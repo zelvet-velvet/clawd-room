@@ -80,7 +80,7 @@ sticker: lucide//book-open
 - **To keep both versions equal:** call the generator in the same order and the same number of times as `room_tui.py` (including calls whose result is unused), and never add a draw in only one of them.
 
 > [!TODO] Test the C version (by eye)
-> - [ ] `python3 setup_profile.py --update`, restart Windows Terminal, open the Clawd Room profile (first start builds C: a few seconds, the menu then shows)
+> - [ ] `python3 setup_profile.py --update` (adds the profile to settings.json if it is missing, so it shows up at once), open the Clawd Room profile (first start builds C: a few seconds, the menu then shows)
 > - [ ] Menu: arrows / 1-3 / S / Enter; the window ends near 110x32 at 8 pt in one step
 > - [ ] Drag the window: only the scale changes; `[` `]` scale; Ctrl +/- font stops the auto part; `f` brings it back
 > - [ ] Two windows side by side (`wt.exe -w new --size 60,18 -p "Clawd Room"` twice, rooms linked): gates line up, `g` sends a Clawd across
