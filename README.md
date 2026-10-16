@@ -122,6 +122,10 @@ fixed scale, `--no-auto` turns all of it off. The terminal font is put back when
 A window opened from the profile menu starts at Windows Terminal's own default size and is resized once to the
 size above; to open it already at that size use `wt.exe -w new --size 60,18 -p "Clawd Room"` (wt counts cells at the default 14 pt font, so 60,18 gives about 110x33 at 8 pt).
 
+## The C version
+
+`c/` holds the same room written in C (standard C11, no libraries; 10x less CPU, 0.5 % vs 5 % of a core). `clawd-room.sh` starts it (`make -C c` builds it, the script does that by itself on first start) and falls back to `room_tui.py` if it cannot. Choose the program with `CLAWD_ENGINE=python` / `c`, or put `python` or `c` on the first line of `~/.clawd-room/engine`; delete that file for automatic. The Clawd Room profile and the `wt.exe` line from `setup_profile.py` call `clawd-room.sh`; after pulling a new version run `python3 setup_profile.py --update`. `room_tui.py` stays the reference: `make -C c test` checks the C version draws and behaves exactly like it, `make smoke`, `linksmoke` and `winsmoke` drive the real programs.
+
 ## Editing the Clawd frames and items
 
 Every Clawd frame and the items it carries (speech bubbles, cup, sign) are text grids in `sprites/clawd.txt` and `sprites/items.txt`, one character per pixel. Edit them, then `python3 sprite_tool.py build` redraws the sheet and one GIF per action in `Clawd Room Note/Animations/`; the room uses the same files when it starts. A frame missing from the files is drawn by the code. `python3 sprite_tool.py export --force` rewrites the files from the code.

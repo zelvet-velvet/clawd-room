@@ -34,6 +34,7 @@ Read this first if you are an AI assistant (Claude Code or similar) working on t
 ```
 hook.py             Claude Code hook: one JSON line per event -> ~/.clawd-room/events.jsonl (mode 600)
 install_hooks.py    prints / applies / removes the hook in ~/.claude/settings.json (prints by default)
+clawd-room.sh       the launcher the profile calls: C program if built, else room_tui.py (CLAWD_ENGINE or ~/.clawd-room/engine override)
 c/                  the C port of the terminal room (`make` in c/, `make test` compares it with Python): see the C port section of [[Dev Log]]
 sprites.py          loads / saves the editable sprite files, writes GIFs (sprites/clawd.txt, sprites/items.txt)
 sprite_tool.py      `export` code drawing -> sprites/*.txt, `build` sheet + GIFs into Clawd Room Note/Animations/
@@ -58,6 +59,7 @@ Test hooks (environment): `CLAWD_EVENTS` (events file), `CLAWD_LINK_DIR` (link f
 - **Standard library only.** No pip installs, no venv needed for `room_tui.py`. Only `room.py` uses pygame (in `.venv`).
 - **No network, no background daemons.** Writes go only to the project folder and `~/.clawd-room/`; the one exception is `setup_profile.py --apply`, which the user runs by hand and which writes a single fragment file under Windows Terminal's `Fragments\clawd-room\` (`settings.json` only via the explicit `--apply-global`, with a `.clawd-room.bak` backup). The `powershell.exe` children belong to the room and must be stopped when it exits.
 - **Do not edit `~/.claude/settings.json` yourself.** Tell the user to run `python3 install_hooks.py` (prints the change); `--apply` only if they say so. The installed hook calls `python3 ~/clawd-room/hook.py`, so the **symlink `~/clawd-room` -> the Desktop folder must stay**.
+- **Two engines, one behaviour.** `room_tui.py` is the reference; the C version in `c/` must match it (`make -C c test`). A behaviour change goes into both, with the same random calls in the same order, and the golden tools (`tools/golden_*.py`, fixtures, scenarios) extended if needed. Launchers call `clawd-room.sh`, never a program directly.
 - **Leave `room.py` alone** (reference only). Keep the state machine and its timings unless asked: 90 s sleep, 30 min stale, 2.5 s cheer, 0.8 s hold-working.
 - **Terminal hygiene.** Alternate screen, hidden cursor, one string written per frame, diff updates; restore the terminal on exit, Ctrl-C and exceptions.
 - **Windows are never moved to attach them** (the user decided). Gates (doors, ladder hatches) line up on screen instead. Do not add window snapping or following again.
