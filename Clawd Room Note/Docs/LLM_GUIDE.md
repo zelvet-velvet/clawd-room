@@ -89,11 +89,11 @@ There is no test runner in the repo. What works:
 ---
 ## 🌿 Regulation: repo management
 
-The repo is private on GitHub (`zelvet-velvet/clawd-room`). `main` holds the original pygame prototype; the terminal version lives on feature branches (`feature/terminal-ui`, then `feature/room-link`).
+The repo is private on GitHub (`zelvet-velvet/clawd-room`). History starts clean (2026-10-16): the first commit is `chore: start clean history`. The old repo, with the original pygame prototype and the branches `feature/terminal-ui` / `feature/room-link`, is archived (read-only, private) as `zelvet-velvet/clawd-room-archive`; look there only for old history. New work goes on branches off `main`.
 
 **Branches**
 - `main` is the stable line. Do not commit to it directly; it only receives merges.
-- Work on a branch named `type/short-slug`, for example `feat/seesaw`, `fix/gate-offset`. (The two existing branches use the older `feature/` prefix.)
+- Work on a branch named `type/short-slug`, for example `feat/seesaw`, `fix/gate-offset`. 
 
 **Commit messages:** `type(scope): summary`, lowercase, imperative, no trailing period.
 - `type` is one of `feat`, `fix`, `refactor`, `chore`, `docs`.
@@ -102,7 +102,7 @@ The repo is private on GitHub (`zelvet-velvet/clawd-room`). `main` holds the ori
 - End each commit message with the co-author line from the session's attribution rules.
 - Git identity: name `Zaviel`, email `you@example.com` (set in the repo, not globally).
 
-**Every change = commit + push** on the current feature branch, without asking; never force-push (history was rewritten once, on purpose, to change the author email).
+**Every change = commit + push** on the current feature branch, without asking; never force-push (the history was restarted once, on purpose, in a new repo).
 
 **Merging to `main`**
 - When a feature seems done, **ask the user** whether to open a PR or merge. Never merge without a yes.
