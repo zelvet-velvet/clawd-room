@@ -9,6 +9,7 @@
 #include "clawd.h"
 #include "term.h"
 #include "fixture.h"
+#include "rng.h"
 
 typedef struct { const char *name, *state; void (*set)(Session *); } Action;
 
@@ -107,6 +108,22 @@ static int run_fixtures(int n, char **files, const SpriteFile *frames, const Spr
     return 0;
 }
 
+/* the random numbers a few seeds give: tools/golden_rng.py prints the same from Python's random.Random */
+static int golden_rng(void) {
+    static const char *SIDS[] = {"x", "aaa", "619c9f42-0144-479e-bc6c-ca68e665dc6f", ""};
+    for (int i = 0; i < 4; i++) {
+        Rng r;
+        rng_seed(&r, crc32_str(SIDS[i]));
+        printf("rng %d", i);
+        for (int k = 0; k < 6; k++) printf(" %.17g", rng_random(&r));
+        for (int k = 0; k < 4; k++) printf(" %.17g", rng_uniform(&r, 1.0, 4.0));
+        for (int k = 0; k < 8; k++) printf(" %d", rng_choice(&r, 3 + k));
+        for (int k = 0; k < 2000; k++) rng_random(&r); /* past one refill of the 624-word state */
+        printf(" %.17g\n", rng_random(&r));
+    }
+    return 0;
+}
+
 int main(int argc, char **argv) {
     const char *dir = getenv("CLAWD_SPRITES") ? getenv("CLAWD_SPRITES") : "../sprites";
     char path[512];
@@ -117,6 +134,7 @@ int main(int argc, char **argv) {
     int rc = 0;
     if (argc > 1 && !strcmp(argv[1], "--golden")) rc = golden(argc > 2 && !strcmp(argv[2], "--code") ? NULL : &frames);
     else if (argc > 2 && !strcmp(argv[1], "--fixture")) rc = run_fixtures(argc - 2, argv + 2, &frames, &items);
+    else if (argc > 1 && !strcmp(argv[1], "--golden-rng")) rc = golden_rng();
     else if (argc > 1 && !strcmp(argv[1], "--golden-term")) rc = golden_term(&frames);
     else { fprintf(stderr, "usage: clawd-room --golden [--code] | --golden-term\n"); rc = 1; }
     sprites_free(&frames);

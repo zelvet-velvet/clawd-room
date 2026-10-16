@@ -58,10 +58,26 @@ sticker: lucide//book-open
 > 1. [x] canvas, 3x5 font, sprite files, `pose_for`, `draw_clawd` (1025 frames identical, from the sprite files and from the code)
 > 2. [x] canvas -> half-block cells -> diff ANSI string (identical)
 > 3. [x] themes (backgrounds, desks, accessories, playground), gates, labels, props, `draw_room` and `render` (17 scenes in `tools/fixtures/*.fx`, made by `tools/make_fixtures.py`, identical pixel for pixel)
-> 4. [ ] `Room` state machine (visits, tag, emotes) with a seeded RNG so both versions can be compared
+> 4. [ ] `Room` state machine (visits, tag, emotes). Python's random generator is already ported (`c/rng.c`, matches; see [[#🎲 How the random numbers work]])
 > 5. [ ] events tail + hook file, main loop, keys, start menu
 > 6. [ ] window link and powershell helpers (`windetect`, `roomlink`), auto font and scale
 > 7. [ ] decide: switch the installed command to the binary, keep Python for the hook and tools
+
+---
+## 🎲 How the random numbers work
+
+> [!INFO] Why it matters
+> The state machine (`Room.plan`, `step`) chooses what an idle Clawd does with random numbers. To check that the C version behaves exactly like the Python one, both must draw the **same sequence**, so the C version reproduces Python's own generator.
+
+- **One generator per Clawd.** `Session.rng = random.Random(zlib.crc32(sid))`: seeded from the session id, so the same id always gives the same stream (a Clawd's habits are repeatable, and different sessions differ). There is no room-wide generator; `plan()` just uses `s.rng`.
+- **What it decides:** when to plan next (`uniform(1, 4)` s and similar), what to do (`random()` roll, `choice` of friend / visit kind / solo act, 20 % chance to visit the next window), where to walk (`uniform` over the floor), how long to chat, the angle and distance when running away in tag, and the little particles (hearts, sparks, colours).
+- **Algorithm (what the C port copies):** Mersenne Twister MT19937. The seed (a 32-bit crc) goes through `init_by_array` with a one-word key, exactly like `random.seed(int)`.
+  - `random()` takes two 32-bit outputs `a`, `b` and returns `(a>>5 * 2^26 + b>>6) / 2^53` (53 bits).
+  - `uniform(a, b)` = `a + (b - a) * random()`.
+  - `choice(seq)` = `seq[k]` where `k` is drawn by `getrandbits(bit_length(n))` (the top bits of one 32-bit output), repeated until `k < n`. So it can use more than one output; the C port loops the same way.
+- **Test:** `c/clawd-room --golden-rng` and `tools/golden_rng.py` print the numbers for four seeds (random, uniform, choice, and one value after 2000 draws to cross the 624-word refill); `make test` compares them. Matches Python 3.14; the algorithm has not changed since Python 3.2.
+- **Not random:** the grass texture of the park (`noise(x, y)`, a hash of the position) and the walk / sprite timing (functions of time).
+- **To keep both versions equal:** call the generator in the same order and the same number of times as `room_tui.py` (including calls whose result is unused), and never add a draw in only one of them.
 
 ---
 ## ⏳ Pending (last step)
