@@ -11,7 +11,7 @@ static void set_field(Session *s, const char *kv) {
     if (!strcmp(k, "name")) snprintf(s->name, sizeof s->name, "%s", v);
     else if (!strcmp(k, "state")) snprintf(s->state, sizeof s->state, "%s", v);
     else if (!strcmp(k, "tool")) snprintf(s->tool, sizeof s->tool, "%s", v);
-    else if (!strcmp(k, "px")) s->px = atof(v);
+    else if (!strcmp(k, "px")) { s->px = atof(v); s->has_pos = 1; }
     else if (!strcmp(k, "py")) s->py = atof(v);
     else if (!strcmp(k, "created")) { s->created = atof(v); s->last = s->state_t = s->created; }
     else if (!strcmp(k, "last")) s->last = atof(v);
@@ -25,19 +25,13 @@ static void set_field(Session *s, const char *kv) {
     else if (!strcmp(k, "chat_kind")) s->chat_kind = atoi(v);
     else if (!strcmp(k, "part")) snprintf(s->part, sizeof s->part, "%s", v);
     else if (!strcmp(k, "emote")) { char kind[12]; double st; if (sscanf(v, "%11[^@]@%lf", kind, &st) == 2) { snprintf(s->emote, sizeof s->emote, "%s", kind); s->emote_start = st; } }
-    else if (!strcmp(k, "peek")) s->peeking = atoi(v);
+    else if (!strcmp(k, "peek")) s->peek_on = s->peek_has_end = atoi(v);
     else if (!strcmp(k, "react")) s->react_until = atof(v);
     else if (!strcmp(k, "cup")) s->cup_until = atof(v);
     else if (!strcmp(k, "left_at")) { s->left_at = atof(v); s->has_left = 1; }
     else if (!strcmp(k, "seed")) s->seed = atof(v);
-    else if (!strcmp(k, "away")) s->away = atoi(v);
+    else if (!strcmp(k, "away")) s->has_away = atoi(v);
     else if (!strcmp(k, "walk_phase")) s->walk_phase = atof(v);
-}
-
-static int by_created(const void *a, const void *b) {
-    const Session *x = a, *y = b;
-    if (x->created != y->created) return x->created < y->created ? -1 : 1;
-    return strcmp(x->sid, y->sid);
 }
 
 int fixture_load(Fixture *f, const char *path) {
@@ -45,12 +39,10 @@ int fixture_load(Fixture *f, const char *path) {
     if (!fp) return 1;
     memset(f, 0, sizeof *f);
     Room *r = &f->room;
-    r->theme = theme_get("office");
-    snprintf(r->ratio, sizeof r->ratio, "auto");
-    r->scale = 1;
+    room_init(r);
+    r->freeze = 1; /* the scene is fixed: nobody moves */
     f->cols = 100; f->rows = 24; f->now = 1000.0; f->t = 0.0;
     char line[512];
-    int ng = 0, ns = 0;
     while (fgets(line, sizeof line, fp)) {
         char *tok[40];
         int n = 0;
@@ -69,22 +61,21 @@ int fixture_load(Fixture *f, const char *path) {
         } else if (!strcmp(tok[0], "neighbor") && n > 2) {
             r->nb[r->nnb].side = side_of(tok[1]);
             snprintf(r->nb[r->nnb].theme, sizeof r->nb[0].theme, "%s", tok[2]);
+            snprintf(r->nb[r->nnb].id, sizeof r->nb[0].id, "id-%s", tok[1]);
             r->nnb++;
         } else if (!strcmp(tok[0], "linkpos") && n > 2) { r->has_link[side_of(tok[1])] = 1; r->link_pos[side_of(tok[1])] = atof(tok[2]); }
         else if (!strcmp(tok[0], "gate") && n > 2) { r->has_gate[side_of(tok[1])] = 1; r->gate_scale[side_of(tok[1])] = atof(tok[2]); }
-        else if (!strcmp(tok[0], "particle") && n > 9 && r->np < 64) {
-            Particle *q = &f->parts[r->np++];
+        else if (!strcmp(tok[0], "particle") && n > 9 && r->np < MAX_PARTS) {
+            Particle *q = &r->parts[r->np++];
             *q = (Particle){atof(tok[1]), atof(tok[2]), atof(tok[3]), atof(tok[4]), atof(tok[5]), RGB(atoi(tok[6]), atoi(tok[7]), atoi(tok[8])), atoi(tok[9])};
         } else if ((!strcmp(tok[0], "session") || !strcmp(tok[0], "guest")) && n > 1) {
             int guest = !strcmp(tok[0], "guest");
-            Session *s = guest ? &f->g[ng++] : &f->s[ns++];
-            session_init(s, tok[1]);
+            Session *s = guest ? &r->gpool[r->ngp++] : &r->pool[r->npool++];
+            session_init(s, tok[1], 0.0);
             s->guest = guest;
             for (int i = 2; i < n; i++) set_field(s, tok[i]);
         }
     }
     fclose(fp);
-    qsort(f->s, (size_t)ns, sizeof(Session), by_created);
-    r->s = f->s; r->n = ns; r->guests = f->g; r->ng = ng; r->parts = f->parts;
     return 0;
 }

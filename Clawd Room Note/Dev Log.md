@@ -58,7 +58,7 @@ sticker: lucide//book-open
 > 1. [x] canvas, 3x5 font, sprite files, `pose_for`, `draw_clawd` (1025 frames identical, from the sprite files and from the code)
 > 2. [x] canvas -> half-block cells -> diff ANSI string (identical)
 > 3. [x] themes (backgrounds, desks, accessories, playground), gates, labels, props, `draw_room` and `render` (17 scenes in `tools/fixtures/*.fx`, made by `tools/make_fixtures.py`, identical pixel for pixel)
-> 4. [ ] `Room` state machine (visits, tag, emotes). Python's random generator is already ported (`c/rng.c`, matches; see [[#🎲 How the random numbers work]])
+> 4. [x] `Room` state machine in `c/room.c` (events, desks, idle plans, visits, tag, solo acts, playground, particles, crossing to other windows and messages), using Python's random generator (`c/rng.c`, see [[#🎲 How the random numbers work]]). 8 scripted scenarios in `tools/scenarios/*.sc` run frame by frame in both versions: canvas hash and everybody's state agree at every checkpoint (they cover all visit kinds incl. tag, coffee orders, peeks, swing / slide, rope / stairs, visitors, recall, the g key). `CLAWD_DUMP=FRAME` prints every session at that frame in both, for finding a difference
 > 5. [ ] events tail + hook file, main loop, keys, start menu
 > 6. [ ] window link and powershell helpers (`windetect`, `roomlink`), auto font and scale
 > 7. [ ] decide: switch the installed command to the binary, keep Python for the hook and tools

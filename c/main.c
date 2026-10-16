@@ -10,6 +10,7 @@
 #include "term.h"
 #include "fixture.h"
 #include "rng.h"
+#include "script.h"
 
 typedef struct { const char *name, *state; void (*set)(Session *); } Action;
 
@@ -29,7 +30,7 @@ static void a_visitor(Session *s) { talk(s, 6); strcpy(s->part, "visitor"); }
 #define EMOTE(fn, kind) static void fn(Session *s) { strcpy(s->emote, kind); s->emote_start = 1000.0; }
 EMOTE(a_stretch, "stretch") EMOTE(a_sdance, "dance") EMOTE(a_swing, "swing") EMOTE(a_slide, "slide") EMOTE(a_jump, "jump") EMOTE(a_wave, "wave")
 static void a_applaud(Session *s) { s->react_until = 9e9; }
-static void a_peek(Session *s) { s->peeking = 1; }
+static void a_peek(Session *s) { s->peek_on = s->peek_has_end = 1; }
 
 /* same order and attributes as ACTIONS in sprite_tool.py */
 static const Action ACTIONS[] = {
@@ -44,7 +45,7 @@ static const Action ACTIONS[] = {
 static int golden(const SpriteFile *frames) {
     for (size_t a = 0; a < sizeof ACTIONS / sizeof ACTIONS[0]; a++) {
         Session s;
-        session_init(&s, "x");
+        session_init(&s, "x", 1000.0);
         s.seed = 0.0;
         s.state_t = 1000.0;
         ACTIONS[a].set(&s);
@@ -71,7 +72,7 @@ static uint64_t fnv_bytes(const char *s, size_t n) {
 static int golden_term(const SpriteFile *frames) {
     for (size_t a = 0; a < sizeof ACTIONS / sizeof ACTIONS[0]; a++) {
         Session s;
-        session_init(&s, "x");
+        session_init(&s, "x", 1000.0);
         s.seed = 0.0;
         s.state_t = 1000.0;
         ACTIONS[a].set(&s);
@@ -117,7 +118,7 @@ static int golden_rng(void) {
         printf("rng %d", i);
         for (int k = 0; k < 6; k++) printf(" %.17g", rng_random(&r));
         for (int k = 0; k < 4; k++) printf(" %.17g", rng_uniform(&r, 1.0, 4.0));
-        for (int k = 0; k < 8; k++) printf(" %d", rng_choice(&r, 3 + k));
+        for (int k = 0; k < 8; k++) printf(" %d", rng_choice(&r, 1 + k));
         for (int k = 0; k < 2000; k++) rng_random(&r); /* past one refill of the 624-word state */
         printf(" %.17g\n", rng_random(&r));
     }
@@ -134,6 +135,7 @@ int main(int argc, char **argv) {
     int rc = 0;
     if (argc > 1 && !strcmp(argv[1], "--golden")) rc = golden(argc > 2 && !strcmp(argv[2], "--code") ? NULL : &frames);
     else if (argc > 2 && !strcmp(argv[1], "--fixture")) rc = run_fixtures(argc - 2, argv + 2, &frames, &items);
+    else if (argc > 2 && !strcmp(argv[1], "--script")) { draw_set_sprites(&frames, &items); for (int i = 2; i < argc && !rc; i++) { printf("script %s\n", argv[i]); rc = script_run(argv[i]); } }
     else if (argc > 1 && !strcmp(argv[1], "--golden-rng")) rc = golden_rng();
     else if (argc > 1 && !strcmp(argv[1], "--golden-term")) rc = golden_term(&frames);
     else { fprintf(stderr, "usage: clawd-room --golden [--code] | --golden-term\n"); rc = 1; }

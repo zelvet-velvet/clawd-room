@@ -5,8 +5,6 @@
 
 typedef struct {
     Room room;
-    Session s[64], g[16];
-    Particle parts[64];
     int cols, rows;
     double now, t;
 } Fixture;

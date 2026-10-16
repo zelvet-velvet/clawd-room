@@ -7,9 +7,13 @@ typedef struct { int x, y, bar; } SwingSpot;
 typedef struct { int base[2], top[2], bottom[2]; } SlideSpot;
 typedef struct { int has; SwingSpot swing; SlideSpot slide; } Spots;
 
+typedef struct { const char *kind; double dur; } Emote;
+
 typedef struct {
     const char *name;
     double horizon;
+    int nkinds; int kinds[8];   /* visit kinds: 0 chat 1 wave 2 hop 3 high-five 4 dance 5 tag 6 order coffee */
+    int nemotes; Emote emotes[8]; /* solo acts and how long they last */
     Rgb wall, wall2, floor, floor2, base, desk, desk_top, counter, counter_top;
 } Theme;
 

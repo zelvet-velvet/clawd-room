@@ -8,7 +8,7 @@ for i, sid in enumerate(["x", "aaa", "619c9f42-0144-479e-bc6c-ca68e665dc6f", ""]
     out = ["rng %d" % i]
     out += ["%.17g" % r.random() for _ in range(6)]
     out += ["%.17g" % r.uniform(1.0, 4.0) for _ in range(4)]
-    out += [str(r.choice(range(3 + k))) for k in range(8)]
+    out += [str(r.choice(range(1 + k))) for k in range(8)]
     for _ in range(2000):
         r.random()
     out.append("%.17g" % r.random())

@@ -13,12 +13,17 @@ unsigned crc32_str(const char *s) { /* zlib.crc32 */
     return ~crc;
 }
 
-void session_init(Session *s, const char *sid) {
+void session_init(Session *s, const char *sid, double t) {
     memset(s, 0, sizeof *s);
     snprintf(s->sid, sizeof s->sid, "%s", sid);
     snprintf(s->state, sizeof s->state, "idle");
+    s->created = s->last = s->state_t = t;
     s->face = 1;
+    s->run = 1.0;
+    s->last_hf = -1;
+    s->enter_side = -1;
     s->seed = (crc32_str(sid) % 1000) / 1000.0;
+    rng_seed(&s->rng, crc32_str(sid));
 }
 
 const char *session_shown(const Session *s, double now) {
@@ -93,7 +98,7 @@ Pose pose_for(const Session *s, const char *state, double t, double now) {
         p.bob = IMOD(t * 0.8, 2) ? 1 : 0; p.eyes = "shut";
     } else if (now < s->react_until) { /* applauding a friend who just finished */
         p.bob = -(int)(fabs(sin(now * 9)) * 3); p.arms[0] = p.arms[1] = 1; p.eyes = "happy"; p.look[0] = s->face;
-    } else if (s->peeking) { /* watching a friend work */
+    } else if (s->peek_on && s->peek_has_end) { /* watching a friend work */
         p.lean = s->face; p.look[0] = s->face; p.arms[0] = 0; p.arms[1] = 2; p.bob = IMOD(ph * 2, 2) ? -1 : 0;
     } else if (s->emote[0]) { /* a little solo act */
         const char *kind = s->emote;

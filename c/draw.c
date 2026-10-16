@@ -156,7 +156,7 @@ static void draw_extras(Canvas *cv, const Session *s, const char *state, double 
         } else if (s->chat_kind == 2 || s->chat_kind == 3) draw_bubble(cv, cx, y - 10, "!", ph);
         else if (s->chat_kind == 6 && !strcmp(s->part, "visitor")) draw_bubble(cv, cx, y - 10, "cup", ph); /* ordering a coffee */
     } else if (now < s->react_until && !strcmp(state, "idle")) draw_bubble(cv, cx, y - 10, "!", t);
-    else if (s->peeking) draw_bubble(cv, cx, y - 10, "?", t);
+    else if (s->peek_on && s->peek_has_end) draw_bubble(cv, cx, y - 10, "?", t);
     else if (!seated && !s->has_left && strcmp(state, "wait")) { /* away from the desk: say who it is */
         char name[24];
         fit(name, sizeof name, s->name[0] ? s->name : "", 19);
@@ -169,13 +169,6 @@ static void draw_extras(Canvas *cv, const Session *s, const char *state, double 
 }
 
 /* ---- layout ---------------------------------------------------------------------------------- */
-typedef struct {
-    int w, h, banner, slot_w, floor_y, ymin, ymax, rope_x, stairs_x, rope_end;
-    int shown, more, has_more_pos, more_pos[2];
-    int home[256][2]; /* by index in room->s */
-    double door_y[2];
-    Spots spots;
-} Geo;
 
 static void layout(int w, int h, int n, int *banner, int *per_row, int *slot_w, int *rows_shown, int *ys) {
     *per_row = imax(1, imin(PER_ROW, fdiv(w, SLOT_MIN_W)));
@@ -187,7 +180,7 @@ static void layout(int w, int h, int n, int *banner, int *per_row, int *slot_w, 
     for (int r = 0; r < *rows_shown && r < 16; r++) ys[r] = *banner + gap * (r + 1) + SLOT_H * r;
 }
 
-static void geo_init(Geo *g, const Room *room, int w, int h) {
+void geo_init(Geo *g, const Room *room, int w, int h) {
     int ys[16], per_row, rows_shown, n = room->n;
     memset(g, 0, sizeof *g);
     g->w = w; g->h = h;
@@ -248,10 +241,13 @@ static void draw_background(Canvas *cv, const Room *room, int banner, int count)
 void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t note_n) {
     static const int HEART[3][3] = {{1, 0, 1}, {1, 1, 1}, {0, 1, 0}};
     Geo geo;
+    room_order(room);
     geo_init(&geo, room, cv->w, cv->h);
+    if (!room->freeze) room_step(room, &geo, now); /* everybody moves a little before they are drawn */
+    room_order(room); /* (visitors may have come or gone) */
     note[0] = 0;
     int active = 0;
-    for (int i = 0; i < room->n; i++) if (!room->s[i].has_left) active++;
+    for (int i = 0; i < room->n; i++) if (!room->s[i]->has_left) active++;
     draw_background(cv, room, geo.banner, active);
     for (int i = 0; i < room->nnb; i++) {
         int side = room->nb[i].side;
@@ -274,16 +270,16 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
     char roles[256][12];
     for (int i = 0; i < geo.shown; i++) snprintf(roles[i], sizeof roles[i], "%s", theme_role(room->theme, i));
     for (int i = 0; i < geo.shown; i++) {
-        const Session *s = &room->s[i];
-        if (s->away) continue;
+        const Session *s = room->s[i];
+        if (s->has_away) continue;
         seated[i] = !s->moving && !s->has_left && fabs(s->px - (geo.home[i][0] - 5)) < 1 && fabs(s->py - (geo.home[i][1] + SEAT_DY)) < 1;
         people[np] = s; pstate[np++] = session_shown(s, now);
     }
     int nshown_people = np;
-    for (int i = 0; i < room->ng; i++) { people[np] = &room->guests[i]; pstate[np++] = session_shown(&room->guests[i], now); }
+    for (int i = 0; i < room->ng; i++) { people[np] = room->guests[i]; pstate[np++] = session_shown(room->guests[i], now); }
     char kinds[256][16];
     for (int i = 0; i < geo.shown; i++) {
-        const Session *s = &room->s[i];
+        const Session *s = room->s[i];
         char buf[16];
         const char *kind = draw_desk(cv, geo.home[i][0], geo.home[i][1], session_shown(s, now), s->tool, t, room->theme, roles[i], buf, sizeof buf);
         snprintf(kinds[i], sizeof kinds[i], "%s", kind);
@@ -292,7 +288,7 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
     IRect rects[256];
     int nrects = 0;
     for (int i = 0; i < geo.shown; i++) { /* desk labels; Clawds walking past are drawn over them */
-        const Session *s = &room->s[i];
+        const Session *s = room->s[i];
         if (s->has_left) continue;
         int cx = geo.home[i][0], by = geo.home[i][1];
         char nm[48], id8[9];
@@ -303,7 +299,7 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
         const char *label = !strcmp(state, "work") ? kinds[i] : LABEL(state);
         char lb[16];
         snprintf(lb, sizeof lb, "%.15s", label);
-        if (s->away && !strcmp(state, "idle")) snprintf(lb, sizeof lb, "AWAY");
+        if (s->has_away && !strcmp(state, "idle")) snprintf(lb, sizeof lb, "AWAY");
         if (text_width(lb) > name_w) lb[5] = 0; /* "THINKING" -> "THINK" in narrow slots */
         canvas_text(cv, cx - text_width(lb) / 2, by + 24, lb, C_GREY);
         rects[nrects++] = (IRect){cx - name_w / 2, by + 18, cx + name_w / 2 + 1, by + 29};
@@ -319,7 +315,7 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
         const Session *s = people[i];
         int idx = i < nshown_people ? -1 : 0;
         const char *role = "";
-        if (idx == -1) for (int q = 0; q < geo.shown; q++) if (&room->s[q] == s) role = roles[q];
+        if (idx == -1) for (int q = 0; q < geo.shown; q++) if (room->s[q] == s) role = roles[q];
         Pose p = pose_for(s, pstate[i], t, now);
         draw_clawd(cv, (int)s->px, (int)s->py, &p, g_frames, C_CLAWD, room->theme, role);
     }
@@ -333,7 +329,7 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
     }
     for (int i = 0; i < np; i++) {
         int is_seated = 0;
-        for (int q = 0; q < geo.shown; q++) if (&room->s[q] == people[i] && seated[q]) is_seated = 1;
+        for (int q = 0; q < geo.shown; q++) if (room->s[q] == people[i] && seated[q]) is_seated = 1;
         draw_extras(cv, people[i], pstate[i], t, now, is_seated, rects, nrects, &geo.spots);
     }
     if (geo.has_more_pos) {
