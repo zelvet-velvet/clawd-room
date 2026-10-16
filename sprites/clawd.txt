@@ -1,5 +1,5 @@
 # Clawd frames (15 x 9, the row above the head is row 0).
-# Edit the grids; `python3 sprite_tool.py build` shows them.
+# Edit the grids; `clawd-room --build-art` shows them.
 : B = body
 : K = 20,20,30
 : P = 250,200,216

@@ -1,0 +1,101 @@
+/* The room: who is in it, how they move and what they do (Room in room_tui.py), and how it is drawn. */
+#ifndef ROOM_H
+#define ROOM_H
+#include <stddef.h>
+#include "canvas.h"
+#include "session.h"
+#include "sprites.h"
+#include "theme.h"
+
+enum { SIDE_LEFT, SIDE_RIGHT, SIDE_UP, SIDE_DOWN, SIDES };
+extern const char *SIDE_NAME[SIDES];     /* "left" "right" "up" "down" */
+int side_index(const char *name);        /* -1 if not a side */
+#define OPPOSITE(side) ((side) ^ 1) /* left<->right, up<->down */
+
+#define MAX_SESS 64
+#define MAX_GUESTS 4
+#define MAX_PARTS 256
+#define MAX_OUT 32
+
+typedef struct { double x, y, vx, vy, life; Rgb c; int heart; } Particle;
+typedef struct { char name[24], side[8]; } Peer; /* side: "left" "right" "up" "down" or "" */
+typedef struct { int side; char theme[12], id[24]; } Neighbor;
+
+/* a message between windows ("walk" a Clawd over, or "recall" it) */
+typedef struct {
+    char peer[24];          /* sent: to, received: from */
+    int walk;               /* 1 "walk", 0 "recall" */
+    char sid[72], name[40]; /* name only in walk messages */
+    int side;               /* the edge it enters by (walk) */
+    int home;               /* walk: one of ours coming back */
+    int has_y; double y;
+} Msg;
+
+/* where the desks are and the strip of floor where Clawds may walk (Geo in room_tui.py) */
+typedef struct {
+    int w, h, banner, slot_w, floor_y, ymin, ymax, rope_x, stairs_x, rope_end;
+    int shown, more, has_more_pos, more_pos[2];
+    int home[MAX_SESS][2];   /* by index in room->s (only the first `shown`) */
+    double door_y[2];
+    Spots spots;
+} Geo;
+
+typedef struct {
+    Session pool[MAX_SESS]; int npool;     /* the sessions, in the order they appeared */
+    Session gpool[MAX_GUESTS]; int ngp;    /* visitors from other windows (not yet placed ones included) */
+    Session *s[MAX_SESS]; int n;           /* the ones this room shows, ordered by (created, sid): rebuilt each frame */
+    Session *guests[MAX_GUESTS]; int ng;   /* the placed visitors */
+    Particle parts[MAX_PARTS]; int np;
+    const Theme *theme;
+    char title[48];
+    Peer peers[8]; int npeers;
+    Neighbor nb[SIDES]; int nnb;     /* windows close enough to have a gate, in the order they were given */
+    int has_link[SIDES]; double link_pos[SIDES];
+    int has_gate[SIDES]; double gate_scale[SIDES];
+    int scale;               /* TUI scale: room pixels are scale x scale terminal cells (auto shape only) */
+    char ratio[8];           /* "auto" or a key of RATIOS */
+    int size_w, size_h;      /* size of the room in pixels as last drawn */
+    int view_x, view_y, view_k; /* where the room sits in the terminal canvas: x offset, y offset, scale */
+    /* movement state */
+    int has_last_now; double last_now;
+    int has_geo_key; int geo_w, geo_h;
+    Msg incoming[MAX_OUT]; int nin;
+    Msg outbox[MAX_OUT]; int nout;
+    char gone_peers[4][24]; int ngone;
+    int freeze;              /* tests: draw without moving anybody */
+    int split;               /* linked rooms share the sessions: this room shows the ones whose crc32 picks it */
+    int n_owner_ids; char owner_ids[17][40], owner_me[40];
+    int has_geo;             /* geo below is from the last frame (the g key needs it) */
+    Geo geo;
+} Room;
+
+#define SLOT_H 40
+#define SLOT_MIN_W 30
+#define SLOT_MAX_W 62
+#define PER_ROW 5
+#define BANNER_H 8
+#define SEAT_DY 7
+
+
+void layout_slots(int w, int h, int n, int *banner, int *per_row, int *slot_w, int *rows_shown, int *ys);
+void geo_init(Geo *g, const Room *room, int w, int h);
+int geo_home(const Geo *g, const Room *room, const Session *s, int *cx, int *by); /* 1 if it has a desk */
+const char *geo_role(const Geo *g, const Room *room, const Session *s);
+
+void room_init(Room *r);
+void room_order(Room *r);                            /* fills r->s (ordered) and r->guests (placed visitors) */
+void room_apply(Room *r, double t, const char *sid, const char *ev, const char *cwd, const char *tool);
+void room_prune(Room *r, double now);
+void room_step(Room *r, const Geo *geo, double now); /* move everybody a little (once per frame) */
+Session *room_add_guest(Room *r, const char *key, double now);
+void room_receive(Room *r, const Msg *m);
+void room_peer_gone(Room *r, const char *peer);
+const char *room_send_one(Room *r, const Geo *geo, double now, char *buf, size_t n); /* the g key */
+
+const SpriteFile *draw_frames(void);
+void draw_set_sprites(const SpriteFile *frames, const SpriteFile *items); /* the editable files the drawing prefers */
+/* draws the room on cv (moving everybody first unless room->freeze); returns the "+N MORE" note in `note` */
+void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t note_n);
+/* the canvas for the whole terminal (cols x rows cells) with the room in it */
+Canvas render(int cols, int rows, Room *room, double now, double t, char *note, size_t note_n);
+#endif

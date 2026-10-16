@@ -1,0 +1,15 @@
+{"t": 1000.5, "sid": "aaa", "ev": "SessionStart", "cwd": "clawd-room", "tool": ""}
+{"t": 1001, "sid": "aaa", "ev": "PreToolUse", "cwd": "clawd-room", "tool": "Bash"}
+not json at all
+{"t": "1002.25", "sid": "bbb", "ev": "UserPromptSubmit", "cwd": null}
+{"t": 1003, "sid": "ccc", "ev": "Notification", "cwd": "café 😀", "tool": "x", "extra": {"deep": [1, 2, {"a": null}], "s": "q\"uote"}}
+{"t": 1004, "sid": "aaa", "ev": "Stop"}
+{"sid": "aaa", "ev": "Stop"}
+{"t": 1005, "sid": "ddd"}
+[1, 2, 3]
+{"t": 1006e0, "sid": "eee", "ev": "SessionEnd", "cwd": "es\\caped", "tool": "T"}
+{"t": 1007, "sid": "fff", "ev": "Stop", "cwd": "trailing"} junk
+{"t": 1008, "sid": "ggg", "ev": "Stop", "cwd": "ok"}
+
+{"t": 999.9, "sid": "old", "ev": "Stop", "cwd": "before-since"}
+{"t": 1009, "sid": "hhh", "ev": "PostToolUse", "cwd": "half-written", "tool": "Re

@@ -4,6 +4,7 @@
   python3 setup_profile.py            # print what would be written, change nothing
   python3 setup_profile.py --apply    # write the fragment file (settings.json is never touched)
   python3 setup_profile.py --remove   # delete the fragment file again
+  python3 setup_profile.py --update   # add the profile entry to settings.json if it is missing (8 pt font, shows up at once, no restart) or point it at clawd-room.sh, and rewrite the fragment; nothing else in settings.json changes (backup first)
   python3 setup_profile.py --apply-global   # also hide the tab bar and give the profile an 8 pt font: edits settings.json (after a backup copy)
 
 Windows Terminal reads extra profiles from  %LOCALAPPDATA%\\Microsoft\\Windows Terminal\\Fragments\\clawd-room\\.
@@ -20,9 +21,10 @@ import sys
 import zlib
 
 NAME = "Clawd Room"
-FONT_SIZE = 8  # the profile opens with this font size (room_tui.py DEFAULT_FONT), so nothing has to zoom
+FONT_SIZE = 8  # the profile opens with this font size (the room's default font, c/app.c), so nothing has to zoom
 GUID = "{c1a3d0f2-7b64-4e1a-9a5c-2f6d8e4b0c13}"
 HERE = os.path.dirname(os.path.abspath(__file__))
+LAUNCHER = os.path.join(HERE, "clawd-room.sh")  # builds and starts the C program (see clawd-room.sh)
 
 
 def win_path(env_var):
@@ -69,14 +71,20 @@ def profile_stub():
     if not distro:
         raise OSError("WSL_DISTRO_NAME is not set; run this from inside WSL")
     return {"guid": GUID, "source": "clawd-room", "name": NAME, "hidden": False, "font": {"size": FONT_SIZE},
-            "commandline": "wsl.exe -d %s -e python3 %s --profile-font %d"
-                           % (distro, os.path.join(HERE, "room_tui.py"), FONT_SIZE)}
+            "commandline": "wsl.exe -d %s -e %s --profile-font %d"
+                           % (distro, LAUNCHER, FONT_SIZE)}
 
 
 def patch_profile(text):
-    """Add (or leave) the profile entry at the start of "profiles"."list"."""
+    """Add the profile entry at the start of "profiles"."list"; if it is there already, point its commandline at the launcher."""
     if GUID in text:
-        return text
+        at = text.index(GUID)
+        pat = re.compile(r'("commandline"\s*:\s*)"(?:[^"\\]|\\.)*"')
+        m = pat.search(text, at, at + 800)
+        if not m:
+            return text
+        cmd = json.dumps(profile_stub()["commandline"])
+        return text[:m.start()] + m.group(1) + cmd + text[m.end():]
     m = re.search(r'"list"\s*:\s*\[[ \t]*\r?\n', text)
     if not m:
         raise OSError('no "profiles": {"list": [ ... found in settings.json')
@@ -85,11 +93,11 @@ def patch_profile(text):
     return text[:m.end()] + entry + ",\n" + text[m.end():]
 
 
-def apply_global():
+def apply_global(only_profile=False):
     path = settings_file()
     with open(path, encoding="utf-8-sig") as f:
         old = f.read()
-    new = patch_profile(patch_settings(old))
+    new = patch_profile(old if only_profile else patch_settings(old))
     if new == old:
         print("settings.json is already set up:", path)
         return
@@ -101,7 +109,7 @@ def apply_global():
     print("backup ", backup, "(copy it back to undo)")
 
 
-# The icon: pixel Clawd (room_tui.draw_clawd, 14 x 8, each pixel 2 x 2 cells) standing in a little room,
+# The icon: pixel Clawd (the Clawd sprite, 14 x 8, each pixel 2 x 2 cells) standing in a little room,
 # on a 32 x 32 grid. Drawn 16 px per cell it is the 512 px picture; smaller sizes are whole multiples.
 GRID = 32
 BODY = (205, 110, 88, 255)
@@ -169,7 +177,7 @@ def fragment(icon):
     return {"profiles": [{
         "guid": GUID,
         "name": NAME,
-        "commandline": "wsl.exe -d %s -e python3 %s" % (distro, os.path.join(HERE, "room_tui.py")),
+        "commandline": "wsl.exe -d %s -e %s" % (distro, LAUNCHER),
         "scrollbarState": "hidden",
         "padding": "0",
         "icon": icon,
@@ -179,8 +187,14 @@ def fragment(icon):
 
 def main():
     arg = sys.argv[1] if len(sys.argv) > 1 else ""
-    if arg not in ("", "--apply", "--remove", "--apply-global"):
+    if arg not in ("", "--apply", "--remove", "--apply-global", "--update"):
         sys.exit(__doc__)
+    if arg == "--update":  # the profile entry in settings.json (added if missing, repointed if not), then the fragment like --apply
+        try:
+            apply_global(only_profile=True)
+        except (OSError, subprocess.SubprocessError) as e:
+            sys.exit("cannot edit settings.json: %s" % e)
+        arg = "--apply"
     if arg == "--apply-global":
         try:
             apply_global()
@@ -219,8 +233,8 @@ def main():
         print("written. Restart Windows Terminal, then open the '%s' profile (it asks which scene), or from a shell:" % NAME)
     else:
         print("(not written; add --apply). After applying, start a window with:")
-    print('  wt.exe -w new --size 60,18 -p "%s" --title "clawd-room park" wsl.exe -e python3 %s --room park --profile-font %d'
-          % (NAME, os.path.join(HERE, "room_tui.py"), FONT_SIZE))
+    print('  wt.exe -w new --size 60,18 -p "%s" --title "clawd-room park" wsl.exe -e %s --room park --profile-font %d'
+          % (NAME, LAUNCHER, FONT_SIZE))
 
 
 if __name__ == "__main__":

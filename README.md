@@ -5,7 +5,7 @@ A pixel room with one little character per running Claude Code session.
 - `hook.py` — Claude Code hook. Appends `{time, session id, event, folder name, tool name}` to
   `~/.clawd-room/events.jsonl` (mode 600). Never stores prompts, tool input/output or full paths.
 - `room.py` — the window (pygame-ce, via WSLg). Replays the last 10 min, then follows the file.
-- `room_tui.py` — the terminal version (standard library only, no window needed). Same states and timings.
+- `c/` — the terminal version, written in C (standard C11, no libraries, no window needed). `clawd-room.sh` builds and starts it. Same states and timings as the window version.
 - `install_hooks.py` — prints / applies / removes the hook entries in `~/.claude/settings.json`.
 - `simulate.py` — fake sessions to watch the animations. `run.sh` — start the window.
 
@@ -20,8 +20,8 @@ idle 90 s (asleep), session end (walks out). A session with no events for 30 min
 
 ## Terminal version
 
-    python3 room_tui.py                       # draws in the terminal (works in a 60x20 pane or fullscreen)
-    python3 room_tui.py --dump 100x30 --events /tmp/e.jsonl --at 1800000010   # one plain-text frame, for tests
+    ./clawd-room.sh                           # draws in the terminal (works in a 60x20 pane or fullscreen); builds c/ on the first start
+    ./clawd-room.sh --dump 100x30 --events /tmp/e.jsonl --at 1800000010   # one plain-text frame, for tests
 
 Keys: `q` or Esc quit, `p` pause, `?` help line. Needs at least 44x20 cells. The hook must be
 installed once (`python3 install_hooks.py` shows what it would change) or the room stays empty.
@@ -34,20 +34,20 @@ applaud when a friend finishes, and do little solo acts (stretch, dance, jump, w
 
 ## Linking windows and room themes
 
-    python3 room_tui.py --room park           # window 1
-    python3 room_tui.py --room coffee         # window 2
+    ./clawd-room.sh --room park               # window 1
+    ./clawd-room.sh --room coffee             # window 2
 
 Rooms on the same machine find each other and exchange small messages through files in
 `~/.clawd-room/link/` (private folder, no network, no daemon). The banner shows `LINK COFFEE`,
 with an arrow (`>` or `<`) and a glowing door on that side of the room when the other window is
-close enough on the Windows desktop. `python3 roomlink.py NAME` is a tiny demo that pings other rooms.
+close enough on the Windows desktop. `clawd-room --link-demo NAME [SECONDS]` is a tiny demo that pings other rooms.
 Messages carry only a type and small values, never prompts or tool data.
 
 How "close enough" works: each room sets its window title to `clawd-room <id>`, and one small
 `powershell.exe` (started by the room, stopped when it quits) reports the screen rectangles of
 windows whose title starts with `clawd-room ` and nothing else. Windows side by side with a gap of
 at most 30 px (`--near PX`; an attached pair stays attached until the gap passes 45 px) count as close. It needs the room's tab to be the active tab of its
-window; `--no-detect` turns it off. `python3 windetect.py` lists the clawd-room windows it can see.
+window; `--no-detect` turns it off. `clawd-room --list-windows` lists the clawd-room windows it can see.
 
 Themes (`--theme office|coffee|park`, by default guessed from the room name):
 - office: desks and monitors.
@@ -122,9 +122,17 @@ fixed scale, `--no-auto` turns all of it off. The terminal font is put back when
 A window opened from the profile menu starts at Windows Terminal's own default size and is resized once to the
 size above; to open it already at that size use `wt.exe -w new --size 60,18 -p "Clawd Room"` (wt counts cells at the default 14 pt font, so 60,18 gives about 110x33 at 8 pt).
 
+## Building and testing
+
+`c/` is plain C11 with no libraries. `clawd-room.sh` builds it by itself (`make -C c`) when the program is missing or older than its sources, so the profile and shortcuts only ever call the script (after pulling a new version run `python3 setup_profile.py --update`). Needs `make` and a C compiler (`sudo apt install build-essential`).
+
+- `make -C c test` compares the program with the snapshots in `c/tests/expected` (frames, terminal output, random numbers, scenes, geometry) — about a second, no terminal needed. `tools/test.sh --update` rewrites the snapshots when a change of behaviour is meant.
+- `make -C c smoke` / `linksmoke` / `winsmoke` drive the real program in ptys and in real Windows Terminal windows (your own throwaway `alpha` / `beta` ones).
+- The Python version of the room (`room_tui.py` and friends) was removed on 2026-10-16 after the two had been compared frame by frame; it is in git history and `clawd-room-archive`. Python is still used for the hook, the installer, the simulator and the profile tools.
+
 ## Editing the Clawd frames and items
 
-Every Clawd frame and the items it carries (speech bubbles, cup, sign) are text grids in `sprites/clawd.txt` and `sprites/items.txt`, one character per pixel. Edit them, then `python3 sprite_tool.py build` redraws the sheet and one GIF per action in `Clawd Room Note/Animations/`; the room uses the same files when it starts. A frame missing from the files is drawn by the code. `python3 sprite_tool.py export --force` rewrites the files from the code.
+Every Clawd frame and the items it carries (speech bubbles, cup, sign) are text grids in `sprites/clawd.txt` and `sprites/items.txt`, one character per pixel. Edit them, then `clawd-room --build-art` redraws the sheet and one GIF per action in `Clawd Room Note/Animations/`; the room uses the same files when it starts. A frame missing from the files is drawn by the code. `clawd-room --export-sprites --force` rewrites the files from the code (`--add` only appends frames a file lacks).
 
 ## Notes vault
 

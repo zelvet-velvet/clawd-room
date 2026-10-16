@@ -1,0 +1,16 @@
+{"t": 1799999900.0, "sid": "a", "ev": "SessionStart", "cwd": "web-shop", "tool": ""}
+{"t": 1800000008.0, "sid": "a", "ev": "UserPromptSubmit", "cwd": "web-shop", "tool": ""}
+{"t": 1799999901.0, "sid": "b", "ev": "SessionStart", "cwd": "api-server", "tool": ""}
+{"t": 1800000008.1, "sid": "b", "ev": "UserPromptSubmit", "cwd": "api-server", "tool": ""}
+{"t": 1800000008.3999999, "sid": "b", "ev": "PreToolUse", "cwd": "api-server", "tool": "Bash"}
+{"t": 1799999902.0, "sid": "c", "ev": "SessionStart", "cwd": "notes_app", "tool": ""}
+{"t": 1800000008.2, "sid": "c", "ev": "UserPromptSubmit", "cwd": "notes_app", "tool": ""}
+{"t": 1800000008.5, "sid": "c", "ev": "PreToolUse", "cwd": "notes_app", "tool": "Edit"}
+{"t": 1799999903.0, "sid": "d", "ev": "SessionStart", "cwd": "pixel-gui", "tool": ""}
+{"t": 1800000008.3, "sid": "d", "ev": "UserPromptSubmit", "cwd": "pixel-gui", "tool": ""}
+{"t": 1800000008.6, "sid": "d", "ev": "Notification", "cwd": "pixel-gui", "tool": ""}
+{"t": 1799999904.0, "sid": "e", "ev": "SessionStart", "cwd": "scratch", "tool": ""}
+{"t": 1800000008.4, "sid": "e", "ev": "UserPromptSubmit", "cwd": "scratch", "tool": ""}
+{"t": 1800000008.7, "sid": "e", "ev": "Stop", "cwd": "scratch", "tool": ""}
+{"t": 1799999905.0, "sid": "f", "ev": "SessionStart", "cwd": "garden", "tool": ""}
+{"t": 1800000008.5, "sid": "f", "ev": "SessionStart", "cwd": "garden", "tool": ""}
