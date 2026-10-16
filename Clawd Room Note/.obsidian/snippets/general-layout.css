@@ -1,0 +1,272 @@
+/* ==========================================================================
+   general-layout.css
+
+   CONTENTS
+     0. Tune here        — all adjustable values in one place
+     1. Global           — no horizontal scroll
+     2. Text             — highlight (==mark==) pill style
+     3. Callouts         — title, icon, content spacing
+     4. Callout tasks    — checkbox position inside callouts
+     5. Properties       — hover-to-show widget, custom title, hide class
+     6. Dataview         — trim outer margins of dataviewjs output
+     7. Mermaid          — scale diagrams down to fit width
+     8. Make.md flow     — gutter for !![[...]] embeds
+   ========================================================================== */
+
+
+/* ==========================================================================
+   0. TUNE HERE
+   ========================================================================== */
+
+body {
+    --highlight-padding: 2px 10px;          /* ==mark== inner space (vertical horizontal) */
+    --highlight-radius: 8px;                /* ==mark== corner roundness */
+    --dataview-edge-margin: 10px;           /* space above/below dataviewjs output */
+    --flow-embed-gutter: 2.5em;             /* left room for list numbers in !![[...]] */
+    --properties-title-icon: "🧵🧵🪡🪡";    /* text replacing the "Properties" title */
+    --properties-title-size: 30px;
+}
+
+/* Callout sizes are multiples of the text size (--font-text-size), so they
+   scale together with text when the font size / zoom changes.
+   Multiplier × 30px base font ≈ the old px value shown in brackets. */
+.callout {
+    --u: var(--font-text-size);
+
+    /* Title & icon */
+    --callout-icon-size: calc(var(--u) * 1.17) !important; /* all callout icons [35px] */
+    --callout-title-top: calc(var(--u) * 0.5);      /* space above the title row [15px] */
+    --callout-title-gap: calc(var(--u) * 0.2);      /* icon → title text [15px] */
+
+    /* Content */
+    --callout-content-top: calc(var(--u) * 0.67);   /* title → first content [20px] */
+    --callout-content-bottom: calc(var(--u) * 0.5); /* space below last content [15px] */
+    --callout-list-item-gap: calc(var(--u) * 0.13); /* between list items [4px] */
+
+    /* Task checkboxes */
+    --callout-checkbox-gap: 0.5em;                  /* checkbox → its text */
+    --callout-checkbox-nudge: calc(var(--u) * -0.1); /* vertical fine-tune: − up, + down [-3px] */
+    --callout-nested-indent: 1.5em;                 /* indent of sub-tasks */
+}
+
+
+/* ==========================================================================
+   1. GLOBAL — kill horizontal scrolling
+   ========================================================================== */
+
+body,
+.workspace-leaf-content,
+.view-content,
+.markdown-rendered {
+    overflow-x: hidden !important;
+    max-width: 100% !important;
+}
+
+
+/* ==========================================================================
+   2. TEXT — highlight pill (Reading view: mark / Live Preview: .cm-highlight)
+   ========================================================================== */
+
+mark,
+.cm-highlight {
+    padding: var(--highlight-padding);
+    border-radius: var(--highlight-radius);
+}
+
+
+/* ==========================================================================
+   3. CALLOUTS — title, icon, content spacing
+   ========================================================================== */
+
+/* Title row: space above, icon vertically centered with title text */
+.callout .callout-title {
+    padding-left: 0px;
+    margin-top: var(--callout-title-top) !important;
+    align-items: center !important;
+}
+
+/* Title-only callout (collapsed, or no content): the title has space above it but
+   nothing below, so it looked top-heavy. Give it the same space below. */
+.callout.is-collapsed > .callout-title,
+.callout:not(:has(.callout-content)) > .callout-title {
+    margin-bottom: var(--callout-title-top) !important;
+}
+
+/* Gap between icon and title text */
+.callout .callout-title-inner {
+    margin-left: var(--callout-title-gap);
+}
+
+/* Icon size (box + svg) */
+.callout .callout-icon {
+    width: var(--callout-icon-size) !important;
+    height: var(--callout-icon-size) !important;
+    min-width: var(--callout-icon-size) !important;
+    min-height: var(--callout-icon-size) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.callout .callout-icon svg {
+    width: var(--callout-icon-size) !important;
+    height: var(--callout-icon-size) !important;
+}
+
+/* Space above first / below last content block */
+.callout-content > :first-child {
+    margin-top: var(--callout-content-top) !important;
+}
+
+.callout-content > :last-child {
+    margin-bottom: var(--callout-content-bottom) !important;
+}
+
+/* Lists/paragraphs inside a callout: no extra top/bottom gap */
+.callout-content > ul,
+.callout-content > ol,
+.callout-content > p {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+/* Gap between list items */
+.callout-content li {
+    margin-bottom: var(--callout-list-item-gap) !important;
+}
+
+
+/* ==========================================================================
+   4. CALLOUT TASKS — checkbox position
+   Horizontal: no indent, checkbox starts at the paragraph text's left edge,
+               so it can never cross the callout/embed frame.
+   Vertical:   checkbox is inline in the text line → center it on the text,
+               then fine-tune with --callout-checkbox-nudge.
+   ========================================================================== */
+
+/* Horizontal: remove list + item indent */
+.callout .contains-task-list,
+.callout .contains-task-list > .task-list-item {
+    padding-inline-start: 0 !important;
+    margin-inline-start: 0 !important;
+    text-indent: 0 !important;
+}
+
+/* Horizontal: sub-tasks still get an indent */
+.callout .task-list-item .contains-task-list {
+    padding-inline-start: var(--callout-nested-indent) !important;
+}
+
+.callout .task-list-item-checkbox {
+    /* Horizontal: no pull-left, gap to text on the right */
+    margin-inline-start: 0 !important;
+    margin-inline-end: var(--callout-checkbox-gap) !important;
+
+    /* Vertical: center on text + nudge (replaces Minimal's top: 2px) */
+    vertical-align: middle !important;
+    top: var(--callout-checkbox-nudge) !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+
+/* ==========================================================================
+   5. PROPERTIES (frontmatter)
+   ========================================================================== */
+
+/* 5a. Reading view / Live Preview: hide property list, show on hover */
+.workspace-leaf-content[data-type=markdown] .metadata-container .metadata-content,
+.workspace-leaf-content[data-type=markdown] .frontmatter-container .metadata-content {
+    display: none;
+}
+
+.workspace-leaf-content[data-type=markdown] .metadata-container:hover .metadata-content,
+.workspace-leaf-content[data-type=markdown] .frontmatter-container:hover .metadata-content {
+    display: block;
+}
+
+/* 5b. Collapse the container's own spacing while hidden, restore on hover */
+.workspace-leaf-content[data-type=markdown] .metadata-container,
+.workspace-leaf-content[data-type=markdown] .frontmatter-container {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    min-height: 0 !important;
+}
+
+.workspace-leaf-content[data-type=markdown] .metadata-container:hover,
+.workspace-leaf-content[data-type=markdown] .frontmatter-container:hover {
+    padding-top: initial !important;
+    padding-bottom: initial !important;
+    margin-top: initial !important;
+    margin-bottom: initial !important;
+}
+
+/* 5c. Source mode: always show the raw frontmatter (no hover needed) */
+.cm-s-obsidian .HyperMD-frontmatter,
+.cm-s-obsidian .frontmatter-container {
+    display: block;
+}
+
+/* 5d. Replace the "Properties" title text with an icon string */
+.metadata-properties-title {
+    font-size: 0;
+}
+
+.metadata-properties-title::before {
+    content: var(--properties-title-icon);
+    font-size: var(--properties-title-size);
+    position: relative;
+    left: 0;
+}
+
+/* 5e. Opt-in per note (cssclasses: hide-my-properties): hide completely */
+.hide-my-properties .metadata-container,    /* Live Preview / Reading view */
+.hide-my-properties .cm-hmd-frontmatter {   /* Source mode */
+    display: none !important;
+}
+
+
+/* ==========================================================================
+   6. DATAVIEW — dv.paragraph()'s <p> carries default browser margin;
+      trim only first/last child so spacing between paragraphs is kept
+   ========================================================================== */
+
+.block-language-dataviewjs > *:first-child {
+    margin-top: var(--dataview-edge-margin) !important;
+}
+
+.block-language-dataviewjs > *:last-child {
+    margin-bottom: var(--dataview-edge-margin) !important;
+}
+
+
+/* ==========================================================================
+   7. MERMAID — natural size, scale down if wider than the note
+   ========================================================================== */
+
+.mermaid {
+    overflow-x: auto !important;
+}
+
+.mermaid svg {
+    display: block;
+    width: auto !important;
+    max-width: 100% !important;
+    height: auto !important;
+    margin: 0 auto;
+}
+
+
+/* ==========================================================================
+   8. MAKE.MD FLOW EMBEDS (!![[...]])
+      The plugin forces .cm-content padding to 0, so list numbers (and task
+      checkboxes outside callouts), which hang left of the text, cross the
+      embed's left border. Give the content a gutter for them.
+   ========================================================================== */
+
+body .mk-floweditor-container .mk-floweditor .markdown-source-view.mod-cm6 .cm-content,
+body div:not(.mk-flowspace-editor) > .mk-floweditor .markdown-source-view.mod-cm6 .cm-content {
+    padding-left: var(--flow-embed-gutter) !important;
+}

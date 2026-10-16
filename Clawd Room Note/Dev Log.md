@@ -1,0 +1,61 @@
+---
+title: clawd-room - Dev Log
+date: 2026-10-16
+updated: 2026-10-16
+tags:
+  - dev-log
+  - clawd-room
+sticker: lucide//book-open
+---
+# 📝 clawd-room Dev Log
+
+> [!INFO] How these notes fit together
+> - **Dev Log** (this note): progress so far, the current phase with its checklist, and what is pending.
+> - [[LLM_GUIDE]]: map, rules and repo regulation for AI assistants.
+> - The detail of every change is in `git log` (commit messages are `type(scope): summary`).
+
+---
+## 🕰️ Progress so far (up to 2026-10-16)
+
+- **`main`**: the original pygame prototype (`room.py`), hook, installer, simulator.
+- **`feature/terminal-ui`**: `room_tui.py`, a standard-library terminal room (half-block truecolor, 16 FPS, diff output); official-style pixel Clawd; idle life, visits; themes office / coffee shop / park.
+- **`feature/room-link`** (current): `roomlink.py` presence + inbox between windows; `windetect.py` (powershell.exe window rectangles, resize / font helper); Clawds crossing through doors, ladders and hatches that line up on screen (windows are never moved); room shape follows the window (`--ratio auto`); start menu (`choose_scene`); `setup_profile.py` (Windows Terminal "Clawd Room" profile, icon, `--apply-global`); auto TUI scale and font on open.
+
+---
+## 🧭 Current phase: opening the window at the right size
+
+> [!NOTE] Decisions (2026-10-16)
+> 1. The room opens at **110x32 cells at 8 pt** (`--size`, `--font`); `off` leaves the window alone.
+> 2. The font comes from the profile (a `settings.json` entry set by `--apply-global`; a fragment font loses to `profiles.defaults`). The room only resizes the window.
+> 3. The window is sized once, from **real window pixels** (outer rect, terminal area, cells now). The terminal's own pixel reports are in other units on a scaled screen (125 %: cell 10x20 reported, 8x16 real) and are not mixed in.
+> 4. `wt.exe --size` counts cells at the default **14 pt**, so `--size 60,18` opens the 8 pt profile at about 110x33 (110,32 gave 197x58).
+
+> [!TODO] Test (by eye)
+> - [x] Profile from the dropdown: the window shrinks once to about 110x32, font stays 8 pt (confirmed 2026-10-16)
+> - [x] `wt.exe -w new --size 60,18 -p "Clawd Room"` opens at the final size (confirmed 2026-10-16)
+> - [ ] Dragging the window changes only the TUI scale; `[` `]` change the scale, Ctrl +/- the font and stop the auto part; `f` brings it back
+> - [ ] Quitting puts the terminal font back to normal
+> - [ ] Window dragged very small: no crash, nothing zooms back and forth
+> - [ ] Menu: arrows / 1-3 / S / Enter / q work; the room opens without resizing again
+> - [ ] `--size off` leaves the window alone; `--room park` skips the menu
+> - [ ] `ccc` many times (also quickly): no crash of all windows over a day or two (`sleep 0.7` before `exit` in `~/.zshrc` is a guess)
+
+> [!TODO] Test: happy eyes
+> - [ ] Happy Clawds (cheer, dance, visits) keep 1x1 dark eyes; each eye is 1 wide and 2 high: a pale peach (242,190,168) top over the dark pupil, plus blush, no white
+
+> [!NOTE] 2026-10-16: [[Animations]] shows every frame and item (sheet + one GIF per action). Frames and items are editable text grids in `sprites/*.txt`, loaded by `room_tui.py` (a frame missing from the file falls back to the code); `sprite_tool.py` exports / builds.
+> - [ ] Edit a grid in `sprites/clawd.txt` (e.g. change an eye), run the room: the change shows; delete the frame: the original is back
+> - [ ] Bubbles, the carried cup and the OK sign look as before
+> - [ ] Open the GIFs in Obsidian: they loop
+> - Next: furniture and playground pieces into the sprite files
+
+---
+## ⏳ Pending (last step)
+
+- Profile from the dropdown still opens at Windows Terminal's default size and then jumps once (WT has no per-profile size). Planned: `setup_profile.py --shortcut` making a shortcut that runs `wt.exe -w new --size 60,18 -p "Clawd Room"`. Not a global `initialCols/Rows` (it would shrink every new window).
+
+---
+## 💡 Open ideas
+
+- Seesaw in the park; an empty-desk look for Clawds that are away.
+- Opt-in focus-mode flag, if it can be made reliable.

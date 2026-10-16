@@ -1,0 +1,463 @@
+/* ==========================================================================
+   popping-and-locking.css
+   Dark color theme ("Popping and Locking") layered on top of Minimal.
+
+   HOW TO EDIT
+     Easiest: Settings → Style Settings → "Popping and Locking" → pick colors.
+     Or: change the hex values in section 1 below. Keep the @settings
+     defaults and section 1 in sync, so "reset to default" gives the same color.
+
+   CONTENTS
+     @settings   — Style Settings panel definition (must stay a comment block)
+     1. Palette  — every color variable (dark mode only)
+     2. Sidebars — make ribbon/sidebars use the palette
+     3. Icons    — keep SVG icons visible with the custom colors
+     4. Tabs     — tab bar + tab header colors (desktop only)
+
+   Used by: mermaid-afterglow.css reads the --diagram-* variables.
+   Color swatches: Docs/Theme Color Preview.md
+   ========================================================================== */
+
+/* @settings
+name: Popping and Locking
+id: popping-and-locking
+settings:
+  - id: heading-backgrounds
+    title: Backgrounds
+    type: heading
+    level: 2
+    collapsed: false
+  - id: background-primary
+    title: Background Primary
+    type: variable-color
+    format: hex
+    default: '#1C1D26'
+  - id: background-primary-alt
+    title: Background Primary Alt
+    type: variable-color
+    format: hex
+    default: '#21222D'
+  - id: background-secondary
+    title: Background Secondary
+    type: variable-color
+    format: hex
+    default: '#1C1D26'
+  - id: background-secondary-alt
+    title: Background Secondary Alt
+    type: variable-color
+    format: hex
+    default: '#313242'
+  - id: background-modifier-border
+    title: Border Color
+    type: variable-color
+    format: hex
+    default: '#313242'
+
+  - id: heading-text
+    title: Text Colors
+    type: heading
+    level: 2
+    collapsed: false
+  - id: text-normal
+    title: Text Normal
+    type: variable-color
+    format: hex
+    default: '#f2e5bc'
+  - id: text-muted
+    title: Text Muted
+    type: variable-color
+    format: hex
+    default: '#c4beb4'
+  - id: text-faint
+    title: Text Faint
+    type: variable-color
+    format: hex
+    default: '#928374'
+  - id: text-accent
+    title: Text Accent
+    type: variable-color
+    format: hex
+    default: '#d79921'
+  - id: interactive-accent
+    title: Interactive Accent
+    type: variable-color
+    format: hex
+    default: '#458588'
+  - id: bold-color
+    title: Bold Color
+    type: variable-color
+    format: hex
+    default: '#fe8019'
+  - id: italic-color
+    title: Italic Color
+    type: variable-color
+    format: hex
+    default: '#d3869b'
+
+  - id: heading-icons
+    title: Icons
+    type: heading
+    level: 2
+    collapsed: true
+  - id: icon-color
+    title: Icon Color
+    type: variable-color
+    format: hex
+    default: '#c4beb4'
+  - id: icon-color-hover
+    title: Icon Color Hover
+    type: variable-color
+    format: hex
+    default: '#f2e5bc'
+  - id: icon-color-active
+    title: Icon Color Active
+    type: variable-color
+    format: hex
+    default: '#d79921'
+  - id: icon-color-focused
+    title: Icon Color Focused
+    type: variable-color
+    format: hex
+    default: '#f2e5bc'
+
+  - id: heading-nav
+    title: Navigation (File Explorer / Search)
+    type: heading
+    level: 2
+    collapsed: true
+  - id: nav-item-color
+    title: Nav Item Color
+    type: variable-color
+    format: hex
+    default: '#c4beb4'
+  - id: nav-item-color-hover
+    title: Nav Item Hover
+    type: variable-color
+    format: hex
+    default: '#f2e5bc'
+  - id: nav-item-color-active
+    title: Nav Item Active
+    type: variable-color
+    format: hex
+    default: '#d79921'
+  - id: nav-collapse-icon-color
+    title: Nav Collapse Icon
+    type: variable-color
+    format: hex
+    default: '#c4beb4'
+
+  - id: heading-tabs
+    title: Titlebar & Tabs
+    type: heading
+    level: 2
+    collapsed: true
+  - id: titlebar-background
+    title: Titlebar Background
+    type: variable-color
+    format: hex
+    default: '#1C1D26'
+  - id: titlebar-background-focused
+    title: Titlebar Background Focused
+    type: variable-color
+    format: hex
+    default: '#1C1D26'
+  - id: tab-container-background
+    title: Tab Container Background
+    type: variable-color
+    format: hex
+    default: '#1C1D26'
+  - id: tab-bar-background
+    title: Tab Bar Background
+    type: variable-color
+    format: hex
+    default: '#1C1D26'
+  - id: tab-outline-color
+    title: Tab Outline Color
+    type: variable-color
+    format: hex
+    default: '#313242'
+  - id: tab-header-bg
+    title: Tab Header Container Background
+    type: variable-color
+    format: hex
+    default: '#21222D'
+  - id: tab-active-bg
+    title: Active Tab Background
+    type: variable-color
+    format: hex
+    default: '#1C1D26'
+  - id: tab-hover-bg
+    title: Tab Hover Background
+    type: variable-color
+    format: hex
+    default: '#313242'
+
+  - id: heading-syntax
+    title: Syntax Highlighting
+    type: heading
+    level: 2
+    collapsed: true
+  - id: code-background
+    title: Code Background
+    type: variable-color
+    format: hex
+    default: '#21222D'
+  - id: code-normal
+    title: Code Normal
+    type: variable-color
+    format: hex
+    default: '#f2e5bc'
+  - id: code-comment
+    title: Code Comment
+    type: variable-color
+    format: hex
+    default: '#928374'
+  - id: code-function
+    title: Code Function
+    type: variable-color
+    format: hex
+    default: '#b8bb26'
+  - id: code-important
+    title: Code Important
+    type: variable-color
+    format: hex
+    default: '#fb4934'
+  - id: code-keyword
+    title: Code Keyword
+    type: variable-color
+    format: hex
+    default: '#d3869b'
+  - id: code-operator
+    title: Code Operator
+    type: variable-color
+    format: hex
+    default: '#8ec07c'
+  - id: code-property
+    title: Code Property
+    type: variable-color
+    format: hex
+    default: '#83a598'
+  - id: code-punctuation
+    title: Code Punctuation
+    type: variable-color
+    format: hex
+    default: '#f2e5bc'
+  - id: code-string
+    title: Code String
+    type: variable-color
+    format: hex
+    default: '#d79921'
+  - id: code-tag
+    title: Code Tag
+    type: variable-color
+    format: hex
+    default: '#fb4934'
+  - id: code-value
+    title: Code Value
+    type: variable-color
+    format: hex
+    default: '#d65d0e'
+
+  - id: heading-diagrams
+    title: Diagram Colors (Mermaid / Excalidraw)
+    type: heading
+    level: 2
+    collapsed: true
+  - id: diagram-text
+    title: Diagram Text Color
+    type: variable-color
+    format: hex
+    default: '#D0D0D0'
+  - id: diagram-node-border
+    title: Diagram Node/Actor Border
+    type: variable-color
+    format: hex
+    default: '#6C99BB'
+  - id: diagram-edge-color
+    title: Diagram Edges/Arrows
+    type: variable-color
+    format: hex
+    default: '#7DD6CF'
+  - id: diagram-subgraph-border
+    title: Diagram Subgraph/Loop Border
+    type: variable-color
+    format: hex
+    default: '#9F4E85'
+  - id: diagram-note-border
+    title: Diagram Note Border
+    type: variable-color
+    format: hex
+    default: '#E5B567'
+  - id: diagram-actor-bg
+    title: Diagram Actor Box Background
+    type: variable-color
+    format: hex
+    default: '#212121'
+  - id: diagram-note-bg
+    title: Diagram Note Box Background
+    type: variable-color
+    format: hex
+    default: '#FFFFFF'
+  - id: diagram-note-text
+    title: Diagram Note Text Color
+    type: variable-color
+    format: hex
+    default: '#000000'
+  - id: diagram-error
+    title: Diagram Error/Reject Color
+    type: variable-color
+    format: hex
+    default: '#AC4142'
+  - id: diagram-success
+    title: Diagram Success/Accept Color
+    type: variable-color
+    format: hex
+    default: '#7E8E50'
+*/
+
+
+/* ==========================================================================
+   1. PALETTE — dark mode only (light mode keeps Minimal's colors)
+   ========================================================================== */
+
+.theme-dark {
+    /* Backgrounds */
+    --background-primary: #1C1D26;          /* note background */
+    --background-primary-alt: #21222D;      /* cards, code blocks */
+    --background-secondary: #1C1D26;        /* sidebars */
+    --background-secondary-alt: #313242;
+    --background-modifier-border: #313242;  /* borders & dividers */
+
+    /* Text */
+    --text-normal: #f2e5bc;
+    --text-muted: #c4beb4;
+    --text-faint: #928374;
+    --text-accent: #d79921;                 /* links, highlights */
+    --interactive-accent: #458588;          /* buttons, active pills */
+    --bold-color: #fe8019;
+    --italic-color: #d3869b;
+
+    /* Icons */
+    --icon-color: #c4beb4;
+    --icon-color-hover: #f2e5bc;
+    --icon-color-active: #d79921;
+    --icon-color-focused: #f2e5bc;
+
+    /* Navigation (file explorer / search) */
+    --nav-item-color: #c4beb4;
+    --nav-item-color-hover: #f2e5bc;
+    --nav-item-color-active: #d79921;
+    --nav-collapse-icon-color: #c4beb4;
+
+    /* Minimal theme base tones (RGB triplets, not hex) */
+    --mono-rgb-0: 28, 29, 38;
+    --mono-rgb-100: 242, 229, 188;
+
+    /* Titlebar & tabs */
+    --titlebar-background: #1C1D26;
+    --titlebar-background-focused: #1C1D26;
+    --tab-container-background: #1C1D26;
+    --tab-bar-background: #1C1D26;
+    --tab-outline-color: #313242;
+    --tab-header-bg: #21222D;               /* used in section 4 */
+    --tab-active-bg: #1C1D26;               /* used in section 4 */
+    --tab-hover-bg: #313242;                /* used in section 4 */
+
+    /* Syntax highlighting */
+    --code-background: #21222D;
+    --code-normal: #f2e5bc;
+    --code-comment: #928374;
+    --code-function: #b8bb26;
+    --code-important: #fb4934;
+    --code-keyword: #d3869b;
+    --code-operator: #8ec07c;
+    --code-property: #83a598;
+    --code-punctuation: #f2e5bc;
+    --code-string: #d79921;
+    --code-tag: #fb4934;
+    --code-value: #d65d0e;
+
+    /* Diagrams (read by mermaid-afterglow.css) */
+    --diagram-text: #D0D0D0;
+    --diagram-node-border: #6C99BB;
+    --diagram-edge-color: #7DD6CF;
+    --diagram-subgraph-border: #9F4E85;
+    --diagram-note-border: #E5B567;
+    --diagram-actor-bg: #212121;
+    --diagram-note-bg: #FFFFFF;             /* light chip behind notes & edge labels */
+    --diagram-note-text: #000000;
+    --diagram-error: #AC4142;               /* classDef fail / error */
+    --diagram-success: #7E8E50;             /* classDef pass / success */
+}
+
+
+/* ==========================================================================
+   2. SIDEBARS — ribbon and side panels follow --background-secondary
+   ========================================================================== */
+
+.workspace-ribbon.mod-left,
+.workspace-split.mod-left-split,
+.workspace-split.mod-right-split {
+    background-color: var(--background-secondary) !important;
+}
+
+/* The Minimal theme paints the left ribbon with its own variables (black in its "dark black" style)
+   and an extra ::before layer, so set those too, otherwise the ribbon stays darker than the sidebar */
+body {
+    --ribbon-background: var(--background-secondary) !important;
+    --ribbon-background-collapsed: var(--background-secondary) !important;
+}
+
+
+.workspace-ribbon.mod-primary .sidebar-toggle-button,
+.workspace-ribbon.mod-primary .sidebar-toggle-button,
+.workspace-ribbon.mod-left::before,
+.workspace-ribbon.mod-left .side-dock-actions,
+.workspace-ribbon.mod-left .side-dock-settings {
+    background-color: var(--background-secondary) !important;
+}
+
+
+/* ==========================================================================
+   3. ICONS — stop icons inheriting hidden/faded styles from the theme
+   ========================================================================== */
+
+.clickable-icon svg,
+.side-bar-button svg,
+.nav-action-button svg,
+.nav-folder-collapse-indicator svg {
+    color: inherit !important;
+    stroke: currentColor !important;
+    opacity: 1 !important;
+}
+
+/* Left sidebar toggle button */
+.sidebar-toggle-button.mod-left {
+    color: var(--text-normal) !important;
+    opacity: 1 !important;
+}
+
+
+/* ==========================================================================
+   4. TABS — tab bar background and individual tab states
+      Desktop only (body:not(.is-mobile)): on mobile the sidebar view menu
+      (Files / Search / Navigator…) reuses .workspace-tab-header, and these
+      rules drew a square dark box behind its rounded highlight.
+   ========================================================================== */
+
+/* The strip behind all tabs */
+body:not(.is-mobile) .workspace-tabs-initial .workspace-tab-header-container,
+body:not(.is-mobile) .workspace-tab-header-container {
+    background-color: var(--tab-header-bg) !important;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+/* Each tab: transparent by default, colored when active / hovered */
+body:not(.is-mobile) .workspace-tab-header {
+    background-color: transparent !important;
+}
+
+body:not(.is-mobile) .workspace-tab-header.is-active {
+    background-color: var(--tab-active-bg) !important;
+}
+

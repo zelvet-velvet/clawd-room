@@ -1,0 +1,13 @@
+{
+  "spellcheck": false,
+  "alwaysUpdateLinks": true,
+  "promptDelete": false,
+  "userIgnoreFilters": [],
+  "useTab": true,
+  "vimMode": false,
+  "propertiesInDocument": "hidden",
+  "autoPairBrackets": false,
+  "showIndentGuide": false,
+  "tabSize": 4,
+  "defaultViewMode": "preview"
+}

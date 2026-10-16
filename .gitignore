@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+PROMPT.md
+/.obsidian/
+Clawd Room Note/.obsidian/plugins/
+Clawd Room Note/.obsidian/workspace.json
+Clawd Room Note/.obsidian/workspaces.json
+Clawd Room Note/.makemd/
+Clawd Room Note/.space/
+Clawd Room Note/Tags/
+Clawd Room Note/.trash/

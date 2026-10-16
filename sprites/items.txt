@@ -1,0 +1,96 @@
+# Items Clawd carries or shows (bubbles, cup, sign). Top-left corner = where the code puts it.
+: B = body
+: K = 20,20,30
+: W = 235,235,245
+: Y = 250,210,70
+: E = 136,136,136
+: c = 160,160,170
+: s = 190,120,80
+: t = 250,235,150
+: m = 120,90,40
+
+@ bubble-dots-0 | bubble-dots-0
+.EEEEEEE.
+EWWWWWWWE
+EWWWWWWWE
+EWWWWWWWE
+EWWWWWWWE
+EWWWWWWWE
+.EEEEEEE.
+..E......
+
+@ bubble-dots-1 | bubble-dots-1
+.EEEEEEE.
+EWWWWWWWE
+EWWWWWWWE
+EWKWWWWWE
+EWWWWWWWE
+EWWWWWWWE
+.EEEEEEE.
+..E......
+
+@ bubble-dots-2 | bubble-dots-2
+.EEEEEEE.
+EWWWWWWWE
+EWWWWWWWE
+EWKWKWWWE
+EWWWWWWWE
+EWWWWWWWE
+.EEEEEEE.
+..E......
+
+@ bubble-dots-3 | bubble-dots-3
+.EEEEEEE.
+EWWWWWWWE
+EWWWWWWWE
+EWKWKWKWE
+EWWWWWWWE
+EWWWWWWWE
+.EEEEEEE.
+..E......
+
+@ bubble-excl | bubble-excl
+.EEEEEEE.
+EWWWKWWWE
+EWWWKWWWE
+EWWWKWWWE
+EWWWWWWWE
+EWWWKWWWE
+.EEEEEEE.
+..E......
+
+@ bubble-ques | bubble-ques
+.EEEEEEE.
+EWWKKWWWE
+EWWWWKWWE
+EWWWKWWWE
+EWWWWWWWE
+EWWWKWWWE
+.EEEEEEE.
+..E......
+
+@ bubble-cup | bubble-cup
+.EEEEEEE.
+EWWWcWWWE
+EWWssssWE
+EWWsssWWE
+EWWWWWWWE
+EWWWWWWWE
+.EEEEEEE.
+..E......
+
+@ cup-held | cup-held
+WWWW
+WWW.
+
+@ sign-wait | sign-wait
+YYYYYYYYY
+YtttttttY
+YtttKtttY
+YtttKtttY
+YtttKtttY
+YtttttttY
+YtttKtttY
+YtttttttY
+YYYYYYYYY
+....m....

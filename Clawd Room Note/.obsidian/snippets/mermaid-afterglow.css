@@ -1,0 +1,450 @@
+/* ==========================================================================
+   mermaid-afterglow.css
+   Colors for Mermaid diagrams (flowchart, sequence, state, mindmap).
+   No hex values here: every color is a --diagram-* (or theme) variable
+   defined in popping-and-locking.css, so change colors there or in
+   Settings → Style Settings → Popping and Locking → Diagram Colors.
+
+   CONTENTS
+     1. Base — transparent background, no dark-mode color inversion
+     2. Global text baseline
+     3. Flowchart nodes
+     4. Edges / arrows / labels
+     5. Subgraphs / clusters
+     6. Sequence diagrams — actors
+     7. Sequence diagrams — messages
+     8. Sequence diagrams — notes
+     9. Sequence diagrams — autonumber circles
+    10. Sequence diagrams — activation
+    11. Sequence diagrams — loop / alt / opt boxes
+    12. Semantic accents — fail / pass node outlines
+    13. State diagrams
+    14. Mindmaps
+    15. Tooltip
+
+   Sizing (fit-to-width) lives in general-layout.css §7.
+   ========================================================================== */
+
+
+/* ==========================================================================
+   1. BASE — let the note background show through and stop Obsidian's
+      automatic dark-mode filter from shifting the colors
+   ========================================================================== */
+
+.mermaid,
+.mermaid svg {
+    background: transparent !important;
+}
+
+.theme-dark .mermaid > svg,
+.theme-dark .mermaid-flow-preview > svg {
+    filter: none !important;
+}
+
+
+/* ==========================================================================
+   2. GLOBAL TEXT BASELINE
+   ========================================================================== */
+
+.mermaid text,
+.mermaid .label,
+.mermaid .nodeLabel {
+    fill: var(--diagram-text) !important;
+    color: var(--diagram-text) !important;
+    font-family: inherit !important;
+}
+
+
+/* ==========================================================================
+   3. FLOWCHART NODES
+   ========================================================================== */
+
+.mermaid .node rect,
+.mermaid .node polygon,
+.mermaid .node path,
+.mermaid .node circle,
+.mermaid .node ellipse {
+    fill: var(--background-primary-alt) !important;
+    stroke: var(--diagram-node-border) !important;
+    stroke-width: 2px !important;
+}
+
+.mermaid .nodeLabel,
+.mermaid .nodeLabel p,
+.mermaid .nodeLabel span {
+    font-weight: 500 !important;
+}
+
+.mermaid .node:hover rect,
+.mermaid .node:hover polygon,
+.mermaid .node:hover path,
+.mermaid .node:hover circle,
+.mermaid .node:hover ellipse {
+    filter: brightness(1.25) !important;
+}
+
+.mermaid .selected rect,
+.mermaid .selected polygon,
+.mermaid .selected path,
+.mermaid .selected circle,
+.mermaid .selected ellipse {
+    stroke: var(--diagram-note-border) !important;
+    stroke-width: 3px !important;
+}
+
+
+/* ==========================================================================
+   4. EDGES / ARROWS / LABELS
+   ========================================================================== */
+
+.mermaid .flowchart-link,
+.mermaid .edgePath .path,
+.mermaid .edge-thickness-normal,
+.mermaid .edge-thickness-thick {
+    stroke: var(--diagram-edge-color) !important;
+    stroke-width: 3px !important;
+}
+
+.mermaid marker path {
+    fill: var(--diagram-edge-color) !important;
+    stroke: var(--diagram-edge-color) !important;
+}
+
+/* Edge label pill — dark text on light chip for max legibility mid-diagram */
+.mermaid .edgeLabel,
+.mermaid .edgeLabel rect,
+.mermaid .labelBkg {
+    fill: var(--diagram-note-bg) !important;
+    background-color: var(--diagram-note-bg) !important;
+    stroke: var(--background-primary-alt) !important;
+}
+
+/* Cover BOTH possible label DOM shapes:
+   - SVG text/tspan (older mermaid / non-html labels)
+   - HTML span/p/div inside foreignObject (default, htmlLabels: true) */
+.mermaid .edgeLabel text,
+.mermaid .edgeLabel tspan,
+.mermaid .edgeLabel span,
+.mermaid .edgeLabel p,
+.mermaid .edgeLabel div,
+.mermaid .edgeLabel foreignObject span,
+.mermaid .edgeLabel foreignObject p {
+    fill: var(--diagram-note-text) !important;
+    color: var(--diagram-note-text) !important;
+    font-weight: 500 !important;
+    background-color: var(--diagram-note-bg) !important;
+}
+
+/* Hide empty or structural labelBkg containers floating in the top-left */
+.mermaid foreignObject:has(> .labelBkg:empty),
+.mermaid foreignObject:has(> .labelBkg > .edgeLabel:empty) {
+    display: none !important;
+}
+
+/* This div IS the visible background chip */
+.mermaid .edgeLabel .labelBkg {
+    overflow: visible !important;
+    background-color: var(--diagram-note-bg) !important;
+    color: var(--diagram-note-text) !important;
+    padding: 3px 8px !important;
+    border-radius: 4px !important;
+    box-sizing: border-box !important;
+    display: table-cell !important;
+}
+
+
+/* ==========================================================================
+   5. SUBGRAPHS / CLUSTERS
+   ========================================================================== */
+
+.mermaid .cluster rect {
+    fill: transparent !important;
+    stroke: var(--diagram-subgraph-border) !important;
+    stroke-width: 2px !important;
+    stroke-dasharray: 4 2 !important;
+}
+
+.mermaid .cluster-label,
+.mermaid .cluster-label text,
+.mermaid .cluster-label tspan {
+    fill: var(--diagram-text) !important;
+    color: var(--diagram-text) !important;
+    font-weight: 600 !important;
+}
+
+
+/* ==========================================================================
+   6. SEQUENCE DIAGRAMS — ACTORS
+   ========================================================================== */
+
+.mermaid .actor,
+.mermaid .actor-top,
+.mermaid .actor-bottom,
+.mermaid svg .actor,
+.mermaid svg .actor-top,
+.mermaid svg .actor-bottom {
+    fill: var(--diagram-actor-bg) !important;
+    stroke: var(--diagram-node-border) !important;
+    stroke-width: 2px !important;
+}
+
+.mermaid text.actor,
+.mermaid .actor text,
+.mermaid .actor tspan,
+.mermaid svg text.actor {
+    fill: var(--diagram-text) !important;
+    color: var(--diagram-text) !important;
+    stroke: none !important;
+    font-weight: 600 !important;
+}
+
+.mermaid .actor-line {
+    stroke: var(--background-modifier-border) !important;
+    stroke-width: 1px !important;
+}
+
+
+/* ==========================================================================
+   7. SEQUENCE DIAGRAMS — MESSAGES
+   ========================================================================== */
+
+.mermaid .messageLine0,
+.mermaid .messageLine1 {
+    stroke: var(--diagram-edge-color) !important;
+    stroke-width: 1.5px !important;
+}
+
+.mermaid .messageText,
+.mermaid text.messageText,
+.mermaid .messageText tspan {
+    fill: var(--diagram-text) !important;
+    color: var(--diagram-text) !important;
+    stroke: none !important;
+}
+
+
+/* ==========================================================================
+   8. SEQUENCE DIAGRAMS — NOTES
+      (dark text on light chip — deliberately inverted from actor boxes
+      so notes visually pop out as "annotations" rather than protocol steps)
+   ========================================================================== */
+
+.mermaid .note,
+.theme-dark .mermaid svg rect.note,
+.theme-dark .mermaid svg g.note rect,
+.theme-dark .mermaid svg .sequence-rect {
+    fill: var(--diagram-note-bg) !important;
+    stroke: var(--diagram-note-border) !important;
+    stroke-width: 5px !important;
+}
+
+
+.mermaid .noteText,
+.mermaid .noteText tspan,
+.mermaid .note text {
+    fill: var(--diagram-note-text) !important;
+    color: var(--diagram-note-text) !important;
+    font-weight: 500 !important;
+}
+
+
+/* ==========================================================================
+   9. SEQUENCE DIAGRAMS — AUTONUMBER CIRCLES
+   ========================================================================== */
+
+.mermaid marker[id$="sequencenumber"] circle {
+    fill: var(--diagram-note-border) !important;
+    stroke: var(--icon-color-active) !important;
+    stroke-width: 1px !important;
+}
+
+.mermaid text.sequenceNumber {
+    fill: var(--tab-outline-color) !important;
+    font-weight: 800 !important;
+}
+
+
+/* ==========================================================================
+   10. SEQUENCE DIAGRAMS — ACTIVATION
+   ========================================================================== */
+
+.mermaid rect.activation0,
+.mermaid rect.activation1,
+.mermaid rect.activation2 {
+    fill: var(--tab-outline-color) !important;
+    stroke: var(--diagram-node-border) !important;
+    stroke-width: 0.5px !important;
+}
+
+
+/* ==========================================================================
+   11. SEQUENCE DIAGRAMS — LOOP / ALT / OPT BOXES
+   ========================================================================== */
+
+.mermaid .loopLine,
+.mermaid .labelBox {
+    stroke: var(--diagram-subgraph-border) !important;
+    fill: transparent !important;
+    stroke-width: 3.5px !important;
+}
+
+.mermaid .loopText,
+.mermaid .labelText,
+.mermaid .loopText tspan {
+    fill: var(--diagram-text) !important;
+    color: var(--diagram-text) !important;
+}
+
+
+/* ==========================================================================
+   12. SEMANTIC ACCENTS — red/green node outlines, opt-in per node.
+      Add a class in the diagram, e.g.
+            classDef fail fill:none,stroke:var(--diagram-error)
+            classDef pass fill:none,stroke:var(--diagram-success)
+   ========================================================================== */
+
+.mermaid .node.fail rect,
+.mermaid .node.error rect {
+    stroke: var(--diagram-error) !important;
+    stroke-width: 2.5px !important;
+}
+
+.mermaid .node.fail .nodeLabel,
+.mermaid .node.error .nodeLabel {
+    fill: var(--diagram-error) !important;
+}
+
+.mermaid .node.pass rect,
+.mermaid .node.success rect {
+    stroke: var(--diagram-success) !important;
+    stroke-width: 2.5px !important;
+}
+
+.mermaid .node.pass .nodeLabel,
+.mermaid .node.success .nodeLabel {
+    fill: var(--diagram-success) !important;
+}
+
+
+/* ==========================================================================
+   13. STATE DIAGRAMS
+   ========================================================================== */
+
+.mermaid .stateGroup rect,
+.mermaid .state-node rect,
+.mermaid .statediagram-state rect {
+    fill: var(--background-primary-alt) !important;
+    stroke: var(--diagram-node-border) !important;
+    stroke-width: 2px !important;
+}
+
+.mermaid .state-label,
+.mermaid .node-text,
+.mermaid .statediagram-state text,
+.mermaid .stateGroup text {
+    fill: var(--diagram-text) !important;
+    color: var(--diagram-text) !important;
+    stroke: none !important;
+}
+
+.mermaid .transition,
+.mermaid .statediagram-arrow {
+    stroke: var(--diagram-edge-color) !important;
+    stroke-width: 2px !important;
+}
+
+.mermaid .statediagram-cluster.cluster-state,
+.mermaid .node.default circle {
+    fill: var(--diagram-actor-bg) !important;
+    stroke: var(--diagram-note-border) !important;
+}
+
+
+/* ==========================================================================
+   14. MINDMAPS
+   ========================================================================== */
+
+.mermaid svg .section-root rect,
+.mermaid svg .section-root circle,
+.mermaid svg .section-root path,
+.mermaid svg .section-root polygon {
+    fill: var(--diagram-actor-bg) !important;
+    stroke: var(--diagram-note-border) !important;
+    stroke-width: 2px !important;
+}
+
+.mermaid svg .section-0 rect,
+.mermaid svg .section-0 circle,
+.mermaid svg .section-0 path,
+.mermaid svg .section-0 polygon {
+    fill: var(--background-primary-alt) !important;
+    stroke: var(--diagram-node-border) !important;
+    stroke-width: 2px !important;
+}
+
+.mermaid svg .section-1 rect,
+.mermaid svg .section-1 circle,
+.mermaid svg .section-1 path,
+.mermaid svg .section-1 polygon {
+    fill: var(--background-primary-alt) !important;
+    stroke: var(--diagram-edge-color) !important;
+    stroke-width: 2px !important;
+}
+
+.mermaid svg .section-2 rect,
+.mermaid svg .section-2 circle,
+.mermaid svg .section-2 path,
+.mermaid svg .section-2 polygon {
+    fill: var(--background-primary-alt) !important;
+    stroke: var(--diagram-subgraph-border) !important;
+    stroke-width: 2px !important;
+}
+
+.mermaid svg .section-root text,
+.mermaid svg .section-0 text,
+.mermaid svg .section-1 text,
+.mermaid svg .section-2 text {
+    fill: var(--diagram-text) !important;
+    color: var(--diagram-text) !important;
+    stroke: none !important;
+}
+
+.mermaid svg path.edge,
+.mermaid .mindmap-link {
+    stroke: var(--diagram-node-border) !important;
+    stroke-width: 2px !important;
+}
+
+.mermaid .mindmap-node rect,
+.mermaid .mindmap-node circle,
+.mermaid .mindmap-node path,
+.mermaid .mindmap-node polygon {
+    fill: transparent !important;
+    stroke: var(--diagram-node-border) !important;
+    stroke-width: 2px !important;
+}
+
+.mermaid .mindmap-node text,
+.mermaid .mindmap-node .nodeLabel {
+    fill: var(--diagram-text) !important;
+    color: var(--diagram-text) !important;
+}
+
+.mermaid .mindmap-node.root rect,
+.mermaid .mindmap-node.root circle,
+.mermaid .mindmap-node.root path,
+.mermaid .mindmap-node.root polygon {
+    stroke: var(--diagram-note-border) !important;
+    stroke-width: 3px !important;
+}
+
+
+/* ==========================================================================
+   15. TOOLTIP
+   ========================================================================== */
+
+.mermaidTooltip {
+    background: var(--background-primary) !important;
+    border: 1px solid var(--diagram-node-border) !important;
+    color: var(--diagram-text) !important;
+}
