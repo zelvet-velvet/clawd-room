@@ -92,11 +92,9 @@ int script_run(const char *path) {
                 room_receive(&room, &m);
             } else if (!strcmp(it->kind, "gone")) room_peer_gone(&room, it->a);
             else if (!strcmp(it->kind, "key")) { /* the g key: needs the geometry of the last frame */
-                Geo geo;
                 char buf[64];
                 room_order(&room);
-                geo_init(&geo, &room, room.size_w, room.size_h);
-                printf("key %d %s\n", f, room_send_one(&room, &geo, now, buf, sizeof buf));
+                printf("key %d %s\n", f, room_send_one(&room, &room.geo, now, buf, sizeof buf));
             }
         }
         room_prune(&room, now);

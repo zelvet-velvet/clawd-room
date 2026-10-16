@@ -8,6 +8,7 @@
 
 static const SpriteFile *g_frames, *g_items;
 void draw_set_sprites(const SpriteFile *frames, const SpriteFile *items) { g_frames = frames; g_items = items; }
+const SpriteFile *draw_frames(void) { return g_frames; }
 
 #define C_GREEN RGB(110, 230, 120)
 #define C_BLUE RGB(110, 200, 240)
@@ -21,11 +22,19 @@ static int pyround(double v) { return (int)nearbyint(v); }                      
 static int imax(int a, int b) { return a > b ? a : b; }
 static int imin(int a, int b) { return a < b ? a : b; }
 
-/* longest start of s (upper case) that fits in `width` pixels */
+/* longest start of s (upper case) that fits in `width` pixels; counts characters, not bytes */
 static void fit(char *out, size_t n, const char *s, int width) {
-    int k = imax(0, fdiv(width + 1, 4)), i = 0;
-    for (; s[i] && i < k && (size_t)i < n - 1; i++) out[i] = (char)((s[i] >= 'a' && s[i] <= 'z') ? s[i] - 32 : s[i]);
-    out[i] = 0;
+    int k = imax(0, fdiv(width + 1, 4)), chars = 0;
+    size_t o = 0;
+    while (*s && chars < k) {
+        int l = utf8_len((unsigned char)*s);
+        for (int i = 1; i < l; i++) if (!s[i]) { l = i; break; }
+        if (o + (size_t)l + 1 > n) break;
+        for (int i = 0; i < l; i++) out[o++] = (l == 1 && s[i] >= 'a' && s[i] <= 'z') ? (char)(s[i] - 32) : s[i];
+        s += l;
+        chars++;
+    }
+    out[o] = 0;
 }
 
 /* ---- gates ----------------------------------------------------------------------------------- */
@@ -170,7 +179,7 @@ static void draw_extras(Canvas *cv, const Session *s, const char *state, double 
 
 /* ---- layout ---------------------------------------------------------------------------------- */
 
-static void layout(int w, int h, int n, int *banner, int *per_row, int *slot_w, int *rows_shown, int *ys) {
+void layout_slots(int w, int h, int n, int *banner, int *per_row, int *slot_w, int *rows_shown, int *ys) {
     *per_row = imax(1, imin(PER_ROW, fdiv(w, SLOT_MIN_W)));
     *slot_w = imin(SLOT_MAX_W, fdiv(w, *per_row));
     int rows_needed = imax(1, -fdiv(-n, *per_row));
@@ -189,7 +198,7 @@ void geo_init(Geo *g, const Room *room, int w, int h) {
     g->stairs_x = imin(imax(pyround(down), 10), w - 10);
     g->spots = theme_spots(room->theme, w, h);
     g->floor_y = (int)(h * room->theme->horizon);
-    layout(w, h, n, &g->banner, &per_row, &g->slot_w, &rows_shown, ys);
+    layout_slots(w, h, n, &g->banner, &per_row, &g->slot_w, &rows_shown, ys);
     int slots = per_row * rows_shown, keep = n;
     if (keep > slots) keep = slots > 1 ? slots - 1 : slots; /* the last slot says "+N MORE" */
     g->shown = keep;
@@ -243,7 +252,7 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
     Geo geo;
     room_order(room);
     geo_init(&geo, room, cv->w, cv->h);
-    if (!room->freeze) room_step(room, &geo, now); /* everybody moves a little before they are drawn */
+    if (!room->freeze) { room->geo = geo; room->has_geo = 1; room_step(room, &room->geo, now); } /* everybody moves a little before they are drawn */
     room_order(room); /* (visitors may have come or gone) */
     note[0] = 0;
     int active = 0;
@@ -341,19 +350,6 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
 }
 
 /* ---- the whole terminal ----------------------------------------------------------------------- */
-static Canvas scaled(const Canvas *c, int k) {
-    Canvas out = canvas_new(c->w * k, c->h * k, RGB(34, 36, 46));
-    for (int y = 0; y < out.h; y++) for (int x = 0; x < out.w; x++) out.p[y * out.w + x] = c->p[(y / k) * c->w + x / k];
-    return out;
-}
-
-static void blit(Canvas *dst, const Canvas *src, int x, int y) {
-    for (int yy = 0; yy < src->h; yy++) {
-        if (y + yy < 0 || y + yy >= dst->h) continue;
-        for (int xx = 0; xx < src->w && x + xx < dst->w; xx++) if (x + xx >= 0) dst->p[(y + yy) * dst->w + x + xx] = src->p[yy * src->w + xx];
-    }
-}
-
 static int ratio_size(const char *r, int *w, int *h) {
     static const struct { const char *k; int w, h; } R[] = {{"3:1", 144, 48}, {"2:1", 120, 60}, {"16:9", 128, 72}, {"4:3", 128, 96}, {"1:1", 120, 120}, {"3:4", 96, 128}};
     for (size_t i = 0; i < sizeof R / sizeof R[0]; i++) if (!strcmp(R[i].k, r)) { *w = R[i].w; *h = R[i].h; return 1; }
@@ -369,8 +365,8 @@ Canvas render(int cols, int rows, Room *room, double now, double t, char *note, 
         draw_room(&cv, room, now, t, note, note_n);
         room->size_w = cv.w; room->size_h = cv.h;
         if (k == 1) return cv;
-        Canvas big = scaled(&cv, k), full = canvas_new(pw, ph, MARGIN);
-        blit(&full, &big, (pw - big.w) / 2, (ph - big.h) / 2 / 2 * 2);
+        Canvas big = canvas_scaled(&cv, k), full = canvas_new(pw, ph, MARGIN);
+        canvas_blit(&full, &big, (pw - big.w) / 2, (ph - big.h) / 2 / 2 * 2);
         canvas_free(&cv); canvas_free(&big);
         return full;
     }
@@ -382,8 +378,8 @@ Canvas render(int cols, int rows, Room *room, double now, double t, char *note, 
         Canvas rc = canvas_new(sw, sh, RGB(34, 36, 46));
         draw_room(&rc, room, now, t, note, note_n);
         room->size_w = sw; room->size_h = sh;
-        Canvas big = scaled(&rc, k);
-        blit(&full, &big, (pw - big.w) / 2, (ph - big.h) / 2 / 2 * 2);
+        Canvas big = canvas_scaled(&rc, k);
+        canvas_blit(&full, &big, (pw - big.w) / 2, (ph - big.h) / 2 / 2 * 2);
         canvas_free(&rc); canvas_free(&big);
         return full;
     }
@@ -392,7 +388,7 @@ Canvas render(int cols, int rows, Room *room, double now, double t, char *note, 
     Canvas rc = canvas_new(rw, rh, RGB(34, 36, 46));
     draw_room(&rc, room, now, t, note, note_n);
     room->size_w = rw; room->size_h = rh;
-    blit(&full, &rc, (pw - rw) / 2, (rows - rh / 2) / 2 * 2);
+    canvas_blit(&full, &rc, (pw - rw) / 2, (rows - rh / 2) / 2 * 2);
     canvas_free(&rc);
     return full;
 }

@@ -17,6 +17,9 @@ void canvas_rect(Canvas *c, int x, int y, int w, int h, Rgb col);
 void canvas_line(Canvas *c, int x0, int y0, int x1, int y1, Rgb col);
 void canvas_text(Canvas *c, int x, int y, const char *s, Rgb col);
 int text_width(const char *s);
+int utf8_len(unsigned char c);
+Canvas canvas_scaled(const Canvas *c, int k); /* every pixel k times wider and taller */
+void canvas_blit(Canvas *dst, const Canvas *src, int x, int y);
 uint64_t canvas_hash(const Canvas *c); /* FNV-1a over the RGB bytes (the tests compare it with Python) */
 
 /* palette (same values as room_tui.py) */

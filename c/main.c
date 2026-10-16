@@ -10,7 +10,10 @@
 #include "term.h"
 #include "fixture.h"
 #include "rng.h"
+#include "app.h"
 #include "script.h"
+#include "tail.h"
+#include "ui.h"
 
 typedef struct { const char *name, *state; void (*set)(Session *); } Action;
 
@@ -125,7 +128,51 @@ static int golden_rng(void) {
     return 0;
 }
 
+/* the pure helpers: the events reader, status line, auto scale and menu (tools/golden_ui.py prints the same) */
+static int golden_ui(const char *path) {
+    Tail t;
+    tail_init(&t, path);
+    static Event ev[64];
+    int n = tail_history(&t, 1000.0, ev, 64);
+    for (int i = 0; i < n; i++) printf("tail %.17g %s %s %s %s\n", ev[i].t, ev[i].sid, ev[i].ev, ev[i].cwd, ev[i].tool);
+    tail_free(&t);
+    char buf[512];
+    for (int paused = 0; paused < 2; paused++) for (int help = 0; help < 2; help++) {
+        static const char *NF[4][2] = {{"", ""}, {"+3 MORE", ""}, {"", "SCALE 2X"}, {"+1 MORE", "FLASH"}};
+        for (int k = 0; k < 4; k++) { overlay_text(buf, sizeof buf, paused, help, NF[k][0], NF[k][1]); printf("overlay %d %d [%s]\n", paused, help, buf); }
+    }
+    static const int SM[4][2] = {{30, 10}, {44, 19}, {10, 5}, {200, 80}};
+    for (int i = 0; i < 4; i++) {
+        too_small(buf, sizeof buf, SM[i][0], SM[i][1]);
+        printf("small %d %d '", SM[i][0], SM[i][1]);
+        for (char *p = buf; *p; p++) { if (*p == 27) printf("\\x1b"); else putchar(*p); }
+        printf("'\n");
+    }
+    static const int PW[4] = {110, 160, 220, 300}, PH[4] = {64, 100, 140, 200}, NN[6] = {0, 1, 3, 6, 12, 40};
+    for (int a = 0; a < 4; a++) for (int b = 0; b < 4; b++) {
+        printf("auto %d %d", PW[a], PH[b]);
+        for (int k = 0; k < 6; k++) printf(" %d", auto_scale(PW[a], PH[b], NN[k]));
+        printf("\n");
+    }
+    static const int MS[6][2] = {{144, 84}, {110, 64}, {60, 40}, {200, 120}, {44, 30}, {46, 56}};
+    for (int s = 0; s < 6; s++) for (int pick = 0; pick < 3; pick++) for (int solo = 0; solo < 2; solo++) for (int ti = 0; ti < 2; ti++) {
+        double tt = ti ? 0.4 : 0.0;
+        Canvas cv = canvas_new(MS[s][0], MS[s][1], RGB(14, 14, 18));
+        draw_menu(&cv, pick, solo, tt);
+        printf("menu %d %d %d %d %.1f %016" PRIx64 "\n", MS[s][0], MS[s][1], pick, solo, tt, canvas_hash(&cv));
+        canvas_free(&cv);
+    }
+    static const int TS[4][2] = {{110, 32}, {200, 60}, {300, 100}, {90, 30}};
+    for (int i = 0; i < 4; i++) {
+        Canvas cv = render_menu(TS[i][0], TS[i][1], 1, 0, 0.4);
+        printf("menuterm %d %d %016" PRIx64 "\n", TS[i][0], TS[i][1], canvas_hash(&cv));
+        canvas_free(&cv);
+    }
+    return 0;
+}
+
 int main(int argc, char **argv) {
+    if (!(argc > 1 && (!strncmp(argv[1], "--golden", 8) || !strcmp(argv[1], "--fixture") || !strcmp(argv[1], "--script")))) return app_main(argc, argv);
     const char *dir = getenv("CLAWD_SPRITES") ? getenv("CLAWD_SPRITES") : "../sprites";
     char path[512];
     snprintf(path, sizeof path, "%s/clawd.txt", dir);
@@ -136,6 +183,7 @@ int main(int argc, char **argv) {
     if (argc > 1 && !strcmp(argv[1], "--golden")) rc = golden(argc > 2 && !strcmp(argv[2], "--code") ? NULL : &frames);
     else if (argc > 2 && !strcmp(argv[1], "--fixture")) rc = run_fixtures(argc - 2, argv + 2, &frames, &items);
     else if (argc > 2 && !strcmp(argv[1], "--script")) { draw_set_sprites(&frames, &items); for (int i = 2; i < argc && !rc; i++) { printf("script %s\n", argv[i]); rc = script_run(argv[i]); } }
+    else if (argc > 2 && !strcmp(argv[1], "--golden-ui")) rc = golden_ui(argv[2]);
     else if (argc > 1 && !strcmp(argv[1], "--golden-rng")) rc = golden_rng();
     else if (argc > 1 && !strcmp(argv[1], "--golden-term")) rc = golden_term(&frames);
     else { fprintf(stderr, "usage: clawd-room --golden [--code] | --golden-term\n"); rc = 1; }

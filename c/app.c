@@ -1,0 +1,375 @@
+/* The terminal program: arguments, terminal setup, the start menu and the room's main loop (port of main / run / choose_scene). */
+#include "app.h"
+#include <errno.h>
+#include <getopt.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/ioctl.h>
+#include <sys/select.h>
+#include <termios.h>
+#include <time.h>
+#include <unistd.h>
+#include "clawd.h"
+#include "room.h"
+#include "tail.h"
+#include "term.h"
+#include "ui.h"
+
+#define FPS 16
+#define REPLAY_SECONDS 600
+#define DEFAULT_EVENTS "/.clawd-room/events.jsonl"
+
+static const char *RATIO_CHOICES[] = {"auto", "3:1", "2:1", "16:9", "4:3", "1:1", "3:4"};
+#define N_RATIOS 7
+
+typedef struct {
+    char events[512];
+    int has_at; double at;
+    const char *room, *theme;
+    char ratio[8];
+    int scale, no_auto, no_detect, no_split;
+    const char *dump;
+    int font, profile_font, near;
+    const char *size, *left, *right, *up, *down;
+} Args;
+
+static volatile sig_atomic_t g_winch, g_quit;
+static void on_winch(int s) { (void)s; g_winch = 1; }
+static void on_quit(int s) { (void)s; g_quit = 1; }
+
+static double mono(void) { struct timespec ts; clock_gettime(CLOCK_MONOTONIC, &ts); return ts.tv_sec + ts.tv_nsec / 1e9; }
+static double wall(void) { struct timespec ts; clock_gettime(CLOCK_REALTIME, &ts); return ts.tv_sec + ts.tv_nsec / 1e9; }
+
+static void put(const char *s, size_t n) {
+    while (n) { ssize_t w = write(STDOUT_FILENO, s, n); if (w < 0) { if (errno == EINTR) continue; return; } s += w; n -= (size_t)w; }
+}
+static void puts_(const char *s) { put(s, strlen(s)); }
+
+static void term_size(int *cols, int *rows) {
+    struct winsize ws;
+    if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == 0 && ws.ws_col > 0 && ws.ws_row > 0) { *cols = ws.ws_col; *rows = ws.ws_row; }
+    else { *cols = 80; *rows = 24; }
+}
+
+typedef struct { struct termios old; int on; } RawTerm;
+
+static void raw_on(RawTerm *r) { /* like tty.setcbreak: no echo, no line buffering; Ctrl-C still works */
+    tcgetattr(STDIN_FILENO, &r->old);
+    struct termios t = r->old;
+    t.c_lflag &= ~(tcflag_t)(ECHO | ICANON);
+    t.c_cc[VMIN] = 1; t.c_cc[VTIME] = 0;
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &t);
+    r->on = 1;
+}
+static void raw_off(RawTerm *r) { if (r->on) tcsetattr(STDIN_FILENO, TCSADRAIN, &r->old); r->on = 0; }
+
+static void screen_on(void) { puts_("\x1b[?1049h\x1b[?25l\x1b[?7l\x1b[0m\x1b[2J"); } /* alt screen, hide cursor, no wrap */
+static void screen_off(void) { puts_("\x1b[0m\x1b[?7h\x1b[?25h\x1b[?1049l"); }
+
+static void show(const Cells *cur, const Cells *prev, int sync) { /* one write per frame, wrapped in "synchronized update" so it never tears */
+    size_t n;
+    char *d = diff_frame(cur, prev, &n);
+    char *out = malloc(n + 64);
+    size_t k = 0;
+    if (sync) k += (size_t)sprintf(out + k, "\x1b[?2026h");
+    memcpy(out + k, d, n); k += n;
+    k += (size_t)sprintf(out + k, sync ? "\x1b[0m\x1b[?2026l" : "");
+    put(out, k);
+    free(d); free(out);
+}
+
+/* what is waiting on the keyboard: the useful keys as characters (a lone Esc is q; escape sequences are ignored).
+ * The terminal's answers to our size questions (CSI 4;h;w t and CSI 6;h;w t) are cut out. */
+static int read_keys(char *keys, size_t n) {
+    char data[256];
+    ssize_t got = read(STDIN_FILENO, data, sizeof data);
+    if (got <= 0) return 0;
+    int len = 0;
+    for (ssize_t i = 0; i < got;) { /* cut the size reports */
+        if (data[i] == 27 && i + 2 < got && data[i + 1] == '[' && (data[i + 2] == '4' || data[i + 2] == '6') && i + 3 < got && data[i + 3] == ';') {
+            ssize_t j = i + 4;
+            while (j < got && data[j] != 't') j++;
+            if (j < got) { i = j + 1; continue; }
+        }
+        data[len++] = data[i++];
+    }
+    size_t k = 0;
+    if (len == 1 && data[0] == 27) { keys[k++] = 'q'; keys[k] = 0; return 1; }
+    if (len > 0 && data[0] == 27) { keys[0] = 0; return 0; }
+    for (int i = 0; i < len && k + 1 < n; i++) if (strchr("qpfgr?[]", data[i]) && data[i]) keys[k++] = data[i];
+    keys[k] = 0;
+    return (int)k;
+}
+
+static int key_ready(double wait) {
+    fd_set fds;
+    FD_ZERO(&fds);
+    FD_SET(STDIN_FILENO, &fds);
+    struct timeval tv = {(time_t)wait, (suseconds_t)((wait - (time_t)wait) * 1e6)};
+    return select(STDIN_FILENO + 1, &fds, NULL, NULL, wait > 0 ? &tv : &(struct timeval){0, 0}) > 0;
+}
+
+/* ---- the room ---------------------------------------------------------------------------------- */
+static int run(const Args *a, const SpriteFile *frames, const SpriteFile *items) {
+    static Room room;
+    room_init(&room);
+    room.theme = theme_pick(a->room, a->theme);
+    snprintf(room.ratio, sizeof room.ratio, "%s", a->ratio);
+    if (a->room) snprintf(room.title, sizeof room.title, "%s", a->room);
+    static Event ev[4096];
+    Tail tail;
+    tail_init(&tail, a->events);
+    double start = a->has_at ? a->at : wall();
+    int n = tail_history(&tail, start - REPLAY_SECONDS, ev, 4096);
+    for (int i = 0; i < n; i++) room_apply(&room, ev[i].t, ev[i].sid, ev[i].ev, ev[i].cwd, ev[i].tool);
+    draw_set_sprites(frames, items);
+
+    int auto_ = !a->scale;
+    room.scale = a->scale ? a->scale : 1;
+    RawTerm rt = {0};
+    struct sigaction sa;
+    memset(&sa, 0, sizeof sa);
+    sa.sa_handler = on_winch; sigaction(SIGWINCH, &sa, NULL);
+    sa.sa_handler = on_quit; sigaction(SIGTERM, &sa, NULL); sigaction(SIGINT, &sa, NULL);
+    g_winch = 1; g_quit = 0;
+    raw_on(&rt);
+    screen_on();
+    double t0 = mono(), frozen_now = 0, frozen_t = 0, flash_until = 0;
+    int paused = 0, help_on = 0, dirty = 1, cols = 0, rows = 0;
+    char flash[96] = "";
+    Cells prev = {0, 0, NULL};
+    int have_prev = 0;
+    while (!g_quit) {
+        double frame_start = mono(), t = frame_start - t0, now = a->has_at ? a->at + t : wall();
+        char keys[256];
+        if (key_ready(0) && read_keys(keys, sizeof keys)) {
+            for (char *kp = keys; *kp; kp++) {
+                char k = *kp;
+                if (k == 'q') { g_quit = 1; break; }
+                if (k == 'p') { paused = !paused; frozen_now = now; frozen_t = t; dirty = 1; }
+                else if (k == '?') { help_on = !help_on; dirty = 1; }
+                else if (k == 'r') { /* next room shape: auto, 3:1, 2:1 ... */
+                    int i = 0;
+                    while (i < N_RATIOS && strcmp(RATIO_CHOICES[i], room.ratio)) i++;
+                    snprintf(room.ratio, sizeof room.ratio, "%s", RATIO_CHOICES[(i + 1) % N_RATIOS]);
+                    char up[16];
+                    snprintf(up, sizeof up, "%s", room.ratio);
+                    for (char *p = up; *p; p++) if (*p >= 'a' && *p <= 'z') *p -= 32;
+                    snprintf(flash, sizeof flash, "ROOM SHAPE %s  (f fits the window)", up);
+                    flash_until = wall() + 4; have_prev = 0; dirty = 1;
+                    puts_("\x1b[0m\x1b[2J");
+                } else if (k == 'g') { /* send a Clawd next door right now (to try crossing) */
+                    char buf[64];
+                    room_order(&room);
+                    snprintf(flash, sizeof flash, "%s", room.has_geo ? room_send_one(&room, &room.geo, now, buf, sizeof buf) : "NO WINDOW NEXT TO THIS ONE");
+                    flash_until = wall() + 4; dirty = 1;
+                } else if (k == '[' || k == ']') {
+                    if (strcmp(room.ratio, "auto")) { snprintf(flash, sizeof flash, "SCALE NEEDS THE AUTO ROOM SHAPE (R)"); flash_until = wall() + 4; }
+                    else {
+                        int s = room.scale + (k == ']' ? 1 : -1);
+                        room.scale = s < 1 ? 1 : s > MAX_SCALE ? MAX_SCALE : s;
+                        auto_ = 0;
+                        snprintf(flash, sizeof flash, "SCALE %dX  (F = AUTO)", room.scale);
+                        flash_until = wall() + 4; have_prev = 0;
+                        puts_("\x1b[0m\x1b[2J");
+                    }
+                } else if (k == 'f') { snprintf(flash, sizeof flash, "FIT ONLY WORKS ON WSL"); flash_until = wall() + 4; dirty = 1; } /* (no window helpers yet) */
+            }
+        }
+        int c, r;
+        term_size(&c, &r);
+        if (g_winch || c != cols || r != rows) {
+            g_winch = 0;
+            cols = c; rows = r;
+            have_prev = 0; dirty = 1;
+            if (auto_ && !strcmp(room.ratio, "auto") && !a->no_auto) room.scale = auto_scale(cols, rows * 2, room.npool);
+            puts_("\x1b[0m\x1b[2J\x1b[14t\x1b[16t"); /* ... and ask how big the text area and a cell are in pixels */
+        }
+        n = tail_poll(&tail, ev, 4096);
+        for (int i = 0; i < n; i++) room_apply(&room, ev[i].t, ev[i].sid, ev[i].ev, ev[i].cwd, ev[i].tool);
+        room_prune(&room, now);
+        if (dirty || !paused) {
+            if (cols < MIN_COLS || rows < MIN_ROWS) {
+                char buf[128];
+                too_small(buf, sizeof buf, cols, rows);
+                puts_(buf);
+                have_prev = 0;
+            } else {
+                double shown_now = paused ? frozen_now : now, shown_t = paused ? frozen_t : t;
+                char note[32], over[512];
+                Canvas cv = render(cols, rows, &room, shown_now, shown_t, note, sizeof note);
+                overlay_text(over, sizeof over, paused, help_on, note, wall() < flash_until ? flash : "");
+                Cells cells = cells_from_canvas(&cv, over);
+                show(&cells, have_prev ? &prev : NULL, 1);
+                if (have_prev) cells_free(&prev);
+                prev = cells; have_prev = 1;
+                canvas_free(&cv);
+            }
+            dirty = 0;
+        }
+        double wait = frame_start + 1.0 / FPS - mono();
+        if (wait > 0) key_ready(wait); /* sleeps, but wakes on a key press */
+    }
+    if (have_prev) cells_free(&prev);
+    tail_free(&tail);
+    raw_off(&rt);
+    screen_off();
+    return 0;
+}
+
+/* ---- the start menu ---------------------------------------------------------------------------- */
+/* returns 1 and the chosen scene / room name (room "" for solo), or 0 to quit */
+static int choose_scene(const char **scene, const char **room_name) {
+    RawTerm rt = {0};
+    struct sigaction sa;
+    memset(&sa, 0, sizeof sa);
+    sa.sa_handler = on_winch; sigaction(SIGWINCH, &sa, NULL);
+    sa.sa_handler = on_quit; sigaction(SIGTERM, &sa, NULL); sigaction(SIGINT, &sa, NULL);
+    g_quit = 0;
+    raw_on(&rt);
+    screen_on();
+    int pick = 0, solo = 0, result = 0, cols = 0, rows = 0, have_prev = 0;
+    double t0 = mono();
+    Cells prev = {0, 0, NULL};
+    while (!g_quit) {
+        if (key_ready(0.08)) {
+            char raw[256];
+            ssize_t got = read(STDIN_FILENO, raw, sizeof raw - 1);
+            if (got > 0) {
+                raw[got] = 0;
+                /* the terminal's size answers may arrive in the same read: cut them out */
+                char data[256];
+                int len = 0;
+                for (ssize_t i = 0; i < got;) {
+                    if (raw[i] == 27 && i + 3 < got && raw[i + 1] == '[' && (raw[i + 2] == '4' || raw[i + 2] == '6') && raw[i + 3] == ';') {
+                        ssize_t j = i + 4;
+                        while (j < got && raw[j] != 't') j++;
+                        if (j < got) { i = j + 1; continue; }
+                    }
+                    data[len++] = raw[i++];
+                }
+                data[len] = 0;
+                if (!strcmp(data, "\x1b[D") || !strcmp(data, "\x1bOD") || !strcmp(data, "h") || !strcmp(data, "k")) pick = (pick + MENU_N - 1) % MENU_N;
+                else if (!strcmp(data, "\x1b[C") || !strcmp(data, "\x1bOC") || !strcmp(data, "l") || !strcmp(data, "j") || !strcmp(data, "\t")) pick = (pick + 1) % MENU_N;
+                else if (!strcmp(data, "s") || !strcmp(data, "S")) solo = !solo;
+                else if (!strcmp(data, "q") || !strcmp(data, "Q") || !strcmp(data, "\x03") || !strcmp(data, "\x1b")) break;
+                else if (!strcmp(data, "\r") || !strcmp(data, "\n") || !strcmp(data, " ")) { *scene = MENU_SCENE[pick]; *room_name = solo ? "" : MENU_SCENE[pick]; result = 1; break; }
+                else if (len == 1 && data[0] >= '1' && data[0] < '1' + MENU_N) pick = data[0] - '1';
+            }
+        }
+        int c, r;
+        term_size(&c, &r);
+        if (c != cols || r != rows || g_winch) { g_winch = 0; cols = c; rows = r; have_prev = 0; puts_("\x1b[0m\x1b[2J"); }
+        Canvas cv = render_menu(cols, rows, pick, solo, mono() - t0);
+        Cells cells = cells_from_canvas(&cv, "");
+        show(&cells, have_prev ? &prev : NULL, 0);
+        if (have_prev) cells_free(&prev);
+        prev = cells; have_prev = 1;
+        canvas_free(&cv);
+    }
+    if (have_prev) cells_free(&prev);
+    raw_off(&rt);
+    screen_off();
+    return result;
+}
+
+/* ---- arguments --------------------------------------------------------------------------------- */
+static void usage(void) {
+    fprintf(stderr,
+        "usage: clawd-room [--events FILE] [--at TS] [--room NAME] [--theme office|coffee|park] [--ratio auto|3:1|2:1|16:9|4:3|1:1|3:4]\n"
+        "                  [--scale N] [--no-auto] [--no-detect] [--dump COLSxROWS]\n"
+        "  (accepted, not used yet by the C version: --left/--right/--up/--down NAME, --no-split, --size, --font, --profile-font, --near)\n");
+}
+
+int app_main(int argc, char **argv) {
+    Args a;
+    memset(&a, 0, sizeof a);
+    const char *home = getenv("HOME");
+    const char *env = getenv("CLAWD_EVENTS");
+    if (env) snprintf(a.events, sizeof a.events, "%s", env);
+    else snprintf(a.events, sizeof a.events, "%s%s", home ? home : "", DEFAULT_EVENTS);
+    snprintf(a.ratio, sizeof a.ratio, "auto");
+    a.font = 8; a.profile_font = 14; a.near = 30; a.size = "110x32";
+    static const struct option opts[] = {
+        {"events", 1, 0, 'e'}, {"at", 1, 0, 'a'}, {"room", 1, 0, 'r'}, {"theme", 1, 0, 't'}, {"left", 1, 0, 'L'}, {"right", 1, 0, 'R'},
+        {"up", 1, 0, 'U'}, {"down", 1, 0, 'D'}, {"no-split", 0, 0, 'S'}, {"ratio", 1, 0, 'x'}, {"size", 1, 0, 'z'}, {"font", 1, 0, 'f'},
+        {"profile-font", 1, 0, 'p'}, {"scale", 1, 0, 'c'}, {"no-auto", 0, 0, 'A'}, {"no-detect", 0, 0, 'N'}, {"near", 1, 0, 'n'},
+        {"dump", 1, 0, 'd'}, {"help", 0, 0, 'h'}, {0, 0, 0, 0}};
+    int o;
+    while ((o = getopt_long(argc, argv, "h", opts, NULL)) != -1) {
+        switch (o) {
+        case 'e': snprintf(a.events, sizeof a.events, "%s", optarg); break;
+        case 'a': a.has_at = 1; a.at = atof(optarg); break;
+        case 'r': a.room = optarg; break;
+        case 't': a.theme = optarg; break;
+        case 'L': a.left = optarg; break; case 'R': a.right = optarg; break; case 'U': a.up = optarg; break; case 'D': a.down = optarg; break;
+        case 'S': a.no_split = 1; break;
+        case 'x': snprintf(a.ratio, sizeof a.ratio, "%s", optarg); break;
+        case 'z': a.size = optarg; break;
+        case 'f': a.font = atoi(optarg); break;
+        case 'p': a.profile_font = atoi(optarg); break;
+        case 'c': a.scale = atoi(optarg); break;
+        case 'A': a.no_auto = 1; break;
+        case 'N': a.no_detect = 1; break;
+        case 'n': a.near = atoi(optarg); break;
+        case 'd': a.dump = optarg; break;
+        default: usage(); return o == 'h' ? 0 : 2;
+        }
+    }
+    int ok = 0;
+    for (int i = 0; i < N_RATIOS; i++) if (!strcmp(a.ratio, RATIO_CHOICES[i])) ok = 1;
+    if (!ok) { fprintf(stderr, "clawd-room: bad --ratio %s\n", a.ratio); return 2; }
+    if (a.theme && strcmp(a.theme, "office") && strcmp(a.theme, "coffee") && strcmp(a.theme, "park")) { fprintf(stderr, "clawd-room: bad --theme %s\n", a.theme); return 2; }
+
+    const char *dir = getenv("CLAWD_SPRITES");
+    char path[600];
+    static char dirbuf[512];
+    if (!dir) { /* the sprites folder next to the program's folder (c/ and sprites/ are siblings) */
+        ssize_t n = readlink("/proc/self/exe", dirbuf, sizeof dirbuf - 20);
+        if (n > 0) { dirbuf[n] = 0; char *s = strrchr(dirbuf, '/'); if (s) { *s = 0; s = strrchr(dirbuf, '/'); if (s) { strcpy(s, "/sprites"); dir = dirbuf; } } }
+        if (!dir) dir = "../sprites";
+    }
+    snprintf(path, sizeof path, "%s/clawd.txt", dir);
+    SpriteFile frames = sprites_load(path), items;
+    snprintf(path, sizeof path, "%s/items.txt", dir);
+    items = sprites_load(path);
+    int rc = 0;
+    if (a.dump) {
+        int cols, rows;
+        if (sscanf(a.dump, "%dx%d", &cols, &rows) != 2) { fprintf(stderr, "clawd-room: --dump wants COLSxROWS, for example 100x30\n"); return 2; }
+        static Room room;
+        room_init(&room);
+        room.theme = theme_pick(a.room, a.theme);
+        snprintf(room.ratio, sizeof room.ratio, "%s", a.ratio);
+        double now = a.has_at ? a.at : wall();
+        static Event ev[4096];
+        Tail tail;
+        tail_init(&tail, a.events);
+        int n = tail_history(&tail, now - REPLAY_SECONDS, ev, 4096);
+        for (int i = 0; i < n; i++) room_apply(&room, ev[i].t, ev[i].sid, ev[i].ev, ev[i].cwd, ev[i].tool);
+        room_prune(&room, now);
+        draw_set_sprites(&frames, &items);
+        room.freeze = 0;
+        char *text = dump_text(cols, rows, &room, now, 0.0);
+        puts(text);
+        free(text);
+        tail_free(&tail);
+    } else if (!(isatty(STDIN_FILENO) && isatty(STDOUT_FILENO))) {
+        fprintf(stderr, "clawd-room needs a terminal (stdin and stdout must be a tty)\n");
+        rc = 1;
+    } else {
+        if (!(a.room || a.theme || a.has_at)) { /* started bare (for example from a tab): ask */
+            const char *scene = NULL, *rn = NULL;
+            if (!choose_scene(&scene, &rn)) goto done;
+            a.theme = scene;
+            a.room = rn[0] ? rn : NULL;
+        }
+        rc = run(&a, &frames, &items);
+    }
+done:
+    sprites_free(&frames);
+    sprites_free(&items);
+    return rc;
+}

@@ -31,6 +31,15 @@ typedef struct {
     int has_y; double y;
 } Msg;
 
+/* where the desks are and the strip of floor where Clawds may walk (Geo in room_tui.py) */
+typedef struct {
+    int w, h, banner, slot_w, floor_y, ymin, ymax, rope_x, stairs_x, rope_end;
+    int shown, more, has_more_pos, more_pos[2];
+    int home[MAX_SESS][2];   /* by index in room->s (only the first `shown`) */
+    double door_y[2];
+    Spots spots;
+} Geo;
+
 typedef struct {
     Session pool[MAX_SESS]; int npool;     /* the sessions, in the order they appeared */
     Session gpool[MAX_GUESTS]; int ngp;    /* visitors from other windows (not yet placed ones included) */
@@ -53,6 +62,8 @@ typedef struct {
     Msg outbox[MAX_OUT]; int nout;
     char gone_peers[4][24]; int ngone;
     int freeze;              /* tests: draw without moving anybody */
+    int has_geo;             /* geo below is from the last frame (the g key needs it) */
+    Geo geo;
 } Room;
 
 #define SLOT_H 40
@@ -62,15 +73,8 @@ typedef struct {
 #define BANNER_H 8
 #define SEAT_DY 7
 
-/* where the desks are and the strip of floor where Clawds may walk (Geo in room_tui.py) */
-typedef struct {
-    int w, h, banner, slot_w, floor_y, ymin, ymax, rope_x, stairs_x, rope_end;
-    int shown, more, has_more_pos, more_pos[2];
-    int home[MAX_SESS][2];   /* by index in room->s (only the first `shown`) */
-    double door_y[2];
-    Spots spots;
-} Geo;
 
+void layout_slots(int w, int h, int n, int *banner, int *per_row, int *slot_w, int *rows_shown, int *ys);
 void geo_init(Geo *g, const Room *room, int w, int h);
 int geo_home(const Geo *g, const Room *room, const Session *s, int *cx, int *by); /* 1 if it has a desk */
 const char *geo_role(const Geo *g, const Room *room, const Session *s);
@@ -85,6 +89,7 @@ void room_receive(Room *r, const Msg *m);
 void room_peer_gone(Room *r, const char *peer);
 const char *room_send_one(Room *r, const Geo *geo, double now, char *buf, size_t n); /* the g key */
 
+const SpriteFile *draw_frames(void);
 void draw_set_sprites(const SpriteFile *frames, const SpriteFile *items); /* the editable files the drawing prefers */
 /* draws the room on cv (moving everybody first unless room->freeze); returns the "+N MORE" note in `note` */
 void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t note_n);
