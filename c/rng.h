@@ -1,5 +1,5 @@
 /* Python's random.Random, bit for bit: Mersenne Twister (MT19937), seeded the way random.Random(int) seeds it.
- * Only the calls room_tui.py makes: random(), uniform(a, b) and choice(n) (the index it would pick). */
+ * Only the calls the room makes: random(), uniform(a, b) and choice(n) (the index it would pick). */
 #ifndef RNG_H
 #define RNG_H
 #include <stdint.h>

@@ -1,0 +1,119 @@
+tail 1000.5 aaa SessionStart clawd-room 
+tail 1001 aaa PreToolUse clawd-room Bash
+tail 1002.25 bbb UserPromptSubmit  
+tail 1003 ccc Notification café 😀 x
+tail 1004 aaa Stop  
+tail 1006 eee SessionEnd es\caped T
+tail 1008 ggg Stop ok 
+overlay 0 0 []
+overlay 0 0 [+3 MORE]
+overlay 0 0 [SCALE 2X]
+overlay 0 0 [+1 MORE   FLASH]
+overlay 0 1 [q/esc quit   p pause   r room shape   [ ] scale   ctrl +/- font   f auto font+scale   g send a Clawd   ? help]
+overlay 0 1 [q/esc quit   p pause   r room shape   [ ] scale   ctrl +/- font   f auto font+scale   g send a Clawd   ? help   +3 MORE]
+overlay 0 1 [q/esc quit   p pause   r room shape   [ ] scale   ctrl +/- font   f auto font+scale   g send a Clawd   ? help   SCALE 2X]
+overlay 0 1 [q/esc quit   p pause   r room shape   [ ] scale   ctrl +/- font   f auto font+scale   g send a Clawd   ? help   +1 MORE   FLASH]
+overlay 1 0 [PAUSED]
+overlay 1 0 [PAUSED   +3 MORE]
+overlay 1 0 [PAUSED   SCALE 2X]
+overlay 1 0 [PAUSED   +1 MORE   FLASH]
+overlay 1 1 [PAUSED   q/esc quit   p pause   r room shape   [ ] scale   ctrl +/- font   f auto font+scale   g send a Clawd   ? help]
+overlay 1 1 [PAUSED   q/esc quit   p pause   r room shape   [ ] scale   ctrl +/- font   f auto font+scale   g send a Clawd   ? help   +3 MORE]
+overlay 1 1 [PAUSED   q/esc quit   p pause   r room shape   [ ] scale   ctrl +/- font   f auto font+scale   g send a Clawd   ? help   SCALE 2X]
+overlay 1 1 [PAUSED   q/esc quit   p pause   r room shape   [ ] scale   ctrl +/- font   f auto font+scale   g send a Clawd   ? help   +1 MORE   FLASH]
+small 30 10 '\x1b[0m\x1b[2J\x1b[6;5Hneed 44x20, have 30x10'
+small 44 19 '\x1b[0m\x1b[2J\x1b[10;12Hneed 44x20, have 44x19'
+small 10 5 '\x1b[0m\x1b[2J\x1b[3;1Hneed 44x20'
+small 200 80 '\x1b[0m\x1b[2J\x1b[41;89Hneed 44x20, have 200x80'
+auto 110 64 1 1 1 1 1 1
+auto 110 100 1 1 1 1 1 1
+auto 110 140 1 1 1 1 1 1
+auto 110 200 1 1 1 1 1 1
+auto 160 64 1 1 1 1 1 1
+auto 160 100 1 1 1 1 1 1
+auto 160 140 2 2 1 1 1 1
+auto 160 200 2 2 2 1 1 1
+auto 220 64 1 1 1 1 1 1
+auto 220 100 1 1 1 1 1 1
+auto 220 140 2 2 2 1 1 1
+auto 220 200 2 2 2 2 1 1
+auto 300 64 1 1 1 1 1 1
+auto 300 100 1 1 1 1 1 1
+auto 300 140 2 2 2 1 1 1
+auto 300 200 3 3 3 2 1 1
+menu 144 84 0 0 0.0 3107c0795621085f
+menu 144 84 0 0 0.4 be79bd81f35d16fb
+menu 144 84 0 1 0.0 560e642f9c9888a9
+menu 144 84 0 1 0.4 40ba8780ad62c7a5
+menu 144 84 1 0 0.0 f0690ef289dafc47
+menu 144 84 1 0 0.4 5e80d45bbed1fe27
+menu 144 84 1 1 0.0 bd622ec9c9016af1
+menu 144 84 1 1 0.4 b2d164fb5dbbaed1
+menu 144 84 2 0 0.0 4965eb321b40ae36
+menu 144 84 2 0 0.4 caf1ce37981aacd4
+menu 144 84 2 1 0.0 c70497b44b0dd9a8
+menu 144 84 2 1 0.4 d60f759269e4d94e
+menu 110 64 0 0 0.0 9cbf6257472ac946
+menu 110 64 0 0 0.4 eeab401e535bafee
+menu 110 64 0 1 0.0 0c667792f7bcda7c
+menu 110 64 0 1 0.4 ce6868cde9bd5bc4
+menu 110 64 1 0 0.0 cf3e02be65ff2112
+menu 110 64 1 0 0.4 b2c83f8b7c6ba9a6
+menu 110 64 1 1 0.0 4eb13ef4cf20f9f8
+menu 110 64 1 1 0.4 b2d5e01b2d07295c
+menu 110 64 2 0 0.0 2f20c7a093288134
+menu 110 64 2 0 0.4 b5c17da0e9a5e280
+menu 110 64 2 1 0.0 4e8823256862d91a
+menu 110 64 2 1 0.4 6b07c3b6939cf036
+menu 60 40 0 0 0.0 03c7b0750e49d0a1
+menu 60 40 0 0 0.4 fce58cb6123913ed
+menu 60 40 0 1 0.0 fcb682c1625292bb
+menu 60 40 0 1 0.4 96b88a5c1801a1df
+menu 60 40 1 0 0.0 3eac800e5e80edcf
+menu 60 40 1 0 0.4 2311a5c2dd9a5d4b
+menu 60 40 1 1 0.0 348d1e051b5fe5ad
+menu 60 40 1 1 0.4 41bc73cc25614b81
+menu 60 40 2 0 0.0 8393ae93f604bae9
+menu 60 40 2 0 0.4 025466cb585a9c15
+menu 60 40 2 1 0.0 c4485b37b8ae592b
+menu 60 40 2 1 0.4 7ae4e5a0e4be6dbf
+menu 200 120 0 0 0.0 ee2abc40d340c8d6
+menu 200 120 0 0 0.4 b03603937b6f2f62
+menu 200 120 0 1 0.0 17011337e094abd8
+menu 200 120 0 1 0.4 cdabb2f48e9557e4
+menu 200 120 1 0 0.0 255141c574be1bc9
+menu 200 120 1 0 0.4 6499d4a5941cf331
+menu 200 120 1 1 0.0 016879b0e04a600b
+menu 200 120 1 1 0.4 b8dccc851d574353
+menu 200 120 2 0 0.0 c1f8c9d678effddb
+menu 200 120 2 0 0.4 83b60ee770b094c5
+menu 200 120 2 1 0.0 6be2cfb75e7fa985
+menu 200 120 2 1 0.4 9fe832d40415d447
+menu 44 30 0 0 0.0 d25d13247886b50b
+menu 44 30 0 0 0.4 d25d13247886b50b
+menu 44 30 0 1 0.0 d25d13247886b50b
+menu 44 30 0 1 0.4 d25d13247886b50b
+menu 44 30 1 0 0.0 d25d13247886b50b
+menu 44 30 1 0 0.4 d25d13247886b50b
+menu 44 30 1 1 0.0 d25d13247886b50b
+menu 44 30 1 1 0.4 d25d13247886b50b
+menu 44 30 2 0 0.0 d25d13247886b50b
+menu 44 30 2 0 0.4 d25d13247886b50b
+menu 44 30 2 1 0.0 d25d13247886b50b
+menu 44 30 2 1 0.4 d25d13247886b50b
+menu 46 56 0 0 0.0 9203cdb49c029d23
+menu 46 56 0 0 0.4 88903a7c48b4b68f
+menu 46 56 0 1 0.0 99f53bac8b0e5681
+menu 46 56 0 1 0.4 1cacf7da7b3a745d
+menu 46 56 1 0 0.0 1ac37328f96058ba
+menu 46 56 1 0 0.4 10d149b4e4391cd2
+menu 46 56 1 1 0.0 06c5fdb3cc02bec0
+menu 46 56 1 1 0.4 8420553c1fa55a18
+menu 46 56 2 0 0.0 d695242661b4b219
+menu 46 56 2 0 0.4 b68866cf3c68c15d
+menu 46 56 2 1 0.0 6f54e265563324a7
+menu 46 56 2 1 0.4 d314e00ab11bdeeb
+menuterm 110 32 b2c83f8b7c6ba9a6
+menuterm 200 60 6499d4a5941cf331
+menuterm 300 100 fe4a3f80e37e6ef3
+menuterm 90 30 013b2ac650b7ab85

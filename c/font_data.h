@@ -1,4 +1,4 @@
-/* generated from room_tui.py _G; 3x5 glyphs, rows separated by / */
+/* the 3x5 pixel font: one glyph per character, rows separated by / */
 static const char *FONT_GLYPHS[][2] = {
     {" ", "000/000/000/000/000"},
     {"!", "010/010/010/000/010"},

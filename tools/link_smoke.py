@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Two linked rooms in ptys (any mix of the Python and C programs): send a Clawd with the g key and check the walk message arrives.
+"""Two linked rooms in ptys: send a Clawd with the g key from each and check the walk messages arrive and everything is cleaned up.
 
-    python3 tools/link_smoke.py            runs python->c, c->python, c->c, python->python
+    python3 tools/link_smoke.py
 """
 import fcntl
 import glob
@@ -16,7 +16,7 @@ import termios
 import time
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
-PROGS = {"c": [os.path.join(ROOT, "c", "clawd-room")], "python": [sys.executable, os.path.join(ROOT, "room_tui.py"), "--no-detect"]}
+PROGS = {"c": [os.path.join(ROOT, "c", "clawd-room")]}
 
 
 class Proc:
@@ -84,7 +84,7 @@ def pair(kind_a, kind_b):
 
 
 bad = 0
-for ka, kb in (("python", "c"), ("c", "python"), ("c", "c"), ("python", "python")):
+for ka, kb in (("c", "c"),):
     walks, hellos, sa, sb, left, oa, ob = pair(ka, kb)
     ok = (sa == 0 and sb == 0 and not left
           and len(hellos.get("alpha", [])) >= 1 and len(hellos.get("beta", [])) >= 1

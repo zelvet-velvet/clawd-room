@@ -1,6 +1,6 @@
 #ifndef PS_SCRIPTS_H
 #define PS_SCRIPTS_H
-/* generated from windetect.py by tools/gen_ps.py: do not edit */
+/* the PowerShell script that lists the clawd-room windows; ASCII only, both scripts are sent base64-encoded as UTF-16 */
 static const char *PS_WATCH =
     "\n"
     "param([string]$prefix)\n"
@@ -53,7 +53,7 @@ static const char *PS_WATCH =
     "while ($true) { [Console]::Out.Write([CW]::List($prefix)); [Console]::Out.WriteLine(\"--\"); Start-Sleep -Milliseconds 400 }\n"
     "\n";
 
-/* generated from windetect.py by tools/gen_ps.py: do not edit */
+/* the window helper that changes the font and window size */
 static const char *PS_TOOL =
     "\n"
     "Add-Type -AssemblyName System.Windows.Forms\n"

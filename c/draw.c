@@ -104,6 +104,7 @@ static int item(Canvas *cv, const char *name, int x, int y) {
     return sp != NULL;
 }
 
+void draw_bubble_code(Canvas *cv, int cx, int y, const char *kind, double ph);
 static void draw_bubble(Canvas *cv, int cx, int y, const char *kind, double ph) {
     char name[32];
     if (!strcmp(kind, "!")) snprintf(name, sizeof name, "bubble-excl");
@@ -125,6 +126,8 @@ static void draw_bubble(Canvas *cv, int cx, int y, const char *kind, double ph) 
         canvas_px(cv, cx, y + 1, RGB(160, 160, 170));
     } else canvas_text(cv, cx - 1, y + 1, kind, C_INK);
 }
+
+void draw_bubble_code(Canvas *cv, int cx, int y, const char *kind, double ph) { draw_bubble(cv, cx, y, kind, ph); } /* (for the sprite export) */
 
 typedef struct { int x0, y0, x1, y1; } IRect;
 
@@ -265,11 +268,10 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
         else if (side == SIDE_UP) draw_rope(cv, geo.rope_x, geo.banner, geo.rope_end, g);
         else draw_stairs(cv, geo.stairs_x, cv->h, g);
     }
-    if (room->n == 0) {
+    if (room->n == 0) { /* nobody lives here: say so (visitors from other windows are still drawn below) */
         int mid = (geo.banner + cv->h) / 2;
         canvas_text(cv, cv->w / 2 - text_width("NO SESSIONS") / 2, mid - 7, "NO SESSIONS", RGB(150, 150, 180));
         canvas_text(cv, cv->w / 2 - text_width("START CLAUDE") / 2, mid, "START CLAUDE", RGB(110, 110, 140));
-        return;
     }
     /* who is seated at their desk, and who is in the room right now */
     int seated[256] = {0};

@@ -1,4 +1,4 @@
-/* A fixed room scene from a text file, so the C and Python drawings can be compared (see tools/fixtures/). */
+/* A fixed room scene from a text file, for tests (see tools/fixtures/ and tools/test.sh). */
 #ifndef FIXTURE_H
 #define FIXTURE_H
 #include "room.h"

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Starts the room (C binary by default, `python` for room_tui.py) in a pty and drives it with keys.
+"""Starts the room in a pty and drives it with keys.
 
-    python3 tools/pty_smoke.py [c|python]
+    python3 tools/pty_smoke.py
 
 Checks: it starts and draws, shows a new event, answers p ? [ ] r g f, quits on q, restores the terminal. Also the start menu.
 """
@@ -17,8 +17,7 @@ import termios
 import time
 
 ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
-which = sys.argv[1] if len(sys.argv) > 1 else "c"
-CMD = [os.path.join(ROOT, "c", "clawd-room")] if which == "c" else [sys.executable, os.path.join(ROOT, "room_tui.py"), "--no-detect"]
+CMD = [os.path.join(ROOT, "c", "clawd-room")]
 
 
 def run(args, keys, env_extra=None, cols=110, rows=32, settle=0.6):
@@ -119,5 +118,5 @@ with tempfile.TemporaryDirectory() as tmp:
     import subprocess
     r = subprocess.run(CMD + ["--theme", "office"], capture_output=True, text=True, stdin=subprocess.DEVNULL)
     check("without a terminal it says so and fails", r.returncode != 0 and "terminal" in r.stderr + r.stdout)
-print("%d failed" % len(fails) if fails else "all passed (%s)" % which)
+print("%d failed" % len(fails) if fails else "all passed")
 sys.exit(1 if fails else 0)

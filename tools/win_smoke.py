@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Real Windows Terminal windows (your own throwaway ones, titled alpha / beta): open two linked rooms, check each is sized to
-110x32 once, put beta next to alpha, and read where the gates were placed from the size log. Run for `python` and `c` and compare.
+110x32 once, put beta next to alpha, and read where the gates were placed from the size log.
 
-    python3 tools/win_smoke.py c|python [gap_px]
+    python3 tools/win_smoke.py [gap_px]
 
 Needs Windows Terminal with the "Clawd Room" profile (setup_profile.py --apply and --apply-global). Never touches other windows.
 """
@@ -14,22 +14,21 @@ import tempfile
 import time
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
-sys.path.insert(0, ROOT)
-import windetect  # noqa: E402
 
-kind = sys.argv[1] if len(sys.argv) > 1 else "c"
-gap = int(sys.argv[2]) if len(sys.argv) > 2 else 10
+gap = int(sys.argv[1]) if len(sys.argv) > 1 else 10
 HOME_ROOT = "~/clawd-room"  # the symlink the hook uses
-PROG = {"c": [HOME_ROOT + "/c/clawd-room"], "python": ["python3", HOME_ROOT + "/room_tui.py"]}[kind]
+PROG = [HOME_ROOT + "/c/clawd-room"]
 
 
 def windows():
-    w = windetect.WindowWatcher()
-    w.start()
-    time.sleep(14)  # (the helper compiles a little C# first)
-    out = dict(w.windows)
-    w.stop()
-    return out
+    """{title: (l, t, r, b)} of the clawd-room windows, from the program's own listing."""
+    out = subprocess.run(PROG + ["--list-windows"], capture_output=True, text=True).stdout
+    found = {}
+    for line in out.splitlines():
+        if ": " in line and line.startswith("clawd-room "):
+            title, rest = line.split(": ", 1)
+            found[title] = tuple(int(v) for v in rest.split("(")[0].split())
+    return found
 
 
 with tempfile.TemporaryDirectory(dir="/tmp") as tmp:

@@ -21,10 +21,10 @@ import sys
 import zlib
 
 NAME = "Clawd Room"
-FONT_SIZE = 8  # the profile opens with this font size (room_tui.py DEFAULT_FONT), so nothing has to zoom
+FONT_SIZE = 8  # the profile opens with this font size (the room's default font, c/app.c), so nothing has to zoom
 GUID = "{c1a3d0f2-7b64-4e1a-9a5c-2f6d8e4b0c13}"
 HERE = os.path.dirname(os.path.abspath(__file__))
-LAUNCHER = os.path.join(HERE, "clawd-room.sh")  # starts the C program if built, else room_tui.py (see clawd-room.sh)
+LAUNCHER = os.path.join(HERE, "clawd-room.sh")  # builds and starts the C program (see clawd-room.sh)
 
 
 def win_path(env_var):
@@ -109,7 +109,7 @@ def apply_global(only_profile=False):
     print("backup ", backup, "(copy it back to undo)")
 
 
-# The icon: pixel Clawd (room_tui.draw_clawd, 14 x 8, each pixel 2 x 2 cells) standing in a little room,
+# The icon: pixel Clawd (the Clawd sprite, 14 x 8, each pixel 2 x 2 cells) standing in a little room,
 # on a 32 x 32 grid. Drawn 16 px per cell it is the 512 px picture; smaller sizes are whole multiples.
 GRID = 32
 BODY = (205, 110, 88, 255)

@@ -12,6 +12,7 @@
 #include <termios.h>
 #include <time.h>
 #include <unistd.h>
+#include "art.h"
 #include "clawd.h"
 #include "link.h"
 #include "room.h"
@@ -34,6 +35,7 @@ typedef struct {
     char ratio[8];
     int scale, no_auto, no_detect, no_split;
     const char *dump;
+    int build_art, export_sprites, force, add, list_windows;
     int font, profile_font, near, opened;
     const char *size, *left, *right, *up, *down;
 } Args;
@@ -554,7 +556,8 @@ int app_main(int argc, char **argv) {
         {"events", 1, 0, 'e'}, {"at", 1, 0, 'a'}, {"room", 1, 0, 'r'}, {"theme", 1, 0, 't'}, {"left", 1, 0, 'L'}, {"right", 1, 0, 'R'},
         {"up", 1, 0, 'U'}, {"down", 1, 0, 'D'}, {"no-split", 0, 0, 'S'}, {"ratio", 1, 0, 'x'}, {"size", 1, 0, 'z'}, {"font", 1, 0, 'f'},
         {"profile-font", 1, 0, 'p'}, {"scale", 1, 0, 'c'}, {"no-auto", 0, 0, 'A'}, {"no-detect", 0, 0, 'N'}, {"near", 1, 0, 'n'},
-        {"dump", 1, 0, 'd'}, {"help", 0, 0, 'h'}, {0, 0, 0, 0}};
+        {"dump", 1, 0, 'd'}, {"build-art", 0, 0, 'B'}, {"export-sprites", 0, 0, 'X'}, {"force", 0, 0, 'F'}, {"add", 0, 0, 'P'},
+        {"list-windows", 0, 0, 'W'}, {"help", 0, 0, 'h'}, {0, 0, 0, 0}};
     int o;
     while ((o = getopt_long(argc, argv, "h", opts, NULL)) != -1) {
         switch (o) {
@@ -573,6 +576,7 @@ int app_main(int argc, char **argv) {
         case 'N': a.no_detect = 1; break;
         case 'n': a.near = atoi(optarg); break;
         case 'd': a.dump = optarg; break;
+        case 'B': a.build_art = 1; break; case 'X': a.export_sprites = 1; break; case 'F': a.force = 1; break; case 'P': a.add = 1; break; case 'W': a.list_windows = 1; break;
         default: usage(); return o == 'h' ? 0 : 2;
         }
     }
@@ -594,6 +598,28 @@ int app_main(int argc, char **argv) {
     snprintf(path, sizeof path, "%s/items.txt", dir);
     items = sprites_load(path);
     int rc = 0;
+    if (a.build_art || a.export_sprites) { /* the sprite files and the pictures made from them */
+        char root[600], art[700];
+        snprintf(root, sizeof root, "%s", dir);
+        char *sl = strrchr(root, '/');
+        if (sl) *sl = 0; else strcpy(root, ".");
+        snprintf(art, sizeof art, "%s/Clawd Room Note/Animations", root);
+        rc = a.export_sprites ? art_export(dir, a.force, a.add) : art_build(dir, art);
+        sprites_free(&frames); sprites_free(&items);
+        return rc;
+    }
+    if (a.list_windows) { /* the clawd-room windows on the Windows desktop */
+        if (!win_available()) { fprintf(stderr, "powershell.exe not found (this needs WSL)\n"); return 1; }
+        Watcher w;
+        if (!watcher_start(&w)) return 1;
+        for (int i = 0; i < 100 && !w.updated; i++) { watcher_poll(&w); usleep(100000); }
+        usleep(500000);
+        watcher_poll(&w);
+        if (!w.ncur) puts("no windows with that title prefix");
+        for (int i = 0; i < w.ncur; i++) printf("%s: %d %d %d %d (terminal area %d %d %d %d, dpi %d)\n", w.cur[i].title, w.cur[i].rect[0], w.cur[i].rect[1], w.cur[i].rect[2], w.cur[i].rect[3], w.cur[i].area[0], w.cur[i].area[1], w.cur[i].area[2], w.cur[i].area[3], w.cur[i].dpi);
+        watcher_stop(&w);
+        return 0;
+    }
     if (a.dump) {
         int cols, rows;
         if (sscanf(a.dump, "%dx%d", &cols, &rows) != 2) { fprintf(stderr, "clawd-room: --dump wants COLSxROWS, for example 100x30\n"); return 2; }

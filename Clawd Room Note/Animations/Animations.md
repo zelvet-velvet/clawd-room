@@ -13,8 +13,8 @@ Every frame a Clawd can show, and the items it carries. All pictures are drawn b
 > [!TODO] Edit a frame
 > 1. Open `sprites/clawd.txt` (or `sprites/items.txt`). Each frame is a small grid, one character per pixel: `.` empty, `B` body colour, `K` eye, `P` blush, `G` eye glint; the legend is at the top and you can add colours.
 > 2. Change the characters. The line `@ name | key` says which pose uses the grid (leave the key alone).
-> 3. `python3 sprite_tool.py build` redraws the pictures below. The room reads the same files when it starts, so a restart shows your edit.
-> 4. A frame missing from the file is drawn by the code, so you can delete a frame to go back to the original. `sprite_tool.py export --force` rewrites the files from the code (**throws away your edits**); `export --add` only appends frames the file lacks.
+> 3. `clawd-room --build-art` (or `c/clawd-room --build-art`) redraws the pictures below. The room reads the same files when it starts, so a restart shows your edit.
+> 4. A frame missing from the file is drawn by the code, so you can delete a frame to go back to the original. `clawd-room --export-sprites --force` rewrites the files from the code (**throws away your edits**); `--export-sprites --add` only appends frames a file lacks.
 
 ![[sheet.png]]
 
@@ -50,7 +50,7 @@ Frame names in the sheet are the names in `sprites/clawd.txt`. A frame shared by
 | applaud | ![[applaud.gif]] |
 | peek | ![[peek.gif]] |
 
-The poses are sampled from `pose_for` with a stand-in Session, so the timing in the GIFs is close, not exact.
+The poses are sampled from the pose code with a stand-in Session (`c/actions.c`), so the timing in the GIFs is close, not exact.
 
 ## Items
 

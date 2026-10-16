@@ -1,4 +1,4 @@
-/* Runs a scripted scene from tools/scenarios and prints what happens, for comparing with Python. */
+/* Runs a scripted scene from tools/scenarios and prints what happens, for tests (tools/test.sh). */
 #ifndef SCRIPT_H
 #define SCRIPT_H
 #include "room.h"

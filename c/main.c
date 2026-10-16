@@ -1,5 +1,5 @@
 /* clawd-room, C port. Stage 1: canvas, font, sprite files, Clawd poses and drawing.
- *   ./clawd-room --golden   prints "action step hash" for every action (tools/golden_clawd.py prints the same from Python)
+ *   ./clawd-room --golden   prints "action step hash" for every action (compared with tests/expected by tools/test.sh)
  */
 #include <inttypes.h>
 #include <stdio.h>
@@ -12,6 +12,7 @@
 #include "rng.h"
 #include <time.h>
 #include <unistd.h>
+#include "actions.h"
 #include "app.h"
 #include "link.h"
 #include "win.h"
@@ -19,38 +20,8 @@
 #include "tail.h"
 #include "ui.h"
 
-typedef struct { const char *name, *state; void (*set)(Session *); } Action;
-
-static void a_none(Session *s) { (void)s; }
-static void a_walk(Session *s) { s->moving = 1; strcpy(s->stage, "walk"); }
-static void a_climb(Session *s) { s->moving = 1; s->vclimb = 1; }
-static void a_chase(Session *s) { s->moving = 1; strcpy(s->stage, "chase"); }
-static void a_flee(Session *s) { s->moving = 1; strcpy(s->stage, "flee"); }
-static void talk(Session *s, int kind) { strcpy(s->chat_with, "y"); strcpy(s->stage, "talk"); s->chat_kind = kind; }
-static void a_nod(Session *s) { talk(s, 0); }
-static void a_cwave(Session *s) { talk(s, 1); }
-static void a_hop(Session *s) { talk(s, 2); }
-static void a_hi5(Session *s) { talk(s, 3); }
-static void a_cdance(Session *s) { talk(s, 4); }
-static void a_barista(Session *s) { talk(s, 6); strcpy(s->part, "host"); }
-static void a_visitor(Session *s) { talk(s, 6); strcpy(s->part, "visitor"); }
-#define EMOTE(fn, kind) static void fn(Session *s) { strcpy(s->emote, kind); s->emote_start = 1000.0; }
-EMOTE(a_stretch, "stretch") EMOTE(a_sdance, "dance") EMOTE(a_swing, "swing") EMOTE(a_slide, "slide") EMOTE(a_jump, "jump") EMOTE(a_wave, "wave")
-static void a_applaud(Session *s) { s->react_until = 9e9; }
-static void a_peek(Session *s) { s->peek_on = s->peek_has_end = 1; }
-
-/* same order and attributes as ACTIONS in sprite_tool.py */
-static const Action ACTIONS[] = {
-    {"idle", "idle", a_none}, {"work", "work", a_none}, {"think", "think", a_none}, {"wait", "wait", a_none},
-    {"cheer", "cheer", a_none}, {"sleep", "sleep", a_none}, {"walk", "idle", a_walk}, {"climb", "idle", a_climb},
-    {"chase", "idle", a_chase}, {"flee", "idle", a_flee}, {"chat-nod", "idle", a_nod}, {"chat-wave", "idle", a_cwave},
-    {"chat-hop", "idle", a_hop}, {"chat-hi5", "idle", a_hi5}, {"chat-dance", "idle", a_cdance}, {"barista", "idle", a_barista},
-    {"visitor", "idle", a_visitor}, {"stretch", "idle", a_stretch}, {"solo-dance", "idle", a_sdance}, {"swing", "idle", a_swing},
-    {"slide", "idle", a_slide}, {"jump", "idle", a_jump}, {"wave", "idle", a_wave}, {"applaud", "idle", a_applaud}, {"peek", "idle", a_peek},
-};
-
 static int golden(const SpriteFile *frames) {
-    for (size_t a = 0; a < sizeof ACTIONS / sizeof ACTIONS[0]; a++) {
+    for (int a = 0; a < N_ACTIONS; a++) {
         Session s;
         session_init(&s, "x", 1000.0);
         s.seed = 0.0;
@@ -77,7 +48,7 @@ static uint64_t fnv_bytes(const char *s, size_t n) {
 
 /* the terminal update strings: first frame of an action in full, then each step against the one before */
 static int golden_term(const SpriteFile *frames) {
-    for (size_t a = 0; a < sizeof ACTIONS / sizeof ACTIONS[0]; a++) {
+    for (int a = 0; a < N_ACTIONS; a++) {
         Session s;
         session_init(&s, "x", 1000.0);
         s.seed = 0.0;
@@ -116,7 +87,7 @@ static int run_fixtures(int n, char **files, const SpriteFile *frames, const Spr
     return 0;
 }
 
-/* the random numbers a few seeds give: tools/golden_rng.py prints the same from Python's random.Random */
+/* the random numbers a few seeds give (the snapshot was made with Python's random.Random) */
 static int golden_rng(void) {
     static const char *SIDS[] = {"x", "aaa", "619c9f42-0144-479e-bc6c-ca68e665dc6f", ""};
     for (int i = 0; i < 4; i++) {
@@ -175,7 +146,7 @@ static int golden_ui(const char *path) {
     return 0;
 }
 
-/* like `python3 roomlink.py NAME --seconds N`: ping every new room, answer pings, print what happens */
+/* `--link-demo NAME [SECONDS]`: ping every new room, answer pings, print what happens */
 static int link_demo(const char *name, double seconds) {
     Link l;
     link_init(&l, name, NULL);
@@ -205,7 +176,7 @@ static int link_demo(const char *name, double seconds) {
     return 0;
 }
 
-/* the Windows geometry on synthetic inputs (tools/golden_win.py prints the same from Python) */
+/* the Windows geometry on synthetic inputs */
 static int golden_win(void) {
     /* neighbour sides */
     static const int R[][4] = {{0, 0, 800, 600}, {830, 0, 1600, 600}, {800, 100, 1600, 700}, {-790, 0, 10, 600}, {0, 620, 800, 1200}, {0, -590, 800, 10}, {850, 0, 1650, 600}, {400, 300, 1200, 900}, {810, 560, 1700, 1100}};

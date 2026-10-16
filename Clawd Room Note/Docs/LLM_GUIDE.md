@@ -14,7 +14,7 @@ Read this first if you are an AI assistant (Claude Code or similar) working on t
 ---
 ## 🧭 What this is
 
-**clawd-room** is a pixel room where every running **Claude Code** session is a little Clawd (the Claude Code mascot). `hook.py` appends one JSON line per Claude Code event to `~/.clawd-room/events.jsonl`; `room_tui.py` follows that file and animates one character per session in the terminal (half-block truecolor). Several windows can be linked (`--room NAME`): Clawds walk through doors, ladders and hatches into the window next to them. Python 3, **standard library only**, used on **WSL2 + Windows Terminal**; the window helpers call `powershell.exe`.
+**clawd-room** is a pixel room where every running **Claude Code** session is a little Clawd (the Claude Code mascot). `hook.py` appends one JSON line per Claude Code event to `~/.clawd-room/events.jsonl`; the C program in `c/` follows that file and animates one character per session in the terminal (half-block truecolor). Several windows can be linked (`--room NAME`): Clawds walk through doors, ladders and hatches into the window next to them. The room is **C11 with no libraries**; Python 3 (standard library only) is used for the hook, the installer, the simulator and the profile tools. Used on **WSL2 + Windows Terminal**; the window helpers call `powershell.exe`.
 
 **The events file is about the user's real work.** It holds only `t, sid, ev, cwd (folder basename), tool`. Never widen that; never print or commit its contents.
 
@@ -25,7 +25,7 @@ Read this first if you are an AI assistant (Claude Code or similar) working on t
 | --- | --- |
 | Commands, keys | `README.md` |
 | What was built, current phase, pending | [[Dev Log]] |
-| Every animation frame | [[Animations]] (edit `sprites/*.txt`, `python3 sprite_tool.py build` redraws the pictures) |
+| Every animation frame | [[Animations]] (edit `sprites/*.txt`, `clawd-room --build-art` redraws the pictures) |
 | Behaviour details | the code (docstrings and constants at the top of each file) and `git log` |
 
 ---
@@ -34,16 +34,13 @@ Read this first if you are an AI assistant (Claude Code or similar) working on t
 ```
 hook.py             Claude Code hook: one JSON line per event -> ~/.clawd-room/events.jsonl (mode 600)
 install_hooks.py    prints / applies / removes the hook in ~/.claude/settings.json (prints by default)
-clawd-room.sh       the launcher the profile calls: C program if built, else room_tui.py (CLAWD_ENGINE or ~/.clawd-room/engine override)
-c/                  the C port of the terminal room (`make` in c/, `make test` compares it with Python): see the C port section of [[Dev Log]]
-sprites.py          loads / saves the editable sprite files, writes GIFs (sprites/clawd.txt, sprites/items.txt)
-sprite_tool.py      `export` code drawing -> sprites/*.txt, `build` sheet + GIFs into Clawd Room Note/Animations/
+clawd-room.sh       the launcher the profile calls: builds c/ when needed, then runs c/clawd-room
+c/                  the room, in C: canvas, sprites, poses, themes, draw, room (state machine), rng, tail (events), link (windows), win (Windows helpers), ui, app (main loop), art (sprite files, PNG, GIF)
+c/tests/expected/   snapshots the tests compare with (made with the old Python version, which agreed on every line)
+sprites/            editable Clawd frames and items (text grids)
+tools/              test.sh (snapshots), fixtures/ + scenarios/ (test scenes), pty_smoke.py, link_smoke.py, win_smoke.py, place_windows.py (test helper for your own windows)
 simulate.py         fake sessions: live, or --fixture TS --out FILE for a static case
-room.py + run.sh    the original pygame-ce window (needs .venv). Reference for the state machine; leave alone
-room_tui.py         the terminal room: state machine, sprites, layout, gates, main loop, keys
-themes.py           office / coffee shop / park: background, furniture, roles, playground spots
-roomlink.py         presence + inbox files between windows (~/.clawd-room/link/)
-windetect.py        powershell.exe helpers: window rectangles, resize/zoom, Fitter
+room.py + run.sh    the original pygame-ce window (needs .venv). Leave alone
 wt_settings.py      print-only: Windows Terminal settings that hide the tab bar / scroll bar
 setup_profile.py    prints / writes (--apply) / removes (--remove) a "Clawd Room" Windows Terminal profile fragment (scroll bar hidden, generated pixel Clawd-in-a-room `.ico`; the 512 px picture is `clawd-room-512px.png` as tab icon); `--apply-global` edits settings.json (tab bar off, with backup)
 Clawd Room Note/    this Obsidian vault (open this folder in Obsidian; plugin code is not in git)
@@ -56,10 +53,10 @@ Test hooks (environment): `CLAWD_EVENTS` (events file), `CLAWD_LINK_DIR` (link f
 ## ⚠️ Rules that prevent breakage
 
 - **Privacy of the events file.** Keep `{"t","sid","ev","cwd","tool"}`. No prompts, tool input/output or full paths, anywhere (hook, link messages, logs). Link messages carry a type and small values only.
-- **Standard library only.** No pip installs, no venv needed for `room_tui.py`. Only `room.py` uses pygame (in `.venv`).
+- **No dependencies.** The room is C11 and libc/libm only; the Python tools use the standard library only. No pip installs. Only `room.py` uses pygame (in `.venv`).
 - **No network, no background daemons.** Writes go only to the project folder and `~/.clawd-room/`; the one exception is `setup_profile.py --apply`, which the user runs by hand and which writes a single fragment file under Windows Terminal's `Fragments\clawd-room\` (`settings.json` only via the explicit `--apply-global`, with a `.clawd-room.bak` backup). The `powershell.exe` children belong to the room and must be stopped when it exits.
 - **Do not edit `~/.claude/settings.json` yourself.** Tell the user to run `python3 install_hooks.py` (prints the change); `--apply` only if they say so. The installed hook calls `python3 ~/clawd-room/hook.py`, so the **symlink `~/clawd-room` -> the Desktop folder must stay**.
-- **Two engines, one behaviour.** `room_tui.py` is the reference; the C version in `c/` must match it (`make -C c test`). A behaviour change goes into both, with the same random calls in the same order, and the golden tools (`tools/golden_*.py`, fixtures, scenarios) extended if needed. Launchers call `clawd-room.sh`, never a program directly.
+- **Snapshots are the contract.** `make -C c test` must pass; a change that alters behaviour on purpose updates the snapshots (`tools/test.sh --update`) and says so in the Dev Log. New behaviour gets a fixture (`tools/fixtures/*.fx`) or scene (`tools/scenarios/*.sc`). The random generator is Python's Mersenne Twister, kept so the old comparisons stay valid: do not add or remove random calls casually. Launchers call `clawd-room.sh`, never the binary directly.
 - **Leave `room.py` alone** (reference only). Keep the state machine and its timings unless asked: 90 s sleep, 30 min stale, 2.5 s cheer, 0.8 s hold-working.
 - **Terminal hygiene.** Alternate screen, hidden cursor, one string written per frame, diff updates; restore the terminal on exit, Ctrl-C and exceptions.
 - **Windows are never moved to attach them** (the user decided). Gates (doors, ladder hatches) line up on screen instead. Do not add window snapping or following again.
@@ -72,13 +69,12 @@ Test hooks (environment): `CLAWD_EVENTS` (events file), `CLAWD_LINK_DIR` (link f
 ---
 ## 🧪 How to test
 
-There is no test runner in the repo. What works:
-
-1. `python3 room_tui.py --dump 100x30 --events FILE --at TS` prints one plain-text frame. `python3 simulate.py --fixture 1800000000 --out /tmp/e.jsonl` writes a static case for it.
-2. Render frames to PNG with a small script that imports `room_tui` (`render(cols, rows, room, now, t)` returns a canvas of RGB tuples) and look at them.
-3. Run `room_tui.py` inside a pty (`pty.fork`) for a few seconds: it must start, draw, answer `p`, `?`, `q`, and restore the terminal. Feed a real event through `hook.py` with `CLAWD_EVENTS` set.
-4. Two linked rooms: start two pty processes with `--room a` and `--room b` and `CLAWD_LINK_DIR` set to a temp folder; check presence/inbox files and the messages. For crossing without real windows, give the two `Room` objects each other's `outbox` messages in a loop.
-5. Real windows: `python3 windetect.py` lists the `clawd-room` windows; the geometry tests used a throwaway helper to place windows. New Windows Terminal windows may open minimized.
+1. `make -C c test` (about a second): snapshots of frames, terminal output, random numbers, scripted scenes over time, geometry and `--dump` frames.
+2. `clawd-room --dump 100x30 --events FILE --at TS` prints one plain-text frame; `python3 simulate.py --fixture 1800000000 --out /tmp/e.jsonl` writes a static case for it.
+3. `make -C c smoke` runs the program in a pty (keys, new events, menu, quitting, terminal restored); feed a real event through `hook.py` with `CLAWD_EVENTS` set.
+4. `make -C c linksmoke`: two linked rooms in ptys, `g` sends a Clawd, the messages arrive.
+5. `make -C c winsmoke`: real Windows Terminal windows (your own `alpha` / `beta`): sizing and gate positions. `clawd-room --list-windows` lists the `clawd-room` windows; `tools/place_windows.py` moves only the titles you give it. New Windows Terminal windows may open minimized, and the PowerShell helper needs a few seconds to start.
+6. `clawd-room --build-art` redraws the sprite sheet and GIFs; look at them.
 
 ---
 ## 🔁 Workflow
@@ -132,4 +128,4 @@ When the user sends **`CMD_SYNC`**, update the notes for every feature or change
 - Pixel text is upper case only (the 3x5 font has no lower case); keep UI strings short.
 - Times in the events file are epoch seconds; `--at TS` pretends "now" is TS.
 - Terminal sizes are `COLSxROWS`; a cell is 1 room pixel wide and 2 high, so room pixels are square on screen.
-- Prefer a named constant at the top of `room_tui.py` over a magic number.
+- Prefer a named constant at the top of a C file over a magic number.

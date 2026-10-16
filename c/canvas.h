@@ -20,9 +20,9 @@ int text_width(const char *s);
 int utf8_len(unsigned char c);
 Canvas canvas_scaled(const Canvas *c, int k); /* every pixel k times wider and taller */
 void canvas_blit(Canvas *dst, const Canvas *src, int x, int y);
-uint64_t canvas_hash(const Canvas *c); /* FNV-1a over the RGB bytes (the tests compare it with Python) */
+uint64_t canvas_hash(const Canvas *c); /* FNV-1a over the RGB bytes (the tests compare it with snapshots) */
 
-/* palette (same values as room_tui.py) */
+/* palette */
 #define C_CLAWD RGB(205, 110, 88)
 #define C_BLUSH RGB(250, 200, 216)
 #define C_BUBBLE_EDGE RGB(136, 136, 136)

@@ -1,6 +1,6 @@
-/* Windows desktop helpers (WSL only; windetect.py and the geometry in room_tui.py): where the clawd-room windows are,
+/* Windows desktop helpers (WSL only): where the clawd-room windows are,
  * changing the font size and the window size, and where the gates between neighbouring windows go. The two PowerShell
- * scripts are the same ones the Python version runs (ps_scripts.h is generated from windetect.py). */
+ * scripts are in ps_scripts.h. */
 #ifndef WIN_H
 #define WIN_H
 #include <sys/types.h>

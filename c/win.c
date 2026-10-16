@@ -85,7 +85,7 @@ static void reap(pid_t pid) {
 int watcher_start(Watcher *w) {
     memset(w, 0, sizeof *w);
     w->fd = -1;
-    /* $prefix = "clawd-room " in place of the parameter line, like the Python version */
+    /* $prefix = "clawd-room " in place of the parameter line */
     const char *marker = "param([string]$prefix)";
     const char *at = strstr(PS_WATCH, marker);
     if (!at) return 0;
@@ -185,7 +185,7 @@ int neighbor_side(const int *mine, const int *other, int near_px, int slack) {
 int tool_start(Tool *t) {
     memset(t, 0, sizeof *t);
     t->fd = -1;
-    return 1; /* started on first use, like the Python version */
+    return 1; /* started on first use */
 }
 
 static void tool_send(Tool *t, const char *line) {
