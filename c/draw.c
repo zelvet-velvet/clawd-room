@@ -364,9 +364,10 @@ Canvas render(int cols, int rows, Room *room, double now, double t, char *note, 
         Canvas cv = canvas_new(pw / k, ph / k / 2 * 2, MARGIN);
         draw_room(&cv, room, now, t, note, note_n);
         room->size_w = cv.w; room->size_h = cv.h;
-        if (k == 1) return cv;
+        if (k == 1) { room->view_x = room->view_y = 0; room->view_k = 1; return cv; }
         Canvas big = canvas_scaled(&cv, k), full = canvas_new(pw, ph, MARGIN);
         canvas_blit(&full, &big, (pw - big.w) / 2, (ph - big.h) / 2 / 2 * 2);
+        room->view_x = (pw - big.w) / 2; room->view_y = (ph - big.h) / 2 / 2 * 2; room->view_k = k;
         canvas_free(&cv); canvas_free(&big);
         return full;
     }
@@ -380,6 +381,7 @@ Canvas render(int cols, int rows, Room *room, double now, double t, char *note, 
         room->size_w = sw; room->size_h = sh;
         Canvas big = canvas_scaled(&rc, k);
         canvas_blit(&full, &big, (pw - big.w) / 2, (ph - big.h) / 2 / 2 * 2);
+        room->view_x = (pw - big.w) / 2; room->view_y = (ph - big.h) / 2 / 2 * 2; room->view_k = k;
         canvas_free(&rc); canvas_free(&big);
         return full;
     }
@@ -389,6 +391,7 @@ Canvas render(int cols, int rows, Room *room, double now, double t, char *note, 
     draw_room(&rc, room, now, t, note, note_n);
     room->size_w = rw; room->size_h = rh;
     canvas_blit(&full, &rc, (pw - rw) / 2, (rows - rh / 2) / 2 * 2);
+    room->view_x = (pw - rw) / 2; room->view_y = (rows - rh / 2) / 2 * 2; room->view_k = 1;
     canvas_free(&rc);
     return full;
 }

@@ -14,6 +14,7 @@
 #include <unistd.h>
 #include "app.h"
 #include "link.h"
+#include "win.h"
 #include "script.h"
 #include "tail.h"
 #include "ui.h"
@@ -204,6 +205,96 @@ static int link_demo(const char *name, double seconds) {
     return 0;
 }
 
+/* the Windows geometry on synthetic inputs (tools/golden_win.py prints the same from Python) */
+static int golden_win(void) {
+    /* neighbour sides */
+    static const int R[][4] = {{0, 0, 800, 600}, {830, 0, 1600, 600}, {800, 100, 1600, 700}, {-790, 0, 10, 600}, {0, 620, 800, 1200}, {0, -590, 800, 10}, {850, 0, 1650, 600}, {400, 300, 1200, 900}, {810, 560, 1700, 1100}};
+    for (int a = 0; a < 9; a++) for (int b = 0; b < 9; b++) {
+        printf("side %d %d", a, b);
+        for (int slack = 0; slack <= 15; slack += 15) printf(" %d", neighbor_side(R[a], R[b], 30, slack));
+        printf(" %d\n", neighbor_side(R[a], R[b], 60, 0));
+    }
+    /* snapping two grids */
+    static const double G[][2][2] = {{{10.5, 8}, {3.25, 6}}, {{0, 8.5}, {4, 5}}, {{7.3, 13}, {1.1, 13}}, {{100.25, 20}, {200.5, 12}}};
+    for (int i = 0; i < 4; i++) {
+        int idx[2];
+        snap_both(100.5, 230.25, G[i], 2, idx);
+        int idy[2];
+        snap_both(55, 56, G[i], 2, idy);
+        printf("snap %d %d %d %d %d\n", i, idx[0], idx[1], idy[0], idy[1]);
+    }
+    /* cell size from the area or the terminal's report */
+    static const int AR[2][4] = {{10, 40, 890, 650}, {0, 0, 1720, 880}};
+    for (int a = 0; a < 2; a++) for (int rep = 0; rep < 3; rep++) for (int dpi = 96; dpi <= 120; dpi += 24) {
+        Reports rp = {0};
+        if (rep == 1) { rp.has_cell = 1; rp.cell[0] = 10; rp.cell[1] = 20; }
+        if (rep == 2) { rp.has_cell = 1; rp.cell[0] = 8; rp.cell[1] = 16; }
+        double cw, ch;
+        cell_px(AR[a], dpi, &rp, a ? 215 : 110, a ? 55 : 32, &cw, &ch);
+        printf("cell %d %d %d %.6f %.6f\n", a, rep, dpi, cw, ch);
+    }
+    /* the window size that holds 110x32 cells */
+    {
+        Reports rp = {0};
+        OpenSetup o;
+        Tool t = {0};
+        opensetup_init(&o, &t, "x", 8, "110x32", &rp, 1, 14);
+        double px[2];
+        int rect[4] = {183, 192, 1922, 1082}, area[4] = {192, 243, 1913, 1073};
+        int ok = opensetup_window_px(&o, rect, area, 215, 55, px) != 0;
+        printf("px %d %.6f %.6f\n", ok, px[0], px[1]);
+        opensetup_init(&o, &t, "x", 11, "128X36", &rp, 1, 14);
+        ok = opensetup_window_px(&o, rect, area, 215, 55, px) != 0;
+        printf("px %d %.6f %.6f\n", ok, px[0], px[1]);
+        printf("px %d\n", opensetup_window_px(&o, rect, NULL, 215, 55, px) != 0);
+    }
+    /* the helper's lines */
+    {
+        Watcher w;
+        memset(&w, 0, sizeof w);
+        static const char *L[] = {"clawd-room alpha-1|10|20|800|600|18|60|792|592|120|40", "clawd-room we|ird|-5|0|300|200|5|30|295|195|96|30", "clawd-room y|1|2|3|4|5|6|7|8|9|x|11", "--"};
+        for (int i = 0; i < 4; i++) watcher_feed(&w, L[i], 1000.0);
+        for (int i = 0; i < w.ncur; i++) printf("win %s %d %d %d %d %d %d %d %d %d\n", w.cur[i].title, w.cur[i].rect[0], w.cur[i].rect[1], w.cur[i].rect[2], w.cur[i].rect[3], w.cur[i].area[0], w.cur[i].area[1], w.cur[i].area[2], w.cur[i].area[3], w.cur[i].dpi);
+    }
+    /* the gates between two windows */
+    for (int variant = 0; variant < 4; variant++) {
+        static Room room;
+        room_init(&room);
+        room.has_geo = 1; room.geo.ymin = 50; room.geo.ymax = 120 - 8 * (variant & 1);
+        room.view_x = 4 * (variant & 2); room.view_y = 2 * (variant & 2); room.view_k = 1 + (variant >> 1);
+        static const char *SIDES_[4] = {"left", "right", "up", "down"};
+        room.nnb = 4;
+        for (int s = 0; s < 4; s++) { room.nb[s].side = s; snprintf(room.nb[s].id, sizeof room.nb[s].id, "peer-%s", SIDES_[s]); }
+        static Watcher w;
+        memset(&w, 0, sizeof w);
+        char buf[200];
+        double now = (double)time(NULL);
+        snprintf(buf, sizeof buf, "clawd-room me|100|100|1000|700|108|150|992|692|96|40"); watcher_feed(&w, buf, now);
+        snprintf(buf, sizeof buf, "clawd-room peer-left|-700|110|90|690|-692|160|82|682|96|40"); watcher_feed(&w, buf, now);
+        snprintf(buf, sizeof buf, "clawd-room peer-right|1010|140|1900|760|1018|190|1892|752|144|40"); watcher_feed(&w, buf, now);
+        snprintf(buf, sizeof buf, "clawd-room peer-up|150|-500|900|90|158|-450|892|82|96|40"); watcher_feed(&w, buf, now);
+        snprintf(buf, sizeof buf, "clawd-room peer-down|120|710|1050|1300|128|760|1042|1292|96|40"); watcher_feed(&w, buf, now);
+        watcher_feed(&w, "--", now);
+        static Link link;
+        memset(&link, 0, sizeof link);
+        link.npeers = 4;
+        for (int s = 0; s < 4; s++) {
+            snprintf(link.peers[s].id, sizeof link.peers[s].id, "peer-%s", SIDES_[s]);
+            if (variant >= 1 && s != 2) { link.peers[s].has_grid = 1; double g[7] = {1018, 190, 9.5, 19, 2, 3, 4}; memcpy(link.peers[s].grid, g, sizeof g); }
+            if (variant >= 2 && s < 2) { link.peers[s].has_band = 1; link.peers[s].band[0] = 200; link.peers[s].band[1] = 600; }
+        }
+        Reports rp = {0};
+        int area[4] = {108, 150, 992, 692};
+        Grid g = grid_params(&room, area, 96, &rp, 110, 32);
+        Passages ps;
+        plan_passages(&room, &w, "me", &g, 1, &link, &ps);
+        printf("gates %d %.6f %.6f %.6f %.6f", variant, g.cw, g.ch, g.k, g.y0);
+        for (int s = 0; s < 4; s++) printf(" | %d %.1f %d %d %.6f", ps.has_pos[s], ps.pos[s], ps.closed[s], ps.has_scale[s], ps.scale[s]);
+        printf("\n");
+    }
+    return 0;
+}
+
 int main(int argc, char **argv) {
     if (argc > 2 && !strcmp(argv[1], "--link-demo")) return link_demo(argv[2], argc > 3 ? atof(argv[3]) : 0);
     if (!(argc > 1 && (!strncmp(argv[1], "--golden", 8) || !strcmp(argv[1], "--fixture") || !strcmp(argv[1], "--script")))) return app_main(argc, argv);
@@ -218,6 +309,7 @@ int main(int argc, char **argv) {
     else if (argc > 2 && !strcmp(argv[1], "--fixture")) rc = run_fixtures(argc - 2, argv + 2, &frames, &items);
     else if (argc > 2 && !strcmp(argv[1], "--script")) { draw_set_sprites(&frames, &items); for (int i = 2; i < argc && !rc; i++) { printf("script %s\n", argv[i]); rc = script_run(argv[i]); } }
     else if (argc > 2 && !strcmp(argv[1], "--golden-ui")) rc = golden_ui(argv[2]);
+    else if (argc > 1 && !strcmp(argv[1], "--golden-win")) rc = golden_win();
     else if (argc > 1 && !strcmp(argv[1], "--golden-rng")) rc = golden_rng();
     else if (argc > 1 && !strcmp(argv[1], "--golden-term")) rc = golden_term(&frames);
     else { fprintf(stderr, "usage: clawd-room --golden [--code] | --golden-term\n"); rc = 1; }

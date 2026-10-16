@@ -34,6 +34,7 @@ Read this first if you are an AI assistant (Claude Code or similar) working on t
 ```
 hook.py             Claude Code hook: one JSON line per event -> ~/.clawd-room/events.jsonl (mode 600)
 install_hooks.py    prints / applies / removes the hook in ~/.claude/settings.json (prints by default)
+c/                  the C port of the terminal room (`make` in c/, `make test` compares it with Python): see the C port section of [[Dev Log]]
 sprites.py          loads / saves the editable sprite files, writes GIFs (sprites/clawd.txt, sprites/items.txt)
 sprite_tool.py      `export` code drawing -> sprites/*.txt, `build` sheet + GIFs into Clawd Room Note/Animations/
 simulate.py         fake sessions: live, or --fixture TS --out FILE for a static case

@@ -31,6 +31,7 @@ void room_init(Room *r) {
     r->theme = theme_get("office");
     snprintf(r->ratio, sizeof r->ratio, "auto");
     r->scale = 1;
+    r->view_k = 1;
 }
 
 static int by_created(const void *a, const void *b) {

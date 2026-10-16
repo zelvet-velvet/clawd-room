@@ -2,6 +2,7 @@
 #include "app.h"
 #include <errno.h>
 #include <getopt.h>
+#include <math.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,6 +17,7 @@
 #include "room.h"
 #include "tail.h"
 #include "term.h"
+#include "win.h"
 #include "ui.h"
 
 #define FPS 16
@@ -32,7 +34,7 @@ typedef struct {
     char ratio[8];
     int scale, no_auto, no_detect, no_split;
     const char *dump;
-    int font, profile_font, near;
+    int font, profile_font, near, opened;
     const char *size, *left, *right, *up, *down;
 } Args;
 
@@ -82,24 +84,34 @@ static void show(const Cells *cur, const Cells *prev, int sync) { /* one write p
 }
 
 /* what is waiting on the keyboard: the useful keys as characters (a lone Esc is q; escape sequences are ignored).
- * The terminal's answers to our size questions (CSI 4;h;w t and CSI 6;h;w t) are cut out. */
-static int read_keys(char *keys, size_t n) {
+ * The terminal's answers to our size questions (CSI 4;h;w t = text area, CSI 6;h;w t = cell, in pixels) go to `rep`. */
+static int read_keys(char *keys, size_t n, Reports *rep) {
     char data[256];
     ssize_t got = read(STDIN_FILENO, data, sizeof data);
     if (got <= 0) return 0;
     int len = 0;
-    for (ssize_t i = 0; i < got;) { /* cut the size reports */
-        if (data[i] == 27 && i + 2 < got && data[i + 1] == '[' && (data[i + 2] == '4' || data[i + 2] == '6') && i + 3 < got && data[i + 3] == ';') {
+    for (ssize_t i = 0; i < got;) { /* take out the size reports */
+        if (data[i] == 27 && i + 3 < got && data[i + 1] == '[' && (data[i + 2] == '4' || data[i + 2] == '6') && data[i + 3] == ';') {
             ssize_t j = i + 4;
             while (j < got && data[j] != 't') j++;
-            if (j < got) { i = j + 1; continue; }
+            if (j < got) {
+                int h, w;
+                char tmp[64];
+                snprintf(tmp, sizeof tmp, "%.*s", (int)(j - i - 4 > 60 ? 60 : j - i - 4), data + i + 4);
+                if (sscanf(tmp, "%d;%d", &h, &w) == 2) {
+                    if (data[i + 2] == '4') { rep->has_text = 1; rep->text[0] = w; rep->text[1] = h; }
+                    else { rep->has_cell = 1; rep->cell[0] = w; rep->cell[1] = h; }
+                }
+                i = j + 1;
+                continue;
+            }
         }
         data[len++] = data[i++];
     }
     size_t k = 0;
     if (len == 1 && data[0] == 27) { keys[k++] = 'q'; keys[k] = 0; return 1; }
     if (len > 0 && data[0] == 27) { keys[0] = 0; return 0; }
-    for (int i = 0; i < len && k + 1 < n; i++) if (strchr("qpfgr?[]", data[i]) && data[i]) keys[k++] = data[i];
+    for (int i = 0; i < len && k + 1 < n; i++) if (data[i] && strchr("qpfgr?[]", data[i])) keys[k++] = data[i];
     keys[k] = 0;
     return (int)k;
 }
@@ -112,13 +124,26 @@ static int key_ready(double wait) {
     return select(STDIN_FILENO + 1, &fds, NULL, NULL, wait > 0 ? &tv : &(struct timeval){0, 0}) > 0;
 }
 
+static int floordiv(int a, int b) { int q = a / b; return (a % b != 0 && ((a < 0) != (b < 0))) ? q - 1 : q; }
+static int in_ids(char ids[][40], int n, const char *id) { for (int i = 0; i < n; i++) if (!strcmp(ids[i], id)) return 1; return 0; }
+
+/* the windows: where they are, the font and size helpers (WSL only) */
+typedef struct { Watcher w; Tool tool; int has_watcher, has_tool; } Desktop;
+
+static void desktop_start(Desktop *d, const Args *a) {
+    memset(d, 0, sizeof *d);
+    if (!a->no_detect && win_available()) {
+        d->has_watcher = watcher_start(&d->w);
+        d->has_tool = tool_start(&d->tool);
+    }
+}
+
 /* ---- the room ---------------------------------------------------------------------------------- */
-static int run(const Args *a, const SpriteFile *frames, const SpriteFile *items) {
+static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
     static Room room;
     room_init(&room);
     room.theme = theme_pick(a->room, a->theme);
     snprintf(room.ratio, sizeof room.ratio, "%s", a->ratio);
-    if (a->room) snprintf(room.title, sizeof room.title, "%s", a->room);
     static Event ev[4096];
     Tail tail;
     tail_init(&tail, a->events);
@@ -127,19 +152,33 @@ static int run(const Args *a, const SpriteFile *frames, const SpriteFile *items)
     for (int i = 0; i < n; i++) room_apply(&room, ev[i].t, ev[i].sid, ev[i].ev, ev[i].cwd, ev[i].tool);
     draw_set_sprites(frames, items);
 
-    int auto_ = !a->scale;
-    room.scale = a->scale ? a->scale : 1;
     Link link;
     int has_link = a->room != NULL;
-    if (has_link) { /* every window with a room name links to the others */
-        link_init(&link, a->room, NULL);
-        snprintf(link.theme, sizeof link.theme, "%s", room.theme->name);
-        link_start(&link);
-        snprintf(room.title, sizeof room.title, "%s", link.name);
-    }
-    double still_since = wall(); /* gates show only after the windows have been still for a second (no window detection yet: always still) */
+    if (has_link) link_init(&link, a->room, NULL);
+    char win_id[80], title[128];
+    if (has_link) snprintf(win_id, sizeof win_id, "%s", link.id); else snprintf(win_id, sizeof win_id, "solo-%d", (int)getpid()); /* our window title is "clawd-room <win_id>" */
+    snprintf(title, sizeof title, "%s%s", WIN_PREFIX, win_id);
+    Desktop desk;
+    desktop_start(&desk, a);
+    Reports reports = {0}; /* what the terminal tells us about its pixel sizes */
+    OpenSetup setup;
+    int has_setup = 0;
+    Fitter fitter;
+    int has_fitter = 0;
+    if (desk.has_tool && !a->no_auto && !a->opened) { opensetup_init(&setup, &desk.tool, title, a->font, a->size, &reports, 1, a->profile_font); has_setup = 1; }
+    int font_set = desk.has_tool && !a->no_auto && a->font; /* we changed the terminal font: put it back on exit */
+    int auto_ = !a->scale; /* the TUI scale follows the window until [ ] is pressed */
+    room.scale = a->scale ? a->scale : 1;
+    struct { int has; double t; int has_cell, cell[2]; int prescale; } pend = {0};
+    char flash[96] = "";
+    double flash_until = 0;
+    int last_closed[SIDES] = {0};
     static char held[MAX_LINK_PEERS][40];
-    (void)held;
+    int nheld = 0;
+    char still_sig[1024] = "";
+    int still_has_sig = 0;
+    double still_since = wall(); /* when the windows last moved (gates wait until they are still) */
+
     RawTerm rt = {0};
     struct sigaction sa;
     memset(&sa, 0, sizeof sa);
@@ -147,16 +186,22 @@ static int run(const Args *a, const SpriteFile *frames, const SpriteFile *items)
     sa.sa_handler = on_quit; sigaction(SIGTERM, &sa, NULL); sigaction(SIGINT, &sa, NULL);
     g_winch = 1; g_quit = 0;
     raw_on(&rt);
+    if (has_link) {
+        snprintf(link.theme, sizeof link.theme, "%s", room.theme->name);
+        link_start(&link);
+        snprintf(room.title, sizeof room.title, "%s", link.name);
+    }
+    if (desk.has_watcher) { char t[160]; snprintf(t, sizeof t, "\x1b[22;0t\x1b]2;%s\x07", title); puts_(t); } /* window title = how we are found */
     screen_on();
-    double t0 = mono(), frozen_now = 0, frozen_t = 0, flash_until = 0;
+    double t0 = mono(), frozen_now = 0, frozen_t = 0;
     int paused = 0, help_on = 0, dirty = 1, cols = 0, rows = 0;
-    char flash[96] = "";
     Cells prev = {0, 0, NULL};
     int have_prev = 0;
     while (!g_quit) {
         double frame_start = mono(), t = frame_start - t0, now = a->has_at ? a->at + t : wall();
+        if (desk.has_watcher) watcher_poll(&desk.w);
         char keys[256];
-        if (key_ready(0) && read_keys(keys, sizeof keys)) {
+        if (key_ready(0) && read_keys(keys, sizeof keys, &reports)) {
             for (char *kp = keys; *kp; kp++) {
                 char k = *kp;
                 if (k == 'q') { g_quit = 1; break; }
@@ -187,7 +232,27 @@ static int run(const Args *a, const SpriteFile *frames, const SpriteFile *items)
                         flash_until = wall() + 4; have_prev = 0;
                         puts_("\x1b[0m\x1b[2J");
                     }
-                } else if (k == 'f') { snprintf(flash, sizeof flash, "FIT ONLY WORKS ON WSL"); flash_until = wall() + 4; dirty = 1; } /* (no window helpers yet) */
+                } else if (k == 'f') {
+                    if (!desk.has_watcher) { snprintf(flash, sizeof flash, "FIT ONLY WORKS ON WSL"); flash_until = wall() + 3; }
+                    else if (!strcmp(room.ratio, "auto")) { /* automatic font and scale again (the window is left as it is) */
+                        auto_ = 1;
+                        opensetup_init(&setup, &desk.tool, title, a->font, a->size, &reports, 0, a->profile_font); has_setup = 1;
+                        font_set = font_set || a->font;
+                        room_order(&room);
+                        room.scale = auto_scale(cols, rows * 2, room.n);
+                        snprintf(flash, sizeof flash, "AUTO FONT AND SCALE");
+                        flash_until = wall() + 3; have_prev = 0;
+                        puts_("\x1b[0m\x1b[2J");
+                    } else { /* fixed shape: zoom the font, then size the window to the exact grid */
+                        int sw = 0, sh = 0;
+                        static const struct { const char *k; int w, h; } RS[] = {{"3:1", 144, 48}, {"2:1", 120, 60}, {"16:9", 128, 72}, {"4:3", 128, 96}, {"1:1", 120, 120}, {"3:4", 96, 128}};
+                        for (size_t q = 0; q < sizeof RS / sizeof RS[0]; q++) if (!strcmp(RS[q].k, room.ratio)) { sw = RS[q].w; sh = RS[q].h; }
+                        fitter_init(&fitter, &desk.tool, title, sw, sh / 2); has_fitter = 1;
+                        snprintf(flash, sizeof flash, "FITTING WINDOW...");
+                        flash_until = wall() + 30;
+                    }
+                    dirty = 1;
+                }
             }
         }
         int c, r;
@@ -196,8 +261,12 @@ static int run(const Args *a, const SpriteFile *frames, const SpriteFile *items)
             g_winch = 0;
             cols = c; rows = r;
             have_prev = 0; dirty = 1;
-            if (auto_ && !strcmp(room.ratio, "auto") && !a->no_auto) room.scale = auto_scale(cols, rows * 2, room.npool);
+            int prescale = room.scale;
+            if (auto_ && !strcmp(room.ratio, "auto") && !a->no_auto) { room_order(&room); room.scale = auto_scale(cols, rows * 2, room.n); } /* at once; undone below if it was the font */
+            if (!pend.has) { pend.has = 1; pend.t = wall(); pend.has_cell = reports.has_cell; pend.cell[0] = reports.cell[0]; pend.cell[1] = reports.cell[1]; pend.prescale = prescale; }
+            reports.has_cell = 0;
             puts_("\x1b[0m\x1b[2J\x1b[14t\x1b[16t"); /* ... and ask how big the text area and a cell are in pixels */
+            if (getenv("CLAWD_SIZE_LOG")) { FILE *lf = fopen(getenv("CLAWD_SIZE_LOG"), "a"); if (lf) { fprintf(lf, "%.1f %d %d\n", wall(), cols, rows); fclose(lf); } }
         }
         n = tail_poll(&tail, ev, 4096);
         for (int i = 0; i < n; i++) room_apply(&room, ev[i].t, ev[i].sid, ev[i].ev, ev[i].cwd, ev[i].tool);
@@ -215,15 +284,28 @@ static int run(const Args *a, const SpriteFile *frames, const SpriteFile *items)
                     if (lev[i].kind == 1) room_peer_gone(&room, lev[i].peer.id);
                 } else if (!strcmp(lev[i].type, "walk") || !strcmp(lev[i].type, "recall")) room_receive(&room, &lev[i].msg);
             }
-            /* which window is next to this one: only the ones named with --left/--right/--up/--down (no window detection yet) */
+            const int *mine = desk.has_watcher ? watcher_rect(&desk.w, win_id) : NULL;
+            int psides[MAX_LINK_PEERS];
+            Neighbor old_nb[SIDES];
+            int n_old = room.nnb;
+            memcpy(old_nb, room.nb, sizeof old_nb);
             room.npeers = 0; room.nnb = 0;
-            for (int i = 0; i < link.npeers; i++) {
+            char new_held[MAX_LINK_PEERS][40];
+            int n_new_held = 0;
+            for (int i = 0; i < link.npeers; i++) { /* which window is next to this one */
                 const LinkPeer *p = &link.peers[i];
                 int side = -1;
                 if (a->left && !strcmp(a->left, p->name)) side = SIDE_LEFT;
                 else if (a->right && !strcmp(a->right, p->name)) side = SIDE_RIGHT;
                 else if (a->up && !strcmp(a->up, p->name)) side = SIDE_UP;
                 else if (a->down && !strcmp(a->down, p->name)) side = SIDE_DOWN;
+                if (side < 0 && desk.has_watcher) {
+                    int attached = in_ids(held, nheld, p->id);
+                    for (int q = 0; q < n_old; q++) if (!strcmp(old_nb[q].id, p->id)) attached = 1;
+                    side = neighbor_side(mine, watcher_rect(&desk.w, p->id), a->near, attached ? HYSTERESIS_PX : 0); /* stay attached a bit longer */
+                }
+                psides[i] = side;
+                if (side >= 0) snprintf(new_held[n_new_held++], 40, "%s", p->id);
                 if (room.npeers < 8) {
                     snprintf(room.peers[room.npeers].name, sizeof room.peers[0].name, "%s", p->name);
                     snprintf(room.peers[room.npeers].side, sizeof room.peers[0].side, "%s", side >= 0 ? SIDE_NAME[side] : "");
@@ -238,21 +320,101 @@ static int run(const Args *a, const SpriteFile *frames, const SpriteFile *items)
                     snprintf(room.nb[k].id, sizeof room.nb[k].id, "%s", p->id);
                 }
             }
+            memcpy(held, new_held, sizeof held); nheld = n_new_held; /* attached now (also counts while its gate is closed) */
             if (!a->no_split) { /* the linked rooms share the sessions: each shows its own part */
                 int m = 0;
                 snprintf(room.owner_ids[m++], 40, "%s", link.id);
                 for (int i = 0; i < link.npeers && m < 17; i++) snprintf(room.owner_ids[m++], 40, "%s", link.peers[i].id);
-                for (int i = 0; i < m; i++) for (int j = i + 1; j < m; j++) if (strcmp(room.owner_ids[j], room.owner_ids[i]) < 0) { char t[40]; strcpy(t, room.owner_ids[i]); strcpy(room.owner_ids[i], room.owner_ids[j]); strcpy(room.owner_ids[j], t); }
+                for (int i = 0; i < m; i++) for (int j = i + 1; j < m; j++) if (strcmp(room.owner_ids[j], room.owner_ids[i]) < 0) { char tt[40]; strcpy(tt, room.owner_ids[i]); strcpy(room.owner_ids[i], room.owner_ids[j]); strcpy(room.owner_ids[j], tt); }
                 room.n_owner_ids = m; room.split = 1;
                 snprintf(room.owner_me, sizeof room.owner_me, "%s", link.id);
             }
+            const int *mine_area = desk.has_watcher ? watcher_area(&desk.w, win_id) : NULL;
+            Grid my_grid = {0};
+            int has_grid = 0;
+            if (mine_area) { my_grid = grid_params(&room, mine_area, watcher_dpi(&desk.w, win_id), &reports, cols, rows); has_grid = 1; }
+            link.has_grid = has_grid;
+            if (has_grid) { double g[7] = {my_grid.ox, my_grid.oy, my_grid.cw, my_grid.ch, my_grid.k, my_grid.x0, my_grid.y0}; memcpy(link.grid, g, sizeof g); }
+            link.has_band = has_grid && my_band(&room, &my_grid, link.band);
+            char sig[1024] = "";
+            int has_sig = 0;
+            if (mine_area) { /* where everything is, to about 4 pixels: if it changes the windows are being moved */
+                has_sig = 1;
+                int o = snprintf(sig, sizeof sig, "%d,%d,%d,%d|", floordiv(mine_area[0], 4), floordiv(mine_area[1], 4), floordiv(mine_area[2], 4), floordiv(mine_area[3], 4));
+                if (has_grid) o += snprintf(sig + o, sizeof sig - (size_t)o, "%d,%d,%d|", (int)nearbyint(my_grid.cw), (int)nearbyint(my_grid.ch), (int)nearbyint(my_grid.k));
+                const char *ids[SIDES];
+                for (int q = 0; q < room.nnb; q++) ids[q] = room.nb[q].id;
+                for (int i = 0; i < room.nnb; i++) for (int j = i + 1; j < room.nnb; j++) if (strcmp(ids[j], ids[i]) < 0) { const char *tt = ids[i]; ids[i] = ids[j]; ids[j] = tt; }
+                for (int q = 0; q < room.nnb; q++) {
+                    const int *pa = watcher_area(&desk.w, ids[q]);
+                    o += snprintf(sig + o, sizeof sig - (size_t)o, "%s:", ids[q]);
+                    if (pa) o += snprintf(sig + o, sizeof sig - (size_t)o, "%d,%d,%d,%d", floordiv(pa[0], 4), floordiv(pa[1], 4), floordiv(pa[2], 4), floordiv(pa[3], 4));
+                    for (int p = 0; p < link.npeers; p++) if (!strcmp(link.peers[p].id, ids[q]) && link.peers[p].has_grid)
+                        o += snprintf(sig + o, sizeof sig - (size_t)o, ":%d,%d,%d", (int)nearbyint(link.peers[p].grid[2]), (int)nearbyint(link.peers[p].grid[3]), (int)nearbyint(link.peers[p].grid[4]));
+                    o += snprintf(sig + o, sizeof sig - (size_t)o, ";");
+                }
+            }
+            if (has_sig != still_has_sig || strcmp(sig, still_sig)) { still_has_sig = has_sig; snprintf(still_sig, sizeof still_sig, "%s", sig); still_since = wall(); }
+            Passages ps;
+            memset(&ps, 0, sizeof ps);
             if (wall() - still_since < 1.0) { /* pending: no gates until the windows have been still */
                 room.nnb = 0;
                 for (int i = 0; i < room.npeers; i++) room.peers[i].side[0] = 0;
+                for (int i = 0; i < SIDES; i++) { room.has_link[i] = 0; room.has_gate[i] = 0; }
+            } else {
+                plan_passages(&room, desk.has_watcher ? &desk.w : NULL, win_id, &my_grid, has_grid, &link, &ps);
+                for (int i = 0; i < SIDES; i++) {
+                    room.has_link[i] = ps.has_pos[i]; room.link_pos[i] = ps.pos[i];
+                    room.has_gate[i] = ps.has_scale[i]; room.gate_scale[i] = ps.scale[i];
+                }
             }
-            for (int i = 0; i < SIDES; i++) { room.has_link[i] = 0; room.has_gate[i] = 0; }
+            { /* no gate where it does not fit */
+                int w = 0;
+                for (int q = 0; q < room.nnb; q++) if (!ps.closed[room.nb[q].side]) room.nb[w++] = room.nb[q];
+                room.nnb = w;
+                for (int i = 0; i < room.npeers; i++) { int sd = side_index(room.peers[i].side); if (sd >= 0 && ps.closed[sd]) room.peers[i].side[0] = 0; }
+            }
+            if (getenv("CLAWD_SIZE_LOG")) { /* test hook: note where the gates go whenever that changes */
+                static char logged[256];
+                char cur[256] = "{";
+                int o = 1, first = 1;
+                for (int q = 0; q < room.nnb; q++) {
+                    int sd = room.nb[q].side;
+                    if (!room.has_link[sd]) continue;
+                    o += snprintf(cur + o, sizeof cur - (size_t)o, "%s'%s': %.1f", first ? "" : ", ", SIDE_NAME[sd], room.link_pos[sd]);
+                    first = 0;
+                }
+                snprintf(cur + o, sizeof cur - (size_t)o, "}");
+                if (strcmp(cur, logged)) { snprintf(logged, sizeof logged, "%s", cur); FILE *lf = fopen(getenv("CLAWD_SIZE_LOG"), "a"); if (lf) { fprintf(lf, "%.1f link %s\n", wall(), cur); fclose(lf); } }
+            }
+            int changed = 0, any = 0;
+            for (int i = 0; i < SIDES; i++) { if (ps.closed[i] != last_closed[i]) changed = 1; if (ps.closed[i]) any = 1; }
+            if (changed) { /* say why a window next to us has no gate */
+                if (any) { snprintf(flash, sizeof flash, "NO GATE: NOT ENOUGH FLOOR / OVERLAP"); flash_until = wall() + 4; }
+                for (int i = 0; i < SIDES; i++) last_closed[i] = ps.closed[i];
+                dirty = 1;
+            }
+            (void)psides;
             for (int i = 0; i < room.nout; i++) if (!link_send_msg(&link, room.outbox[i].peer, &room.outbox[i])) room_peer_gone(&room, room.outbox[i].peer);
             room.nout = 0;
+        }
+        if (pend.has) { /* did the window change, or the font (the cell size changed, the window did not)? */
+            if (reports.has_cell || wall() - pend.t > 0.4) {
+                if (reports.has_cell && pend.has_cell && (reports.cell[0] != pend.cell[0] || reports.cell[1] != pend.cell[1]) && !has_setup && !has_fitter && auto_) {
+                    auto_ = 0; room.scale = pend.prescale; /* Ctrl +/- : the user took over, keep the scale */
+                    snprintf(flash, sizeof flash, "FONT CHANGED: F = AUTO FONT AND SCALE");
+                    flash_until = wall() + 5;
+                } else if (!reports.has_cell && pend.has_cell) { reports.has_cell = 1; reports.cell[0] = pend.cell[0]; reports.cell[1] = pend.cell[1]; }
+                pend.has = 0; have_prev = 0; dirty = 1;
+            }
+        }
+        if (has_setup) {
+            if (!opensetup_update(&setup, wall(), cols, rows, desk.has_watcher ? watcher_rect(&desk.w, win_id) : NULL, desk.has_watcher ? watcher_area(&desk.w, win_id) : NULL)) { has_setup = 0; dirty = 1; }
+            else if (setup.ask_pending) puts_("\x1b[14t\x1b[16t");
+        }
+        if (has_fitter) {
+            fitter_update(&fitter, wall(), cols, rows, desk.has_watcher ? watcher_rect(&desk.w, win_id) : NULL);
+            if (fitter.done) { snprintf(flash, sizeof flash, "%s", fitter.message); flash_until = wall() + 5; has_fitter = 0; dirty = 1; }
         }
         if (dirty || !paused) {
             if (cols < MIN_COLS || rows < MIN_ROWS) {
@@ -278,6 +440,11 @@ static int run(const Args *a, const SpriteFile *frames, const SpriteFile *items)
     }
     if (have_prev) cells_free(&prev);
     tail_free(&tail);
+    if (desk.has_tool) {
+        if (font_set) { tool_reset_zoom(&desk.tool, title); usleep(800000); } /* put the terminal font back to the profile's */
+        tool_stop(&desk.tool);
+    }
+    if (desk.has_watcher) { watcher_stop(&desk.w); puts_("\x1b[23;0t"); } /* give the window title back (if the terminal supports it) */
     if (has_link) link_close(&link);
     raw_off(&rt);
     screen_off();
@@ -286,32 +453,49 @@ static int run(const Args *a, const SpriteFile *frames, const SpriteFile *items)
 
 /* ---- the start menu ---------------------------------------------------------------------------- */
 /* returns 1 and the chosen scene / room name (room "" for solo), or 0 to quit */
-static int choose_scene(const char **scene, const char **room_name) {
+static int choose_scene(Args *a, const char **scene, const char **room_name) {
     RawTerm rt = {0};
     struct sigaction sa;
     memset(&sa, 0, sizeof sa);
     sa.sa_handler = on_winch; sigaction(SIGWINCH, &sa, NULL);
     sa.sa_handler = on_quit; sigaction(SIGTERM, &sa, NULL); sigaction(SIGINT, &sa, NULL);
     g_quit = 0;
+    Desktop desk;
+    desktop_start(&desk, a);
+    Reports reports = {0};
+    char title[128];
+    snprintf(title, sizeof title, "%smenu-%d", WIN_PREFIX, (int)getpid());
+    OpenSetup setup;
+    int has_setup = 0, chosen = 0;
+    if (desk.has_tool && !a->no_auto) { opensetup_init(&setup, &desk.tool, title, a->font, a->size, &reports, 1, a->profile_font); has_setup = 1; }
     raw_on(&rt);
+    if (desk.has_watcher) { char t[160]; snprintf(t, sizeof t, "\x1b]2;%s\x07", title); puts_(t); } /* window title = how we are found */
     screen_on();
     int pick = 0, solo = 0, result = 0, cols = 0, rows = 0, have_prev = 0;
     double t0 = mono();
     Cells prev = {0, 0, NULL};
     while (!g_quit) {
+        if (desk.has_watcher) watcher_poll(&desk.w);
         if (key_ready(0.08)) {
             char raw[256];
             ssize_t got = read(STDIN_FILENO, raw, sizeof raw - 1);
             if (got > 0) {
                 raw[got] = 0;
-                /* the terminal's size answers may arrive in the same read: cut them out */
                 char data[256];
                 int len = 0;
-                for (ssize_t i = 0; i < got;) {
+                for (ssize_t i = 0; i < got;) { /* the terminal's answers about its pixel sizes may arrive in the same read */
                     if (raw[i] == 27 && i + 3 < got && raw[i + 1] == '[' && (raw[i + 2] == '4' || raw[i + 2] == '6') && raw[i + 3] == ';') {
                         ssize_t j = i + 4;
                         while (j < got && raw[j] != 't') j++;
-                        if (j < got) { i = j + 1; continue; }
+                        if (j < got) {
+                            int h, w;
+                            if (sscanf(raw + i + 4, "%d;%d", &h, &w) == 2) {
+                                if (raw[i + 2] == '4') { reports.has_text = 1; reports.text[0] = w; reports.text[1] = h; }
+                                else { reports.has_cell = 1; reports.cell[0] = w; reports.cell[1] = h; }
+                            }
+                            i = j + 1;
+                            continue;
+                        }
                     }
                     data[len++] = raw[i++];
                 }
@@ -320,13 +504,17 @@ static int choose_scene(const char **scene, const char **room_name) {
                 else if (!strcmp(data, "\x1b[C") || !strcmp(data, "\x1bOC") || !strcmp(data, "l") || !strcmp(data, "j") || !strcmp(data, "\t")) pick = (pick + 1) % MENU_N;
                 else if (!strcmp(data, "s") || !strcmp(data, "S")) solo = !solo;
                 else if (!strcmp(data, "q") || !strcmp(data, "Q") || !strcmp(data, "\x03") || !strcmp(data, "\x1b")) break;
-                else if (!strcmp(data, "\r") || !strcmp(data, "\n") || !strcmp(data, " ")) { *scene = MENU_SCENE[pick]; *room_name = solo ? "" : MENU_SCENE[pick]; result = 1; break; }
+                else if (!strcmp(data, "\r") || !strcmp(data, "\n") || !strcmp(data, " ")) { *scene = MENU_SCENE[pick]; *room_name = solo ? "" : MENU_SCENE[pick]; result = 1; chosen = 1; break; }
                 else if (len == 1 && data[0] >= '1' && data[0] < '1' + MENU_N) pick = data[0] - '1';
             }
         }
         int c, r;
         term_size(&c, &r);
         if (c != cols || r != rows || g_winch) { g_winch = 0; cols = c; rows = r; have_prev = 0; puts_("\x1b[0m\x1b[2J"); }
+        if (has_setup) {
+            if (!opensetup_update(&setup, wall(), cols, rows, desk.has_watcher ? watcher_rect(&desk.w, title + strlen(WIN_PREFIX)) : NULL, desk.has_watcher ? watcher_area(&desk.w, title + strlen(WIN_PREFIX)) : NULL)) { has_setup = 0; a->opened = 1; } /* the room need not do it again */
+            else if (setup.ask_pending) puts_("\x1b[14t\x1b[16t");
+        }
         Canvas cv = render_menu(cols, rows, pick, solo, mono() - t0);
         Cells cells = cells_from_canvas(&cv, "");
         show(&cells, have_prev ? &prev : NULL, 0);
@@ -335,6 +523,11 @@ static int choose_scene(const char **scene, const char **room_name) {
         canvas_free(&cv);
     }
     if (have_prev) cells_free(&prev);
+    if (desk.has_tool) {
+        if (!chosen && a->font && !a->no_auto) { tool_reset_zoom(&desk.tool, title); usleep(800000); } /* leaving: put the terminal font back */
+        tool_stop(&desk.tool);
+    }
+    if (desk.has_watcher) watcher_stop(&desk.w);
     raw_off(&rt);
     screen_off();
     return result;
@@ -356,7 +549,7 @@ int app_main(int argc, char **argv) {
     if (env) snprintf(a.events, sizeof a.events, "%s", env);
     else snprintf(a.events, sizeof a.events, "%s%s", home ? home : "", DEFAULT_EVENTS);
     snprintf(a.ratio, sizeof a.ratio, "auto");
-    a.font = 8; a.profile_font = 14; a.near = 30; a.size = "110x32";
+    a.font = 8; a.profile_font = 14; a.near = NEAR_PX; a.size = "110x32";
     static const struct option opts[] = {
         {"events", 1, 0, 'e'}, {"at", 1, 0, 'a'}, {"room", 1, 0, 'r'}, {"theme", 1, 0, 't'}, {"left", 1, 0, 'L'}, {"right", 1, 0, 'R'},
         {"up", 1, 0, 'U'}, {"down", 1, 0, 'D'}, {"no-split", 0, 0, 'S'}, {"ratio", 1, 0, 'x'}, {"size", 1, 0, 'z'}, {"font", 1, 0, 'f'},
@@ -427,7 +620,7 @@ int app_main(int argc, char **argv) {
     } else {
         if (!(a.room || a.theme || a.has_at)) { /* started bare (for example from a tab): ask */
             const char *scene = NULL, *rn = NULL;
-            if (!choose_scene(&scene, &rn)) goto done;
+            if (!choose_scene(&a, &scene, &rn)) goto done;
             a.theme = scene;
             a.room = rn[0] ? rn : NULL;
         }

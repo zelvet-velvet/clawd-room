@@ -55,6 +55,7 @@ typedef struct {
     int scale;               /* TUI scale: room pixels are scale x scale terminal cells (auto shape only) */
     char ratio[8];           /* "auto" or a key of RATIOS */
     int size_w, size_h;      /* size of the room in pixels as last drawn */
+    int view_x, view_y, view_k; /* where the room sits in the terminal canvas: x offset, y offset, scale */
     /* movement state */
     int has_last_now; double last_now;
     int has_geo_key; int geo_w, geo_h;

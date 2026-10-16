@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 CFLAGS ?= -O2 -Wall -Wextra -std=c11 -D_DEFAULT_SOURCE -Wno-format-truncation
-OBJS = main.o canvas.o sprites.o clawd.o term.o theme.o draw.o fixture.o rng.o room.o script.o tail.o ui.o app.o json.o link.o
+OBJS = main.o canvas.o sprites.o clawd.o term.o theme.o draw.o fixture.o rng.o room.o script.o tail.o ui.o app.o json.o link.o win.o
 
 clawd-room: $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $(OBJS) -lm
@@ -22,6 +22,8 @@ test: clawd-room
 	./clawd-room --script ../tools/scenarios/*.sc | diff - <(python3 ../tools/golden_room.py ../tools/scenarios/*.sc)
 	./clawd-room --golden-ui ../tools/fixtures/events-odd.jsonl | diff - <(python3 ../tools/golden_ui.py ../tools/fixtures/events-odd.jsonl)
 	python3 ../tools/compare_dump.py
+	./clawd-room --golden-win | diff - <(python3 ../tools/golden_win.py)
+	python3 ../tools/gen_ps.py --check
 	@echo "C port matches Python"
 .PHONY: test
 
@@ -34,3 +36,9 @@ linksmoke: clawd-room
 smoke: clawd-room
 	python3 ../tools/pty_smoke.py c
 .PHONY: smoke
+
+# real Windows Terminal windows (your own alpha / beta): sizing and where the gates go, for C and Python (about 1 minute each)
+winsmoke: clawd-room
+	python3 ../tools/win_smoke.py python 10
+	python3 ../tools/win_smoke.py c 10
+.PHONY: winsmoke
