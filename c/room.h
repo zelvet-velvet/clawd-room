@@ -62,6 +62,8 @@ typedef struct {
     Msg outbox[MAX_OUT]; int nout;
     char gone_peers[4][24]; int ngone;
     int freeze;              /* tests: draw without moving anybody */
+    int split;               /* linked rooms share the sessions: this room shows the ones whose crc32 picks it */
+    int n_owner_ids; char owner_ids[17][40], owner_me[40];
     int has_geo;             /* geo below is from the last frame (the g key needs it) */
     Geo geo;
 } Room;

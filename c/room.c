@@ -39,9 +39,14 @@ static int by_created(const void *a, const void *b) {
     return strcmp(x->sid, y->sid);
 }
 
+static int owns(const Room *r, const Session *s) { /* which sessions this room shows (when several rooms share them) */
+    if (!r->split || r->n_owner_ids < 1) return 1;
+    return !strcmp(r->owner_ids[crc32_str(s->sid) % (unsigned)r->n_owner_ids], r->owner_me);
+}
+
 void room_order(Room *r) {
-    r->n = r->npool;
-    for (int i = 0; i < r->npool; i++) r->s[i] = &r->pool[i];
+    r->n = 0;
+    for (int i = 0; i < r->npool; i++) if (owns(r, &r->pool[i])) r->s[r->n++] = &r->pool[i];
     qsort(r->s, (size_t)r->n, sizeof(Session *), by_created);
     r->ng = 0;
     for (int i = 0; i < r->ngp; i++) if (r->gpool[i].has_pos) r->guests[r->ng++] = &r->gpool[i];

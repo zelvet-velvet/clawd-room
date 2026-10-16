@@ -12,6 +12,7 @@
 #include <time.h>
 #include <unistd.h>
 #include "clawd.h"
+#include "link.h"
 #include "room.h"
 #include "tail.h"
 #include "term.h"
@@ -128,6 +129,17 @@ static int run(const Args *a, const SpriteFile *frames, const SpriteFile *items)
 
     int auto_ = !a->scale;
     room.scale = a->scale ? a->scale : 1;
+    Link link;
+    int has_link = a->room != NULL;
+    if (has_link) { /* every window with a room name links to the others */
+        link_init(&link, a->room, NULL);
+        snprintf(link.theme, sizeof link.theme, "%s", room.theme->name);
+        link_start(&link);
+        snprintf(room.title, sizeof room.title, "%s", link.name);
+    }
+    double still_since = wall(); /* gates show only after the windows have been still for a second (no window detection yet: always still) */
+    static char held[MAX_LINK_PEERS][40];
+    (void)held;
     RawTerm rt = {0};
     struct sigaction sa;
     memset(&sa, 0, sizeof sa);
@@ -190,6 +202,58 @@ static int run(const Args *a, const SpriteFile *frames, const SpriteFile *items)
         n = tail_poll(&tail, ev, 4096);
         for (int i = 0; i < n; i++) room_apply(&room, ev[i].t, ev[i].sid, ev[i].ev, ev[i].cwd, ev[i].tool);
         room_prune(&room, now);
+        if (has_link) {
+            static LinkEvent lev[64];
+            int ne = link_update(&link, wall(), cols, rows, lev, 64);
+            for (int i = 0; i < ne; i++) {
+                if (lev[i].kind < 2) {
+                    char nm[32];
+                    snprintf(nm, sizeof nm, "%s", lev[i].peer.name);
+                    for (char *p = nm; *p; p++) if (*p >= 'a' && *p <= 'z') *p -= 32;
+                    snprintf(flash, sizeof flash, "%s %s", nm, lev[i].kind == 0 ? "JOINED" : "LEFT");
+                    flash_until = wall() + 4; dirty = 1;
+                    if (lev[i].kind == 1) room_peer_gone(&room, lev[i].peer.id);
+                } else if (!strcmp(lev[i].type, "walk") || !strcmp(lev[i].type, "recall")) room_receive(&room, &lev[i].msg);
+            }
+            /* which window is next to this one: only the ones named with --left/--right/--up/--down (no window detection yet) */
+            room.npeers = 0; room.nnb = 0;
+            for (int i = 0; i < link.npeers; i++) {
+                const LinkPeer *p = &link.peers[i];
+                int side = -1;
+                if (a->left && !strcmp(a->left, p->name)) side = SIDE_LEFT;
+                else if (a->right && !strcmp(a->right, p->name)) side = SIDE_RIGHT;
+                else if (a->up && !strcmp(a->up, p->name)) side = SIDE_UP;
+                else if (a->down && !strcmp(a->down, p->name)) side = SIDE_DOWN;
+                if (room.npeers < 8) {
+                    snprintf(room.peers[room.npeers].name, sizeof room.peers[0].name, "%s", p->name);
+                    snprintf(room.peers[room.npeers].side, sizeof room.peers[0].side, "%s", side >= 0 ? SIDE_NAME[side] : "");
+                    room.npeers++;
+                }
+                if (side >= 0) {
+                    int k = 0;
+                    while (k < room.nnb && room.nb[k].side != side) k++;
+                    if (k == room.nnb) room.nnb++; /* (a second window on the same side replaces the first, in the first one's place) */
+                    room.nb[k].side = side;
+                    snprintf(room.nb[k].theme, sizeof room.nb[k].theme, "%s", p->theme);
+                    snprintf(room.nb[k].id, sizeof room.nb[k].id, "%s", p->id);
+                }
+            }
+            if (!a->no_split) { /* the linked rooms share the sessions: each shows its own part */
+                int m = 0;
+                snprintf(room.owner_ids[m++], 40, "%s", link.id);
+                for (int i = 0; i < link.npeers && m < 17; i++) snprintf(room.owner_ids[m++], 40, "%s", link.peers[i].id);
+                for (int i = 0; i < m; i++) for (int j = i + 1; j < m; j++) if (strcmp(room.owner_ids[j], room.owner_ids[i]) < 0) { char t[40]; strcpy(t, room.owner_ids[i]); strcpy(room.owner_ids[i], room.owner_ids[j]); strcpy(room.owner_ids[j], t); }
+                room.n_owner_ids = m; room.split = 1;
+                snprintf(room.owner_me, sizeof room.owner_me, "%s", link.id);
+            }
+            if (wall() - still_since < 1.0) { /* pending: no gates until the windows have been still */
+                room.nnb = 0;
+                for (int i = 0; i < room.npeers; i++) room.peers[i].side[0] = 0;
+            }
+            for (int i = 0; i < SIDES; i++) { room.has_link[i] = 0; room.has_gate[i] = 0; }
+            for (int i = 0; i < room.nout; i++) if (!link_send_msg(&link, room.outbox[i].peer, &room.outbox[i])) room_peer_gone(&room, room.outbox[i].peer);
+            room.nout = 0;
+        }
         if (dirty || !paused) {
             if (cols < MIN_COLS || rows < MIN_ROWS) {
                 char buf[128];
@@ -214,6 +278,7 @@ static int run(const Args *a, const SpriteFile *frames, const SpriteFile *items)
     }
     if (have_prev) cells_free(&prev);
     tail_free(&tail);
+    if (has_link) link_close(&link);
     raw_off(&rt);
     screen_off();
     return 0;

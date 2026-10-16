@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 CFLAGS ?= -O2 -Wall -Wextra -std=c11 -D_DEFAULT_SOURCE -Wno-format-truncation
-OBJS = main.o canvas.o sprites.o clawd.o term.o theme.o draw.o fixture.o rng.o room.o script.o tail.o ui.o app.o
+OBJS = main.o canvas.o sprites.o clawd.o term.o theme.o draw.o fixture.o rng.o room.o script.o tail.o ui.o app.o json.o link.o
 
 clawd-room: $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $(OBJS) -lm
@@ -24,6 +24,11 @@ test: clawd-room
 	python3 ../tools/compare_dump.py
 	@echo "C port matches Python"
 .PHONY: test
+
+# two linked rooms (C and Python in every mix): send a Clawd with g, check the messages arrive (about 15 s)
+linksmoke: clawd-room
+	python3 ../tools/link_smoke.py
+.PHONY: linksmoke
 
 # drives the real program in a pty (about 30 s): keys, new events, menu, quitting, terminal restored
 smoke: clawd-room

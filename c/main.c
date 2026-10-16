@@ -10,7 +10,10 @@
 #include "term.h"
 #include "fixture.h"
 #include "rng.h"
+#include <time.h>
+#include <unistd.h>
 #include "app.h"
+#include "link.h"
 #include "script.h"
 #include "tail.h"
 #include "ui.h"
@@ -171,7 +174,38 @@ static int golden_ui(const char *path) {
     return 0;
 }
 
+/* like `python3 roomlink.py NAME --seconds N`: ping every new room, answer pings, print what happens */
+static int link_demo(const char *name, double seconds) {
+    Link l;
+    link_init(&l, name, NULL);
+    link_start(&l);
+    printf("room %s is up (id %s); looking for other rooms...\n", l.name, l.id);
+    fflush(stdout);
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    double end = ts.tv_sec + ts.tv_nsec / 1e9 + seconds;
+    for (;;) {
+        clock_gettime(CLOCK_REALTIME, &ts);
+        double now = ts.tv_sec + ts.tv_nsec / 1e9;
+        if (seconds && now >= end) break;
+        LinkEvent ev[32];
+        int n = link_update(&l, now, 0, 0, ev, 32);
+        for (int i = 0; i < n; i++) {
+            if (ev[i].kind == 0) { printf("joined: %s\n", ev[i].peer.name); link_send_num(&l, ev[i].peer.id, "ping", "sent", now); }
+            else if (ev[i].kind == 1) printf("left: %s\n", ev[i].peer.name);
+            else if (!strcmp(ev[i].type, "ping")) link_send_num(&l, ev[i].msg.peer, "pong", "sent", now);
+            else if (!strcmp(ev[i].type, "pong")) printf("pong from %s\n", ev[i].msg.peer);
+            else printf("got %s from %s\n", ev[i].type, ev[i].msg.peer);
+        }
+        fflush(stdout);
+        usleep(100000);
+    }
+    link_close(&l);
+    return 0;
+}
+
 int main(int argc, char **argv) {
+    if (argc > 2 && !strcmp(argv[1], "--link-demo")) return link_demo(argv[2], argc > 3 ? atof(argv[3]) : 0);
     if (!(argc > 1 && (!strncmp(argv[1], "--golden", 8) || !strcmp(argv[1], "--fixture") || !strcmp(argv[1], "--script")))) return app_main(argc, argv);
     const char *dir = getenv("CLAWD_SPRITES") ? getenv("CLAWD_SPRITES") : "../sprites";
     char path[512];
