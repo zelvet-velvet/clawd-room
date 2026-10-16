@@ -1,12 +1,32 @@
 #include "clawd.h"
+#include "theme.h"
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
 
+unsigned crc32_str(const char *s) { /* zlib.crc32 */
+    unsigned crc = 0xFFFFFFFFu;
+    for (; *s; s++) {
+        crc ^= (unsigned char)*s;
+        for (int k = 0; k < 8; k++) crc = (crc >> 1) ^ (0xEDB88320u & (0u - (crc & 1u)));
+    }
+    return ~crc;
+}
+
 void session_init(Session *s, const char *sid) {
     memset(s, 0, sizeof *s);
     snprintf(s->sid, sizeof s->sid, "%s", sid);
+    snprintf(s->state, sizeof s->state, "idle");
     s->face = 1;
+    s->seed = (crc32_str(sid) % 1000) / 1000.0;
+}
+
+const char *session_shown(const Session *s, double now) {
+    if (s->guest) return "idle";
+    if (!strcmp(s->state, "think") && now < s->hold_work_until) return "work"; /* no flicker between two tool calls */
+    if (!strcmp(s->state, "cheer") && now - s->state_t > CHEER_FOR) return now - s->state_t > SLEEP_AFTER ? "sleep" : "idle";
+    if (!strcmp(s->state, "idle") && now - s->last > SLEEP_AFTER) return "sleep";
+    return s->state;
 }
 
 /* Python's int(x) % n for x >= 0 */
@@ -113,7 +133,7 @@ void pose_key(const Pose *p, char *out, size_t n) {
 }
 
 /* the code's own drawing: an 8-wide torso, two 2x2 stub arms, four 1-pixel legs, two 1x1 eyes, no mouth */
-static void draw_by_code(Canvas *cv, int x, int y, const Pose *p, Rgb body) {
+static void draw_by_code(Canvas *cv, int x, int y, const Pose *p, Rgb body, const Theme *theme, const char *role) {
     static const int LEGX[4] = {3, 5, 8, 10};
     int lean = p->lean;
     for (int i = 0; i < 4; i++) { /* legs; while walking one pair is lifted */
@@ -126,6 +146,7 @@ static void draw_by_code(Canvas *cv, int x, int y, const Pose *p, Rgb body) {
         int ax = k ? x + 11 : x + 1, mode = p->arms[k];
         canvas_rect(cv, ax + lean, y + (mode == 0 ? 2 : mode == 1 ? -1 : 1), 2, 2, body);
     }
+    if (theme) theme_accessory(theme, cv, x + lean, y, role);
     int ex = x + lean + p->look[0], ey = y + 1 + p->look[1];
     if (strcmp(p->eyes, "shut")) { canvas_px(cv, ex + 4, ey, C_INK); canvas_px(cv, ex + 9, ey, C_INK); }
     if (!strcmp(p->eyes, "happy")) { /* the eye grows to 1x2 (pale peach top), plus blush */
@@ -134,12 +155,14 @@ static void draw_by_code(Canvas *cv, int x, int y, const Pose *p, Rgb body) {
     }
 }
 
-void draw_clawd(Canvas *cv, int cx, int y, const Pose *p, const SpriteFile *frames, Rgb body) {
+void draw_clawd(Canvas *cv, int cx, int y, const Pose *p, const SpriteFile *frames, Rgb body, const Theme *theme, const char *role) {
     int x = cx - 7;
     y += p->bob;
     char key[128];
     pose_key(p, key, sizeof key);
     const Sprite *sp = frames ? sprites_by_key(frames, key) : NULL;
-    if (sp) sprite_blit(cv, sp, x, y - 1, body); /* an edited / exported frame (15 wide, from one row above the head) */
-    else draw_by_code(cv, x, y, p, body);
+    if (sp) { /* an edited / exported frame (15 wide, from one row above the head) */
+        sprite_blit(cv, sp, x, y - 1, body);
+        if (theme) theme_accessory(theme, cv, x + p->lean, y, role);
+    } else draw_by_code(cv, x, y, p, body, theme, role);
 }

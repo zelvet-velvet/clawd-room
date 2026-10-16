@@ -57,7 +57,7 @@ sticker: lucide//book-open
 > `room_tui.py` stays the reference and keeps working. The C version lives in `c/` (standard C11 + libm, `make`), is built stage by stage, and each stage must match Python exactly (`make test` compares frame hashes and terminal strings from `tools/golden_clawd.py`).
 > 1. [x] canvas, 3x5 font, sprite files, `pose_for`, `draw_clawd` (1025 frames identical, from the sprite files and from the code)
 > 2. [x] canvas -> half-block cells -> diff ANSI string (identical)
-> 3. [ ] themes (backgrounds, desks, accessories, playground) and `draw_room`
+> 3. [x] themes (backgrounds, desks, accessories, playground), gates, labels, props, `draw_room` and `render` (17 scenes in `tools/fixtures/*.fx`, made by `tools/make_fixtures.py`, identical pixel for pixel)
 > 4. [ ] `Room` state machine (visits, tag, emotes) with a seeded RNG so both versions can be compared
 > 5. [ ] events tail + hook file, main loop, keys, start menu
 > 6. [ ] window link and powershell helpers (`windetect`, `roomlink`), auto font and scale

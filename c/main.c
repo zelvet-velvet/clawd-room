@@ -8,6 +8,7 @@
 #include "canvas.h"
 #include "clawd.h"
 #include "term.h"
+#include "fixture.h"
 
 typedef struct { const char *name, *state; void (*set)(Session *); } Action;
 
@@ -51,7 +52,7 @@ static int golden(const SpriteFile *frames) {
             s.walk_phase = t * 12;
             Pose p = pose_for(&s, ACTIONS[a].state, t, 1000.0 + t);
             Canvas cv = canvas_new(26, 18, RGB(0, 0, 0));
-            draw_clawd(&cv, 13, 8, &p, frames, C_CLAWD);
+            draw_clawd(&cv, 13, 8, &p, frames, C_CLAWD, NULL, "");
             printf("%s %d %016" PRIx64 "\n", ACTIONS[a].name, i, canvas_hash(&cv));
             canvas_free(&cv);
         }
@@ -70,6 +71,7 @@ static int golden_term(const SpriteFile *frames) {
     for (size_t a = 0; a < sizeof ACTIONS / sizeof ACTIONS[0]; a++) {
         Session s;
         session_init(&s, "x");
+        s.seed = 0.0;
         s.state_t = 1000.0;
         ACTIONS[a].set(&s);
         Cells prev = {0, 0, NULL};
@@ -78,7 +80,7 @@ static int golden_term(const SpriteFile *frames) {
             s.walk_phase = t * 12;
             Pose p = pose_for(&s, ACTIONS[a].state, t, 1000.0 + t);
             Canvas cv = canvas_new(26, 18, RGB(0, 0, 0));
-            draw_clawd(&cv, 13, 8, &p, frames, C_CLAWD);
+            draw_clawd(&cv, 13, 8, &p, frames, C_CLAWD, NULL, "");
             Cells cur = cells_from_canvas(&cv, ACTIONS[a].name);
             size_t n1, n2;
             char *full = diff_frame(&cur, NULL, &n1), *d = diff_frame(&cur, prev.c ? &prev : NULL, &n2);
@@ -90,15 +92,34 @@ static int golden_term(const SpriteFile *frames) {
     return 0;
 }
 
+/* --fixture FILE...: one line per scene: name, hash of the terminal canvas, note */
+static int run_fixtures(int n, char **files, const SpriteFile *frames, const SpriteFile *items) {
+    draw_set_sprites(frames, items);
+    for (int i = 0; i < n; i++) {
+        static Fixture f;
+        if (fixture_load(&f, files[i])) { fprintf(stderr, "cannot read %s\n", files[i]); return 1; }
+        char note[32];
+        Canvas cv = render(f.cols, f.rows, &f.room, f.now, f.t, note, sizeof note);
+        const char *base = strrchr(files[i], '/');
+        printf("fixture %s %016" PRIx64 " %s\n", base ? base + 1 : files[i], canvas_hash(&cv), note);
+        canvas_free(&cv);
+    }
+    return 0;
+}
+
 int main(int argc, char **argv) {
     const char *dir = getenv("CLAWD_SPRITES") ? getenv("CLAWD_SPRITES") : "../sprites";
     char path[512];
     snprintf(path, sizeof path, "%s/clawd.txt", dir);
-    SpriteFile frames = sprites_load(path);
+    SpriteFile frames = sprites_load(path), items;
+    snprintf(path, sizeof path, "%s/items.txt", dir);
+    items = sprites_load(path);
     int rc = 0;
     if (argc > 1 && !strcmp(argv[1], "--golden")) rc = golden(argc > 2 && !strcmp(argv[2], "--code") ? NULL : &frames);
+    else if (argc > 2 && !strcmp(argv[1], "--fixture")) rc = run_fixtures(argc - 2, argv + 2, &frames, &items);
     else if (argc > 1 && !strcmp(argv[1], "--golden-term")) rc = golden_term(&frames);
     else { fprintf(stderr, "usage: clawd-room --golden [--code] | --golden-term\n"); rc = 1; }
     sprites_free(&frames);
+    sprites_free(&items);
     return rc;
 }

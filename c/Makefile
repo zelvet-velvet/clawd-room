@@ -1,6 +1,6 @@
 SHELL := /bin/bash
-CFLAGS ?= -O2 -Wall -Wextra -std=c11 -D_DEFAULT_SOURCE
-OBJS = main.o canvas.o sprites.o clawd.o term.o
+CFLAGS ?= -O2 -Wall -Wextra -std=c11 -D_DEFAULT_SOURCE -Wno-format-truncation
+OBJS = main.o canvas.o sprites.o clawd.o term.o theme.o draw.o fixture.o
 
 clawd-room: $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $(OBJS) -lm
@@ -17,5 +17,6 @@ test: clawd-room
 	./clawd-room --golden | diff - <(python3 ../tools/golden_clawd.py)
 	./clawd-room --golden --code | diff - <(python3 ../tools/golden_clawd.py --code)
 	./clawd-room --golden-term | diff - <(python3 ../tools/golden_clawd.py --term)
+	./clawd-room --fixture ../tools/fixtures/*.fx | diff - <(python3 ../tools/golden_fixture.py ../tools/fixtures/*.fx)
 	@echo "C port matches Python"
 .PHONY: test
