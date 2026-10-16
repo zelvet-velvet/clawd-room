@@ -51,6 +51,19 @@ sticker: lucide//book-open
 > - Next: furniture and playground pieces into the sprite files
 
 ---
+## 🔧 C port (branch `feat/c-port`, started 2026-10-16)
+
+> [!NOTE] Plan
+> `room_tui.py` stays the reference and keeps working. The C version lives in `c/` (standard C11 + libm, `make`), is built stage by stage, and each stage must match Python exactly (`make test` compares frame hashes and terminal strings from `tools/golden_clawd.py`).
+> 1. [x] canvas, 3x5 font, sprite files, `pose_for`, `draw_clawd` (1025 frames identical, from the sprite files and from the code)
+> 2. [x] canvas -> half-block cells -> diff ANSI string (identical)
+> 3. [ ] themes (backgrounds, desks, accessories, playground) and `draw_room`
+> 4. [ ] `Room` state machine (visits, tag, emotes) with a seeded RNG so both versions can be compared
+> 5. [ ] events tail + hook file, main loop, keys, start menu
+> 6. [ ] window link and powershell helpers (`windetect`, `roomlink`), auto font and scale
+> 7. [ ] decide: switch the installed command to the binary, keep Python for the hook and tools
+
+---
 ## ⏳ Pending (last step)
 
 - Profile from the dropdown still opens at Windows Terminal's default size and then jumps once (WT has no per-profile size). Planned: `setup_profile.py --shortcut` making a shortcut that runs `wt.exe -w new --size 60,18 -p "Clawd Room"`. Not a global `initialCols/Rows` (it would shrink every new window).
