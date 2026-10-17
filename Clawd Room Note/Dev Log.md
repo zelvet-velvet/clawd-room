@@ -159,6 +159,19 @@ sticker: lucide//book-open
 > - A room blocks in `write()` if the terminal stops reading (seen with iTerm2 in full screen); it could use a non-blocking write with a timeout so `q` / SIGTERM still work.
 > - Windows Terminal panes: the PowerShell watcher sees only the whole window. UI Automation exposes each `TermControl` with a bounding rectangle, which could report panes like iTerm2's (to try on WSL).
 
+## 🤝 Agreed with Zaviel: resize, room size, camera (2026-10-17, not built yet)
+
+> [!NOTE] What Zaviel decided
+> The `r` list of shapes and the plain `[` `]` camera from the entry above are not what Zaviel wants; this replaces them.
+> - **Resize = grow, then scale.** While the window is dragged the room always fills it: it gains room pixels until it reaches the chosen room size, past that every room pixel gets bigger (integer scale) so the picture fills the window. Shrinking does the reverse. The room's shape always follows the window.
+> - **Room size = the biggest the room may be**, not a shape. `r` list: **AUTO** (big enough to seat every session with floor to walk on; grows when sessions arrive) and **S / M / L / XL** fixed maximum sizes. The 3:1 / 16:9 / ... shapes go away.
+> - **Camera follows Clawds (auto follow is the default when zoomed).** Priority: the Clawd that needs you (waiting for an OK) > the one that just finished (cheering) > the most recently active one > if nothing happens, the next Clawd about every 10 s. The camera moves only when its Clawd nears the edge of the view, smoothly. `Tab` = pick the next Clawd yourself (stays on it), arrows / WASD = free camera, `c` = back to auto follow.
+> - **Zoom is manual by default** (`[` `]`); a shortcut turns on **auto zoom** (the camera frames the active Clawds: closer on one busy Clawd, wider when several are active) until pressed again.
+
+> [!QUESTION] Still to agree
+> - Sizes in room pixels, proposed: S 120x60, M 160x90, L 220x120, XL 300x160 (an 80x25 window is 80x50 room pixels; a full-screen MacBook Air iTerm2 at 14 pt is about 162x102).
+> - Shortcut for auto zoom, proposed `z`.
+
 ---
 ## ⏳ Pending (last step)
 
