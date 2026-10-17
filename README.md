@@ -56,8 +56,8 @@ get a gate between them, like two attached windows. iTerm2 does not say where a 
 worked out from the window size, the title and tab bar and iTerm2's margins (simple splits only: a row of side-by-side
 panes or a column of stacked ones). `f` resizes the window there too. The room leaves the iTerm2 font alone unless you
 pass `--font PT` (that sends Cmd -/+ to the room's own window when it has the focus, and needs Accessibility for iTerm2).
-When a room opens in iTerm2 its window is sized from the screen (`--size screen`, the default there): 40% of the usable
-width and 55% of its height, at least 44x20 cells, moved only as far as needed to stay on screen. `--size COLSxROWS` or `--size off`
+When a room opens in iTerm2 its window becomes a quarter of the screen (`--size screen`, the default there), like macOS's
+four-window tiling: half the usable width and height, snapped into the quarter its centre is in (at least 44x20 cells). `--size COLSxROWS` or `--size off`
 as on WSL.
 
 Themes (`--theme office|coffee|park`, by default guessed from the room name):

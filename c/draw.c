@@ -16,12 +16,10 @@ const SpriteFile *draw_frames(void) { return g_frames; }
 #define ROPE RGB(186, 166, 124)
 #define RUNG RGB(150, 130, 96)
 #define HOLE RGB(18, 16, 20)
-#define LADDER_TOP_H 9 /* room pixels of the ladder top shown at the bottom gate */
 #define GATE_ANIM 0.8   /* seconds a gate takes to appear (door rises and opens, rope unrolls, ladder rises) */
 #define DOOR_LEAF RGB(132, 94, 62)
 #define DOOR_EDGE RGB(96, 68, 46)
 #define DOOR_KNOB RGB(230, 190, 90)
-#define DOOR_MAT RGB(120, 64, 56)
 
 static int fdiv(int a, int b) { int q = a / b; return (a % b != 0 && ((a < 0) != (b < 0))) ? q - 1 : q; } /* Python's // */
 static int pyround(double v) { return (int)nearbyint(v); }                                              /* round half to even */
@@ -64,9 +62,10 @@ static int sc(int v, double g) { return imax(1, pyround(v * g)); }
 static void edge_rect(Canvas *cv, int left, int xl, int y, int w, int h, Rgb c) { canvas_rect(cv, left ? xl : cv->w - xl - w, y, w, h, c); }
 static Rgb mixc(Rgb a, Rgb b, double f) { return RGB((int)(a.r + (b.r - a.r) * f), (int)(a.g + (b.g - a.g) * f), (int)(a.b + (b.b - a.b) * f)); }
 
-/* a side door: a wooden frame with a glimpse of the next room (its wall and floor), the door leaf hinged at the edge of the
- * room and a doormat. p (0..1) is how far it has appeared: first the closed door rises from the floor, then the leaf
- * swings open towards the next room (1 = standing open, a thin edge at the hinge). */
+/* a side door: a wooden frame with a glimpse of the next room (its wall and floor). It is one door between two windows, so
+ * only the window on the left draws the leaf (its door is on its right edge), hinged at the edge; the window on the right
+ * shows the open doorway. p (0..1) is how far it has appeared: the doorway rises from the floor (with the closed leaf, on
+ * the left window), then the leaf swings open towards the next room (1 = standing open, a thin edge at the hinge). */
 static void draw_door(Canvas *cv, int left, double door_y, const char *theme_name, double g, double p) {
     const Theme *th = theme_get(theme_name);
     int w = sc(8, g), cy = (int)(door_y + 5.5);
@@ -81,35 +80,36 @@ static void draw_door(Canvas *cv, int left, double door_y, const char *theme_nam
     edge_rect(cv, left, 0, cy + down - post, opening, post, mixc(th->floor2, RGB(0, 0, 0), 0.25));
     edge_rect(cv, left, opening, top, post, hgt, WOOD); /* post on the room side */
     if (rise >= 1.0) edge_rect(cv, left, 0, cy - up - lint, w, lint, WOOD); /* lintel */
+    if (left) return; /* the window on the right: just the doorway */
     int lw = imax(post, (int)(opening * (1.0 - swing) + 0.5)); /* the leaf, hinged at the edge */
     edge_rect(cv, left, 0, top, lw, hgt, DOOR_LEAF);
     if (lw > post) edge_rect(cv, left, lw - post, top, post, hgt, DOOR_EDGE);
     if (lw > sc(3, g) && hgt > down) edge_rect(cv, left, lw - sc(2, g), cy, post, post, DOOR_KNOB);
-    if (rise >= 1.0) edge_rect(cv, left, w, cy + down - post, sc(5, g), post, DOOR_MAT); /* doormat on the room side */
 }
 
-/* the top gate: a hatch with a rope ladder; p (0..1): the hatch opens, then the ladder unrolls down */
+/* the top gate: the ladder from the room above coming down through the ceiling (no hatch here: the hole is in the floor
+ * of the room above); p (0..1): it slides down */
 static void draw_rope(Canvas *cv, int x, int top, int end, double g, double p) {
-    int half = sc(9, g), rail = sc(7, g), thick = sc(1, g);
-    double opening = fmin(1.0, p / 0.3), unroll = fmax(0.0, (p - 0.3) / 0.7);
-    canvas_rect(cv, x - half, top, 2 * half + 1, sc(3, g), WOOD); /* hatch frame */
-    int hw = (int)((2 * half + 1 - 2 * thick) * opening + 0.5);
-    if (hw > 0) canvas_rect(cv, x - hw / 2, top + thick, hw, thick, HOLE);
-    int len = (int)((end - top - sc(3, g)) * unroll + 0.5), y0 = top + sc(3, g);
+    int rail = sc(7, g), thick = sc(1, g);
+    int len = (int)((end - top) * p + 0.5);
     if (len <= 0) return;
     int rx[2] = {x - rail, x + rail};
-    for (int i = 0; i < 2; i++) canvas_rect(cv, rx[i], y0, thick, len, ROPE); /* the two ropes */
-    for (int y = top + sc(6, g); y < y0 + len; y += sc(5, g)) canvas_rect(cv, x - rail + thick, y, 2 * rail - thick, thick, RUNG); /* rungs */
+    for (int i = 0; i < 2; i++) canvas_rect(cv, rx[i], top, thick, len, ROPE); /* the two rails */
+    for (int y = top + sc(3, g); y < top + len; y += sc(5, g)) canvas_rect(cv, x - rail + thick, y, 2 * rail - thick, thick, RUNG); /* rungs */
 }
 
-/* the bottom gate: the top of the ladder from the room below, sticking up through the floor edge (same rails and rung
- * spacing as that room's ladder, so the two read as one ladder across the windows; no frame, no hole) */
-static void draw_stairs(Canvas *cv, int x, int h, double g, double p) { /* p (0..1): the ladder rises up through the edge */
-    int rail = sc(7, g), thick = sc(1, g), depth = (int)(sc(LADDER_TOP_H, g) * p + 0.5);
+/* the bottom gate: a framed hole in the floor with the ladder going down into it (the room below sees the ladder come
+ * through its ceiling); p (0..1): it rises up from the bottom edge */
+static void draw_stairs(Canvas *cv, int x, int h, double g, double p) {
+    int half = sc(9, g), rail = sc(6, g), thick = sc(1, g), depth = (int)(sc(6, g) * p + 0.5);
     if (depth <= 0) return;
+    canvas_rect(cv, x - half, h - depth - thick, 2 * half + 1, thick, WOOD); /* frame */
+    canvas_rect(cv, x - half, h - depth, sc(2, g), depth, WOOD);
+    canvas_rect(cv, x + half - sc(2, g) + 1, h - depth, sc(2, g), depth, WOOD);
+    canvas_rect(cv, x - half + sc(2, g), h - depth, 2 * (half - sc(2, g)) + 1, depth, HOLE); /* the dark shaft */
     int rx[2] = {x - rail, x + rail};
-    for (int i = 0; i < 2; i++) canvas_rect(cv, rx[i], h - depth, thick, depth, ROPE);
-    for (int y = h - sc(2, g); y > h - depth; y -= sc(5, g)) canvas_rect(cv, x - rail + thick, y, 2 * rail - thick, thick, RUNG);
+    for (int i = 0; i < 2; i++) canvas_rect(cv, rx[i], h - depth, thick, depth, ROPE); /* the ladder goes down into it */
+    for (int y = h - sc(1, g); y > h - depth; y -= sc(2, g)) canvas_rect(cv, x - rail + thick, y, 2 * rail - thick, thick, RUNG);
 }
 
 /* ---- desks, bubbles, props ------------------------------------------------------------------- */

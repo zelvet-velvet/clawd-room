@@ -45,8 +45,8 @@ int tool_start(Tool *t);
 void tool_resize(Tool *t, const char *title, int w, int h);
 void tool_zoom(Tool *t, const char *title, int step, int only_if_focused, int live);
 void tool_reset_zoom(Tool *t, const char *title);
-#define SCREEN_W_PERCENT 40 /* --size screen: the window takes this part of the screen's width ... */
-#define SCREEN_H_PERCENT 55 /* ... and of its height (iTerm2) */
+#define SCREEN_W_PERCENT 50 /* --size screen: a macOS quarter tile, half the screen's width ... */
+#define SCREEN_H_PERCENT 50 /* ... and half its height, snapped into the quarter its centre is in (iTerm2) */
 void tool_screen(Tool *t, const char *title, int w_percent, int h_percent);
 void tool_stop(Tool *t);
 

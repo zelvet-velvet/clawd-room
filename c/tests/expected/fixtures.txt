@@ -6,8 +6,8 @@ fixture coffee-visit.fx 6c6ba60bc7219210
 fixture office-basic.fx e3fa2350ebf33090 
 fixture office-empty-guest.fx 14f3308470c9c03f 
 fixture office-empty.fx 22ba234cb25419d5 
-fixture office-gates-defaults.fx e8a2ad772def6110 
-fixture office-gates.fx 98352c6b36d2cd52 
+fixture office-gates-defaults.fx dcff9469b2ec7baa 
+fixture office-gates.fx 50bbd577e93066ed 
 fixture office-many.fx 2719aaf902b34b2e 
 fixture office-overflow.fx 826497c62602f97c 
 fixture office-props.fx e87cb29eafd5f3d3 

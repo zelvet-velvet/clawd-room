@@ -269,7 +269,7 @@ sticker: lucide//book-open
 > [!TODO] Test
 > - [ ] Two stacked windows: the bottom of the upper room shows the ladder top (no frame), lining up with the ladder in the room below
 
-## 🚪 New door, gates animate in (2026-10-17)
+## 🚪 New door, gates animate in, quarter windows (2026-10-17)
 
 > [!NOTE] What changed
 > Zaviel: redesign the door; doors and ladders should appear with an animation. (Top hatch with the rope ladder: same look as before; bottom: just the ladder carrying on, see the entry above.)
@@ -277,9 +277,15 @@ sticker: lucide//book-open
 > - **Appearing** (`GATE_ANIM` 0.8 s, only for gates that appear while the room runs; gates there from the first frame are drawn complete): door = the closed door rises from the floor, then the leaf swings open towards the next room; top hatch = the hatch opens, then the rope ladder unrolls down; bottom = the ladder top rises up through the edge. `Room.gate_seen / gate_t0 / drawn`.
 > - Snapshots: only the gate fixtures (`office-gates`, `office-gates-defaults`) and the scenes with gates (`office-gates-cross`, `coffee-gates-busy`, `empty-room-visitor`) changed. Checked close-ups of the stages (rendered with a scratch tool).
 
+> [!NOTE] Second round (Zaviel: keep the upper room's old framed hole, the lower room should just get the ladder; two doors opening at once is weird; the mat looked like a blood stain; windows the size of a macOS quarter tile)
+> - Bottom gate (upper room): back to the old framed hole with the ladder going down into it (rises up from the edge when it appears). Top gate (lower room): no hatch frame any more, just the ladder coming down through the ceiling (slides down when it appears). (Supersedes the "bottom gate is the top of the ladder" entry above.)
+> - One door between two windows: only the window on the left draws the leaf (its door is on its right edge); the window on the right shows the open doorway rising in. Doormat removed.
+> - iTerm2 default window: a quarter tile (`SCREEN_W_PERCENT` / `SCREEN_H_PERCENT` 50), snapped into the quarter of the screen its centre is in, so two rooms land next to each other.
+
 > [!TODO] Test (by eye)
-> - [ ] Push two windows together: the door rises and opens (side by side), the hatch opens and the rope unrolls / the ladder top rises (stacked)
+> - [ ] Push two windows together: the door rises and the left window's leaf opens (side by side); the ladder slides down in the lower room and the framed hole rises in the upper room (stacked)
 > - [ ] The open door shows a bit of the other room (office / coffee / park colours)
+> - [ ] A new room opens as a quarter of the screen, in the quarter it was in
 > - [ ] Gates that are there when a room starts are simply there (no animation)
 
 ---
