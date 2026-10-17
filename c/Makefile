@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 CFLAGS ?= -O2 -Wall -Wextra -std=c11 -D_DEFAULT_SOURCE -Wno-format-truncation
-OBJS = main.o canvas.o sprites.o clawd.o term.o theme.o draw.o fixture.o rng.o room.o script.o tail.o ui.o app.o json.o link.o win.o actions.o art.o camera.o
+OBJS = main.o canvas.o sprites.o clawd.o term.o theme.o draw.o fixture.o rng.o room.o script.o tail.o ui.o app.o json.o link.o win.o actions.o art.o camera.o persp.o
 
 clawd-room: $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $(OBJS) -lm

@@ -6,6 +6,7 @@
 #include "session.h"
 #include "sprites.h"
 #include "theme.h"
+#include "persp.h"
 
 enum { SIDE_LEFT, SIDE_RIGHT, SIDE_UP, SIDE_DOWN, SIDES };
 extern const char *SIDE_NAME[SIDES];     /* "left" "right" "up" "down" */
@@ -31,9 +32,12 @@ typedef struct {
     int has_y; double y;
 } Msg;
 
-/* where the desks are and the strip of floor where Clawds may walk (Geo in room_tui.py) */
+/* where the workspaces are and the strip of floor where Clawds may walk, in perspective (style A) */
 typedef struct {
     int w, h, banner, slot_w, floor_y, ymin, ymax, rope_x, stairs_x, rope_end;
+    View view;                 /* the perspective (persp.h) */
+    double gate_in[SIDES][2];  /* for each gate: where a Clawd steps on and off it (feet, room pixels) ... */
+    double gate_out[SIDES][2]; /* ... and where it goes through (the door, the top of the stairs, the treehouse, down the well) */
     int shown, more, has_more_pos, more_pos[2];
     int home[MAX_SESS][2];   /* by index in room->s (only the first `shown`) */
     double door_y[2];
@@ -77,16 +81,25 @@ typedef struct {
 } Room;
 
 #define SLOT_H 40
-#define SLOT_MIN_W 30
-#define SLOT_MAX_W 62
+#define SLOT_MIN_W 24     /* a workspace on the floor, in room pixels across */
+#define SLOT_MAX_W 40
+#define ROW_PITCH 15       /* room pixels between the rows of workspaces */
+#define ROW_MARGIN 3       /* room pixels kept free at the floor's sides of each row */
+#define WALK_MIN 16        /* room pixels of floor kept in front of the last row to walk on */
+#define TREE_X 0.76        /* the park's treehouse tree, as a part of the width */
+#define TREEHOUSE_UP 18    /* how far above the back of the floor the treehouse door is */
+#define WELL_X 0.24        /* the stair well (indoors), as a part of the width */
+#define WELL_H 0.3         /* its depth on screen, as a part of the floor's height */
 #define CAM_MAX_ZOOM 4     /* [ ] camera zoom steps over the room */
 #define PER_ROW 5
 #define BANNER_H 8
-#define SEAT_DY 7
+#define SEAT_DY -12 /* a Clawd sits behind its desk / table: its body top this far above the furniture's front edge */
 
 
 void layout_slots(int w, int h, int n, int *banner, int *per_row, int *slot_w, int *rows_shown, int *ys);
 void geo_init(Geo *g, const Room *room, int w, int h);
+/* a gate in this theme (door / fence gate, stairs / treehouse, stair well / stone steps); p 0..1 how far it has appeared */
+void theme_gate(const Theme *th, Canvas *cv, const Geo *g, int side, double p, double open);
 int geo_home(const Geo *g, const Room *room, const Session *s, int *cx, int *by); /* 1 if it has a desk */
 const char *geo_role(const Geo *g, const Room *room, const Session *s);
 

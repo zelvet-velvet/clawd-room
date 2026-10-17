@@ -14,7 +14,6 @@
 #define WALK_SPEED 26.0
 #define LEAVE_SPEED 50.0
 #define MAX_GUESTS_SHOWN 4
-#define DOOR_STEP_IN 12.0 /* a Clawd coming in by a side door walks this far in at once (it used to wait outside for its first plan) */
 
 #define PINK RGB(220, 120, 230) /* (room_tui.py defines PINK twice: this is the one that wins) */
 #define BLUE RGB(110, 200, 240)
@@ -140,32 +139,32 @@ static void drop_social(Session *s) {
 }
 
 static void set_goal(Session *s, double x, double y) { s->has_goal = 1; s->gx = x; s->gy = y; }
-
-static void enter(Session *s, int side, const Geo *geo) {
-    s->nroute = 0; s->has_goal = 0; s->vclimb = 0;
-    if (side == SIDE_LEFT || side == SIDE_RIGHT) { /* in through the door, which lines up with the other window's door */
-        s->has_pos = 1; s->px = side == SIDE_LEFT ? -10.0 : geo->w + 10.0; s->py = geo->door_y[side];
-        set_goal(s, side == SIDE_LEFT ? DOOR_STEP_IN : geo->w - DOOR_STEP_IN, geo->door_y[side]);
-    } else if (side == SIDE_UP) { /* slides down the rope hanging from the top */
-        s->has_pos = 1; s->px = geo->rope_x; s->py = -12.0; set_goal(s, geo->rope_x, (double)geo->ymin); s->vclimb = 1;
-    } else { /* comes up the stairs from the bottom */
-        s->has_pos = 1; s->px = geo->stairs_x; s->py = geo->h + 8.0; set_goal(s, geo->stairs_x, (double)geo->ymax); s->vclimb = 1;
-    }
+/* a goal on the walking floor: x kept inside the floor's width on that row (the side walls slant in towards the back) */
+static void set_floor_goal(Session *s, const Geo *geo, double x, double y) {
+    double xl, xr;
+    view_floor_span(&geo->view, y + 8, &xl, &xr);
+    set_goal(s, fmax(xl + 7, fmin(xr - 7, x)), y);
 }
 
+/* coming in by a gate: appear where it goes through (the door, the top of the stairs, the treehouse, down the well) and
+ * walk / climb to where it steps off it */
+static void enter(Session *s, int side, const Geo *geo) {
+    s->nroute = 0; s->has_goal = 0;
+    s->has_pos = 1; s->px = geo->gate_out[side][0]; s->py = geo->gate_out[side][1] - 8;
+    set_goal(s, geo->gate_in[side][0], geo->gate_in[side][1] - 8);
+    s->vclimb = side == SIDE_UP || side == SIDE_DOWN;
+}
+
+/* going out by a gate: walk to where it steps on, then on to where it goes through; when that is reached it has crossed */
 static void exit_route(Session *s, int edge, const Geo *geo) {
     s->leaving = 1;
-    if (edge == SIDE_LEFT || edge == SIDE_RIGHT) {
-        set_goal(s, edge == SIDE_LEFT ? -12.0 : geo->w + 12.0, geo->door_y[edge]);
-        s->nroute = 0;
-    } else {
-        double x = edge == SIDE_UP ? geo->rope_x : geo->stairs_x, out = edge == SIDE_UP ? -14.0 : geo->h + 8.0;
-        set_goal(s, x, (double)(edge == SIDE_UP ? geo->ymin : geo->ymax));
-        s->nroute = 1; s->rx[0] = x; s->ry[0] = out;
-    }
+    set_goal(s, geo->gate_in[edge][0], geo->gate_in[edge][1] - 8);
+    s->nroute = 1; s->rx[0] = geo->gate_out[edge][0]; s->ry[0] = geo->gate_out[edge][1] - 8;
 }
 
+/* crossed: off the picture, or a Clawd on its way out has come to the end of its gate route */
 static int outside(const Session *s, const Geo *geo) {
+    if (s->leaving && !s->has_goal && !s->nroute) return 1;
     return !(-6 < s->px && s->px < geo->w + 6 && -9 < s->py && s->py < geo->h + 1);
 }
 
@@ -394,7 +393,7 @@ static void plan(Room *r, Session *s, int has_seat, double seat_x, double seat_y
     } else if (roll < 0.67) {
         double x = rng_uniform(rng, 8, geo->w - 8);
         double y = rng_uniform(rng, geo->ymin, geo->ymax);
-        set_goal(s, x, y);
+        set_floor_goal(s, geo, x, y);
     } else if (social && roll < 0.87) {
         Emote em = r->theme->emotes[rng_choice(rng, r->theme->nemotes)];
         int spot = geo->spots.has && (!strcmp(em.kind, "swing") || !strcmp(em.kind, "slide"));
@@ -410,7 +409,7 @@ static void plan(Room *r, Session *s, int has_seat, double seat_x, double seat_y
         else {
             double x = rng_uniform(rng, 8, geo->w - 8);
             double y = rng_uniform(rng, geo->ymin, geo->ymax);
-            set_goal(s, x, y);
+            set_floor_goal(s, geo, x, y);
         }
     }
 }
@@ -443,7 +442,7 @@ static void watch(Room *r, Session *s, const Geo *geo, double now) { /* walk ove
     }
     s->face = o->px >= s->px ? 1 : -1;
     if (!s->peek_has_end) {
-        set_goal(s, o->px - 17, clampd(o->py + 3, geo->ymin, geo->ymax));
+        set_floor_goal(s, geo, o->px - 17, clampd(o->py + 3, geo->ymin, geo->ymax));
         if (fabs(s->px - s->gx) + fabs(s->py - s->gy) < 1.0) {
             s->has_goal = 0;
             s->peek_has_end = 1; s->peek_end = now + rng_uniform(&s->rng, 3.0, 5.0);
@@ -463,7 +462,7 @@ static void chat(Room *r, Session *s, const Geo *geo, double now) { /* one step 
     }
     if (strcmp(s->stage, "flee")) s->face = o->px >= s->px ? 1 : -1;
     if (!strcmp(s->stage, "walk")) {
-        set_goal(s, o->px + (s->px > o->px ? 18 : -18), clampd(o->py, geo->ymin, geo->ymax));
+        set_floor_goal(s, geo, o->px + (s->px > o->px ? 18 : -18), clampd(o->py, geo->ymin, geo->ymax));
         if (fabs(s->px - s->gx) + fabs(s->py - s->gy) < 1.0) {
             s->has_goal = 0;
             if (s->chat_kind == 5) { /* tag: this one chases, the friend runs */
@@ -489,7 +488,7 @@ static void chat(Room *r, Session *s, const Geo *geo, double now) { /* one step 
             s->flee_next = now + 0.7;
             double ang = atan2(s->py - o->py, s->px - o->px) + rng_uniform(&s->rng, -0.8, 0.8);
             double dist = rng_uniform(&s->rng, 25, 50);
-            set_goal(s, clampd(s->px + cos(ang) * dist, 8, geo->w - 8), clampd(s->py + sin(ang) * dist * 0.5, geo->ymin, geo->ymax));
+            set_floor_goal(s, geo, clampd(s->px + cos(ang) * dist, 8, geo->w - 8), clampd(s->py + sin(ang) * dist * 0.5, geo->ymin, geo->ymax));
         }
     }
     int active = !strcmp(s->stage, "talk") || !strcmp(s->stage, "chase") || !strcmp(s->stage, "flee");
@@ -536,7 +535,7 @@ static void steer(Room *r, Session *s, double seat_x, double seat_y, const Geo *
     const char *state = session_shown(s, now);
     if (s->has_left) { /* leave through the nearest side */
         drop_social(s);
-        set_goal(s, s->px < geo->w / 2.0 ? -12.0 : geo->w + 12.0, s->py);
+        set_goal(s, s->px < geo->w / 2.0 ? -12.0 : geo->w + 12.0, (double)geo->ymax);
     } else if (!strcmp(state, "work") || !strcmp(state, "think") || !strcmp(state, "sleep")) { /* busy or asleep: be at the desk */
         drop_social(s);
         int far = fabs(s->px - seat_x) + fabs(s->py - seat_y) > 0.5;

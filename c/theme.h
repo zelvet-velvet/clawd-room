@@ -1,4 +1,4 @@
-/* The three room looks (port of themes.py): background, furniture, roles, accessories, playground spots. */
+/* The three rooms in perspective (style A): background, workspaces, gates (room.h: theme_gate), the room's sign, roles, accessories, playground spots. */
 #ifndef THEME_H
 #define THEME_H
 #include "canvas.h"
@@ -21,7 +21,9 @@ const Theme *theme_get(const char *name); /* unknown name = office */
 const Theme *theme_pick(const char *room_name, const char *theme_name); /* the theme named, or guessed from the room name */
 /* paints the background (cached per theme and size, copied after the first time) */
 void theme_background(const Theme *th, Canvas *cv, int banner);
-void theme_furniture(const Theme *th, Canvas *cv, int cx, int by, int on, Rgb color, double t, const char *role);
+/* a workspace whose front edge is (cx, by); variant (a hash of the session) picks the device / drink / park thing */
+void theme_furniture(const Theme *th, Canvas *cv, int cx, int by, int on, Rgb color, double t, const char *role, unsigned variant);
+void theme_sign(const Theme *th, Canvas *cv, const char *title); /* the room's name as a sign in the room */
 void theme_accessory(const Theme *th, Canvas *cv, int x, int y, const char *role);
 /* roles for the ordered sessions: role[i] is "" , "barista" or "customer" */
 const char *theme_role(const Theme *th, int index);
