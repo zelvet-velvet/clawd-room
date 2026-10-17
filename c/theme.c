@@ -277,7 +277,9 @@ static void wall_door(Canvas *c, const View *v, int right, double fx, double fy,
     view_world(v, fx, fy, &X, &Z);
     double xw = right ? v->xw : -v->xw, z0 = Z - 0.1 * Z, z1 = Z + 0.1 * Z, e = view_e(v, 17) * p, fr = 0.02 * Z, fe = view_e(v, 2);
     if (e <= 0) return;
-    wq(c, v, xw, z0, 0, xw, z1, 0, xw, z1, e + fe, xw, z0, e + fe, RGB(124, 92, 66));           /* the frame */
+    double ol = 0.012 * Z; /* a dark outline, so the door reads on any wall (light office, brown coffee shop) */
+    wq(c, v, xw, z0 - ol, 0, xw, z1 + ol, 0, xw, z1 + ol, e + fe + view_e(v, 1), xw, z0 - ol, e + fe + view_e(v, 1), RGB(58, 40, 28));
+    wq(c, v, xw, z0, 0, xw, z1, 0, xw, z1, e + fe, xw, z0, e + fe, RGB(176, 132, 90));           /* the frame */
     double i0 = z0 + fr, i1 = z1 - fr;
     wq(c, v, xw, i0, 0, xw, i1, 0, xw, i1, e, xw, i0, e, RGB(40, 32, 28));                         /* the doorway */
     double lz = i1 - (i1 - i0) * (1 - open * 0.8);                                               /* the leaf, hinged at the back */
@@ -332,9 +334,9 @@ static void back_stairs(Canvas *c, const View *v, int coffee, double p) {
         canvas_rect(c, dxl - 1, yl - dh - 1, dw + 2, dh + 1, WOOD_LT);
         canvas_rect(c, dxl, yl - dh, dw, dh, RGB(20, 16, 14));
     }
-    /* the banister: balusters and a rail 6 px above the stairs and along the platform's edge (stopping before the door) */
-    for (int x = x0 + 1; x < dxl - 2; x += 3) { int ty = x < x1 ? y0 - (y0 - yl) * (x - x0) / (x1 - x0) : yl - 1; canvas_rect(c, x, ty - 5, 1, 5, rail); }
-    for (int x = x0; x < dxl - 2; x++) { int ty = x < x1 ? y0 - (y0 - yl) * (x - x0) / (x1 - x0) : yl - 1; canvas_px(c, x, ty - 6, rail); canvas_px(c, x, ty - 7, lt(rail, 0.15)); }
+    /* the banister: balusters and a rail 6 px above the stairs and all along the platform's edge (the door is behind it) */
+    for (int x = x0 + 1; x < xr - 1; x += 3) { int ty = x < x1 ? y0 - (y0 - yl) * (x - x0) / (x1 - x0) : yl - 1; canvas_rect(c, x, ty - 5, 1, 5, rail); }
+    for (int x = x0; x < xr; x++) { int ty = x < x1 ? y0 - (y0 - yl) * (x - x0) / (x1 - x0) : yl - 1; canvas_px(c, x, ty - 6, rail); canvas_px(c, x, ty - 7, lt(rail, 0.15)); }
     if (coffee && xr - x1 > 20 && y0 - yl >= 11) menu_board(c, (x1 + xr) / 2 - 8, yl + 1 + (y0 - yl - 11) / 2); /* the menu on the platform's face */
 }
 /* indoors, down: a stair well at the front: a trapezoid opening, its side walls going down, the steps dropping away and
