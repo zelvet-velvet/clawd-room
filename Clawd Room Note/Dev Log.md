@@ -247,7 +247,13 @@ sticker: lucide//book-open
 > - **`c` = follow <-> free camera.** Auto follow -> `c` -> free (only now the arrows / WASD move the view) -> `c` -> auto follow; a picked Clawd -> `c` -> auto follow. While following, left / right (A / D) or Tab pick the previous / next Clawd (`camera_step`, locked); up / down only say how to steer.
 > - Checked in ptys (two linked rooms, one session, both 3x): beta followed its Clawd to the door and went to zoom 1 when it had crossed; alpha (no desk) followed the visitor; `d` locked, `c` back to auto, left arrow picked again. `ui.txt` help line changed.
 
+> [!NOTE] Third round (Zaviel: an empty zoomed room, `c`, then a visitor comes in: the camera must follow it)
+> - Cause: the room was already on auto follow, so `c` switched it to the free camera (`cam 2` in the log), which follows nobody; nothing on screen said which mode was on.
+> - Now: while zoomed the status line shows the camera mode (`camera_label`: AUTO FOLLOW (WAITING) / AUTO: NAME / FOLLOW NAME / WITH NAME TO THE GATE / FREE CAMERA); `c` in a room with nobody to follow stays on auto follow ("WAITING FOR A CLAWD"). Also: our Clawds that are next door (`has_away`, parked just outside the edge) are never followed.
+> - Checked in ptys: beta with no sessions, 3x, `c` -> still auto, label WAITING; alpha sends its Clawd -> beta's camera follows `~alpha~s1`.
+
 > [!TODO] Test (by eye)
+> - [ ] Empty room zoomed in: the status line says AUTO FOLLOW (WAITING); `c` keeps it; a visitor comes in: the camera follows it
 > - [ ] A new iTerm2 room opens narrower (about 40% of the screen wide)
 > - [ ] Zoom in (`]`) in alpha: the gate next to beta stays where it was (beta's gate does not move or close)
 > - [ ] Zoomed, `g`: the camera goes with the Clawd to the door (or rope / stairs when stacked), then zooms out to the whole room

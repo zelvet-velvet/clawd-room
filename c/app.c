@@ -254,7 +254,8 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                 else if (k == '?') { help_on = !help_on; dirty = 1; }
                 else if (k == 'r') { size_pick = size; size_menu = 1; dirty = 1; } /* open the ROOM SIZE list at the current size */
                 else if (k == 'c') { /* follow (auto) <-> free camera; from a chosen Clawd back to auto */
-                    if (cam.mode == CAM_AUTO) { cam.mode = CAM_FREE; snprintf(flash, sizeof flash, "FREE CAMERA  ARROWS MOVE  (C = FOLLOW)"); }
+                    if (cam.mode == CAM_AUTO && !camera_anyone(&room)) snprintf(flash, sizeof flash, "AUTO FOLLOW: WAITING FOR A CLAWD"); /* (nothing to look at freely) */
+                    else if (cam.mode == CAM_AUTO) { cam.mode = CAM_FREE; snprintf(flash, sizeof flash, "FREE CAMERA  ARROWS MOVE  (C = FOLLOW)"); }
                     else { cam.mode = CAM_AUTO; cam.sid[0] = 0; snprintf(flash, sizeof flash, "AUTO FOLLOW  < > PICK A CLAWD%s", room.cam_zoom > 1 || cam.autozoom ? "" : "  (] ZOOMS IN)"); }
                     flash_until = wall() + 3; dirty = 1;
                 } else if (k == '\t' || ((k == 'a' || k == 'd') && cam.mode != CAM_FREE)) { /* following: the previous / next Clawd */
@@ -507,8 +508,14 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                     snprintf(cur, sizeof cur, "cam %d %s zoom %d cross %s", cam.mode, cam.sid, room.cam_zoom, cam.cross_sid[0] ? cam.cross_sid : "-");
                     if (strcmp(cur, logged_cam)) { snprintf(logged_cam, sizeof logged_cam, "%s", cur); FILE *lf = fopen(getenv("CLAWD_SIZE_LOG"), "a"); if (lf) { fprintf(lf, "%.1f %s\n", wall(), cur); fclose(lf); } }
                 }
-                char note[32], over[512];
+                char note[80], over[512];
                 Canvas cv = render(cols, rows, &room, shown_now, shown_t, note, sizeof note);
+                if (room.cam_zoom > 1 || cam.autozoom) { /* zoomed: say what the camera does (c switches follow / free) */
+                    char lab[48];
+                    camera_label(&cam, &room, lab, sizeof lab);
+                    size_t l = strlen(note);
+                    snprintf(note + l, sizeof note - l, "%s%s", l ? "   " : "", lab);
+                }
                 if (size_menu) draw_size_menu(&cv, SIZE_LABEL, N_SIZES, size_pick);
                 overlay_text(over, sizeof over, paused, help_on, note, wall() < flash_until ? flash : "");
                 Cells cells = cells_from_canvas(&cv, over);

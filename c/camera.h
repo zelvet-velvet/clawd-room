@@ -31,4 +31,7 @@ void camera_init(Camera *c);
 void camera_update(Camera *c, Room *room, double now);
 /* Tab, right, left: lock on the next (dir 1) or previous (dir -1) Clawd; returns its name (or NULL if the room is empty) */
 const char *camera_step(Camera *c, Room *room, double now, int dir);
+int camera_anyone(Room *room); /* somebody here the camera could follow */
+/* what the camera does, for the status line: AUTO FOLLOW (WAITING), AUTO: NAME, FOLLOW NAME, WITH NAME TO THE GATE, FREE CAMERA */
+void camera_label(const Camera *c, Room *room, char *out, size_t n);
 #endif

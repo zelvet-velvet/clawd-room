@@ -18,8 +18,11 @@ static int want(const Session *s, double now) {
 static int count(const Room *room) { return room->n + room->ng; }
 static Session *nth(Room *room, int i) { return i < room->n ? room->s[i] : room->guests[i - room->n]; }
 
+/* on screen here: not one of ours that is next door (it waits, unseen, just outside the edge it left by) */
+static int followable(const Session *s) { return s->has_pos && !s->has_away; }
+
 static Session *by_sid(Room *room, const char *sid) {
-    for (int i = 0; i < count(room); i++) if (nth(room, i)->has_pos && !strcmp(nth(room, i)->sid, sid)) return nth(room, i);
+    for (int i = 0; i < count(room); i++) if (followable(nth(room, i)) && !strcmp(nth(room, i)->sid, sid)) return nth(room, i);
     return NULL;
 }
 
@@ -34,7 +37,7 @@ static Session *choose(Camera *c, Room *room, double now) {
     int best_w = -1;
     for (int i = 0; i < count(room); i++) {
         Session *s = nth(room, i);
-        if (!s->has_pos) continue;
+        if (!followable(s)) continue;
         int w = want(s, now);
         if (w > best_w || (w == best_w && s->last > best->last)) { best = s; best_w = w; } /* ties: the most recent event */
     }
@@ -46,7 +49,7 @@ static Session *choose(Camera *c, Room *room, double now) {
         while (i < n && nth(room, i) != cur) i++;
         for (int k = 1; k <= n; k++) {
             Session *s = nth(room, (i + k) % n);
-            if (s->has_pos) { pick(c, s, now); return s; }
+            if (followable(s)) { pick(c, s, now); return s; }
         }
     }
     return cur;
@@ -58,7 +61,7 @@ static void frame_busy(Camera *c, Room *room, double now, double *tx, double *ty
     int n = 0;
     for (int i = 0; i < count(room); i++) {
         const Session *s = nth(room, i);
-        if (!s->has_pos || want(s, now) == 0) continue;
+        if (!followable(s) || want(s, now) == 0) continue;
         x0 = fmin(x0, s->px - 7); x1 = fmax(x1, s->px + 7); y0 = fmin(y0, s->py); y1 = fmax(y1, s->py + 8);
         n++;
     }
@@ -108,13 +111,30 @@ void camera_update(Camera *c, Room *room, double now) {
     if (fabs(dy) > my) room->cam_y += (dy - copysign(my, dy)) * CAM_EASE;
 }
 
+int camera_anyone(Room *room) {
+    for (int i = 0; i < count(room); i++) if (followable(nth(room, i))) return 1;
+    return 0;
+}
+
+void camera_label(const Camera *c, Room *room, char *out, size_t n) {
+    const Session *s = by_sid(room, c->cross_sid[0] ? c->cross_sid : c->sid);
+    char nm[16] = "";
+    if (s) snprintf(nm, sizeof nm, "%.10s", s->name[0] ? s->name : "CLAWD");
+    for (char *p = nm; *p; p++) if (*p >= 'a' && *p <= 'z') *p -= 32;
+    if (c->mode == CAM_FREE) snprintf(out, n, "FREE CAMERA");
+    else if (c->cross_sid[0] && s) snprintf(out, n, "WITH %s TO THE GATE", nm);
+    else if (c->mode == CAM_LOCKED && s) snprintf(out, n, "FOLLOW %s", nm);
+    else if (s) snprintf(out, n, "AUTO: %s", nm);
+    else snprintf(out, n, "AUTO FOLLOW (WAITING)");
+}
+
 const char *camera_step(Camera *c, Room *room, double now, int dir) {
     Session *cur = by_sid(room, c->sid);
     int n = count(room), i = dir > 0 ? -1 : 0;
     for (int q = 0; q < n; q++) if (nth(room, q) == cur) i = q;
     for (int k = 1; k <= n; k++) {
         Session *s = nth(room, ((i + dir * k) % n + n) % n);
-        if (s->has_pos) { pick(c, s, now); c->mode = CAM_LOCKED; return s->name[0] ? s->name : "CLAWD"; }
+        if (followable(s)) { pick(c, s, now); c->mode = CAM_LOCKED; return s->name[0] ? s->name : "CLAWD"; }
     }
     return NULL;
 }
