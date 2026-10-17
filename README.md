@@ -23,7 +23,7 @@ idle 90 s (asleep), session end (walks out). A session with no events for 30 min
     ./clawd-room.sh                           # draws in the terminal (works in a 60x20 pane or fullscreen); builds c/ on the first start
     ./clawd-room.sh --dump 100x30 --events /tmp/e.jsonl --at 1800000010   # one plain-text frame, for tests
 
-Keys: `q` or Esc quit, `p` pause, `?` help line, `r` room size list, `[` `]` camera zoom, arrows or W A S D move the camera, `g` send a Clawd next door, `f` fit. Needs at least 44x20 cells. The hook must be
+Keys: `q` or Esc quit, `p` pause, `?` help line, `r` room size list, `[` `]` camera zoom, `z` auto zoom, Tab follow the next Clawd, `c` auto follow, arrows or W A S D move the camera freely, `g` send a Clawd next door, `f` fit. Needs at least 44x20 cells. The hook must be
 installed once (`python3 install_hooks.py` shows what it would change) or the room stays empty.
 Needs a truecolor terminal (Windows Terminal is fine). It only reads the events file.
 
@@ -63,15 +63,18 @@ Themes (`--theme office|coffee|park`, by default guessed from the room name):
   are customers at cafe tables; idle customers go and order a coffee and carry it back.
 - park: picnic tables with laptops; idle Clawds play on the swing and the slide.
 
-Room size: by default (`--ratio auto`, FIT WINDOW) the room is as big and as shaped as the window, so it
-follows you when you resize the window (1:1, 4:3, 16:9, 3:1 ...). `r` opens the ROOM SIZE list (up/down or W/S, Enter picks,
-Esc or `r` closes); `--ratio 3:1|2:1|16:9|4:3|1:1|3:4|large|huge` picks one from the command line. The shapes pin a standard
-room (3:1 = 144x48 pixels = 144x24 cells, ...), drawn bigger when the window is bigger; `large` (192x108) and `huge` (256x144)
-are rooms that can be bigger than the window: you see part of them and move around with the camera.
+Room size: the room always fills the window and takes its shape; dragging the window resizes it live. It grows (more
+floor, more desks) up to the chosen room size, then the pixels get bigger instead (grow, then scale). `r` opens the ROOM SIZE
+list (up/down or W/S, Enter picks, Esc or `r` closes; `--room-size auto|s|m|l|xl`):
+- AUTO (default): just big enough to seat every session with floor to walk on; it changes when sessions come and go.
+- S 120x60, M 160x90, L 220x120, XL 300x160 room pixels: the biggest the room may be (an 80x25 window is 80x50 room pixels).
+(`--ratio 3:1|2:1|16:9|4:3|1:1|3:4` still pins an old fixed shape; it is kept for the tests.)
 
-Camera: `[` and `]` zoom a camera into the room (1x to 4x; `--zoom N` starts zoomed). The room keeps its layout (the same
-desks and floor), only the view gets closer; the arrows or W A S D move it a quarter of the view. FIT WINDOW at 1x shows the
-whole room, so there is nothing to move until you zoom in.
+Camera: `[` and `]` zoom a camera into the room (1x to 4x; `--zoom N` starts zoomed); the room keeps its layout, only the
+view gets closer. When zoomed the camera follows a Clawd and only moves when that Clawd nears the edge of the view. Auto
+follow (default) picks the Clawd that needs you, else the one that just finished, else the most recently active one, and
+takes turns every 10 s when nothing happens. Tab locks on the next Clawd, the arrows or W A S D move the camera freely, `c`
+goes back to auto follow. `z` turns auto zoom on or off: the zoom then frames the busy Clawds (close on one, wider for several).
 
 Font size follows the window (WSL, Windows Terminal): when you stop resizing, a window with fewer
 than 110 columns gets a smaller font and one with more than 170 a bigger one (it sends the

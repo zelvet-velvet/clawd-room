@@ -128,6 +128,9 @@ sticker: lucide//book-open
 
 ## 🎥 Camera, room size list, iTerm2 helper (2026-10-17)
 
+> [!WARNING] Superseded the same day
+> The `r` shape list (LARGE / HUGE) and the free-only camera below were replaced by the agreed design in the next entry ("Agreed with Zaviel"); kept here for the history.
+
 > [!NOTE] Camera zoom (`[` `]`, arrows / WASD)
 > Decided with Zaviel: `[` `]` are a **camera**, no longer a TUI scale that shrinks the room.
 > - The room is laid out as before (FIT WINDOW: window / auto scale; a shape: its fixed size), then `render_camera()` (`c/draw.c`) shows part of it at base scale x zoom (1x to `CAM_MAX_ZOOM` 4) around `cam_x, cam_y` (room pixels, clamped so the view stays inside the room). Zooming in starts at the centre; the arrows or W A S D move a quarter of the view. At 1x in FIT WINDOW nothing moves (flash says `]` zooms in).
@@ -159,7 +162,7 @@ sticker: lucide//book-open
 > - A room blocks in `write()` if the terminal stops reading (seen with iTerm2 in full screen); it could use a non-blocking write with a timeout so `q` / SIGTERM still work.
 > - Windows Terminal panes: the PowerShell watcher sees only the whole window. UI Automation exposes each `TermControl` with a bounding rectangle, which could report panes like iTerm2's (to try on WSL).
 
-## 🤝 Agreed with Zaviel: resize, room size, camera (2026-10-17, not built yet)
+## 🤝 Agreed with Zaviel: resize, room size, camera (2026-10-17, built)
 
 > [!NOTE] What Zaviel decided
 > The `r` list of shapes and the plain `[` `]` camera from the entry above are not what Zaviel wants; this replaces them.
@@ -168,9 +171,22 @@ sticker: lucide//book-open
 > - **Camera follows Clawds (auto follow is the default when zoomed).** Priority: the Clawd that needs you (waiting for an OK) > the one that just finished (cheering) > the most recently active one > if nothing happens, the next Clawd about every 10 s. The camera moves only when its Clawd nears the edge of the view, smoothly. `Tab` = pick the next Clawd yourself (stays on it), arrows / WASD = free camera, `c` = back to auto follow.
 > - **Zoom is manual by default** (`[` `]`); a shortcut turns on **auto zoom** (the camera frames the active Clawds: closer on one busy Clawd, wider when several are active) until pressed again.
 
-> [!QUESTION] Still to agree
-> - Sizes in room pixels, proposed: S 120x60, M 160x90, L 220x120, XL 300x160 (an 80x25 window is 80x50 room pixels; a full-screen MacBook Air iTerm2 at 14 pt is about 162x102).
-> - Shortcut for auto zoom, proposed `z`.
+> [!NOTE] Also decided
+> - Sizes in room pixels: S 120x60, M 160x90, L 220x120, XL 300x160 (an 80x25 window is 80x50 room pixels; a full-screen MacBook Air iTerm2 at 14 pt is about 162x102).
+> - Auto zoom key: `z`.
+
+> [!NOTE] How it is built
+> - **Room size** (`c/ui.c`: `SIZE_*`, `size_scale()`): AUTO = `auto_scale()` as before (biggest scale up to 3x that seats everybody); S/M/L/XL = the smallest scale k with window / k inside the size (`ceil(cols / W)`, `ceil(rows*2 / H)`). The scale is picked again on every resize and now also when the number of Clawds changes. The room is always the auto shape; `--ratio` shapes stay only for the old tests and are not in the list. `--room-size auto|s|m|l|xl`.
+> - **Camera** (`c/camera.c`): `want()` = 3 wait, 2 cheer, 1 work/think, 0 idle/sleep. Auto follow keeps its Clawd unless one wants the camera more; ties go to the most recent event; when the best is 0 it moves to the next Clawd after `CAM_CYCLE` 10 s. Dead zone `CAM_DEAD` 0.25 of the view, `CAM_EASE` 0.18 of the rest each frame. Tab = `CAM_LOCKED` on the next Clawd (back to auto if it leaves), arrows = `CAM_FREE`, `c` = auto. Auto zoom: the box around the busy Clawds + 12 px; the biggest zoom (to 4) whose view holds it, changing at most every 2 s; nobody busy = 1x. `[` `]` turn auto zoom off.
+> - Test hook: `CLAWD_SIZE_LOG` also logs `cam MODE SID zoom Z` when the camera target changes. Checked in a pty with the simulated sessions: auto follow took `d` (Notification = needs you), Tab gave `e` then `f`, `c` gave `d` again, `z` gave 1x (busy Clawds spread over the room), an arrow gave free.
+> - Snapshots: `ui.txt` help line; `dump.txt` replaced the LARGE / HUGE frames with `--room-size s` (100x30, 200x70) and `--room-size m --zoom 2`; all older frames identical. `pty_smoke` checks `ROOM SIZE S`, `FOLLOW`, `AUTO ZOOM ON`.
+
+> [!TODO] Test (by eye)
+> - [ ] Drag the window bigger and smaller: the room re-lays out at once; with S chosen, past 120 columns the pixels get bigger
+> - [ ] `r` list shows AUTO, S, M, L, XL; picking one changes the room at once
+> - [ ] `]` twice: the camera sits on the Clawd that needs you / just finished / is busy, and follows it when it walks
+> - [ ] Tab goes through the Clawds (flash FOLLOW NAME); arrows make it free; `c` back to auto
+> - [ ] `z`: the zoom closes in on a single busy Clawd and widens when several are busy
 
 ---
 ## ⏳ Pending (last step)

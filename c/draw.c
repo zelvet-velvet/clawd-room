@@ -353,14 +353,13 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
 
 /* ---- the whole terminal ----------------------------------------------------------------------- */
 static int ratio_size(const char *r, int *w, int *h) {
-    static const struct { const char *k; int w, h; } R[] = {{"3:1", 144, 48}, {"2:1", 120, 60}, {"16:9", 128, 72}, {"4:3", 128, 96}, {"1:1", 120, 120}, {"3:4", 96, 128},
-                                                         {"large", BIG_ROOM_W, BIG_ROOM_H}, {"huge", HUGE_ROOM_W, HUGE_ROOM_H}};
+    static const struct { const char *k; int w, h; } R[] = {{"3:1", 144, 48}, {"2:1", 120, 60}, {"16:9", 128, 72}, {"4:3", 128, 96}, {"1:1", 120, 120}, {"3:4", 96, 128}};
     for (size_t i = 0; i < sizeof R / sizeof R[0]; i++) if (!strcmp(R[i].k, r)) { *w = R[i].w; *h = R[i].h; return 1; }
     return 0;
 }
 
 /* the camera: the room is laid out as usual (w x h room pixels shown at base scale k), then a part of it is shown
- * at k * zoom around (cam_x, cam_y). A room bigger than the window is shown at 1x and panned the same way. */
+ * at k * zoom around (cam_x, cam_y). */
 static Canvas render_camera(int pw, int ph, Room *room, double now, double t, char *note, size_t note_n, int w, int h, int k) {
     const Rgb MARGIN = RGB(14, 14, 18);
     Canvas rc = canvas_new(w, h, RGB(34, 36, 46));
@@ -404,7 +403,7 @@ Canvas render(int cols, int rows, Room *room, double now, double t, char *note, 
     int sw = 0, sh = 0;
     ratio_size(room->ratio, &sw, &sh);
     int k = imin(pw / sw, ph / sh);
-    if (room->cam_zoom > 1 || !strcmp(room->ratio, "large") || !strcmp(room->ratio, "huge")) return render_camera(pw, ph, room, now, t, note, note_n, sw, sh, imax(1, k));
+    if (room->cam_zoom > 1) return render_camera(pw, ph, room, now, t, note, note_n, sw, sh, imax(1, k));
     Canvas full = canvas_new(pw, ph, MARGIN);
     if (k >= 1) {
         Canvas rc = canvas_new(sw, sh, RGB(34, 36, 46));

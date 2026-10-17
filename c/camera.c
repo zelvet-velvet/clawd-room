@@ -1,0 +1,98 @@
+#include "camera.h"
+#include <math.h>
+#include <stdio.h>
+#include <string.h>
+
+void camera_init(Camera *c) { memset(c, 0, sizeof *c); }
+
+/* how much a Clawd wants the camera: 3 needs you, 2 just finished, 1 busy, 0 idle or asleep */
+static int want(const Session *s, double now) {
+    const char *st = session_shown(s, now);
+    if (!strcmp(st, "wait")) return 3;
+    if (!strcmp(st, "cheer")) return 2;
+    if (!strcmp(st, "work") || !strcmp(st, "think")) return 1;
+    return 0;
+}
+
+static Session *by_sid(Room *room, const char *sid) {
+    for (int i = 0; i < room->n; i++) if (room->s[i]->has_pos && !strcmp(room->s[i]->sid, sid)) return room->s[i];
+    return NULL;
+}
+
+static void pick(Camera *c, const Session *s, double now) {
+    snprintf(c->sid, sizeof c->sid, "%s", s ? s->sid : "");
+    c->since = now;
+}
+
+/* auto follow: keep the current Clawd unless one wants the camera more; when nothing happens, take turns */
+static Session *choose(Camera *c, Room *room, double now) {
+    Session *cur = by_sid(room, c->sid), *best = NULL;
+    int best_w = -1;
+    for (int i = 0; i < room->n; i++) {
+        Session *s = room->s[i];
+        if (!s->has_pos) continue;
+        int w = want(s, now);
+        if (w > best_w || (w == best_w && s->last > best->last)) { best = s; best_w = w; } /* ties: the most recent event */
+    }
+    if (!best) return NULL;
+    int cur_w = cur ? want(cur, now) : -1;
+    if (!cur || best_w > cur_w) { pick(c, best, now); return best; }
+    if (best_w == 0 && now - c->since > CAM_CYCLE) { /* a quiet room: the next Clawd in seat order */
+        int i = 0;
+        while (i < room->n && room->s[i] != cur) i++;
+        for (int k = 1; k <= room->n; k++) {
+            Session *s = room->s[(i + k) % room->n];
+            if (s->has_pos) { pick(c, s, now); return s; }
+        }
+    }
+    return cur;
+}
+
+/* auto zoom: the biggest zoom whose view still holds every busy Clawd (with a margin); 1 when nobody is busy */
+static void frame_busy(Camera *c, Room *room, double now, double *tx, double *ty) {
+    double x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+    int n = 0;
+    for (int i = 0; i < room->n; i++) {
+        const Session *s = room->s[i];
+        if (!s->has_pos || want(s, now) == 0) continue;
+        x0 = fmin(x0, s->px - 7); x1 = fmax(x1, s->px + 7); y0 = fmin(y0, s->py); y1 = fmax(y1, s->py + 8);
+        n++;
+    }
+    int z = 1;
+    if (n) {
+        double bw = x1 - x0 + 2 * CAM_MARGIN, bh = y1 - y0 + 2 * CAM_MARGIN;
+        while (z < CAM_MAX_ZOOM && bw <= room->size_w / (double)(z + 1) && bh <= room->size_h / (double)(z + 1)) z++;
+        *tx = (x0 + x1) / 2; *ty = (y0 + y1) / 2;
+    }
+    int cur = room->cam_zoom > 1 ? room->cam_zoom : 1;
+    if (z != cur && now - c->zoom_at >= CAM_ZOOM_EVERY) { room->cam_zoom = z; c->zoom_at = now; }
+}
+
+void camera_update(Camera *c, Room *room, double now) {
+    double tx = -1, ty = -1;
+    if (c->autozoom) frame_busy(c, room, now, &tx, &ty);
+    if (room->cam_zoom <= 1 || !room->size_w || c->mode == CAM_FREE) return; /* the whole room is shown, or the user steers */
+    if (tx < 0) { /* not framing a group: follow one Clawd */
+        Session *s = c->mode == CAM_LOCKED ? by_sid(room, c->sid) : NULL;
+        if (!s) { c->mode = CAM_AUTO; s = choose(c, room, now); } /* the locked Clawd left: back to auto */
+        if (!s) return;
+        tx = s->px; ty = s->py + 4;
+    }
+    if (!room->cam_set) { room->cam_x = tx; room->cam_y = ty; room->cam_set = 1; return; }
+    double vw = room->cam_vw ? room->cam_vw : room->size_w / (double)room->cam_zoom, vh = room->cam_vh ? room->cam_vh : room->size_h / (double)room->cam_zoom;
+    double dx = tx - room->cam_x, dy = ty - room->cam_y, mx = vw * CAM_DEAD, my = vh * CAM_DEAD;
+    /* only the part outside the dead zone pulls, a little each frame */
+    if (fabs(dx) > mx) room->cam_x += (dx - copysign(mx, dx)) * CAM_EASE;
+    if (fabs(dy) > my) room->cam_y += (dy - copysign(my, dy)) * CAM_EASE;
+}
+
+const char *camera_next(Camera *c, Room *room, double now) {
+    Session *cur = by_sid(room, c->sid);
+    int i = -1;
+    for (int q = 0; q < room->n; q++) if (room->s[q] == cur) i = q;
+    for (int k = 1; k <= room->n; k++) {
+        Session *s = room->s[(i + k + room->n) % room->n];
+        if (s->has_pos) { pick(c, s, now); c->mode = CAM_LOCKED; return s->name; }
+    }
+    return NULL;
+}

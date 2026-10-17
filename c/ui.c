@@ -12,7 +12,7 @@ void overlay_text(char *out, size_t n, int paused, int help_on, const char *note
     const char *parts[4];
     int k = 0;
     if (paused) parts[k++] = "PAUSED";
-    if (help_on) parts[k++] = "q/esc quit   p pause   r room size   [ ] zoom   arrows/wasd move   ctrl +/- font   f auto font+scale   g send a Clawd   ? help";
+    if (help_on) parts[k++] = "q/esc quit   p pause   r room size   [ ] zoom   z auto zoom   tab follow next   c auto follow   arrows/wasd move   f auto font+scale   g send a Clawd   ? help";
     if (note && note[0]) parts[k++] = note;
     if (flash && flash[0]) parts[k++] = flash;
     for (int i = 0; i < k; i++) {
@@ -27,6 +27,17 @@ void too_small(char *out, size_t n, int cols, int rows) {
     if ((int)strlen(msg) > cols) msg[cols > 0 ? cols : 0] = 0;
     int r = rows / 2 + 1 > 1 ? rows / 2 + 1 : 1, c = (cols - (int)strlen(msg)) / 2 + 1 > 1 ? (cols - (int)strlen(msg)) / 2 + 1 : 1;
     snprintf(out, n, "\x1b[0m\x1b[2J\x1b[%d;%dH%s", r, c, msg);
+}
+
+const char *const SIZE_LABEL[N_SIZES] = {"AUTO", "S  120X60", "M  160X90", "L  220X120", "XL 300X160"};
+const char *const SIZE_KEY[N_SIZES] = {"auto", "s", "m", "l", "xl"};
+const int SIZE_MAX_W[N_SIZES] = {0, 120, 160, 220, 300}, SIZE_MAX_H[N_SIZES] = {0, 60, 90, 120, 160};
+
+int size_scale(int pw, int ph, int size, int n) {
+    if (size <= 0 || size >= N_SIZES) return auto_scale(pw, ph, n);
+    int kw = (pw + SIZE_MAX_W[size] - 1) / SIZE_MAX_W[size], kh = (ph + SIZE_MAX_H[size] - 1) / SIZE_MAX_H[size];
+    int k = kw > kh ? kw : kh;
+    return k < 1 ? 1 : k;
 }
 
 int auto_scale(int pw, int ph, int n) {

@@ -53,7 +53,7 @@ typedef struct {
     int has_link[SIDES]; double link_pos[SIDES];
     int has_gate[SIDES]; double gate_scale[SIDES];
     int scale;               /* TUI scale: room pixels are scale x scale terminal cells (auto shape only) */
-    char ratio[8];           /* "auto" or a key of RATIOS (incl. the big rooms "large", "huge") */
+    char ratio[8];           /* "auto" (the room follows the window) or a fixed shape (--ratio, kept for the tests) */
     int size_w, size_h;      /* size of the room in pixels as last drawn */
     int view_x, view_y, view_k; /* where the room sits in the terminal canvas: x offset, y offset, scale */
     int cam_zoom;            /* camera zoom over the laid-out room: 0 or 1 = whole room, 2..CAM_MAX_ZOOM = closer */
@@ -76,10 +76,6 @@ typedef struct {
 #define SLOT_MIN_W 30
 #define SLOT_MAX_W 62
 #define CAM_MAX_ZOOM 4     /* [ ] camera zoom steps over the room */
-#define BIG_ROOM_W 192     /* the "large" room: can be bigger than the window, the camera pans over it */
-#define BIG_ROOM_H 108
-#define HUGE_ROOM_W 256    /* the "huge" room */
-#define HUGE_ROOM_H 144
 #define PER_ROW 5
 #define BANNER_H 8
 #define SEAT_DY 7
