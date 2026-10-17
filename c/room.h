@@ -95,6 +95,7 @@ Session *room_add_guest(Room *r, const char *key, double now);
 void room_receive(Room *r, const Msg *m);
 void room_peer_gone(Room *r, const char *peer);
 const char *room_send_one(Room *r, const Geo *geo, double now, char *buf, size_t n); /* the g key */
+const char *room_recall(Room *r, double now, char *buf, size_t n); /* the b key: call our Clawds home, or send visitors home */
 
 const SpriteFile *draw_frames(void);
 void draw_set_sprites(const SpriteFile *frames, const SpriteFile *items); /* the editable files the drawing prefers */

@@ -243,7 +243,7 @@ static void tool_send(Tool *t, const char *line) {
         snprintf(buf, sizeof buf, "%s", line);
         int n = 0;
         for (char *p = strtok_r(buf, "|", &save); p && n < 4; p = strtok_r(NULL, "|", &save)) parts[n++] = p;
-        if (n < 3 || !(strcmp(parts[0], "resize") == 0 || strcmp(parts[0], "zoomfg") == 0 || strcmp(parts[0], "resetfg") == 0)) return; /* no font keys for a window without the focus */
+        if (n < 3 || !(strcmp(parts[0], "resize") == 0 || strcmp(parts[0], "screen") == 0 || strcmp(parts[0], "zoomfg") == 0 || strcmp(parts[0], "resetfg") == 0)) return; /* no font keys for a window without the focus */
         spawn_osa_detached(OSA_TOOL, (const char *const *)parts, n);
         return;
     }
@@ -263,6 +263,7 @@ void tool_zoom(Tool *t, const char *title, int step, int only_if_focused, int li
     snprintf(b, sizeof b, "%s|%s|%d", live ? "zoomlive" : only_if_focused ? "zoomfg" : "zoom", title, step);
     tool_send(t, b);
 }
+void tool_screen(Tool *t, const char *title, int percent) { char b[300]; snprintf(b, sizeof b, "screen|%s|%d", title, percent); tool_send(t, b); }
 void tool_reset_zoom(Tool *t, const char *title) { char b[300]; snprintf(b, sizeof b, "resetfg|%s|0", title); tool_send(t, b); }
 void tool_stop(Tool *t) {
     if (t->fd >= 0) close(t->fd);
@@ -321,7 +322,9 @@ void opensetup_init(OpenSetup *o, Tool *tool, const char *title, int font, const
     snprintf(o->title, sizeof o->title, "%s", title);
     snprintf(o->size, sizeof o->size, "%s", window ? size : "off");
     for (char *p = o->size; *p; p++) if (*p >= 'A' && *p <= 'Z') *p += 32;
-    o->size_off = !strcmp(o->size, "off");
+    o->size_screen = !strcmp(o->size, "screen");
+    if (o->size_screen && !use_mac()) o->size_off = 1; /* (only the iTerm2 helper knows the screen) */
+    else o->size_off = !strcmp(o->size, "off");
     o->stage = ST_RESET;
 }
 
@@ -345,6 +348,7 @@ int opensetup_update(OpenSetup *o, double now, int cols, int rows, const int *re
         o->stage = ST_PROBE; o->wait_until = now + 0.6;
     } else if (o->stage == ST_PROBE) {
         if (o->size_off) o->stage = ST_FONT;
+        else if (o->size_screen) { tool_screen(o->tool, o->title, SCREEN_PERCENT); o->stage = ST_FONT; }
         else if (now >= o->wait_until) {
             double px[2];
             int have = opensetup_window_px(o, rect, area, cols, rows, px) != 0;

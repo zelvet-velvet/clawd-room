@@ -23,7 +23,7 @@ idle 90 s (asleep), session end (walks out). A session with no events for 30 min
     ./clawd-room.sh                           # draws in the terminal (works in a 60x20 pane or fullscreen); builds c/ on the first start
     ./clawd-room.sh --dump 100x30 --events /tmp/e.jsonl --at 1800000010   # one plain-text frame, for tests
 
-Keys: `q` or Esc quit, `p` pause, `?` help line, `r` room size list, `[` `]` camera zoom, `z` auto zoom, Tab follow the next Clawd, `c` auto follow, arrows or W A S D move the camera freely, `g` send a Clawd next door, `f` fit. Needs at least 44x20 cells. The hook must be
+Keys: `q` or Esc quit, `p` pause, `?` help line, `r` room size list, `[` `]` camera zoom, `z` auto zoom, Tab follow the next Clawd, `c` auto follow, arrows or W A S D move the camera freely, `g` send a Clawd next door, `b` call your Clawds back (or send visitors home), `f` fit. Needs at least 44x20 cells. The hook must be
 installed once (`python3 install_hooks.py` shows what it would change) or the room stays empty.
 Needs a truecolor terminal (Windows Terminal is fine). It only reads the events file.
 
@@ -56,6 +56,9 @@ get a gate between them, like two attached windows. iTerm2 does not say where a 
 worked out from the window size, the title and tab bar and iTerm2's margins (simple splits only: a row of side-by-side
 panes or a column of stacked ones). `f` resizes the window there too. The room leaves the iTerm2 font alone unless you
 pass `--font PT` (that sends Cmd -/+ to the room's own window when it has the focus, and needs Accessibility for iTerm2).
+When a room opens in iTerm2 its window is sized from the screen (`--size screen`, the default there): 55% of the usable
+width and height, at least 44x20 cells, moved only as far as needed to stay on screen. `--size COLSxROWS` or `--size off`
+as on WSL.
 
 Themes (`--theme office|coffee|park`, by default guessed from the room name):
 - office: desks and monitors.

@@ -4,8 +4,9 @@
  * iTerm2 does not tell where a pane is or where the text starts, so the terminal area is worked out: window bounds minus
  * the title bar (none in full screen), the tab bar when there are several tabs, and iTerm2's margins. Panes are split
  * by their columns (side by side) or rows (stacked); other layouts report the whole window for each pane.
- * OSA_TOOL does one command: resize|title|w|h, or zoomfg|title|step and resetfg|title|0 (font keys, only when that
- * window is the focused one). */
+ * OSA_TOOL does one command: resize|title|w|h; screen|title|percent (the window to that part of the screen's usable area,
+ * at least MIN_COLS x MIN_ROWS cells, moved only as far as needed to stay on screen); or zoomfg|title|step and
+ * resetfg|title|0 (font keys, only when that window is the focused one). */
 #ifndef MAC_SCRIPTS_H
 #define MAC_SCRIPTS_H
 
@@ -53,12 +54,29 @@ static const char OSA_WATCH[] =
     "}\n";
 
 static const char OSA_TOOL[] =
+    "ObjC.import('AppKit');\n"
+    "const MIN_COLS = 44, MIN_ROWS = 20, TITLE_H = 28;\n"
     "function run(argv) {\n"
     "  const cmd = argv[0], title = argv[1], n = parseInt(argv[2] || '0', 10), m = parseInt(argv[3] || '0', 10);\n"
     "  const it = Application('iTerm2');\n"
     "  const named = s => String(s.variable({named: 'terminalWindowName'}) || '') === title;\n"
     "  if (cmd === 'resize') {\n"
     "    for (const w of it.windows()) if (w.currentTab().sessions().some(named)) { const b = w.bounds(); w.bounds = {x: b.x, y: b.y, width: n, height: m}; return; }\n"
+    "    return;\n"
+    "  }\n"
+    "  if (cmd === 'screen') {\n"
+    "    for (const w of it.windows()) {\n"
+    "      const s = w.currentTab().sessions().find(named);\n"
+    "      if (!s) continue;\n"
+    "      const scr = $.NSScreen.mainScreen, f = scr.frame, v = scr.visibleFrame; /* Cocoa: origin bottom-left */\n"
+    "      const vx = v.origin.x, vy = f.size.height - v.origin.y - v.size.height, vw = v.size.width, vh = v.size.height;\n"
+    "      const b = w.bounds(), cw = (b.width - 10) / s.columns(), ch = (b.height - TITLE_H - 4) / s.rows();\n"
+    "      let ww = Math.max(vw * n / 100, MIN_COLS * cw + 10), wh = Math.max(vh * n / 100, MIN_ROWS * ch + TITLE_H + 4);\n"
+    "      ww = Math.min(ww, vw); wh = Math.min(wh, vh);\n"
+    "      const x = Math.min(Math.max(b.x, vx), vx + vw - ww), y = Math.min(Math.max(b.y, vy), vy + vh - wh);\n"
+    "      w.bounds = {x: Math.round(x), y: Math.round(y), width: Math.round(ww), height: Math.round(wh)};\n"
+    "      return;\n"
+    "    }\n"
     "    return;\n"
     "  }\n"
     "  /* font keys: only into our own window, and only when it already has the focus */\n"

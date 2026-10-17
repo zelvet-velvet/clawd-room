@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Two linked rooms in ptys: send a Clawd with the g key from each and check the walk messages arrive and everything is cleaned up.
+"""Two linked rooms in ptys: send a Clawd with the g key from each, call alpha's back with b, and check the walk and recall messages arrive and everything is cleaned up.
 
     python3 tools/link_smoke.py
 """
 import fcntl
 import glob
+import re
 import json
 import os
 import pty
@@ -72,29 +73,35 @@ def pair(kind_a, kind_b):
         a.key(b"g"); a.pump(0.6)
         b.key(b"g"); b.pump(0.6)
         a.pump(1.0); b.pump(1.0)
+        for _ in range(40):  # the Clawds walk to the door and through it
+            a.pump(0.1); b.pump(0.1)
+        a.key(b"b"); a.pump(0.6); b.pump(0.6)
         inboxes = {}
         for path in glob.glob(os.path.join(link, "*.inbox")):
             lines = [json.loads(x) for x in open(path).read().splitlines() if x.strip()]
             inboxes[os.path.basename(path).split("-")[0]] = lines
         walks = {room: [m for m in lines if m["type"] == "walk"] for room, lines in inboxes.items()}
         hellos = {room: [m for m in lines if m["type"] == "hello"] for room, lines in inboxes.items()}
+        recalls = {room: [m for m in lines if m["type"] == "recall"] for room, lines in inboxes.items()}
         sa, sb = a.stop(), b.stop()
         leftovers = glob.glob(os.path.join(link, "*"))
-        return walks, hellos, sa, sb, leftovers, a.out, b.out
+        return walks, hellos, recalls, sa, sb, leftovers, a.out, b.out
 
 
 bad = 0
 for ka, kb in (("c", "c"),):
-    walks, hellos, sa, sb, left, oa, ob = pair(ka, kb)
+    walks, hellos, recalls, sa, sb, left, oa, ob = pair(ka, kb)
     ok = (sa == 0 and sb == 0 and not left
           and len(hellos.get("alpha", [])) >= 1 and len(hellos.get("beta", [])) >= 1
           and len(walks.get("beta", [])) >= 1 and len(walks.get("alpha", [])) >= 1
           and all(m["data"]["side"] == "left" and m["data"]["sid"].startswith("sess") for m in walks.get("beta", []))
           and all(m["data"]["side"] == "right" and m["data"]["sid"].startswith("sess") for m in walks.get("alpha", []))
-          and b"SENDING" in oa and b"SENDING" in ob and b"BETA JOINED" in oa and b"ALPHA JOINED" in ob)
+          and b"SENDING" in oa and b"SENDING" in ob and b"BETA JOINED" in oa and b"ALPHA JOINED" in ob
+          and b"CALLING " in oa and len(recalls.get("beta", [])) >= 1)
     bad += not ok
-    print("%-4s alpha=%s beta=%s: hello %s/%s, walk messages %s/%s, exit %s/%s, files left %d" % (
-        "OK" if ok else "FAIL", ka, kb, len(hellos.get("alpha", [])), len(hellos.get("beta", [])), len(walks.get("alpha", [])), len(walks.get("beta", [])), sa, sb, len(left)))
+    print("%-4s alpha=%s beta=%s: hello %s/%s, walk messages %s/%s, recall to beta %s, exit %s/%s, files left %d" % (
+        "OK" if ok else "FAIL", ka, kb, len(hellos.get("alpha", [])), len(hellos.get("beta", [])), len(walks.get("alpha", [])), len(walks.get("beta", [])), len(recalls.get("beta", [])), sa, sb, len(left)))
     if not ok:
         print("   alpha out has SENDING:", b"SENDING" in oa, "JOINED:", b"BETA JOINED" in oa, "| beta:", b"SENDING" in ob, b"ALPHA JOINED" in ob)
+        print("   alpha b flash:", re.findall(rb"(CALLING[ A-Z0-9]*|SENDING \d VISITOR[ A-Z]*|NOBODY AWAY[ ,A-Z]*)", oa)[:3])
 sys.exit(1 if bad else 0)

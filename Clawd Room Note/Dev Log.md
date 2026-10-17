@@ -208,6 +208,23 @@ sticker: lucide//book-open
 > - [ ] Drag-resize quickly up and down: no old frames in the scrollback (scroll up after quitting shows the shell as before)
 > - [ ] `]`: the Clawds and furniture get bigger, the names / states and the banner stay small and readable
 
+## 🚪 Doors, call back, window size from the screen, resize stripes (2026-10-17)
+
+> [!NOTE] What Zaviel saw (two linked iTerm2 windows: "works correct")
+> After `g`, the Clawd took too long to come in through the door of the other room; there was no way to call it back (`g` again only said NO IDLE CLAWD TO SEND); the window opened too big on a 13" MacBook Air; while resizing, iTerm2 showed striped frames.
+
+> [!NOTE] Fixes
+> - **Step in at once.** A visitor arriving by a side door was put just outside the window (x = -10) with no goal and waited for its first plan (1-3 s) out of sight. `enter()` now gives it a goal `DOOR_STEP_IN` 12 px inside the door (the rope and stairs already had one). No random call added or removed; the crossing scenes in `scenarios.txt` changed from the arrival on (expected), all others identical.
+> - **`b` = call back.** `room_recall()`: every Clawd of ours that is next door gets the existing recall message (the visit ends, it walks back through its door); with none away, the visitors in this room are sent home. Flash `CALLING N CLAWDS HOME` / `SENDING N VISITORS HOME` / `NOBODY AWAY, NO VISITORS`. `link_smoke` now presses `b` after the crossings and checks the recall reaches the other room.
+> - **Window from the screen (iTerm2).** Default `--size screen` there: the `screen` tool command sets the window to `SCREEN_PERCENT` 55% of the screen's usable area (`NSScreen.visibleFrame`), at least 44x20 cells, keeping its position unless it would leave the screen. Checked on a test window: 1100x700 -> 808x508 on a 1470x924 usable screen. WSL keeps 110x32 (`--size screen` there means off).
+> - **Resize stripes (not fixed, explained).** iTerm2 reflows the screen when the window gets narrower: every full-width row of the last frame wraps onto two rows (the left part, then the rest, mostly dark margin), so the picture looks stretched with dark rows between. Windows Terminal does not reflow it. The room repaints right after the size changes (SIGWINCH wakes the main loop: no `SA_RESTART`), so the stripes should only show during a drag, between iTerm2's resize steps and the next frame.
+
+> [!TODO] Test (by eye)
+> - [ ] `g` from alpha: the Clawd comes out of beta's door at once and walks in
+> - [ ] `b` in alpha: the Clawd in beta walks back through the door and home; `b` in a room with visitors and none of its own away sends the visitors home
+> - [ ] A new room in iTerm2 opens at about half the screen on the MacBook Air
+> - [ ] Drag-resize: stripes only while dragging, a clean picture as soon as you let go
+
 ---
 ## ⏳ Pending (last step)
 
