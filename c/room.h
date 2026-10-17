@@ -91,15 +91,19 @@ typedef struct {
 #define TREEHOUSE_UP 18    /* how far above the back of the floor the treehouse door is */
 #define STAIRS_FOOT 0.2     /* the stairs on the back wall start this far along it ... */
 #define STAIRS_TOP 0.42     /* ... and reach the platform here */
-#define ARCH_W 8            /* the opening up: width, height (room pixels), and how far right of the stairs' top */
+#define ARCH_W 12            /* the opening up: width, height (room pixels), and how far right of the stairs' top */
 #define ARCH_H 11
-#define ARCH_IN 1
-#define DOOR_HALF_DEPTH 0.07 /* a side door spans this part of its depth to each side (a normal door's width) */
+#define ARCH_IN -2
+#define DOOR_HALF_DEPTH 0.05 /* a side door spans this part of its depth to each side (a normal door's width) */
+#define PLATFORM_ALONG 0.22 /* the platform carries on along the right-hand wall for this part of the wall's width */
 #define PLATFORM_UP 0.4     /* the platform (a half floor) is this part of the way up the back wall (room above it for the archway) */
 #define PLAY_Y 0.62        /* the park's swing and slide stand this far down the floor */
 #define PLAY_SWING_X 0.23  /* ... the swing this far across, the slide there */
 #define PLAY_SLIDE_X 0.6
-#define WELL_X 0.24        /* the stair well (indoors), as a part of the width */
+#define WELL_BACK 8         /* the stair well (indoors): its front edge this far in front of the back wall (room pixels), */
+#define WELL_SIDE 11        /* ... its middle this far in from the left-hand wall, */
+#define WELL_DEEP 5         /* ... this deep on screen, */
+#define WELL_HALF_W 0.07    /* ... this wide (world units each side) */
 #define WELL_H 0.3         /* its depth on screen, as a part of the floor's height */
 #define CAM_MAX_ZOOM 4     /* [ ] camera zoom steps over the room */
 #define PER_ROW 5

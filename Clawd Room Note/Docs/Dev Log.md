@@ -46,6 +46,13 @@ gitGraph
 ---
 ## 2026-10-18
 
+### 🪜 Stair well at the back left, platform in the corner
+> [!info] Branch `feat/style-a`
+- The **stair well** (way down) is smaller and moved to the **back left** of the floor; its steps go down from the back edge towards the front, with a railing along its sides.
+- The **platform carries on along the right-hand wall**, so it sits in the corner; the way up is wider again and starts over the top of the stairs; side doors a little narrower.
+
+![[2026-10-18 office stairs well and doors.png|300]] ![[2026-10-18 stair well close-up.png|250]]
+
 ### 🚪 The way up, on the left of the platform
 > [!info] Branch `feat/style-a`
 - After mocking up five ideas and trying the lit archway, Zaviel kept the **opening where the stairs carry on upwards** (steps into the dark, a warm light at the top), now **small and on the left of the platform**, right where the stairs arrive.
