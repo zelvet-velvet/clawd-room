@@ -287,7 +287,14 @@ sticker: lucide//book-open
 > - **Ladder** in the lower room: from the window's top edge (y 0, over the banner) to the top of the floor (`floor_y` + 2); slides down from the edge when it appears. Clawds still climb on down to their walking strip.
 > - **Double door:** each window draws one half, hinged at its own post on the room side; the halves meet at the edge between the windows; when it appears, both closed halves rise, then swing open into their rooms at the same time. (Replaces "only the left window draws the leaf".)
 
+> [!NOTE] Fourth round (Zaviel's screenshot with four windows: a ladder sat on a door; the ladder rails did not line up across windows; a Clawd crossing should make it look like a door; one side should be only a frame, without the other room's colours)
+> - **Ladders keep clear of doors:** `plan_passages` keeps a hatch `DOOR_CLEAR` 10 room pixels further from both windows' side edges when the overlap allows it (both rooms see the same overlap, so the two ends still line up). `win.txt` changed (positions moved inwards).
+> - **Rails line up:** the framed hole's ladder now has its rails 7 from the centre, like the ladder in the room below.
+> - **Door:** the window on the left (door on its right edge) has the door: frame, the leaf (closed), and through it, only when open, a glimpse of the next room. The leaf **opens while a Clawd is within `DOOR_NEAR` 18 px** of the door and closes after it (`DOOR_SWING` 0.3 s, `Room.door_open`). The window on the right shows **only the frame** (posts, lintel, sill; no leaf, no colours from the other room). Appearing: both rise from the floor, together (synced as before). (Replaces the double door.)
+
 > [!TODO] Test (by eye)
+> - [ ] Side by side: the left window shows a closed door, the right window a frame; `g` from either: the door swings open as the Clawd comes through and closes after
+> - [ ] Stacked with a door near the corner: the ladder stays clear of the door; the hole's rails line up with the ladder below
 > - [ ] Push two windows together side by side: both door halves rise and open at the same moment; stacked: the ladder slides down from the top edge in the lower room while the framed hole rises in the upper room, together
 > - [ ] The open door shows a bit of the other room (office / coffee / park colours)
 > - [ ] A new room opens as a quarter of the screen, in the quarter it was in

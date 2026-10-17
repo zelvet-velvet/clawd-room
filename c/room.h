@@ -61,6 +61,7 @@ typedef struct {
     int cam_vw, cam_vh;      /* room pixels the camera shows, as last drawn (for the pan step) */
     int gate_seen[SIDES]; double gate_t0[SIDES]; /* when each gate appeared (it animates in: draw.c GATE_ANIM) */
     int drawn;               /* a frame has been drawn (gates there from the start do not animate) */
+    double door_open[SIDES], door_t; /* how far each door leaf is open (0..1, opens while a Clawd passes) and when it was last moved */
     int has_gate_sync; double gate_sync_t; /* when the windows stopped moving + 1 s, in draw time: both rooms start the animation then */
     /* movement state */
     int has_last_now; double last_now;

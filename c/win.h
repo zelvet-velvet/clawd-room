@@ -13,6 +13,7 @@
 #define HYSTERESIS_PX 15
 #define DOOR_H 14
 #define HATCH_W 21
+#define DOOR_CLEAR 10 /* room pixels a ladder keeps from the windows' side edges (a door is 8 wide), when the overlap allows it */
 
 int win_available(void); /* powershell.exe on the PATH, or running inside iTerm2 on macOS */
 const char *win_platform(void); /* "Windows Terminal" or "iTerm2" */

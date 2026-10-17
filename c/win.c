@@ -437,6 +437,8 @@ void plan_passages(const Room *room, const Watcher *w, const char *win_id, const
             double half = HATCH_W * big / 2;
             lo += half; hi -= half;
             if (lo > hi) { out->closed[side] = 1; continue; }
+            double clear = DOOR_CLEAR * big; /* stay clear of the doors at the side edges (both rooms see the same overlap) */
+            if (lo + clear <= hi - clear) { lo += clear; hi -= clear; }
             double grids[2][2] = {{ox + (x0 + 0.5 * k) * cw, k * cw}, {pg[0] + (pg[5] + 0.5 * pg[4]) * pg[2], pg[4] * pg[2]}};
             snap_both(lo, hi, grids, 2, idx);
             out->has_pos[side] = 1; out->pos[side] = idx[0];
