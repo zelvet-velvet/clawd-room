@@ -23,7 +23,7 @@ idle 90 s (asleep), session end (walks out). A session with no events for 30 min
     ./clawd-room.sh                           # draws in the terminal (works in a 60x20 pane or fullscreen); builds c/ on the first start
     ./clawd-room.sh --dump 100x30 --events /tmp/e.jsonl --at 1800000010   # one plain-text frame, for tests
 
-Keys: `q` or Esc quit, `p` pause, `?` help line. Needs at least 44x20 cells. The hook must be
+Keys: `q` or Esc quit, `p` pause, `?` help line, `r` room size list, `[` `]` camera zoom, `z` auto zoom, Tab follow the next Clawd, `c` auto follow, arrows or W A S D move the camera freely, `g` send a Clawd next door, `b` call your Clawds back (or send visitors home), `f` fit. Needs at least 44x20 cells. The hook must be
 installed once (`python3 install_hooks.py` shows what it would change) or the room stays empty.
 Needs a truecolor terminal (Windows Terminal is fine). It only reads the events file.
 
@@ -49,15 +49,35 @@ windows whose title starts with `clawd-room ` and nothing else. Windows side by 
 at most 30 px (`--near PX`; an attached pair stays attached until the gap passes 45 px) count as close. It needs the room's tab to be the active tab of its
 window; `--no-detect` turns it off. `clawd-room --list-windows` lists the clawd-room windows it can see.
 
+On macOS the same works in **iTerm2** (the room must run inside iTerm2, not inside tmux): instead of PowerShell a small
+`osascript` (JavaScript) reports the iTerm2 windows titled `clawd-room ...`, in points, about four times a second, and quits
+with the room. **Split panes** count as windows of their own: two clawd-room panes side by side (or stacked) in one window
+get a gate between them, like two attached windows. iTerm2 does not say where a pane or the text area is, so they are
+worked out from the window size, the title and tab bar and iTerm2's margins (simple splits only: a row of side-by-side
+panes or a column of stacked ones). `f` resizes the window there too. The room leaves the iTerm2 font alone unless you
+pass `--font PT` (that sends Cmd -/+ to the room's own window when it has the focus, and needs Accessibility for iTerm2).
+When a room opens in iTerm2 its window is sized from the screen (`--size screen`, the default there): 55% of the usable
+width and height, at least 44x20 cells, moved only as far as needed to stay on screen. `--size COLSxROWS` or `--size off`
+as on WSL.
+
 Themes (`--theme office|coffee|park`, by default guessed from the room name):
 - office: desks and monitors.
 - coffee: the oldest session is the barista (apron, espresso machine behind a counter), the others
   are customers at cafe tables; idle customers go and order a coffee and carry it back.
 - park: picnic tables with laptops; idle Clawds play on the swing and the slide.
 
-Room shape: by default (`--ratio auto`) the room is as big and as shaped as the window, so it
-follows you when you resize the window (1:1, 4:3, 16:9, 3:1 ...). `--ratio 3:1|2:1|16:9|4:3|1:1|3:4` (or the `r` key) pins a standard room of
-that shape instead (3:1 = 144x48 pixels = 144x24 cells, ...), drawn bigger when the window is bigger.
+Room size: the room always fills the window and takes its shape; dragging the window resizes it live. It grows (more
+floor, more desks) up to the chosen room size, then the pixels get bigger instead (grow, then scale). `r` opens the ROOM SIZE
+list (up/down or W/S, Enter picks, Esc or `r` closes; `--room-size auto|s|m|l|xl`):
+- AUTO (default): just big enough to seat every session with floor to walk on; it changes when sessions come and go.
+- S 120x60, M 160x90, L 220x120, XL 300x160 room pixels: the biggest the room may be (an 80x25 window is 80x50 room pixels).
+(`--ratio 3:1|2:1|16:9|4:3|1:1|3:4` still pins an old fixed shape; it is kept for the tests.)
+
+Camera: `[` and `]` zoom a camera into the room (1x to 4x; `--zoom N` starts zoomed); the room keeps its layout, only the
+view gets closer. When zoomed the camera follows a Clawd and only moves when that Clawd nears the edge of the view. Auto
+follow (default) picks the Clawd that needs you, else the one that just finished, else the most recently active one, and
+takes turns every 10 s when nothing happens. Tab locks on the next Clawd, the arrows or W A S D move the camera freely, `c`
+goes back to auto follow. `z` turns auto zoom on or off: the zoom then frames the busy Clawds (close on one, wider for several).
 
 Font size follows the window (WSL, Windows Terminal): when you stop resizing, a window with fewer
 than 110 columns gets a smaller font and one with more than 170 a bigger one (it sends the
@@ -116,8 +136,8 @@ The tab bar is a global setting, so it needs the two lines from `wt_settings.py`
 When a room opens on WSL (the start menu included) it sets the terminal font to 8 pt (`--font PT`, 0 = leave it) and
 the window to 110x32 cells (`--size COLSxROWS`, `off` = leave it; sized once in pixels together with the font change). The room is then drawn at a TUI scale (1x, 2x, 3x:
 every room pixel is scale x scale cells) that follows the window size and the number of sessions, and a window
-resize only changes that scale, never the font. `[` and `]` set the scale by hand, Ctrl +/- sets the terminal font by
-hand; after either the automatic part stays off until `f` (font and scale automatic again). `--scale N` starts at a
+resize only changes that scale, never the font. Ctrl +/- sets the terminal font by
+hand; after that the automatic part stays off until `f` (font and scale automatic again, camera back to 1x). `--scale N` starts at a
 fixed scale, `--no-auto` turns all of it off. The terminal font is put back when the room quits.
 A window opened from the profile menu starts at Windows Terminal's own default size and is resized once to the
 size above; to open it already at that size use `wt.exe -w new --size 60,18 -p "Clawd Room"` (wt counts cells at the default 14 pt font, so 60,18 gives about 110x33 at 8 pt).

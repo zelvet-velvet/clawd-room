@@ -22,6 +22,20 @@ static int pyround(double v) { return (int)nearbyint(v); }                      
 static int imax(int a, int b) { return a > b ? a : b; }
 static int imin(int a, int b) { return a < b ? a : b; }
 
+/* the words over the room (names, states, "+N MORE"): drawn straight away, or, while the camera is zoomed in, kept in this
+ * list and written afterwards at the normal size where they belong on screen (only the room is magnified, not the text) */
+typedef struct { int x, y; char s[48]; Rgb c; } WText;
+#define MAX_WTEXT 256
+static WText *g_wt;
+static int g_nwt;
+static void wtext(Canvas *cv, int x, int y, const char *s, Rgb c) {
+    if (!g_wt) { canvas_text(cv, x, y, s, c); return; }
+    if (g_nwt >= MAX_WTEXT) return;
+    WText *w = &g_wt[g_nwt++];
+    w->x = x; w->y = y; w->c = c;
+    snprintf(w->s, sizeof w->s, "%s", s);
+}
+
 /* longest start of s (upper case) that fits in `width` pixels; counts characters, not bytes */
 static void fit(char *out, size_t n, const char *s, int width) {
     int k = imax(0, fdiv(width + 1, 4)), chars = 0;
@@ -176,7 +190,7 @@ static void draw_extras(Canvas *cv, const Session *s, const char *state, double 
         int tw = text_width(name), x0 = cx - tw / 2, y0 = y - 8, hit = 0;
         for (int i = 0; i < nrects; i++) /* skip the tag where it would sit on top of a desk label */
             if (x0 < rects[i].x1 && x0 + tw > rects[i].x0 && y0 < rects[i].y1 && y0 + 5 > rects[i].y0) hit = 1;
-        if (!hit) canvas_text(cv, x0, y0, name, s->guest ? C_BLUE : C_GREY);
+        if (!hit) wtext(cv, x0, y0, name, s->guest ? C_BLUE : C_GREY);
     }
 }
 
@@ -268,10 +282,12 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
         else if (side == SIDE_UP) draw_rope(cv, geo.rope_x, geo.banner, geo.rope_end, g);
         else draw_stairs(cv, geo.stairs_x, cv->h, g);
     }
-    if (room->n == 0) { /* nobody lives here: say so (visitors from other windows are still drawn below) */
+    int anyone = 0; /* any live session at all: linked rooms share them out, so this room may have none of its own */
+    for (int i = 0; i < room->npool; i++) if (!room->pool[i].has_left) anyone = 1;
+    if (room->n == 0 && !anyone) { /* no Claude Code running anywhere: say so (visitors from other windows are still drawn below) */
         int mid = (geo.banner + cv->h) / 2;
-        canvas_text(cv, cv->w / 2 - text_width("NO SESSIONS") / 2, mid - 7, "NO SESSIONS", RGB(150, 150, 180));
-        canvas_text(cv, cv->w / 2 - text_width("START CLAUDE") / 2, mid, "START CLAUDE", RGB(110, 110, 140));
+        wtext(cv, cv->w / 2 - text_width("NO SESSIONS") / 2, mid - 7, "NO SESSIONS", RGB(150, 150, 180));
+        wtext(cv, cv->w / 2 - text_width("START CLAUDE") / 2, mid, "START CLAUDE", RGB(110, 110, 140));
     }
     /* who is seated at their desk, and who is in the room right now */
     int seated[256] = {0};
@@ -305,14 +321,14 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
         char nm[48], id8[9];
         snprintf(id8, sizeof id8, "%.8s", s->sid);
         fit(nm, sizeof nm, s->name[0] ? s->name : id8, name_w);
-        canvas_text(cv, cx - text_width(nm) / 2, by + 18, nm, C_WHITE);
+        wtext(cv, cx - text_width(nm) / 2, by + 18, nm, C_WHITE);
         const char *state = session_shown(s, now);
         const char *label = !strcmp(state, "work") ? kinds[i] : LABEL(state);
         char lb[16];
         snprintf(lb, sizeof lb, "%.15s", label);
         if (s->has_away && !strcmp(state, "idle")) snprintf(lb, sizeof lb, "AWAY");
         if (text_width(lb) > name_w) lb[5] = 0; /* "THINKING" -> "THINK" in narrow slots */
-        canvas_text(cv, cx - text_width(lb) / 2, by + 24, lb, C_GREY);
+        wtext(cv, cx - text_width(lb) / 2, by + 24, lb, C_GREY);
         rects[nrects++] = (IRect){cx - name_w / 2, by + 18, cx + name_w / 2 + 1, by + 29};
     }
     int order[512];
@@ -346,7 +362,7 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
     if (geo.has_more_pos) {
         char m[24];
         snprintf(m, sizeof m, "+%d MORE", geo.more);
-        canvas_text(cv, geo.more_pos[0] - text_width(m) / 2, geo.more_pos[1], m, C_WHITE);
+        wtext(cv, geo.more_pos[0] - text_width(m) / 2, geo.more_pos[1], m, C_WHITE);
     }
     if (geo.more && !geo.has_more_pos) snprintf(note, note_n, "+%d MORE", geo.more);
 }
@@ -358,11 +374,74 @@ static int ratio_size(const char *r, int *w, int *h) {
     return 0;
 }
 
+/* text at k times the pixel size (the font is 3x5), only the lit pixels, clipped to [cx0, cx1) x [cy0, cy1) */
+static void text_scaled(Canvas *cv, int x, int y, const char *s, Rgb c, int k, int cx0, int cy0, int cx1, int cy1) {
+    const Rgb KEY = RGB(1, 2, 3);
+    int tw = text_width(s);
+    if (tw <= 0) return;
+    Canvas t = canvas_new(tw, 5, KEY);
+    canvas_text(&t, 0, 0, s, c);
+    for (int ty = 0; ty < 5; ty++) for (int tx = 0; tx < tw; tx++) {
+        Rgb p = t.p[ty * tw + tx];
+        if (rgb_eq(p, KEY)) continue;
+        for (int dy = 0; dy < k; dy++) for (int dx = 0; dx < k; dx++) {
+            int X = x + tx * k + dx, Y = y + ty * k + dy;
+            if (X >= cx0 && X < cx1 && Y >= cy0 && Y < cy1) cv->p[Y * cv->w + X] = p;
+        }
+    }
+    canvas_free(&t);
+}
+
+/* the camera: the room is laid out as usual (w x h room pixels at base scale k, where it sits at 1x). The banner stays at
+ * the top at the normal size; below it the room is shown zoomed (k * zoom) around (cam_x, cam_y), in the same rectangle the
+ * room has at 1x. The words over the room are written at the normal size afterwards (see wtext). */
+static Canvas render_camera(int pw, int ph, Room *room, double now, double t, char *note, size_t note_n, int w, int h, int k) {
+    const Rgb MARGIN = RGB(14, 14, 18);
+    static WText texts[MAX_WTEXT];
+    Canvas rc = canvas_new(w, h, RGB(34, 36, 46));
+    g_wt = texts; g_nwt = 0;
+    draw_room(&rc, room, now, t, note, note_n);
+    g_wt = NULL;
+    room->size_w = w; room->size_h = h;
+    int band = room->has_geo ? imin(room->geo.banner, h) : 0; /* banner rows, not zoomed */
+    int z = imax(1, imin(CAM_MAX_ZOOM, room->cam_zoom)), s = k * z;
+    int ox = (pw - w * k) / 2, oy = (ph - h * k) / 2 / 2 * 2; /* where the room sits at 1x (whole terminal rows) */
+    int ax0 = imax(0, ox), ay0 = imax(0, oy + band * k), ax1 = imin(pw, ox + w * k), ay1 = imin(ph, oy + h * k); /* the room part on screen */
+    int vw = imin(w, (ax1 - ax0) / s), vh = imin(h - band, (ay1 - ay0) / s); /* room pixels the camera shows */
+    if (!room->cam_set) { room->cam_x = w / 2.0; room->cam_y = (band + h) / 2.0; room->cam_set = 1; }
+    room->cam_x = fmax(vw / 2.0, fmin(w - vw / 2.0, room->cam_x)); /* keep the view inside the room, under the banner */
+    room->cam_y = fmax(band + vh / 2.0, fmin(h - vh / 2.0, room->cam_y));
+    room->cam_vw = vw; room->cam_vh = vh;
+    int x0 = (int)(room->cam_x - vw / 2.0), y0 = (int)(room->cam_y - vh / 2.0);
+    int vx = ax0 + ((ax1 - ax0) - vw * s) / 2, vy = ay0 + ((ay1 - ay0) - vh * s) / 2 / 2 * 2; /* the view, centred in that part */
+    Canvas full = canvas_new(pw, ph, MARGIN);
+    for (int y = 0; y < band * k; y++) { /* the banner at 1x */
+        int Y = oy + y;
+        if (Y < 0 || Y >= ph) continue;
+        for (int x = 0; x < w * k; x++) { int X = ox + x; if (X >= 0 && X < pw) full.p[Y * pw + X] = rc.p[(y / k) * w + x / k]; }
+    }
+    for (int y = 0; y < vh * s; y++) {
+        const Rgb *src = rc.p + (size_t)(y0 + y / s) * (size_t)rc.w + x0;
+        Rgb *dst = full.p + (size_t)(vy + y) * (size_t)pw + vx;
+        for (int x = 0; x < vw * s; x++) dst[x] = src[x / s];
+    }
+    room->view_x = vx - x0 * s; room->view_y = vy - y0 * s; room->view_k = s; /* screen = view + room pixel * k, as the gates expect */
+    for (int i = 0; i < g_nwt; i++) { /* the words: same centre, normal size */
+        const WText *q = &texts[i];
+        int tw = text_width(q->s);
+        double cx = room->view_x + (q->x + tw / 2.0) * s, top = room->view_y + q->y * s;
+        text_scaled(&full, (int)(cx - tw * k / 2.0), (int)top, q->s, q->c, k, vx, vy, vx + vw * s, vy + vh * s);
+    }
+    canvas_free(&rc);
+    return full;
+}
+
 Canvas render(int cols, int rows, Room *room, double now, double t, char *note, size_t note_n) {
     const Rgb MARGIN = RGB(14, 14, 18);
     int pw = cols, ph = rows * 2;
     if (!strcmp(room->ratio, "auto")) { /* the room is the whole window, whatever its shape */
         int k = imax(1, room->scale);
+        if (room->cam_zoom > 1) return render_camera(pw, ph, room, now, t, note, note_n, pw / k, ph / k / 2 * 2, k);
         Canvas cv = canvas_new(pw / k, ph / k / 2 * 2, MARGIN);
         draw_room(&cv, room, now, t, note, note_n);
         room->size_w = cv.w; room->size_h = cv.h;
@@ -376,6 +455,7 @@ Canvas render(int cols, int rows, Room *room, double now, double t, char *note, 
     int sw = 0, sh = 0;
     ratio_size(room->ratio, &sw, &sh);
     int k = imin(pw / sw, ph / sh);
+    if (room->cam_zoom > 1) return render_camera(pw, ph, room, now, t, note, note_n, sw, sh, imax(1, k));
     Canvas full = canvas_new(pw, ph, MARGIN);
     if (k >= 1) {
         Canvas rc = canvas_new(sw, sh, RGB(34, 36, 46));

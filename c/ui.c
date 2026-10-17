@@ -12,7 +12,7 @@ void overlay_text(char *out, size_t n, int paused, int help_on, const char *note
     const char *parts[4];
     int k = 0;
     if (paused) parts[k++] = "PAUSED";
-    if (help_on) parts[k++] = "q/esc quit   p pause   r room shape   [ ] scale   ctrl +/- font   f auto font+scale   g send a Clawd   ? help";
+    if (help_on) parts[k++] = "q/esc quit   p pause   r room size   [ ] zoom   z auto zoom   tab follow next   c auto follow   arrows/wasd move   f auto font+scale   g send a Clawd   b call back   ? help";
     if (note && note[0]) parts[k++] = note;
     if (flash && flash[0]) parts[k++] = flash;
     for (int i = 0; i < k; i++) {
@@ -26,7 +26,20 @@ void too_small(char *out, size_t n, int cols, int rows) {
     snprintf(msg, sizeof msg, "need %dx%d, have %dx%d", MIN_COLS, MIN_ROWS, cols, rows);
     if ((int)strlen(msg) > cols) msg[cols > 0 ? cols : 0] = 0;
     int r = rows / 2 + 1 > 1 ? rows / 2 + 1 : 1, c = (cols - (int)strlen(msg)) / 2 + 1 > 1 ? (cols - (int)strlen(msg)) / 2 + 1 : 1;
-    snprintf(out, n, "\x1b[0m\x1b[2J\x1b[%d;%dH%s", r, c, msg);
+    size_t k = (size_t)snprintf(out, n, "\x1b[0m");
+    for (int i = 1; i <= rows && k + 16 < n; i++) k += (size_t)snprintf(out + k, n - k, "\x1b[%d;1H\x1b[2K", i); /* no ESC[2J (see wipe in app.c) */
+    if (k < n) snprintf(out + k, n - k, "\x1b[%d;%dH%s\x1b[H", r, c, msg);
+}
+
+const char *const SIZE_LABEL[N_SIZES] = {"AUTO", "S  120X60", "M  160X90", "L  220X120", "XL 300X160"};
+const char *const SIZE_KEY[N_SIZES] = {"auto", "s", "m", "l", "xl"};
+const int SIZE_MAX_W[N_SIZES] = {0, 120, 160, 220, 300}, SIZE_MAX_H[N_SIZES] = {0, 60, 90, 120, 160};
+
+int size_scale(int pw, int ph, int size, int n) {
+    if (size <= 0 || size >= N_SIZES) return auto_scale(pw, ph, n);
+    int kw = (pw + SIZE_MAX_W[size] - 1) / SIZE_MAX_W[size], kh = (ph + SIZE_MAX_H[size] - 1) / SIZE_MAX_H[size];
+    int k = kw > kh ? kw : kh;
+    return k < 1 ? 1 : k;
 }
 
 int auto_scale(int pw, int ph, int n) {
@@ -37,6 +50,26 @@ int auto_scale(int pw, int ph, int n) {
         if (per_row * rows_shown >= (n > 1 ? n : 1) && w >= ROAM_W && h >= ROAM_H) return k;
     }
     return 1;
+}
+
+void draw_size_menu(Canvas *cv, const char *const *labels, int n, int pick) {
+    const int LINE = 7, PAD = 3;
+    int fit = (cv->h - 2 * PAD - 9) / LINE; /* the lines that fit: the list scrolls with the pick */
+    int shown = n < fit ? n : fit > 1 ? fit : 1, first = pick - shown / 2;
+    if (first > n - shown) first = n - shown;
+    if (first < 0) first = 0;
+    int w = text_width("ROOM SIZE");
+    for (int i = 0; i < n; i++) if (text_width(labels[i]) + 6 > w) w = text_width(labels[i]) + 6;
+    w += 2 * PAD;
+    int h = 2 * PAD + 9 + shown * LINE, x = (cv->w - w) / 2, y = (cv->h - h) / 2;
+    canvas_rect(cv, x - 1, y - 1, w + 2, h + 2, C_GREY);
+    canvas_rect(cv, x, y, w, h, RGB(20, 20, 28));
+    canvas_text(cv, x + (w - text_width("ROOM SIZE")) / 2, y + PAD, "ROOM SIZE", C_YELLOW);
+    for (int i = 0; i < shown; i++) {
+        int q = first + i, ly = y + PAD + 9 + i * LINE;
+        if (q == pick) canvas_text(cv, x + PAD, ly, ">", C_YELLOW);
+        canvas_text(cv, x + PAD + 6, ly, labels[q], q == pick ? C_WHITE : C_GREY);
+    }
 }
 
 static Rgb dim(Rgb c, double f) { return RGB((int)(c.r * f), (int)(c.g * f), (int)(c.b * f)); }

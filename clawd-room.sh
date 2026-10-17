@@ -15,7 +15,10 @@ if [ "$stale" = 1 ]; then
     echo "building clawd-room..." >&2
     make -C "$here/c" -s >/dev/null 2>&1 || echo "(the build failed; run 'make -C c' to see why)" >&2
   else
-    echo "clawd-room: needs make and a C compiler to build (sudo apt install build-essential)" >&2
+    case "$(uname -s)" in
+      Darwin) echo "clawd-room: needs make and a C compiler to build (xcode-select --install)" >&2 ;;
+      *) echo "clawd-room: needs make and a C compiler to build (sudo apt install build-essential)" >&2 ;;
+    esac
   fi
 fi
 if [ -x "$bin" ]; then exec "$bin" "$@"; fi

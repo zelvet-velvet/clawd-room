@@ -22,7 +22,7 @@ dumps() { # the --dump frames, in the format of dump.txt
   local events at c
   for pair in "tools/fixtures/events-odd.jsonl 1010" "tools/fixtures/events-sim.jsonl 1800000000"; do
     set -- $pair; events=$1; at=$2
-    for c in "--dump 100x30" "--dump 120x40 --theme coffee" "--dump 140x50 --theme park" "--dump 80x24 --ratio 16:9" "--dump 160x60 --theme office --room alpha" "--dump 200x70 --scale 2"; do
+    for c in "--dump 100x30" "--dump 120x40 --theme coffee" "--dump 140x50 --theme park" "--dump 80x24 --ratio 16:9" "--dump 160x60 --theme office --room alpha" "--dump 200x70 --scale 2" "--dump 100x30 --zoom 2" "--dump 120x40 --theme park --zoom 3" "--dump 100x30 --room-size s" "--dump 200x70 --room-size s" "--dump 200x70 --room-size m --zoom 2"; do
       echo "### $(basename "$events") $c"
       $bin $c --events "$events" --at "$at"
     done

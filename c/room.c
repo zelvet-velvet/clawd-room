@@ -14,6 +14,7 @@
 #define WALK_SPEED 26.0
 #define LEAVE_SPEED 50.0
 #define MAX_GUESTS_SHOWN 4
+#define DOOR_STEP_IN 12.0 /* a Clawd coming in by a side door walks this far in at once (it used to wait outside for its first plan) */
 
 #define PINK RGB(220, 120, 230) /* (room_tui.py defines PINK twice: this is the one that wins) */
 #define BLUE RGB(110, 200, 240)
@@ -144,6 +145,7 @@ static void enter(Session *s, int side, const Geo *geo) {
     s->nroute = 0; s->has_goal = 0; s->vclimb = 0;
     if (side == SIDE_LEFT || side == SIDE_RIGHT) { /* in through the door, which lines up with the other window's door */
         s->has_pos = 1; s->px = side == SIDE_LEFT ? -10.0 : geo->w + 10.0; s->py = geo->door_y[side];
+        set_goal(s, side == SIDE_LEFT ? DOOR_STEP_IN : geo->w - DOOR_STEP_IN, geo->door_y[side]);
     } else if (side == SIDE_UP) { /* slides down the rope hanging from the top */
         s->has_pos = 1; s->px = geo->rope_x; s->py = -12.0; set_goal(s, geo->rope_x, (double)geo->ymin); s->vclimb = 1;
     } else { /* comes up the stairs from the bottom */
@@ -282,6 +284,25 @@ static void cross(Room *r, Session *s, const Geo *geo, double now) {
         s->has_travel = 0; s->has_goal = 0; s->moving = 0; s->nroute = 0; s->leaving = 0;
         s->has_away = 1; snprintf(s->away_peer, sizeof s->away_peer, "%s", peer); s->away_side = edge; s->away_since = now; s->away_recalled = 0;
     }
+}
+
+/* the b key: call our Clawds that are next door back home (the visit ends, they walk back through the door);
+ * with none away, the visitors in this room are sent home instead */
+const char *room_recall(Room *r, double now, char *buf, size_t n) {
+    (void)now;
+    int called = 0, sent = 0;
+    for (int i = 0; i < r->npool; i++) {
+        Session *s = &r->pool[i];
+        if (!s->has_away || s->away_recalled) continue;
+        s->away_recalled = 1;
+        push_out(r, s->away_peer, 0, s->sid, NULL, 0, 0, 0, 0);
+        called++;
+    }
+    if (!called) for (int q = 0; q < r->ngp; q++) if (!r->gpool[q].returning) { r->gpool[q].returning = 1; sent++; }
+    if (called) snprintf(buf, n, "CALLING %d CLAWD%s HOME", called, called == 1 ? "" : "S");
+    else if (sent) snprintf(buf, n, "SENDING %d VISITOR%s HOME", sent, sent == 1 ? "" : "S");
+    else snprintf(buf, n, "NOBODY AWAY, NO VISITORS");
+    return buf;
 }
 
 const char *room_send_one(Room *r, const Geo *geo, double now, char *buf, size_t n) {

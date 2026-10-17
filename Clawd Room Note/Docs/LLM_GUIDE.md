@@ -35,7 +35,7 @@ Read this first if you are an AI assistant (Claude Code or similar) working on t
 hook.py             Claude Code hook: one JSON line per event -> ~/.clawd-room/events.jsonl (mode 600)
 install_hooks.py    prints / applies / removes the hook in ~/.claude/settings.json (prints by default)
 clawd-room.sh       the launcher the profile calls: builds c/ when needed, then runs c/clawd-room
-c/                  the room, in C: canvas, sprites, poses, themes, draw, room (state machine), rng, tail (events), link (windows), win (Windows helpers), ui, app (main loop), art (sprite files, PNG, GIF)
+c/                  the room, in C: canvas, sprites, poses, themes, draw, room (state machine), rng, tail (events), link (windows), win (window helpers: PowerShell on WSL, osascript on macOS iTerm2; scripts in ps_scripts.h / mac_scripts.h), ui, app (main loop), art (sprite files, PNG, GIF)
 c/tests/expected/   snapshots the tests compare with (made with the old Python version, which agreed on every line)
 sprites/            editable Clawd frames and items (text grids)
 tools/              test.sh (snapshots), fixtures/ + scenarios/ (test scenes), pty_smoke.py, link_smoke.py, win_smoke.py, place_windows.py (test helper for your own windows)
@@ -60,7 +60,7 @@ Test hooks (environment): `CLAWD_EVENTS` (events file), `CLAWD_LINK_DIR` (link f
 - **Leave `room.py` alone** (reference only). Keep the state machine and its timings unless asked: 90 s sleep, 30 min stale, 2.5 s cheer, 0.8 s hold-working.
 - **Terminal hygiene.** Alternate screen, hidden cursor, one string written per frame, diff updates; restore the terminal on exit, Ctrl-C and exceptions.
 - **Windows are never moved to attach them** (the user decided). Gates (doors, ladder hatches) line up on screen instead. Do not add window snapping or following again.
-- **Windows helpers (WSL only).** Only look at windows whose title starts with `clawd-room `. Be DPI aware (real pixels). Send the font-size keys only to a window that already has the focus, and never type into another window. Windows Terminal's focus mode (command palette) dropped the window in tests: do not use it.
+- **Window helpers (WSL: PowerShell; macOS: osascript + iTerm2, panes count as windows).** Only look at windows / panes whose title starts with `clawd-room `. Be DPI aware (real pixels). Send the font-size keys only to a window that already has the focus, and never type into another window. Windows Terminal's focus mode (command palette) dropped the window in tests: do not use it.
 - **The Clawd looks official**: flat `#CD6E58`, 14x8 sprite (8-wide torso, 2x2 arms, four 1-pixel legs), 1x1 eyes, no mouth. Draw gates at the size they need in the window with the bigger cells, so both ends match on screen.
 - **Constants with a reason** (change only on request): attach gap 30 px (stays until 45), gates wait 1 s for still windows, a door needs 14 room pixels of shared floor, a hatch 21 room pixels of overlap, slots 30-62 px wide and 40 tall, minimum terminal 44x20, 16 FPS.
 - **Do not hurt the user's running windows.** When testing with real Windows Terminal windows, create your own (names like `alpha` / `beta`), find them by exact title or pid, and never resize or kill the user's `park` / `coffee` windows. Do not use `pkill -f` with a pattern that also matches your own command line.

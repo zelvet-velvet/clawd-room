@@ -64,6 +64,12 @@ int fixture_load(Fixture *f, const char *path) {
             snprintf(r->nb[r->nnb].id, sizeof r->nb[0].id, "id-%s", tok[1]);
             r->nnb++;
         } else if (!strcmp(tok[0], "linkpos") && n > 2) { r->has_link[side_of(tok[1])] = 1; r->link_pos[side_of(tok[1])] = atof(tok[2]); }
+        else if (!strcmp(tok[0], "split") && n > 2) { /* split ME ID...: linked rooms sharing the sessions (ids sorted as the app does) */
+            snprintf(r->owner_me, sizeof r->owner_me, "%s", tok[1]);
+            r->n_owner_ids = 0;
+            for (int i = 2; i < n && r->n_owner_ids < 17; i++) snprintf(r->owner_ids[r->n_owner_ids++], 40, "%s", tok[i]);
+            r->split = 1;
+        }
         else if (!strcmp(tok[0], "gate") && n > 2) { r->has_gate[side_of(tok[1])] = 1; r->gate_scale[side_of(tok[1])] = atof(tok[2]); }
         else if (!strcmp(tok[0], "particle") && n > 9 && r->np < MAX_PARTS) {
             Particle *q = &r->parts[r->np++];

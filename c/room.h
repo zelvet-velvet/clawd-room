@@ -53,9 +53,12 @@ typedef struct {
     int has_link[SIDES]; double link_pos[SIDES];
     int has_gate[SIDES]; double gate_scale[SIDES];
     int scale;               /* TUI scale: room pixels are scale x scale terminal cells (auto shape only) */
-    char ratio[8];           /* "auto" or a key of RATIOS */
+    char ratio[8];           /* "auto" (the room follows the window) or a fixed shape (--ratio, kept for the tests) */
     int size_w, size_h;      /* size of the room in pixels as last drawn */
     int view_x, view_y, view_k; /* where the room sits in the terminal canvas: x offset, y offset, scale */
+    int cam_zoom;            /* camera zoom over the laid-out room: 0 or 1 = whole room, 2..CAM_MAX_ZOOM = closer */
+    int cam_set; double cam_x, cam_y; /* camera centre in room pixels (cam_set 0: centre of the room) */
+    int cam_vw, cam_vh;      /* room pixels the camera shows, as last drawn (for the pan step) */
     /* movement state */
     int has_last_now; double last_now;
     int has_geo_key; int geo_w, geo_h;
@@ -72,6 +75,7 @@ typedef struct {
 #define SLOT_H 40
 #define SLOT_MIN_W 30
 #define SLOT_MAX_W 62
+#define CAM_MAX_ZOOM 4     /* [ ] camera zoom steps over the room */
 #define PER_ROW 5
 #define BANNER_H 8
 #define SEAT_DY 7
@@ -91,6 +95,7 @@ Session *room_add_guest(Room *r, const char *key, double now);
 void room_receive(Room *r, const Msg *m);
 void room_peer_gone(Room *r, const char *peer);
 const char *room_send_one(Room *r, const Geo *geo, double now, char *buf, size_t n); /* the g key */
+const char *room_recall(Room *r, double now, char *buf, size_t n); /* the b key: call our Clawds home, or send visitors home */
 
 const SpriteFile *draw_frames(void);
 void draw_set_sprites(const SpriteFile *frames, const SpriteFile *items); /* the editable files the drawing prefers */

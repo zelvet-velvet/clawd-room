@@ -1,4 +1,4 @@
-/* Windows desktop helpers (WSL only): where the clawd-room windows are,
+/* Desktop helpers (WSL + Windows Terminal through PowerShell, or macOS + iTerm2 through osascript): where the clawd-room windows are,
  * changing the font size and the window size, and where the gates between neighbouring windows go. The two PowerShell
  * scripts are in ps_scripts.h. */
 #ifndef WIN_H
@@ -14,7 +14,8 @@
 #define DOOR_H 14
 #define HATCH_W 21
 
-int win_available(void); /* powershell.exe on the PATH */
+int win_available(void); /* powershell.exe on the PATH, or running inside iTerm2 on macOS */
+const char *win_platform(void); /* "Windows Terminal" or "iTerm2" */
 
 /* ---- where the windows are -------------------------------------------------------------------- */
 typedef struct { char title[96]; int rect[4], area[4], dpi; } WinInfo;
@@ -44,6 +45,8 @@ int tool_start(Tool *t);
 void tool_resize(Tool *t, const char *title, int w, int h);
 void tool_zoom(Tool *t, const char *title, int step, int only_if_focused, int live);
 void tool_reset_zoom(Tool *t, const char *title);
+#define SCREEN_PERCENT 55 /* --size screen: the window takes this part of the screen's width and height (iTerm2) */
+void tool_screen(Tool *t, const char *title, int percent);
 void tool_stop(Tool *t);
 
 typedef struct { int has_text, has_cell; int text[2], cell[2]; } Reports; /* what the terminal says about its pixel sizes: (w, h) */
@@ -64,7 +67,7 @@ void fitter_update(Fitter *f, double now, int cols, int rows, const int *rect);
 /* when a room opens: font to `font` points and the window to `size`, in one go */
 typedef struct {
     Tool *tool; char title[100];
-    int font, profile_font; char size[16]; int size_off;
+    int font, profile_font; char size[16]; int size_off, size_screen;
     Reports *reports;
     int stage; /* 0 reset, 1 probe, 2 fit, 3 font, 4 wait, 5 done */
     double wait_until, started, asked; int has_started;

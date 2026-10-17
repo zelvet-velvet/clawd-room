@@ -6,28 +6,40 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef __linux__
 #include <sys/prctl.h>
+#endif
 #include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
 #include "ps_scripts.h"
+#include "mac_scripts.h"
 
 static double wall(void) { struct timespec ts; clock_gettime(CLOCK_REALTIME, &ts); return ts.tv_sec + ts.tv_nsec / 1e9; }
 static int pyround(double v) { return (int)nearbyint(v); }
 
-int win_available(void) {
+static int on_path(const char *prog) {
     const char *path = getenv("PATH");
     if (!path) return 0;
     char *copy = strdup(path), *save = NULL;
     int found = 0;
     for (char *d = strtok_r(copy, ":", &save); d && !found; d = strtok_r(NULL, ":", &save)) {
         char p[1024];
-        snprintf(p, sizeof p, "%s/powershell.exe", d);
+        snprintf(p, sizeof p, "%s/%s", d, prog);
         if (access(p, X_OK) == 0) found = 1;
     }
     free(copy);
     return found;
 }
+
+/* macOS: the helpers are osascript talking to iTerm2, and only when the room runs inside iTerm2 */
+static int use_mac(void) {
+    const char *tp = getenv("TERM_PROGRAM");
+    return tp && !strcmp(tp, "iTerm.app") && !getenv("TMUX") && access("/usr/bin/osascript", X_OK) == 0;
+}
+
+int win_available(void) { return use_mac() || on_path("powershell.exe"); }
+const char *win_platform(void) { return use_mac() ? "iTerm2" : "Windows Terminal"; }
 
 /* ---- starting powershell.exe with an encoded script ------------------------------------------- */
 static char *encode_script(const char *script) { /* base64 of the UTF-16LE script (the scripts are ASCII) */
@@ -54,7 +66,9 @@ static pid_t spawn_ps(const char *script, int want_in, int want_out, int *in_fd,
     char *enc = encode_script(script);
     pid_t pid = fork();
     if (pid == 0) {
+#ifdef __linux__
         prctl(PR_SET_PDEATHSIG, SIGTERM);
+#endif
         int nul = open("/dev/null", O_RDWR);
         dup2(want_in ? pin[0] : nul, 0);
         dup2(want_out ? pout[1] : nul, 1);
@@ -67,6 +81,36 @@ static pid_t spawn_ps(const char *script, int want_in, int want_out, int *in_fd,
     if (want_in) { close(pin[0]); *in_fd = pin[1]; }
     if (want_out) { close(pout[1]); *out_fd = pout[0]; fcntl(pout[0], F_SETFL, O_NONBLOCK); }
     return pid;
+}
+
+/* osascript running one of the JavaScript helpers with its arguments; its output (if wanted) comes back on a pipe.
+ * There is no PDEATHSIG on macOS: the watcher stops by itself when its parent is gone. */
+static pid_t spawn_osa(const char *script, const char *const *args, int nargs, int want_out, int *out_fd) {
+    int pout[2] = {-1, -1};
+    if (want_out && pipe(pout)) return -1;
+    pid_t pid = fork();
+    if (pid == 0) {
+        int nul = open("/dev/null", O_RDWR);
+        dup2(nul, 0);
+        dup2(want_out ? pout[1] : nul, 1);
+        dup2(nul, 2);
+        for (int i = 3; i < 64; i++) close(i);
+        const char *argv[12] = {"osascript", "-l", "JavaScript", "-e", script};
+        int n = 5;
+        for (int i = 0; i < nargs && n < 11; i++) argv[n++] = args[i];
+        argv[n] = NULL;
+        execv("/usr/bin/osascript", (char *const *)argv);
+        _exit(127);
+    }
+    if (want_out) { close(pout[1]); *out_fd = pout[0]; fcntl(pout[0], F_SETFL, O_NONBLOCK); }
+    return pid;
+}
+
+/* a one-shot helper nobody waits for: the middle child exits at once, so no zombie is left */
+static void spawn_osa_detached(const char *script, const char *const *args, int nargs) {
+    pid_t mid = fork();
+    if (mid == 0) { spawn_osa(script, args, nargs, 0, NULL); _exit(0); }
+    if (mid > 0) waitpid(mid, NULL, 0);
 }
 
 static void reap(pid_t pid) {
@@ -85,6 +129,11 @@ static void reap(pid_t pid) {
 int watcher_start(Watcher *w) {
     memset(w, 0, sizeof *w);
     w->fd = -1;
+    if (use_mac()) {
+        const char *args[1] = {WIN_PREFIX};
+        w->pid = spawn_osa(OSA_WATCH, args, 1, 1, &w->fd);
+        return w->pid > 0;
+    }
     /* $prefix = "clawd-room " in place of the parameter line */
     const char *marker = "param([string]$prefix)";
     const char *at = strstr(PS_WATCH, marker);
@@ -189,6 +238,15 @@ int tool_start(Tool *t) {
 }
 
 static void tool_send(Tool *t, const char *line) {
+    if (use_mac()) { /* the same command line, split into osascript arguments: cmd|title|n|m */
+        char buf[400], *parts[4] = {0}, *save = NULL;
+        snprintf(buf, sizeof buf, "%s", line);
+        int n = 0;
+        for (char *p = strtok_r(buf, "|", &save); p && n < 4; p = strtok_r(NULL, "|", &save)) parts[n++] = p;
+        if (n < 3 || !(strcmp(parts[0], "resize") == 0 || strcmp(parts[0], "screen") == 0 || strcmp(parts[0], "zoomfg") == 0 || strcmp(parts[0], "resetfg") == 0)) return; /* no font keys for a window without the focus */
+        spawn_osa_detached(OSA_TOOL, (const char *const *)parts, n);
+        return;
+    }
     if (t->pid <= 0) {
         t->pid = spawn_ps(PS_TOOL, 1, 0, &t->fd, NULL);
         if (t->pid <= 0) return;
@@ -205,6 +263,7 @@ void tool_zoom(Tool *t, const char *title, int step, int only_if_focused, int li
     snprintf(b, sizeof b, "%s|%s|%d", live ? "zoomlive" : only_if_focused ? "zoomfg" : "zoom", title, step);
     tool_send(t, b);
 }
+void tool_screen(Tool *t, const char *title, int percent) { char b[300]; snprintf(b, sizeof b, "screen|%s|%d", title, percent); tool_send(t, b); }
 void tool_reset_zoom(Tool *t, const char *title) { char b[300]; snprintf(b, sizeof b, "resetfg|%s|0", title); tool_send(t, b); }
 void tool_stop(Tool *t) {
     if (t->fd >= 0) close(t->fd);
@@ -263,7 +322,9 @@ void opensetup_init(OpenSetup *o, Tool *tool, const char *title, int font, const
     snprintf(o->title, sizeof o->title, "%s", title);
     snprintf(o->size, sizeof o->size, "%s", window ? size : "off");
     for (char *p = o->size; *p; p++) if (*p >= 'A' && *p <= 'Z') *p += 32;
-    o->size_off = !strcmp(o->size, "off");
+    o->size_screen = !strcmp(o->size, "screen");
+    if (o->size_screen && !use_mac()) o->size_off = 1; /* (only the iTerm2 helper knows the screen) */
+    else o->size_off = !strcmp(o->size, "off");
     o->stage = ST_RESET;
 }
 
@@ -287,6 +348,7 @@ int opensetup_update(OpenSetup *o, double now, int cols, int rows, const int *re
         o->stage = ST_PROBE; o->wait_until = now + 0.6;
     } else if (o->stage == ST_PROBE) {
         if (o->size_off) o->stage = ST_FONT;
+        else if (o->size_screen) { tool_screen(o->tool, o->title, SCREEN_PERCENT); o->stage = ST_FONT; }
         else if (now >= o->wait_until) {
             double px[2];
             int have = opensetup_window_px(o, rect, area, cols, rows, px) != 0;
