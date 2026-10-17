@@ -261,6 +261,14 @@ sticker: lucide//book-open
 > - [ ] Following: left / right pick another Clawd, the view does not move by hand; `c`: free camera, the arrows move it; `c` again: auto follow
 > - [ ] A visitor going home in a zoomed room: the camera takes it to its door too
 
+## 🪜 The bottom gate is the top of the ladder (2026-10-17)
+
+> [!NOTE] What changed
+> Zaviel: the stairs at the bottom of the upper room (a wood frame, a dark shaft and short rungs) did not read right; it should just be the ladder carrying on, no frame. `draw_stairs()` now draws only the top of the ladder from the room below: two rails rising `LADDER_TOP_H` 9 room pixels from the bottom edge, rungs every 5 px, the same rail spacing (7) and colours as the ladder hanging from the hatch in the room below, so the two read as one ladder across the windows. Snapshots: only fixtures / scenes with a bottom gate changed (`fixtures.txt`, `scenarios.txt`).
+
+> [!TODO] Test
+> - [ ] Two stacked windows: the bottom of the upper room shows the ladder top (no frame), lining up with the ladder in the room below
+
 ---
 ## ⏳ Pending (last step)
 

@@ -16,6 +16,7 @@ const SpriteFile *draw_frames(void) { return g_frames; }
 #define ROPE RGB(186, 166, 124)
 #define RUNG RGB(150, 130, 96)
 #define HOLE RGB(18, 16, 20)
+#define LADDER_TOP_H 9 /* room pixels of the ladder top shown at the bottom gate */
 
 static int fdiv(int a, int b) { int q = a / b; return (a % b != 0 && ((a < 0) != (b < 0))) ? q - 1 : q; } /* Python's // */
 static int pyround(double v) { return (int)nearbyint(v); }                                              /* round half to even */
@@ -77,15 +78,13 @@ static void draw_rope(Canvas *cv, int x, int top, int end, double g) {
     for (int y = top + sc(6, g); y < end; y += sc(5, g)) canvas_rect(cv, x - rail + thick, y, 2 * rail - thick, thick, RUNG); /* rungs */
 }
 
+/* the bottom gate: the top of the ladder from the room below, sticking up through the floor edge (same rails and rung
+ * spacing as that room's ladder, so the two read as one ladder across the windows; no frame, no hole) */
 static void draw_stairs(Canvas *cv, int x, int h, double g) {
-    int half = sc(9, g), rail = sc(6, g), thick = sc(1, g), depth = sc(6, g);
-    canvas_rect(cv, x - half, h - depth - thick, 2 * half + 1, thick, WOOD); /* frame */
-    canvas_rect(cv, x - half, h - depth, sc(2, g), depth, WOOD);
-    canvas_rect(cv, x + half - sc(2, g) + 1, h - depth, sc(2, g), depth, WOOD);
-    canvas_rect(cv, x - half + sc(2, g), h - depth, 2 * (half - sc(2, g)) + 1, depth, HOLE); /* the dark shaft */
+    int rail = sc(7, g), thick = sc(1, g), depth = sc(LADDER_TOP_H, g);
     int rx[2] = {x - rail, x + rail};
-    for (int i = 0; i < 2; i++) canvas_rect(cv, rx[i], h - depth, thick, depth, ROPE); /* the ladder goes down into it */
-    for (int y = h - sc(1, g); y > h - depth; y -= sc(2, g)) canvas_rect(cv, x - rail + thick, y, 2 * rail - thick, thick, RUNG);
+    for (int i = 0; i < 2; i++) canvas_rect(cv, rx[i], h - depth, thick, depth, ROPE);
+    for (int y = h - sc(2, g); y > h - depth; y -= sc(5, g)) canvas_rect(cv, x - rail + thick, y, 2 * rail - thick, thick, RUNG);
 }
 
 /* ---- desks, bubbles, props ------------------------------------------------------------------- */
