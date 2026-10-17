@@ -141,7 +141,7 @@ static int key_ready(double wait) {
 static int floordiv(int a, int b) { int q = a / b; return (a % b != 0 && ((a < 0) != (b < 0))) ? q - 1 : q; }
 static int in_ids(char ids[][40], int n, const char *id) { for (int i = 0; i < n; i++) if (!strcmp(ids[i], id)) return 1; return 0; }
 
-/* the windows: where they are, the font and size helpers (WSL only) */
+/* the windows: where they are, the font and size helpers (WSL or iTerm2) */
 typedef struct { Watcher w; Tool tool; int has_watcher, has_tool; } Desktop;
 
 static void desktop_start(Desktop *d, const Args *a) {
@@ -586,7 +586,7 @@ int app_main(int argc, char **argv) {
         {"profile-font", 1, 0, 'p'}, {"scale", 1, 0, 'c'}, {"no-auto", 0, 0, 'A'}, {"no-detect", 0, 0, 'N'}, {"near", 1, 0, 'n'},
         {"dump", 1, 0, 'd'}, {"build-art", 0, 0, 'B'}, {"export-sprites", 0, 0, 'X'}, {"force", 0, 0, 'F'}, {"add", 0, 0, 'P'},
         {"list-windows", 0, 0, 'W'}, {"zoom", 1, 0, 'Z'}, {"help", 0, 0, 'h'}, {0, 0, 0, 0}};
-    int o;
+    int o, font_given = 0;
     while ((o = getopt_long(argc, argv, "h", opts, NULL)) != -1) {
         switch (o) {
         case 'e': snprintf(a.events, sizeof a.events, "%s", optarg); break;
@@ -597,7 +597,7 @@ int app_main(int argc, char **argv) {
         case 'S': a.no_split = 1; break;
         case 'x': snprintf(a.ratio, sizeof a.ratio, "%s", optarg); break;
         case 'z': a.size = optarg; break;
-        case 'f': a.font = atoi(optarg); break;
+        case 'f': a.font = atoi(optarg); font_given = 1; break;
         case 'p': a.profile_font = atoi(optarg); break;
         case 'c': a.scale = atoi(optarg); break;
         case 'Z': a.zoom = atoi(optarg); break;
@@ -609,6 +609,7 @@ int app_main(int argc, char **argv) {
         default: usage(); return o == 'h' ? 0 : 2;
         }
     }
+    if (!font_given && !strcmp(win_platform(), "iTerm2")) a.font = 0; /* iTerm2: keep the font unless asked (the font keys need Accessibility) */
     int ok = 0;
     for (int i = 0; i < N_RATIOS; i++) if (!strcmp(a.ratio, RATIO_CHOICES[i])) ok = 1;
     if (!ok) { fprintf(stderr, "clawd-room: bad --ratio %s\n", a.ratio); return 2; }
@@ -637,8 +638,8 @@ int app_main(int argc, char **argv) {
         sprites_free(&frames); sprites_free(&items);
         return rc;
     }
-    if (a.list_windows) { /* the clawd-room windows on the Windows desktop */
-        if (!win_available()) { fprintf(stderr, "powershell.exe not found (this needs WSL)\n"); return 1; }
+    if (a.list_windows) { /* the clawd-room windows on the desktop (Windows Terminal or iTerm2) */
+        if (!win_available()) { fprintf(stderr, "needs WSL (powershell.exe) or iTerm2 on macOS\n"); return 1; }
         Watcher w;
         if (!watcher_start(&w)) return 1;
         for (int i = 0; i < 100 && !w.updated; i++) { watcher_poll(&w); usleep(100000); }

@@ -1,4 +1,4 @@
-/* Windows desktop helpers (WSL only): where the clawd-room windows are,
+/* Desktop helpers (WSL + Windows Terminal through PowerShell, or macOS + iTerm2 through osascript): where the clawd-room windows are,
  * changing the font size and the window size, and where the gates between neighbouring windows go. The two PowerShell
  * scripts are in ps_scripts.h. */
 #ifndef WIN_H
@@ -14,7 +14,8 @@
 #define DOOR_H 14
 #define HATCH_W 21
 
-int win_available(void); /* powershell.exe on the PATH */
+int win_available(void); /* powershell.exe on the PATH, or running inside iTerm2 on macOS */
+const char *win_platform(void); /* "Windows Terminal" or "iTerm2" */
 
 /* ---- where the windows are -------------------------------------------------------------------- */
 typedef struct { char title[96]; int rect[4], area[4], dpi; } WinInfo;

@@ -126,6 +126,39 @@ sticker: lucide//book-open
 - Points vs pixels: macOS bounds are in points (Retina = 2 px per point); gates must use the same unit on both ends.
 - Same rules as WSL: only windows titled `clawd-room `, never move windows to attach them, never type into another window.
 
+## 🎥 Camera, room size list, iTerm2 helper (2026-10-17)
+
+> [!NOTE] Camera zoom (`[` `]`, arrows / WASD)
+> Decided with Zaviel: `[` `]` are a **camera**, no longer a TUI scale that shrinks the room.
+> - The room is laid out as before (FIT WINDOW: window / auto scale; a shape: its fixed size), then `render_camera()` (`c/draw.c`) shows part of it at base scale x zoom (1x to `CAM_MAX_ZOOM` 4) around `cam_x, cam_y` (room pixels, clamped so the view stays inside the room). Zooming in starts at the centre; the arrows or W A S D move a quarter of the view. At 1x in FIT WINDOW nothing moves (flash says `]` zooms in).
+> - `view_x / view_y / view_k` are set so that screen = view + room pixel x k still holds; the gates use them. While zoomed the gates follow the zoom (not lined up with the next window).
+> - The arrows are read now (ESC [ A..D and ESC O A..D); other escape sequences are skipped; a lone Esc closes the size list or quits.
+> - `f` (auto) puts the camera back to 1x. `--zoom N` starts zoomed (used by the `--dump` snapshots).
+
+> [!NOTE] Room size list (`r`)
+> `r` no longer cycles: it opens a ROOM SIZE list drawn over the room (pixel font, scrolls in small windows): FIT WINDOW, 3:1, 2:1, 16:9, 4:3, 1:1, 3:4, **LARGE 192x108**, **HUGE 256x144**. Up/down or W/S, Enter picks, Esc or `r` closes. LARGE and HUGE can be bigger than the window: shown at 1x (or bigger if the window allows) and moved with the camera. `--ratio large|huge` too.
+> - Snapshots: `ui.txt` (help line) changed on purpose; `dump.txt` gained 4 frames (zoom 2, park zoom 3, large, huge zoom 2); every old frame is the same. `pty_smoke` checks the zoom flash, the size list (r, down, Enter) and that Esc closes the list without quitting.
+
+> [!NOTE] macOS helper (iTerm2), replaces PowerShell there
+> - `c/mac_scripts.h`: `OSA_WATCH` (JavaScript for Automation, one `osascript` per room) prints the iTerm2 windows **and split panes** whose title (`terminalWindowName`, set by the room with OSC 2) starts with `clawd-room `, in the PowerShell watcher's line format, in points (dpi 96), four times a second. It quits when its parent changes (no PDEATHSIG on macOS); checked: SIGKILL on the room, the watcher was gone 2 s later.
+> - The terminal area is worked out (iTerm2 gives no pane or text-area pixels; it answers `CSI 14t` with the whole window and does not answer `CSI 16t`): bounds - title bar 28 pt (none in full screen) - tab bar 25 pt when there are tabs - margins (`TerminalMargin` 5, `TerminalVMargin` 2 from iTerm2's defaults). Error of a few points is possible; gates may sit a little off.
+> - **Split panes = windows.** A row of panes with the same rows is split by columns, a column of panes with the same columns by rows (two equal panes: whichever gives cells about 2.05 tall per wide). Each clawd-room pane is reported with its own rectangle, so `neighbor_side` sees two panes as attached windows (gap 0) and puts a gate between them. Other layouts (L shapes) report the whole window for each pane: no gate between them. Only the current tab of each window counts.
+> - `OSA_TOOL` (one-shot): `resize` sets the window bounds (the `f` fit and opening at 110x32); `zoomfg` / `resetfg` send Cmd -/+/0 through System Events only when iTerm2 is frontmost and its current session is the room's. Non-focused zoom is dropped (rule: never type into another window).
+> - The room uses this only when `TERM_PROGRAM=iTerm.app`, not in tmux, and `/usr/bin/osascript` exists. On iTerm2 the font is left alone unless `--font PT` is given (Accessibility needed).
+> - Found while testing: when Zaviel's iTerm2 window is in **native full screen**, new windows open full-screen size and AppleScript `set bounds` hangs; a room in such a window stopped being read by iTerm2 and blocked in `write()` (SIGTERM could not stop it, SIGKILL did). The same happened with `--no-detect` (no helper), so it is iTerm2, not the watcher. Two "Untitled" iTerm2 windows were left over that AppleScript cannot close.
+
+> [!TODO] Test (by eye, iTerm2, not in full screen)
+> - [ ] `]` zooms in (2x, 3x, 4x), arrows and W A S D move, the view stops at the room edges, `[` back to 1x shows the whole room
+> - [ ] `r` opens ROOM SIZE; up/down, Enter on LARGE: part of a big room, the camera moves over it; Esc closes the list without quitting
+> - [ ] Two windows `--room alpha` / `--room beta` side by side (touching): a gate shows on the facing sides; `g` sends a Clawd through
+> - [ ] One window split vertically (Cmd+D), `clawd-room.sh --room alpha` in the left pane, `--room beta` in the right: a gate between the panes; same for Cmd+Shift+D (stacked, hatch)
+> - [ ] `f` with a pinned shape resizes the iTerm2 window to that grid
+> - [ ] Quit: the window title goes back; no `osascript` left (`pgrep -fl osascript`)
+
+> [!WARNING] Open
+> - A room blocks in `write()` if the terminal stops reading (seen with iTerm2 in full screen); it could use a non-blocking write with a timeout so `q` / SIGTERM still work.
+> - Windows Terminal panes: the PowerShell watcher sees only the whole window. UI Automation exposes each `TermControl` with a bounding rectangle, which could report panes like iTerm2's (to try on WSL).
+
 ---
 ## ⏳ Pending (last step)
 
