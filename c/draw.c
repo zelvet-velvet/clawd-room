@@ -17,6 +17,11 @@ const SpriteFile *draw_frames(void) { return g_frames; }
 #define RUNG RGB(150, 130, 96)
 #define HOLE RGB(18, 16, 20)
 #define LADDER_TOP_H 9 /* room pixels of the ladder top shown at the bottom gate */
+#define GATE_ANIM 0.8   /* seconds a gate takes to appear (door rises and opens, rope unrolls, ladder rises) */
+#define DOOR_LEAF RGB(132, 94, 62)
+#define DOOR_EDGE RGB(96, 68, 46)
+#define DOOR_KNOB RGB(230, 190, 90)
+#define DOOR_MAT RGB(120, 64, 56)
 
 static int fdiv(int a, int b) { int q = a / b; return (a % b != 0 && ((a < 0) != (b < 0))) ? q - 1 : q; } /* Python's // */
 static int pyround(double v) { return (int)nearbyint(v); }                                              /* round half to even */
@@ -55,33 +60,53 @@ static void fit(char *out, size_t n, const char *s, int width) {
 /* ---- gates ----------------------------------------------------------------------------------- */
 static int sc(int v, double g) { return imax(1, pyround(v * g)); }
 
-static void draw_door(Canvas *cv, int left, double door_y, const char *theme_name, double g) {
-    const Theme *theme = theme_get(theme_name);
-    int w = sc(8, g), x = left ? 0 : cv->w - w, cy = (int)(door_y + 5.5);
-    int up = sc(7, g), down = sc(7, g), lint = sc(2, g), post = sc(1, g);
-    int outer = left ? x : x + w - post, inner = left ? x + w - post : x;
-    canvas_rect(cv, x, cy - up - lint, w, lint, WOOD); /* lintel */
-    canvas_rect(cv, inner, cy - up, post, up + down, WOOD); /* post on the room side */
-    canvas_rect(cv, outer, cy - up, post, up + down, RGB(54, 42, 34)); /* dark gap at the edge of the room */
-    canvas_rect(cv, x, cy + down, w, post, WOOD); /* sill */
-    int mat_x = left ? x + post : x;
-    canvas_rect(cv, mat_x, cy + down - sc(3, g), w - post, sc(3, g), theme->floor); /* doormat */
-    canvas_rect(cv, mat_x, cy + down - sc(2, g), w - post, post, theme->floor2);
+/* a rectangle measured from the room's edge inwards (the right-hand door is the mirror of the left one) */
+static void edge_rect(Canvas *cv, int left, int xl, int y, int w, int h, Rgb c) { canvas_rect(cv, left ? xl : cv->w - xl - w, y, w, h, c); }
+static Rgb mixc(Rgb a, Rgb b, double f) { return RGB((int)(a.r + (b.r - a.r) * f), (int)(a.g + (b.g - a.g) * f), (int)(a.b + (b.b - a.b) * f)); }
+
+/* a side door: a wooden frame with a glimpse of the next room (its wall and floor), the door leaf hinged at the edge of the
+ * room and a doormat. p (0..1) is how far it has appeared: first the closed door rises from the floor, then the leaf
+ * swings open towards the next room (1 = standing open, a thin edge at the hinge). */
+static void draw_door(Canvas *cv, int left, double door_y, const char *theme_name, double g, double p) {
+    const Theme *th = theme_get(theme_name);
+    int w = sc(8, g), cy = (int)(door_y + 5.5);
+    int up = sc(7, g), down = sc(7, g), lint = sc(2, g), post = sc(1, g), opening = w - post, floor_h = sc(4, g);
+    double rise = fmin(1.0, p / 0.5), swing = fmax(0.0, (p - 0.5) / 0.5);
+    int full = up + down, hgt = (int)(full * rise + 0.5), top = cy + down - hgt;
+    edge_rect(cv, left, 0, cy + down, w, post, WOOD); /* sill */
+    if (hgt <= 0) return;
+    int fy = imax(top, cy + down - floor_h); /* the next room: its wall, then its floor, a little darker (further away) */
+    if (fy > top) edge_rect(cv, left, 0, top, opening, fy - top, mixc(th->wall, RGB(0, 0, 0), 0.3));
+    edge_rect(cv, left, 0, fy, opening, cy + down - fy, mixc(th->floor, RGB(0, 0, 0), 0.25));
+    edge_rect(cv, left, 0, cy + down - post, opening, post, mixc(th->floor2, RGB(0, 0, 0), 0.25));
+    edge_rect(cv, left, opening, top, post, hgt, WOOD); /* post on the room side */
+    if (rise >= 1.0) edge_rect(cv, left, 0, cy - up - lint, w, lint, WOOD); /* lintel */
+    int lw = imax(post, (int)(opening * (1.0 - swing) + 0.5)); /* the leaf, hinged at the edge */
+    edge_rect(cv, left, 0, top, lw, hgt, DOOR_LEAF);
+    if (lw > post) edge_rect(cv, left, lw - post, top, post, hgt, DOOR_EDGE);
+    if (lw > sc(3, g) && hgt > down) edge_rect(cv, left, lw - sc(2, g), cy, post, post, DOOR_KNOB);
+    if (rise >= 1.0) edge_rect(cv, left, w, cy + down - post, sc(5, g), post, DOOR_MAT); /* doormat on the room side */
 }
 
-static void draw_rope(Canvas *cv, int x, int top, int end, double g) {
+/* the top gate: a hatch with a rope ladder; p (0..1): the hatch opens, then the ladder unrolls down */
+static void draw_rope(Canvas *cv, int x, int top, int end, double g, double p) {
     int half = sc(9, g), rail = sc(7, g), thick = sc(1, g);
+    double opening = fmin(1.0, p / 0.3), unroll = fmax(0.0, (p - 0.3) / 0.7);
     canvas_rect(cv, x - half, top, 2 * half + 1, sc(3, g), WOOD); /* hatch frame */
-    canvas_rect(cv, x - half + thick, top + thick, 2 * half + 1 - 2 * thick, thick, HOLE);
+    int hw = (int)((2 * half + 1 - 2 * thick) * opening + 0.5);
+    if (hw > 0) canvas_rect(cv, x - hw / 2, top + thick, hw, thick, HOLE);
+    int len = (int)((end - top - sc(3, g)) * unroll + 0.5), y0 = top + sc(3, g);
+    if (len <= 0) return;
     int rx[2] = {x - rail, x + rail};
-    for (int i = 0; i < 2; i++) canvas_rect(cv, rx[i], top + sc(3, g), thick, end - top - sc(3, g), ROPE); /* the two ropes */
-    for (int y = top + sc(6, g); y < end; y += sc(5, g)) canvas_rect(cv, x - rail + thick, y, 2 * rail - thick, thick, RUNG); /* rungs */
+    for (int i = 0; i < 2; i++) canvas_rect(cv, rx[i], y0, thick, len, ROPE); /* the two ropes */
+    for (int y = top + sc(6, g); y < y0 + len; y += sc(5, g)) canvas_rect(cv, x - rail + thick, y, 2 * rail - thick, thick, RUNG); /* rungs */
 }
 
 /* the bottom gate: the top of the ladder from the room below, sticking up through the floor edge (same rails and rung
  * spacing as that room's ladder, so the two read as one ladder across the windows; no frame, no hole) */
-static void draw_stairs(Canvas *cv, int x, int h, double g) {
-    int rail = sc(7, g), thick = sc(1, g), depth = sc(LADDER_TOP_H, g);
+static void draw_stairs(Canvas *cv, int x, int h, double g, double p) { /* p (0..1): the ladder rises up through the edge */
+    int rail = sc(7, g), thick = sc(1, g), depth = (int)(sc(LADDER_TOP_H, g) * p + 0.5);
+    if (depth <= 0) return;
     int rx[2] = {x - rail, x + rail};
     for (int i = 0; i < 2; i++) canvas_rect(cv, rx[i], h - depth, thick, depth, ROPE);
     for (int y = h - sc(2, g); y > h - depth; y -= sc(5, g)) canvas_rect(cv, x - rail + thick, y, 2 * rail - thick, thick, RUNG);
@@ -274,12 +299,22 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
     int active = 0;
     for (int i = 0; i < room->n; i++) if (!room->s[i]->has_left) active++;
     draw_background(cv, room, geo.banner, active);
+    { /* gates that appear while the room is running animate in; the ones there from the first frame do not */
+        int present[SIDES] = {0};
+        for (int i = 0; i < room->nnb; i++) present[room->nb[i].side] = 1;
+        for (int sd = 0; sd < SIDES; sd++) {
+            if (present[sd] && !room->gate_seen[sd]) { room->gate_seen[sd] = 1; room->gate_t0[sd] = room->drawn ? t : t - GATE_ANIM; }
+            else if (!present[sd]) room->gate_seen[sd] = 0;
+        }
+        room->drawn = 1;
+    }
     for (int i = 0; i < room->nnb; i++) {
         int side = room->nb[i].side;
         double g = room->has_gate[side] ? room->gate_scale[side] : 1.0;
-        if (side == SIDE_LEFT || side == SIDE_RIGHT) draw_door(cv, side == SIDE_LEFT, geo.door_y[side], room->nb[i].theme, g);
-        else if (side == SIDE_UP) draw_rope(cv, geo.rope_x, geo.banner, geo.rope_end, g);
-        else draw_stairs(cv, geo.stairs_x, cv->h, g);
+        double p = fmin(1.0, fmax(0.0, (t - room->gate_t0[side]) / GATE_ANIM));
+        if (side == SIDE_LEFT || side == SIDE_RIGHT) draw_door(cv, side == SIDE_LEFT, geo.door_y[side], room->nb[i].theme, g, p);
+        else if (side == SIDE_UP) draw_rope(cv, geo.rope_x, geo.banner, geo.rope_end, g, p);
+        else draw_stairs(cv, geo.stairs_x, cv->h, g, p);
     }
     int anyone = 0; /* any live session at all: linked rooms share them out, so this room may have none of its own */
     for (int i = 0; i < room->npool; i++) if (!room->pool[i].has_left) anyone = 1;

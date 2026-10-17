@@ -269,6 +269,19 @@ sticker: lucide//book-open
 > [!TODO] Test
 > - [ ] Two stacked windows: the bottom of the upper room shows the ladder top (no frame), lining up with the ladder in the room below
 
+## 🚪 New door, gates animate in (2026-10-17)
+
+> [!NOTE] What changed
+> Zaviel: redesign the door; doors and ladders should appear with an animation. (Top hatch with the rope ladder: same look as before; bottom: just the ladder carrying on, see the entry above.)
+> - **Door** (same 8x16 footprint, so the gate maths and the Clawds' path are unchanged): a wooden frame (lintel, post on the room side, sill), a **glimpse of the next room** in the opening (its wall and floor colours, a little darker), the **door leaf hinged at the room's edge** with a knob, and a doormat on the room side. Colours `DOOR_LEAF / DOOR_EDGE / DOOR_KNOB / DOOR_MAT`.
+> - **Appearing** (`GATE_ANIM` 0.8 s, only for gates that appear while the room runs; gates there from the first frame are drawn complete): door = the closed door rises from the floor, then the leaf swings open towards the next room; top hatch = the hatch opens, then the rope ladder unrolls down; bottom = the ladder top rises up through the edge. `Room.gate_seen / gate_t0 / drawn`.
+> - Snapshots: only the gate fixtures (`office-gates`, `office-gates-defaults`) and the scenes with gates (`office-gates-cross`, `coffee-gates-busy`, `empty-room-visitor`) changed. Checked close-ups of the stages (rendered with a scratch tool).
+
+> [!TODO] Test (by eye)
+> - [ ] Push two windows together: the door rises and opens (side by side), the hatch opens and the rope unrolls / the ladder top rises (stacked)
+> - [ ] The open door shows a bit of the other room (office / coffee / park colours)
+> - [ ] Gates that are there when a room starts are simply there (no animation)
+
 ---
 ## ⏳ Pending (last step)
 

@@ -59,6 +59,8 @@ typedef struct {
     int cam_zoom;            /* camera zoom over the laid-out room: 0 or 1 = whole room, 2..CAM_MAX_ZOOM = closer */
     int cam_set; double cam_x, cam_y; /* camera centre in room pixels (cam_set 0: centre of the room) */
     int cam_vw, cam_vh;      /* room pixels the camera shows, as last drawn (for the pan step) */
+    int gate_seen[SIDES]; double gate_t0[SIDES]; /* when each gate appeared (it animates in: draw.c GATE_ANIM) */
+    int drawn;               /* a frame has been drawn (gates there from the start do not animate) */
     /* movement state */
     int has_last_now; double last_now;
     int has_geo_key; int geo_w, geo_h;
