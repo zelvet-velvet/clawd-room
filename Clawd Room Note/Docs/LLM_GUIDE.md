@@ -23,10 +23,15 @@ Read this first if you are an AI assistant (Claude Code or similar) working on t
 
 | You need | Read |
 | --- | --- |
-| Commands, keys | `README.md` |
-| What was built, current phase, pending | [[Dev Log]] |
+| Commands, flags | `README.md` |
+| What changed and when (short, with pictures), pending, ideas | [[Dev Log]] |
+| The look: rooms, workspaces, gates, signs, art rules, layout numbers | [[Rooms and Art]] |
+| Keys, camera, room size, linked windows, crossing, sessions | [[Interaction]] |
+| WSL / Windows Terminal, macOS / iTerm2, window helpers | [[Platforms and Windows]] |
+| The code's layout, tests, random numbers | [[Engine and Tests]] |
+| What is still to check by eye | [[Test Checklist]] |
 | Every animation frame | [[Animations]] (edit `sprites/*.txt`, `clawd-room --build-art` redraws the pictures) |
-| Behaviour details | the code (docstrings and constants at the top of each file) and `git log` |
+| Exact behaviour | the code (comments and constants at the top of each file) and `git log` |
 
 ---
 ## 🗂️ Map
@@ -35,19 +40,21 @@ Read this first if you are an AI assistant (Claude Code or similar) working on t
 hook.py             Claude Code hook: one JSON line per event -> ~/.clawd-room/events.jsonl (mode 600)
 install_hooks.py    prints / applies / removes the hook in ~/.claude/settings.json (prints by default)
 clawd-room.sh       the launcher the profile calls: builds c/ when needed, then runs c/clawd-room
-c/                  the room, in C: canvas, sprites, poses, themes, draw, room (state machine), rng, tail (events), link (windows), win (window helpers: PowerShell on WSL, osascript on macOS iTerm2; scripts in ps_scripts.h / mac_scripts.h), ui, app (main loop), art (sprite files, PNG, GIF)
-c/tests/expected/   snapshots the tests compare with (made with the old Python version, which agreed on every line)
+c/                  the room, in C: canvas, sprites, clawd (poses), persp (the perspective), theme (the rooms, workspaces, gates, signs), draw (layout, frame, camera view), room (state machine), camera, rng, tail (events), link (windows), win (window helpers: PowerShell on WSL, osascript on macOS iTerm2; scripts in ps_scripts.h / mac_scripts.h), ui, app (main loop), art (sprite files, PNG, GIF)
+c/tests/expected/   snapshots the tests compare with (from the C program since style A, 2026-10-18)
 sprites/            editable Clawd frames and items (text grids)
 tools/              test.sh (snapshots), fixtures/ + scenarios/ (test scenes), pty_smoke.py, link_smoke.py, win_smoke.py, place_windows.py (test helper for your own windows)
 simulate.py         fake sessions: live, or --fixture TS --out FILE for a static case
 room.py + run.sh    the original pygame-ce window (needs .venv). Leave alone
 wt_settings.py      print-only: Windows Terminal settings that hide the tab bar / scroll bar
 setup_profile.py    prints / writes (--apply) / removes (--remove) a "Clawd Room" Windows Terminal profile fragment (scroll bar hidden, generated pixel Clawd-in-a-room `.ico`; the 512 px picture is `clawd-room-512px.png` as tab icon); `--apply-global` edits settings.json (tab bar off, with backup)
-Clawd Room Note/    this Obsidian vault (open this folder in Obsidian; plugin code is not in git)
+Clawd Room Note/    this Obsidian vault (open this folder in Obsidian; plugin code is not in git):
+                      Dev Log.md (short dated entries), Notes/ (one note per subject), Screenshots/ (pictures linked from the log),
+                      Animations/ (frames), Docs/ (this guide)
 CLAUDE.md           points here
 ```
 
-Test hooks (environment): `CLAWD_EVENTS` (events file), `CLAWD_LINK_DIR` (link folder), `CLAWD_SIZE_LOG` (logs terminal size and gate positions to a file).
+Test hooks (environment): `CLAWD_EVENTS` (events file), `CLAWD_LINK_DIR` (link folder), `CLAWD_SIZE_LOG` (logs terminal size, gate positions and who the camera follows).
 
 ---
 ## ⚠️ Rules that prevent breakage
@@ -59,10 +66,11 @@ Test hooks (environment): `CLAWD_EVENTS` (events file), `CLAWD_LINK_DIR` (link f
 - **Snapshots are the contract.** `make -C c test` must pass; a change that alters behaviour on purpose updates the snapshots (`tools/test.sh --update`) and says so in the Dev Log. New behaviour gets a fixture (`tools/fixtures/*.fx`) or scene (`tools/scenarios/*.sc`). The random generator is Python's Mersenne Twister, kept so the old comparisons stay valid: do not add or remove random calls casually. Launchers call `clawd-room.sh`, never the binary directly.
 - **Leave `room.py` alone** (reference only). Keep the state machine and its timings unless asked: 90 s sleep, 30 min stale, 2.5 s cheer, 0.8 s hold-working.
 - **Terminal hygiene.** Alternate screen, hidden cursor, one string written per frame, diff updates; restore the terminal on exit, Ctrl-C and exceptions.
-- **Windows are never moved to attach them** (the user decided). Gates (doors, ladder hatches) line up on screen instead. Do not add window snapping or following again.
+- **Windows are never moved to attach them** (the user decided). Gates sit on the room's walls, ceiling and floor (style A), so the two ends need not line up on screen. Do not add window snapping or following again.
 - **Window helpers (WSL: PowerShell; macOS: osascript + iTerm2, panes count as windows).** Only look at windows / panes whose title starts with `clawd-room `. Be DPI aware (real pixels). Send the font-size keys only to a window that already has the focus, and never type into another window. Windows Terminal's focus mode (command palette) dropped the window in tests: do not use it.
-- **The Clawd looks official**: flat `#CD6E58`, 14x8 sprite (8-wide torso, 2x2 arms, four 1-pixel legs), 1x1 eyes, no mouth. Draw gates at the size they need in the window with the bigger cells, so both ends match on screen.
-- **Constants with a reason** (change only on request): attach gap 30 px (stays until 45), gates wait 1 s for still windows, a door needs 14 room pixels of shared floor, a hatch 21 room pixels of overlap, slots 30-62 px wide and 40 tall, minimum terminal 44x20, 16 FPS.
+- **The Clawd looks official**: flat `#CD6E58`, 14x8 sprite (8-wide torso, 2x2 arms, four 1-pixel legs), 1x1 eyes, no mouth.
+- **The look is style A** (one-point perspective, see [[Rooms and Art]]). **Visual changes start with rendered mockups** (a scratch program drawing with the room's own canvas code) that Zaviel picks from; send them as pictures, then build.
+- **Constants with a reason** (change only on request): attach gap 30 px (stays until 45), gates wait 1 s for still windows, a door needs 14 room pixels of shared floor, a hatch 21 room pixels of overlap, workspaces 24-40 px wide in rows 15 px apart, minimum terminal 44x20, 16 FPS; the rest are listed in [[Rooms and Art]] and [[Interaction]].
 - **Do not hurt the user's running windows.** When testing with real Windows Terminal windows, create your own (names like `alpha` / `beta`), find them by exact title or pid, and never resize or kill the user's `park` / `coffee` windows. Do not use `pkill -f` with a pattern that also matches your own command line.
 - **Testing needs the user's eyes** for the real windows. Say what could not be tested and what the user must look at.
 
@@ -82,7 +90,7 @@ Test hooks (environment): `CLAWD_EVENTS` (events file), `CLAWD_LINK_DIR` (link f
 1. Read [[Dev Log]] and the code you are about to change before editing.
 2. Make the smallest change that does the job; match the surrounding style (small functions, a short comment per non-obvious step, no new dependencies).
 3. Test as above, then say plainly what works, what could not be tested and what you were unsure about.
-4. Record it: add a dated entry to [[Dev Log]]; update `README.md` when commands or keys change.
+4. Record it (see the notes regulation below); update `README.md` when commands or keys change.
 5. **Commit and push every change** on a feature branch, following [[#🌿 Regulation: repo management]].
 
 ---
@@ -110,16 +118,17 @@ The repo is private on GitHub (`zelvet-velvet/clawd-room`). History starts clean
 - Unrelated things go on a new branch.
 
 ---
-## 📜 Regulation: `CMD_SYNC`
+## 📜 Regulation: notes and `CMD_SYNC`
 
 When the user sends **`CMD_SYNC`**, update the notes for every feature or change added since the last sync:
 
 1. Find what changed: `git status`, `git log` since the previous `docs(vault): sync` commit, and the conversation so far.
-2. Add or update the entry for each change in [[Dev Log]]: what it does, decisions, and a `[!TODO] Test` checklist of what the user still has to check by eye. Bug fixes go into the related entry.
-3. Keep constants in this guide in step with the code.
-4. Update `README.md` if commands, flags or keys changed, and this guide if a rule changed.
-5. Do not mark anything as confirmed; only the user's yes does that.
-6. Commit and push as `docs(vault): sync`, then finish with a short list of what was added.
+2. **[[Dev Log]]:** one short entry per change under its date (newest first): a title, two to four plain bullets of what changed for the user, the branch if not merged, a link to the topic note. No code details, no rounds of back and forth; superseded attempts get one line.
+3. **Pictures:** put screenshots (the user's, renders from the real program, chosen mockups) in `Screenshots/` named `YYYY-MM-DD subject.png` (the user's own: `... (Zaviel).png`, scaled to 1400 px) and embed them in the Dev Log entry (`![[name.png|250]]`).
+4. **Topic notes** (`Notes/`): update the note(s) the change belongs to so they describe how things work *now* (rewrite, do not append history): [[Rooms and Art]], [[Interaction]], [[Platforms and Windows]], [[Engine and Tests]]. Constants go in the tables there.
+5. **[[Test Checklist]]:** add what the user still has to check by eye, under its subject; drop checks for things that were replaced. Do not tick anything; only the user's yes does that.
+6. Update `README.md` if commands, flags or keys changed, and this guide if a rule changed.
+7. Commit and push as `docs(vault): sync`, then finish with a short list of what was added.
 
 ---
 ## 🗣️ Conventions
