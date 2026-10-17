@@ -96,6 +96,36 @@ sticker: lucide//book-open
 > - [ ] Two iTerm2 windows with `--room NAME`, `g` sends a Clawd across
 > - Next: iTerm2 window helpers (font size / window size / position) instead of PowerShell, e.g. via escape codes or AppleScript
 
+> [!NOTE] 2026-10-17: resize and full screen in a real iTerm2 window (my own test window, driven by AppleScript, screenshots)
+> - The room follows every resize: 65x22 -> 132x38 -> 76x19 redraws at once; below 44x20 it shows "need 44x20". Full screen (Cmd+Enter) 162x51 and back to 80x25 also redraw correctly.
+> - iTerm2 (3.5, default settings) does not answer the pixel queries `CSI 14t` / `CSI 16t`, so `reports.has_cell` stays 0 there: the "font changed" guess (Cmd +/-) never fires on a Mac, and auto scale only looks at cols x rows.
+> - In macOS full screen the menu bar and title bar slide over the top terminal rows when the mouse goes to the top: the banner is hidden for that moment (no change in size, nothing to fix in the room).
+> - At 162x51 with 7 Clawds auto scale stays 1x (2x would not seat them), so full screen shows small Clawds on a big floor.
+> - Open: Zaviel said the TUI "won't auto resize" on the Mac. In these tests it does redraw on resize; what is missing is the WSL part where the room sets the font and window size itself (no PowerShell here). To confirm with Zaviel which one was meant.
+
+> [!INFO] How `[` / `]` scale works now (answer to "camera zoom or smaller room?")
+> It is **not** a camera. With the auto room shape the room is rebuilt at `cols / k` x `rows*2 / k` room pixels and every room pixel is drawn as k x k cells (`render()` in `c/draw.c`). So `]` makes everything bigger **and the room smaller**: fewer desks per row, less floor, more `+N MORE`. At 80x25 a 2x room is only 40x25 room pixels. Steps are whole numbers (1x -> 2x halves the room), up to `MAX_SCALE` 8; auto picks at most `SCALE_CAP` 3. With a fixed shape (`r`) the room keeps its size in room pixels and `[` `]` are refused.
+
+## 💡 Ideas: zoom and full screen (2026-10-17, to discuss, nothing built)
+
+**Zoom (`[` `]`)**
+- **Only useful steps:** `]` stops at the biggest scale that still seats every Clawd (what `auto_scale` already computes) and flashes why; or allow it but say "+N MORE AT 3X".
+- **Camera zoom:** lay the room out once for the window at 1x, then `[` `]` zoom a camera into it: the world keeps its desks, the view shows part of it and follows a Clawd (`Tab` picks which one, e.g. the one that needs you). Pairs with the "focus" idea. Gates and visits keep working because the room size does not change.
+- **Fixed world, letterbox:** keep the room at the size it had at 1x and scale it up with margins (like the fixed shapes do now), instead of shrinking the world.
+- **Font zoom instead:** on WSL the font keys already exist; on iTerm2 there is no escape code for font size, only AppleScript / the profile (or the user's Cmd +/-). Fractional scales (1.5x) would make uneven pixels with half blocks: no.
+
+**Full screen, both platforms**
+- *What happens today:* the room just gets a bigger terminal. Windows Terminal: F11 (and maximised); focus mode is banned (it dropped the window in tests). macOS: native full screen (own Space, Cmd+Enter), or iTerm2's non-native full screen (same Space, setting "Native full screen windows" off), or a maximised window.
+- *Linking:* a full-screen window has no neighbours (macOS even puts it in its own Space), so no gates. Ideas: (a) a full-screen room is the **hub**: linked rooms send their Clawds there to visit; (b) in full screen draw **several rooms side by side** (office | coffee | park) with doors between them inside one window, since there is room for it; (c) leave gates off and say "FULL SCREEN: NO GATES".
+- *Size:* full screen should pick a bigger scale or font so Clawds are not tiny; maybe a minimum Clawd size on screen (e.g. auto scale prefers 2x and shows two desk rows instead of five tiny desks).
+- *Detect it:* WSL: the PowerShell watcher can compare the window rect with the monitor; macOS: AppleScript (`bounds` of the iTerm2 window vs the screen) or simply "cols x rows got very large". Only needed if behaviour should change in full screen.
+- *macOS overlay:* the menu bar slides over the top rows when the mouse touches the top; keep important text (banner) out of the top row or accept it.
+
+**macOS window helpers (to replace PowerShell)**
+- iTerm2 AppleScript gives every window's `bounds` (points, top-left origin; used in these tests) and can set them: enough for a watcher (neighbours, gates lining up) and for "fit". Window titles: the room already sets `clawd-room <id>` via OSC 2 when it has a watcher; iTerm2 shows it as the window name, so windows can be found by title the same way.
+- Points vs pixels: macOS bounds are in points (Retina = 2 px per point); gates must use the same unit on both ends.
+- Same rules as WSL: only windows titled `clawd-room `, never move windows to attach them, never type into another window.
+
 ---
 ## ⏳ Pending (last step)
 
