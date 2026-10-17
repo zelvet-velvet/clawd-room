@@ -314,6 +314,16 @@ sticker: lucide//book-open
 > - [ ] A new room opens as a quarter of the screen, in the quarter it was in
 > - [ ] Gates that are there when a room starts are simply there (no animation)
 
+## 🏛️ Style A: the room in perspective (2026-10-18, agreed with Zaviel, branch feat/style-a off feat/camera-gates)
+
+> [!NOTE] What Zaviel picked (from rendered mockups, rounds 1-4; the mockup program is scratch, not in git)
+> - **One-point perspective room** (style A, over 3/4 top-down and isometric): back wall in the middle, side walls slanting in, a stylised ceiling, the floor and every object worked out from one vanishing point; the floor leans forward a little (the back wall's bottom at 34/72 of the height).
+> - **Rooms:** office brighter (light walls, a window, a plant, wooden floor); coffee shop bright with a checker floor in perspective, a **low bar** (a Clawd stands behind it, the espresso machine on it), **customer tables with laptops and chairs**; park bright (sky, hills, mowed grass, bushes).
+> - **Workspaces in every room:** desks (office), cafe tables with laptops (coffee; the first session is the barista at the bar), picnic tables with laptops (park). Clawds sit behind their desk/table.
+> - **Gates:** side door on the wall facing the neighbour (door leaf on the right wall, opening while a Clawd passes; a frame on the left wall); office/coffee: **stairs** (up: a staircase along the right wall to an opening in the ceiling; down: a stairwell with a railing in the floor at the front); park: **treehouse** with a ladder (up), **stone steps** into the ground (down), a **fence gate** (side).
+> - **Text:** no top banner (title, session count, link line go); the room name is a **sign in the room** (office plaque, coffee shop sign, park signpost). Over each Clawd's head a **dot** for the state (green working, yellow needs you, grey idle, blue visitor); the **name only when it needs you**. The NAME / STATE lines under desks go.
+> - Consequences: gates no longer sit at the shared window edge, so they need not line up pixel for pixel across windows (the gate-alignment drawing and the size matching are not used for drawing any more); every snapshot changes on purpose. The Clawd sprite stays the official one.
+
 ---
 ## ⏳ Pending (last step)
 
