@@ -91,7 +91,7 @@ typedef struct {
 #define TREEHOUSE_UP 18    /* how far above the back of the floor the treehouse door is */
 #define STAIRS_FOOT 0.2     /* the stairs on the back wall start this far along it ... */
 #define STAIRS_TOP 0.42     /* ... and reach the platform here */
-#define PLATFORM_UP 0.5     /* the platform (a half floor) is this part of the way up the back wall */
+#define PLATFORM_UP 0.4     /* the platform (a half floor) is this part of the way up the back wall (room above it for the archway) */
 #define PLAY_Y 0.62        /* the park's swing and slide stand this far down the floor */
 #define PLAY_SWING_X 0.23  /* ... the swing this far across, the slide there */
 #define PLAY_SLIDE_X 0.6

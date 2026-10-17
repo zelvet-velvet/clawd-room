@@ -86,9 +86,9 @@ Gates sit **on the room's walls, ceiling and floor**, not at the window edge, so
 | **Down** | a **stair well** at the front: trapezoid opening, side walls going down, steps dropping away into the dark, a railing | **stone steps** into the ground, low stone walls round them |
 
 > [!example] The stairs, as Zaviel drew them
-> They start a fifth of the way along the back wall (`STAIRS_FOOT` 0.2) and climb to a **platform half way up the wall** (`PLATFORM_UP` 0.5, reached at `STAIRS_TOP` 0.42). The platform runs to the right-hand wall; its front face goes down to the floor (the coffee shop's **menu** hangs on it). A **banister** runs up the stairs and along the platform. The way up is an **opening where the stairs carry on upwards** into the dark, with a warm light from upstairs, at the platform's right end, standing on the platform floor behind the railing.
+> They start a fifth of the way along the back wall (`STAIRS_FOOT` 0.2) and climb to a **platform** 40% of the way up the wall (`PLATFORM_UP` 0.4, reached at `STAIRS_TOP` 0.42). The platform runs to the right-hand wall; its front face goes down to the floor (the coffee shop's **menu** hangs on it). A **banister** runs up the stairs and along the platform. The way up is a **lit archway** at the platform's right end: warm light inside and spilling onto the platform, a small lamp above, standing on the platform floor behind the railing (picked from mockups).
 >
-> ![[2026-10-18 stairs to a half floor.png|300]] ![[2026-10-18 office steel stairs.png|300]]
+> ![[2026-10-18 lit archway coffee.png|300]] ![[2026-10-18 lit archway office.png|300]]
 
 > [!note] Appearing
 > A gate that appears while the room runs animates in over `GATE_ANIM` (0.8 s): doors and fences rise, stairs appear step by step, the well opens, the treehouse ladder grows. Gates there from the first frame are simply there.

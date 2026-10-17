@@ -331,20 +331,19 @@ typedef struct { Rgb side, tread, riser, rail, glass; int glass_rail; } StairSty
 static const StairStyle WOOD_STAIRS = {{150, 112, 86}, {214, 186, 150}, {166, 130, 98}, {96, 66, 46}, {0, 0, 0}, 0};
 static const StairStyle STEEL_STAIRS = {{110, 116, 128}, {206, 210, 218}, {140, 146, 158}, {70, 76, 88}, {214, 230, 238}, 1};
 
-/* the way up from the platform: an opening in the back wall with the stairs carrying on upwards inside, into the dark,
- * a warm light at the top; its bottom on the platform floor */
+/* the way up from the platform (picked by Zaviel from mockups): a lit archway in the back wall, warm light inside and
+ * spilling onto the platform floor, a small lamp above; its bottom on the platform floor */
 static void upstairs_opening(Canvas *c, int x, int floor_y, int w, int h, const StairStyle *st) {
-    Rgb dark = RGB(22, 18, 16);
-    canvas_rect(c, x - 1, floor_y - h - 1, w + 2, h + 1, st->rail);         /* the frame */
-    canvas_rect(c, x, floor_y - h, w, h, dark);
-    canvas_rect(c, x + 1, floor_y - h, w - 2, 1, RGB(250, 214, 140));         /* light from upstairs */
-    canvas_px(c, x + w / 2, floor_y - h + 1, RGB(200, 160, 100));
-    int n = 4;
-    for (int i = 0; i < n; i++) {                                             /* steps going up inside, fading into the dark */
-        int sy = floor_y - 1 - i * (h - 3) / n, sx = x + 1 + i * (w - 2) / n, sw = w - 1 - (sx - x);
-        canvas_rect(c, sx, sy, sw, 1, rgb_mix(st->tread, dark, 0.1 + 0.15 * i));
-        canvas_rect(c, sx, sy + 1, 1, (h - 3) / n - 1, rgb_mix(st->riser, dark, 0.3 + 0.15 * i));
-    }
+    Rgb warm = RGB(250, 214, 140), dark = RGB(22, 18, 16), wood = st->glass_rail ? st->riser : RGB(120, 84, 50); /* (steel in the office) */
+    canvas_rect(c, x - 1, floor_y - h + 2, w + 2, h - 2, st->rail);                 /* the frame, rounded at the top */
+    canvas_rect(c, x + 1, floor_y - h, w - 2, 2, st->rail);
+    canvas_rect(c, x, floor_y - h + 2, w, h - 2, wood);
+    canvas_rect(c, x + 2, floor_y - h + 1, w - 4, 1, wood);
+    canvas_rect(c, x + 1, floor_y - h + 3, w - 2, h - 3, rgb_mix(warm, dark, 0.35)); /* the light inside */
+    canvas_rect(c, x + 2, floor_y - h + 2, w - 4, h - 2, rgb_mix(warm, dark, 0.15));
+    canvas_rect(c, x - 3, floor_y, w + 6, 1, rgb_mix(warm, st->tread, 0.5));        /* spilling onto the platform */
+    canvas_rect(c, x + w / 2 - 1, floor_y - h - 3, 3, 2, RGB(60, 50, 40));          /* a small lamp above */
+    canvas_px(c, x + w / 2, floor_y - h - 1, warm);
 }
 
 static void back_stairs(Canvas *c, const View *v, int coffee, double p) {
