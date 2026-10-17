@@ -6,7 +6,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef __linux__
 #include <sys/prctl.h>
+#endif
 #include <sys/wait.h>
 #include <time.h>
 #include <unistd.h>
@@ -54,7 +56,9 @@ static pid_t spawn_ps(const char *script, int want_in, int want_out, int *in_fd,
     char *enc = encode_script(script);
     pid_t pid = fork();
     if (pid == 0) {
+#ifdef __linux__
         prctl(PR_SET_PDEATHSIG, SIGTERM);
+#endif
         int nul = open("/dev/null", O_RDWR);
         dup2(want_in ? pin[0] : nul, 0);
         dup2(want_out ? pout[1] : nul, 1);

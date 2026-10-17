@@ -81,6 +81,22 @@ sticker: lucide//book-open
 > - [ ] Quit: the font returns to normal
 
 ---
+## 🍎 macOS + iTerm2 (2026-10-17)
+
+> [!NOTE] What happened
+> First step to run the room on a Mac in iTerm2 (branch `feat/macos-iterm`).
+> - `c/win.c`: `sys/prctl.h` / `PR_SET_PDEATHSIG` are Linux only, now behind `#ifdef __linux__`. On macOS `powershell.exe` is never found, so no helper is started; the window helpers (font keys, fit, window watcher, gates lining up with real windows) stay off, as with `--no-detect` (`f` says FIT ONLY WORKS ON WSL).
+> - Scripts had no exec bit in git (committed from Windows): `tools/test.sh`, `clawd-room.sh`, `run.sh` are now `100755`.
+> - `clawd-room.sh` suggests `xcode-select --install` on macOS when there is no compiler.
+> - On macOS (clang): `make -C c test` all snapshots match, `smoke` all passed, `linksmoke` OK. `hook.py` / `install_hooks.py` need no change (paths come from `__file__` and `~`).
+
+> [!TODO] Test in iTerm2 (by eye)
+> - [ ] `./clawd-room.sh` in iTerm2: colours, half blocks and animation look right, no flicker, `q` restores the terminal
+> - [ ] `python3 install_hooks.py --apply`, start a Claude Code session: its Clawd appears and reacts
+> - [ ] Two iTerm2 windows with `--room NAME`, `g` sends a Clawd across
+> - Next: iTerm2 window helpers (font size / window size / position) instead of PowerShell, e.g. via escape codes or AppleScript
+
+---
 ## ⏳ Pending (last step)
 
 - Profile from the dropdown still opens at Windows Terminal's default size and then jumps once (WT has no per-profile size). Planned: `setup_profile.py --shortcut` making a shortcut that runs `wt.exe -w new --size 60,18 -p "Clawd Room"`. Not a global `initialCols/Rows` (it would shrink every new window).
