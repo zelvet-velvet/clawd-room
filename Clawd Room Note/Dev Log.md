@@ -225,6 +225,14 @@ sticker: lucide//book-open
 > - [ ] A new room in iTerm2 opens at about half the screen on the MacBook Air
 > - [ ] Drag-resize: stripes only while dragging, a clean picture as soon as you let go
 
+## 🙈 NO SESSIONS only when there are none (2026-10-17)
+
+> [!NOTE] What changed
+> Zaviel: with a session running, NO SESSIONS / START CLAUDE must not show in any room. Linked rooms share the sessions out, so a room whose share was empty said NO SESSIONS while its neighbour had Clawds. Now the text shows only when no live session exists at all (every linked room reads the same events file, so `room->pool` holds them all). New fixture `office-split-empty.fx` (and a `split ME ID...` fixture line): a linked room with an empty share draws no text (its frame differs from the old code's); `office-empty-guest.fx` (no sessions anywhere) is unchanged and still shows it.
+
+> [!TODO] Test
+> - [ ] Two linked rooms, one session: the room without a Clawd shows an empty room, no NO SESSIONS text; quit all Claude Code sessions: both rooms show NO SESSIONS
+
 ---
 ## ⏳ Pending (last step)
 

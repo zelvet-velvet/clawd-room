@@ -12,6 +12,7 @@ fixture office-many.fx 2719aaf902b34b2e
 fixture office-overflow.fx 826497c62602f97c 
 fixture office-props.fx e87cb29eafd5f3d3 
 fixture office-scale2.fx a69a8924e4f2ab7b 
+fixture office-split-empty.fx bf3fab8cc0f293ca 
 fixture park-basic.fx c016dd9a3c6b7686 
 fixture park-many.fx a1586b12470376de 
 fixture park-overflow.fx 9537a420844d9619 

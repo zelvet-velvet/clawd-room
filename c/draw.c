@@ -282,7 +282,9 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
         else if (side == SIDE_UP) draw_rope(cv, geo.rope_x, geo.banner, geo.rope_end, g);
         else draw_stairs(cv, geo.stairs_x, cv->h, g);
     }
-    if (room->n == 0) { /* nobody lives here: say so (visitors from other windows are still drawn below) */
+    int anyone = 0; /* any live session at all: linked rooms share them out, so this room may have none of its own */
+    for (int i = 0; i < room->npool; i++) if (!room->pool[i].has_left) anyone = 1;
+    if (room->n == 0 && !anyone) { /* no Claude Code running anywhere: say so (visitors from other windows are still drawn below) */
         int mid = (geo.banner + cv->h) / 2;
         wtext(cv, cv->w / 2 - text_width("NO SESSIONS") / 2, mid - 7, "NO SESSIONS", RGB(150, 150, 180));
         wtext(cv, cv->w / 2 - text_width("START CLAUDE") / 2, mid, "START CLAUDE", RGB(110, 110, 140));
