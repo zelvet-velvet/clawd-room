@@ -111,7 +111,7 @@ static int golden_ui(const char *path) {
     int n = tail_history(&t, 1000.0, ev, 64);
     for (int i = 0; i < n; i++) printf("tail %.17g %s %s %s %s\n", ev[i].t, ev[i].sid, ev[i].ev, ev[i].cwd, ev[i].tool);
     tail_free(&t);
-    char buf[512];
+    char buf[4096];
     for (int paused = 0; paused < 2; paused++) for (int help = 0; help < 2; help++) {
         static const char *NF[4][2] = {{"", ""}, {"+3 MORE", ""}, {"", "SCALE 2X"}, {"+1 MORE", "FLASH"}};
         for (int k = 0; k < 4; k++) { overlay_text(buf, sizeof buf, paused, help, NF[k][0], NF[k][1]); printf("overlay %d %d [%s]\n", paused, help, buf); }

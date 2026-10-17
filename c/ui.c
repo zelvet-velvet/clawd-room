@@ -26,7 +26,9 @@ void too_small(char *out, size_t n, int cols, int rows) {
     snprintf(msg, sizeof msg, "need %dx%d, have %dx%d", MIN_COLS, MIN_ROWS, cols, rows);
     if ((int)strlen(msg) > cols) msg[cols > 0 ? cols : 0] = 0;
     int r = rows / 2 + 1 > 1 ? rows / 2 + 1 : 1, c = (cols - (int)strlen(msg)) / 2 + 1 > 1 ? (cols - (int)strlen(msg)) / 2 + 1 : 1;
-    snprintf(out, n, "\x1b[0m\x1b[2J\x1b[%d;%dH%s", r, c, msg);
+    size_t k = (size_t)snprintf(out, n, "\x1b[0m");
+    for (int i = 1; i <= rows && k + 16 < n; i++) k += (size_t)snprintf(out + k, n - k, "\x1b[%d;1H\x1b[2K", i); /* no ESC[2J (see wipe in app.c) */
+    if (k < n) snprintf(out + k, n - k, "\x1b[%d;%dH%s\x1b[H", r, c, msg);
 }
 
 const char *const SIZE_LABEL[N_SIZES] = {"AUTO", "S  120X60", "M  160X90", "L  220X120", "XL 300X160"};

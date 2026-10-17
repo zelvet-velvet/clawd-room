@@ -188,6 +188,26 @@ sticker: lucide//book-open
 > - [ ] Tab goes through the Clawds (flash FOLLOW NAME); arrows make it free; `c` back to auto
 > - [ ] `z`: the zoom closes in on a single busy Clawd and widens when several are busy
 
+## 🩹 Resize leaves the view scrolled; zoom magnified everything (2026-10-17)
+
+> [!NOTE] What Zaviel saw
+> In iTerm2, after the window was too small ("need 44x20") and then made bigger again, the picture was wrong until the view was scrolled down; and `]` magnified the whole picture (banner and words too), not the room.
+
+> [!NOTE] Fix: no clear-screen, cursor parked at the top
+> - Cause (two ways lines got into iTerm2's scrollback): every resize sent `ESC[2J`, which iTerm2 copies into scrollback, and the cursor was left where the last changed cell was (often low on the screen), so when the window got shorter iTerm2 pushed the top lines into scrollback to keep the cursor's line. Making the window bigger then showed old lines, scrolled up.
+> - Now: no `ESC[2J` anywhere; `wipe()` erases row by row (`ESC[2K`), the "need 44x20" screen does the same, and every frame ends with the cursor at the top-left (`ESC[H`). A full repaint (after a resize) writes every cell anyway.
+> - Checked in a pty: 100x30 -> 30x10 -> 120x40, no `ESC[2J`, all 39 frames end with `ESC[H`. Not seen in iTerm2 itself (Zaviel's window was in full screen, test windows could not be captured). `ui.txt` snapshot changed (the too-small strings).
+
+> [!NOTE] Fix: the camera zooms the room only
+> - `render_camera()` now keeps the banner at the top at the normal size and shows the room below it zoomed, inside the rectangle the room has at 1x.
+> - The words over the room (desk names and states, name tags of walking Clawds, `+N MORE`, `NO SESSIONS`) go through `wtext()`: at 1x they are drawn as before; zoomed they are collected and written at the normal size at the right place over the zoomed room (clipped to the view). Bubbles and the `!` / `Z` signs are part of the pictures and zoom with them.
+> - Snapshots: only the zoom frames in `dump.txt` changed; all 1x frames identical.
+
+> [!TODO] Test (by eye, iTerm2)
+> - [ ] Make the window smaller than 44x20, then bigger: the room comes back at once, nothing scrolled
+> - [ ] Drag-resize quickly up and down: no old frames in the scrollback (scroll up after quitting shows the shell as before)
+> - [ ] `]`: the Clawds and furniture get bigger, the names / states and the banner stay small and readable
+
 ---
 ## ⏳ Pending (last step)
 

@@ -71,7 +71,18 @@ static void raw_on(RawTerm *r) { /* like tty.setcbreak: no echo, no line bufferi
 }
 static void raw_off(RawTerm *r) { if (r->on) tcsetattr(STDIN_FILENO, TCSADRAIN, &r->old); r->on = 0; }
 
-static void screen_on(void) { puts_("\x1b[?1049h\x1b[?25l\x1b[?7l\x1b[0m\x1b[2J"); } /* alt screen, hide cursor, no wrap */
+/* Never ESC[2J and never leave the cursor low on the screen: iTerm2 copies a cleared screen into its scrollback, and when the
+ * window gets shorter it keeps the cursor's line by pushing the top lines into scrollback; either leaves the view scrolled
+ * up on old frames after a resize. Rows are erased one by one (EL) and the cursor is parked at the top-left. */
+static void wipe(void) {
+    int c, r;
+    term_size(&c, &r);
+    char buf[16];
+    puts_("\x1b[0m");
+    for (int i = 1; i <= r; i++) { snprintf(buf, sizeof buf, "\x1b[%d;1H\x1b[2K", i); puts_(buf); }
+    puts_("\x1b[H");
+}
+static void screen_on(void) { puts_("\x1b[?1049h\x1b[?25l\x1b[?7l\x1b[0m\x1b[H"); wipe(); } /* alt screen, hide cursor, no wrap */
 static void screen_off(void) { puts_("\x1b[0m\x1b[?7h\x1b[?25h\x1b[?1049l"); }
 
 static void show(const Cells *cur, const Cells *prev, int sync) { /* one write per frame, wrapped in "synchronized update" so it never tears */
@@ -81,7 +92,7 @@ static void show(const Cells *cur, const Cells *prev, int sync) { /* one write p
     size_t k = 0;
     if (sync) k += (size_t)sprintf(out + k, "\x1b[?2026h");
     memcpy(out + k, d, n); k += n;
-    k += (size_t)sprintf(out + k, sync ? "\x1b[0m\x1b[?2026l" : "");
+    k += (size_t)sprintf(out + k, sync ? "\x1b[0m\x1b[H\x1b[?2026l" : "\x1b[0m\x1b[H"); /* cursor home (see wipe) */
     put(out, k);
     free(d); free(out);
 }
@@ -232,7 +243,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                         room.cam_set = 0;
                         snprintf(flash, sizeof flash, "ROOM SIZE %s", SIZE_LABEL[size]);
                         flash_until = wall() + 4; have_prev = 0;
-                        puts_("\x1b[0m\x1b[2J");
+                        wipe();
                         size_menu = 0;
                     } else if (k == 27 || k == 'r') size_menu = 0;
                     dirty = 1;
@@ -255,7 +266,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                     if (!cam.autozoom) room.cam_zoom = 1;
                     snprintf(flash, sizeof flash, "AUTO ZOOM %s", cam.autozoom ? "ON" : "OFF");
                     flash_until = wall() + 3; have_prev = 0; dirty = 1;
-                    puts_("\x1b[0m\x1b[2J");
+                    wipe();
                 } else if (k == 'w' || k == 'a' || k == 's' || k == 'd') { /* free camera: move a quarter of the view */
                     if (!room.cam_vw || (room.cam_vw >= room.size_w && room.cam_vh >= room.size_h)) { snprintf(flash, sizeof flash, "ALL OF THE ROOM IS SHOWN: ] ZOOMS IN"); flash_until = wall() + 3; }
                     else {
@@ -277,7 +288,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                     if (room.cam_zoom > 1) snprintf(flash, sizeof flash, "ZOOM %dX  TAB FOLLOW  ARROWS MOVE", room.cam_zoom);
                     else snprintf(flash, sizeof flash, "ZOOM 1X");
                     flash_until = wall() + 3; have_prev = 0; dirty = 1;
-                    puts_("\x1b[0m\x1b[2J");
+                    wipe();
                 } else if (k == 'f') {
                     if (!desk.has_watcher) { snprintf(flash, sizeof flash, "FIT NEEDS WSL OR ITERM2"); flash_until = wall() + 3; }
                     else if (!strcmp(room.ratio, "auto")) { /* automatic font and scale again (the window is left as it is) */
@@ -288,7 +299,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                         room.scale = size_scale(cols, rows * 2, size, room.n);
                         snprintf(flash, sizeof flash, "AUTO FONT AND SCALE");
                         flash_until = wall() + 3; have_prev = 0;
-                        puts_("\x1b[0m\x1b[2J");
+                        wipe();
                     } else { /* fixed shape: zoom the font, then size the window to the exact grid */
                         int sw = 0, sh = 0;
                         static const struct { const char *k; int w, h; } RS[] = {{"3:1", 144, 48}, {"2:1", 120, 60}, {"16:9", 128, 72}, {"4:3", 128, 96}, {"1:1", 120, 120}, {"3:4", 96, 128}};
@@ -311,7 +322,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
             if (auto_ && !strcmp(room.ratio, "auto") && !a->no_auto) { room_order(&room); room.scale = size_scale(cols, rows * 2, size, room.n); seen_n = room.n; } /* at once; undone below if it was the font */
             if (!pend.has) { pend.has = 1; pend.t = wall(); pend.has_cell = reports.has_cell; pend.cell[0] = reports.cell[0]; pend.cell[1] = reports.cell[1]; pend.prescale = prescale; }
             reports.has_cell = 0;
-            puts_("\x1b[0m\x1b[2J\x1b[14t\x1b[16t"); /* ... and ask how big the text area and a cell are in pixels */
+            wipe(); puts_("\x1b[14t\x1b[16t"); /* ... and ask how big the text area and a cell are in pixels */
             if (getenv("CLAWD_SIZE_LOG")) { FILE *lf = fopen(getenv("CLAWD_SIZE_LOG"), "a"); if (lf) { fprintf(lf, "%.1f %d %d\n", wall(), cols, rows); fclose(lf); } }
         }
         n = tail_poll(&tail, ev, 4096);
@@ -464,7 +475,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
         }
         if (dirty || !paused) {
             if (cols < MIN_COLS || rows < MIN_ROWS) {
-                char buf[128];
+                char buf[4096];
                 too_small(buf, sizeof buf, cols, rows);
                 puts_(buf);
                 have_prev = 0;
@@ -572,7 +583,7 @@ static int choose_scene(Args *a, const char **scene, const char **room_name) {
         }
         int c, r;
         term_size(&c, &r);
-        if (c != cols || r != rows || g_winch) { g_winch = 0; cols = c; rows = r; have_prev = 0; puts_("\x1b[0m\x1b[2J"); }
+        if (c != cols || r != rows || g_winch) { g_winch = 0; cols = c; rows = r; have_prev = 0; wipe(); }
         if (has_setup) {
             if (!opensetup_update(&setup, wall(), cols, rows, desk.has_watcher ? watcher_rect(&desk.w, title + strlen(WIN_PREFIX)) : NULL, desk.has_watcher ? watcher_area(&desk.w, title + strlen(WIN_PREFIX)) : NULL)) { has_setup = 0; a->opened = 1; } /* the room need not do it again */
             else if (setup.ask_pending) puts_("\x1b[14t\x1b[16t");
