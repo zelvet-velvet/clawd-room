@@ -245,7 +245,7 @@ void geo_init(Geo *g, const Room *room, int w, int h) {
         stairs_geometry(v, &x0, &x1, &yl);
         g->gate_in[SIDE_UP][0] = x0 - 4; g->gate_in[SIDE_UP][1] = v->bb + 2;
         g->gate_has_mid[SIDE_UP] = 1; g->gate_mid[SIDE_UP][0] = x1 + 2; g->gate_mid[SIDE_UP][1] = yl - 1; /* up the stairs, then along the platform */
-        g->gate_out[SIDE_UP][0] = v->br - 7.5; g->gate_out[SIDE_UP][1] = yl - 1;                         /* to its door */
+        g->gate_out[SIDE_UP][0] = x1 + ARCH_IN + ARCH_W / 2.0; g->gate_out[SIDE_UP][1] = yl - 1;          /* to the archway */
     }
     double wx = w * (park ? 0.5 : WELL_X), wh = (h - v->bb) * WELL_H;
     g->gate_in[SIDE_DOWN][0] = wx; g->gate_in[SIDE_DOWN][1] = h - 1;

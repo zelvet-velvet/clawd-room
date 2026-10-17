@@ -49,7 +49,8 @@ gitGraph
 ### 🚪 The way up is a lit archway
 > [!info] Branch `feat/style-a`
 - Zaviel picked from four mocked-up ideas (lit archway, door ajar with an UP sign, a second flight into the ceiling, a spiral stair): the **lit archway** — warm light inside and spilling onto the platform, a small lamp above.
-- The platform sits a bit lower (**40%** of the wall instead of half), so the archway stands above the railing.
+- The platform sits a bit lower (**40%** of the wall instead of half), so the archway stands above the railing; the archway is small and on the **left of the platform**, where the stairs arrive.
+- Side doors are a normal width now (they were too wide); the coffee shop's lamps moved over the right part of the room.
 
 ![[2026-10-18 lit archway coffee.png|300]] ![[2026-10-18 lit archway office.png|300]]
 

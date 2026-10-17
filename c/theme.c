@@ -145,7 +145,7 @@ static void paint_office(const Theme *th, Canvas *c, const View *v) {
 static void paint_coffee(const Theme *th, Canvas *c, const View *v) {
     room_box(c, v, RGB(118, 86, 66), th->wall, th->wall2, RGB(140, 104, 80), th->floor, th->floor2, 1, th->base);
     for (int i = 0; i < 2; i++) { /* hanging lamps with a warm glow */
-        int lx = (int)(v->bl + (v->br - v->bl) * (0.2 + 0.3 * i));
+        int lx = (int)(v->bl + (v->br - v->bl) * (0.64 + 0.22 * i)); /* (over the right part: the sign and the archway are on the left) */
         canvas_rect(c, lx, (int)v->bt, 1, 4, RGB(80, 60, 48));
         canvas_rect(c, lx - 2, (int)v->bt + 4, 5, 2, RGB(230, 190, 110));
         canvas_px(c, lx, (int)v->bt + 6, RGB(255, 230, 150));
@@ -287,7 +287,7 @@ void theme_furniture(const Theme *th, Canvas *cv, int cx, int by, int on, Rgb co
 static void wall_door(Canvas *c, const View *v, int right, double fx, double fy, double p, double open) {
     double X, Z;
     view_world(v, fx, fy, &X, &Z);
-    double xw = right ? v->xw : -v->xw, z0 = Z * 0.88, z1 = Z * 1.12, e = view_e(v, 17) * Z;
+    double xw = right ? v->xw : -v->xw, z0 = Z * (1 - DOOR_HALF_DEPTH), z1 = Z * (1 + DOOR_HALF_DEPTH), e = view_e(v, 17) * Z;
     double xa = view_sx(v, xw, z0), xb = view_sx(v, xw, z1);  /* front edge (z0) and back edge (z1, the hinge) */
     double ab = view_sy(v, z0, 0), bb = view_sy(v, z1, 0), at = view_sy(v, z0, e), bt = view_sy(v, z1, e);
     int lo = (int)floor(fmin(xa, xb)), hi = (int)floor(fmax(xa, xb)), n = hi - lo;
@@ -370,7 +370,7 @@ static void back_stairs(Canvas *c, const View *v, int coffee, double p) {
     canvas_rect(c, x1, yl + 1, xr - x1, 1, riser);
     double dx = (c->w - v->br) * 0.18, fy0 = v->bb + (c->h - v->bb) * 0.18; /* a little forward along the right-hand wall */
     quad(c, v->br, yl - 1, v->br + dx, yl - 1 + (fy0 - v->bb), v->br + dx, fy0, v->br, v->bb, dk(side, 0.18));
-    int dw = 12, dh = (int)fmin(15, yl - v->bt - 2), dxl = xr - dw - 3;
+    int dw = ARCH_W, dh = (int)fmin(ARCH_H, yl - v->bt - 2), dxl = x1 + ARCH_IN; /* on the left of the platform, where the stairs arrive */
     if (dh > 6) upstairs_opening(c, dxl, yl - 1, dw, dh, st);
     /* the railing up the stairs and along the platform's edge (the opening is behind it): wooden balusters, or a glass
      * panel under a thin steel rail */

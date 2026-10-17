@@ -81,12 +81,12 @@ Gates sit **on the room's walls, ceiling and floor**, not at the window edge, so
 
 | Way | 🏢 Office / ☕ coffee shop | 🌳 Park |
 | --- | --- | --- |
-| **Side** | a **door** on the side wall facing the neighbour, drawn column by column along the wall (dark outline, light frame and lintel, leaf with a knob; reads on any wall); **opens while a Clawd passes** | a **fence** along that side with a **gate** (the bushes leave that side) |
+| **Side** | a **door** on the side wall facing the neighbour, a normal door's width, drawn column by column along the wall (dark outline, light frame and lintel, leaf with a knob; reads on any wall); **opens while a Clawd passes** | a **fence** along that side with a **gate** (the bushes leave that side) |
 | **Up** | **stairs to a half floor** (below): **steel with a glass railing** in the office, **wooden with balusters** in the coffee shop | a **treehouse** in the big tree, a ladder up to it |
 | **Down** | a **stair well** at the front: trapezoid opening, side walls going down, steps dropping away into the dark, a railing | **stone steps** into the ground, low stone walls round them |
 
 > [!example] The stairs, as Zaviel drew them
-> They start a fifth of the way along the back wall (`STAIRS_FOOT` 0.2) and climb to a **platform** 40% of the way up the wall (`PLATFORM_UP` 0.4, reached at `STAIRS_TOP` 0.42). The platform runs to the right-hand wall; its front face goes down to the floor (the coffee shop's **menu** hangs on it). A **banister** runs up the stairs and along the platform. The way up is a **lit archway** at the platform's right end: warm light inside and spilling onto the platform, a small lamp above, standing on the platform floor behind the railing (picked from mockups).
+> They start a fifth of the way along the back wall (`STAIRS_FOOT` 0.2) and climb to a **platform** 40% of the way up the wall (`PLATFORM_UP` 0.4, reached at `STAIRS_TOP` 0.42). The platform runs to the right-hand wall; its front face goes down to the floor (the coffee shop's **menu** hangs on it). A **banister** runs up the stairs and along the platform. The way up is a small **lit archway** on the left of the platform, right where the stairs arrive: warm light inside and spilling onto the platform, a small lamp above, standing on the platform floor behind the railing (picked from mockups).
 >
 > ![[2026-10-18 lit archway coffee.png|300]] ![[2026-10-18 lit archway office.png|300]]
 
