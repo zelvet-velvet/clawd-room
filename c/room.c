@@ -151,7 +151,10 @@ static void set_floor_goal(Session *s, const Geo *geo, double x, double y) {
 static void enter(Session *s, int side, const Geo *geo) {
     s->nroute = 0; s->has_goal = 0;
     s->has_pos = 1; s->px = geo->gate_out[side][0]; s->py = geo->gate_out[side][1] - 8;
-    set_goal(s, geo->gate_in[side][0], geo->gate_in[side][1] - 8);
+    if (geo->gate_has_mid[side]) { /* along the platform, then down the stairs */
+        set_goal(s, geo->gate_mid[side][0], geo->gate_mid[side][1] - 8);
+        s->nroute = 1; s->rx[0] = geo->gate_in[side][0]; s->ry[0] = geo->gate_in[side][1] - 8;
+    } else set_goal(s, geo->gate_in[side][0], geo->gate_in[side][1] - 8);
     s->vclimb = side == SIDE_UP || side == SIDE_DOWN;
 }
 
@@ -159,7 +162,9 @@ static void enter(Session *s, int side, const Geo *geo) {
 static void exit_route(Session *s, int edge, const Geo *geo) {
     s->leaving = 1;
     set_goal(s, geo->gate_in[edge][0], geo->gate_in[edge][1] - 8);
-    s->nroute = 1; s->rx[0] = geo->gate_out[edge][0]; s->ry[0] = geo->gate_out[edge][1] - 8;
+    s->nroute = 0;
+    if (geo->gate_has_mid[edge]) { s->rx[s->nroute] = geo->gate_mid[edge][0]; s->ry[s->nroute++] = geo->gate_mid[edge][1] - 8; }
+    s->rx[s->nroute] = geo->gate_out[edge][0]; s->ry[s->nroute++] = geo->gate_out[edge][1] - 8;
 }
 
 /* crossed: off the picture, or a Clawd on its way out has come to the end of its gate route */

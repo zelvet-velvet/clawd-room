@@ -49,7 +49,7 @@ What the keys do and how Clawds, the camera and linked windows behave. Looks are
 
 ## Crossing
 
-- Each gate has an **in** point (where a Clawd steps on, on the floor) and an **out** point (the door, the top of the stairs, the treehouse door, the bottom of the well).
+- Each gate has an **in** point (where a Clawd steps on, on the floor) and an **out** point (the side door, the door on the stairs' platform, the treehouse door, the bottom of the well). The stairs also have a point in between (their top), so a Clawd walks up the stairs and along the platform.
 - **Going out:** the Clawd walks to "in", then to "out"; when it gets there it has crossed and appears in the other window at that window's matching gate.
 - **Coming in:** it appears at "out" and walks to "in", then into the room.
 - A side door **opens while a Clawd is near it** and closes after.

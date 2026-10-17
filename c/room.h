@@ -37,7 +37,8 @@ typedef struct {
     int w, h, banner, slot_w, floor_y, ymin, ymax, rope_x, stairs_x, rope_end;
     View view;                 /* the perspective (persp.h) */
     double gate_in[SIDES][2];  /* for each gate: where a Clawd steps on and off it (feet, room pixels) ... */
-    double gate_out[SIDES][2]; /* ... and where it goes through (the door, the top of the stairs, the treehouse, down the well) */
+    double gate_out[SIDES][2]; /* ... and where it goes through (the door, the platform's door, the treehouse, down the well) */
+    int gate_has_mid[SIDES]; double gate_mid[SIDES][2]; /* a point on the way between them (the top of the stairs) */
     int shown, more, has_more_pos, more_pos[2];
     int home[MAX_SESS][2];   /* by index in room->s (only the first `shown`) */
     double door_y[2];
@@ -89,7 +90,8 @@ typedef struct {
 #define TREE_X 0.76        /* the park's treehouse tree, as a part of the width */
 #define TREEHOUSE_UP 18    /* how far above the back of the floor the treehouse door is */
 #define STAIRS_FOOT 0.2     /* the stairs on the back wall start this far along it ... */
-#define STAIRS_TOP 0.45     /* ... and reach the landing under the ceiling here */
+#define STAIRS_TOP 0.42     /* ... and reach the platform here */
+#define PLATFORM_UP 0.5     /* the platform (a half floor) is this part of the way up the back wall */
 #define WELL_X 0.24        /* the stair well (indoors), as a part of the width */
 #define WELL_H 0.3         /* its depth on screen, as a part of the floor's height */
 #define CAM_MAX_ZOOM 4     /* [ ] camera zoom steps over the room */

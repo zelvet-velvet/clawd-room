@@ -23,7 +23,7 @@ Things only a person can check by looking. Ticked = Zaviel confirmed it. Automat
 - [x] Two linked windows side by side: gates appear, `g` sends a Clawd across (2026-10-17, older gates)
 - [ ] Side by side: a door on each room's facing wall; `g`: the Clawd walks to the door, it opens, the Clawd goes through and comes out of the other room's door
 - [ ] Stacked: the upper room shows the stair well (office / coffee) or stone steps (park); the lower room shows the stairs on the back wall (office / coffee) or the treehouse (park)
-- [ ] Going up: the Clawd climbs the stairs and goes through the opening in the ceiling (or up the treehouse ladder); going down: it walks into the well / steps
+- [ ] Going up: the Clawd climbs the stairs to the half floor, walks along it and goes through the dark door (or up the treehouse ladder); coming down the other way round; going down: it walks into the well / steps
 - [ ] Gates appearing animate in, in both windows at the same moment; gates there at start are simply there
 - [ ] `b` calls our Clawds home; with none away it sends visitors home
 - [ ] One session, two linked rooms: the room without a Clawd shows an empty room (no NO SESSIONS); with no sessions at all both say NO SESSIONS

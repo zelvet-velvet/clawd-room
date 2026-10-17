@@ -25,6 +25,15 @@ Pictures are in `Screenshots/`. Details of every change: `git log`.
 ---
 ## 2026-10-18
 
+### 🪜 The stairs go up to a half floor
+*Branch `feat/style-a`.*
+- The stairs now climb to a **platform half way up the back wall**; it runs to the right-hand wall, and the way up is a **door with dark inside** at the platform's end (no more hole in the ceiling).
+- A Clawd going up walks up the stairs, along the platform and through the door; coming down it does the reverse.
+
+![[2026-10-18 half floor sketch (Zaviel).png|300]] ![[2026-10-18 stairs to a half floor.png|300]]
+
+→ [[Rooms and Art]]
+
 ### 🏛️ The rooms in perspective are built
 *Branch `feat/style-a` (on top of `feat/camera-gates`), not merged yet.*
 - The three rooms are drawn in one-point perspective: workspaces in rows on the floor, Clawds sitting behind them, a sign with the room's name instead of the top banner, a dot over each head.

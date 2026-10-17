@@ -58,9 +58,9 @@ Gates sit **on the room's walls, ceiling and floor**, not at the window edge, so
 | **Up** | **stairs on the back wall** (see below) | a **treehouse**: a little house on a platform in the big tree, a ladder up to it |
 | **Down** | a **stair well** at the front: a trapezoid opening, side walls going down, steps dropping away and getting darker, a railing on three sides | **stone steps** going into the ground, low stone walls round them |
 
-**The stairs (as Zaviel drew them):** they start a fifth of the way along the back wall (`STAIRS_FOOT` 0.2), climb steeply to just under the ceiling (`STAIRS_TOP` 0.45), then a **landing** runs along under the ceiling to the right-hand wall. Their **side wall** fills the shape down to the floor (the coffee shop's **menu** hangs on it). A **banister** (hand rail and balusters) runs up the stairs and along the landing. The way up is an **opening in the ceiling** at the top of the stairs.
+**The stairs (as Zaviel drew them):** they start a fifth of the way along the back wall (`STAIRS_FOOT` 0.2) and climb to a **platform half way up the wall** (`PLATFORM_UP` 0.5, reached at `STAIRS_TOP` 0.42). The platform (a half floor) runs along the back wall to the right-hand wall; its front face goes down to the floor (the coffee shop's **menu** hangs on it) and its end meets the right-hand wall. A **banister** (hand rail and balusters) runs up the stairs and along the platform's edge. The way up is a **door with dark inside** in the back wall at the platform's right end.
 
-![[2026-10-18 stairs as drawn (Zaviel).png|360]]
+![[2026-10-18 stairs to a half floor.png|360]]
 
 **Appearing:** a gate that appears while the room runs animates in over `GATE_ANIM` (0.8 s): doors and fences rise from the floor, stairs appear step by step, the well opens, the treehouse ladder grows. Gates there from the first frame are simply there.
 
