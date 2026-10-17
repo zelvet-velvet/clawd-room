@@ -46,16 +46,15 @@ gitGraph
 ---
 ## 2026-10-18
 
-### 🚪 The way up is a lit archway
+### 🚪 The way up, on the left of the platform
 > [!info] Branch `feat/style-a`
-- Zaviel picked from four mocked-up ideas (lit archway, door ajar with an UP sign, a second flight into the ceiling, a spiral stair): the **lit archway** — warm light inside and spilling onto the platform, a small lamp above.
-- The platform sits a bit lower (**40%** of the wall instead of half), so the archway stands above the railing; the archway is small and on the **left of the platform**, where the stairs arrive.
-- Side doors are a normal width now (they were too wide); the coffee shop's lamps moved over the right part of the room.
+- After mocking up five ideas and trying the lit archway, Zaviel kept the **opening where the stairs carry on upwards** (steps into the dark, a warm light at the top), now **small and on the left of the platform**, right where the stairs arrive.
+- The platform sits a bit lower (**40%** of the wall instead of half); side doors are a normal width; the coffee shop's lamps moved over the right part of the room.
 
-![[2026-10-18 lit archway coffee.png|300]] ![[2026-10-18 lit archway office.png|300]]
+![[2026-10-18 way up coffee.png|300]] ![[2026-10-18 way up office.png|300]]
 
-> [!example]- The other ideas
-> ![[2026-10-18 entrance idea 3.png|300]] ![[2026-10-18 entrance idea 4.png|300]] ![[2026-10-18 entrance idea 5.png|300]]
+> [!example]- The ideas that were mocked up
+> ![[2026-10-18 lit archway coffee.png|250]] ![[2026-10-18 entrance idea 3.png|250]] ![[2026-10-18 entrance idea 4.png|250]] ![[2026-10-18 entrance idea 5.png|250]]
 
 ### 🏢 Steel stairs in the office, a new way up, a smaller playground
 > [!info] Branch `feat/style-a`

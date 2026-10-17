@@ -25,7 +25,7 @@ tags:
 - [x] Two linked windows side by side: gates appear, `g` sends a Clawd across (2026-10-17, older gates)
 - [ ] Side by side: a door on each room's facing wall; `g`: the Clawd walks to the door, it opens, the Clawd goes through and comes out of the other room's door
 - [ ] Stacked: the upper room shows the stair well (office / coffee) or stone steps (park); the lower room shows the stairs on the back wall (office / coffee) or the treehouse (park)
-- [ ] Office stairs are steel with a glass railing, coffee shop stairs wooden; the way up is a lit archway above the railing
+- [ ] Office stairs are steel with a glass railing, coffee shop stairs wooden; the way up is a small opening on the left of the platform with steps going up and a light
 - [ ] Going up: the Clawd climbs the stairs to the half floor, walks along it and goes through the opening (or up the treehouse ladder); coming down the other way round; going down: it walks into the well / steps
 - [ ] Gates appearing animate in, in both windows at the same moment; gates there at start are simply there
 - [ ] `b` calls our Clawds home; with none away it sends visitors home
