@@ -432,7 +432,8 @@ static void play(Session *s, const Geo *geo, double now) { /* swing back and for
         if (c < 1.0) { s->px = tx; s->py = by + (ty - by) * c; } /* climb */
         else if (c < 1.9) { double k = (c - 1.0) / 0.9; s->px = tx + (ex - tx) * k; s->py = ty + (ey - ty) * k * k; } /* slide */
         else { double k = (c - 1.9) / 0.3; s->px = ex + (bx - ex) * k; s->py = ey + (by - ey) * k; } /* walk back to the ladder */
-        s->face = c < 1.9 ? 1 : -1;
+        int down_right = ex >= tx; /* (the slide may run either way) */
+        s->face = c < 1.9 ? (down_right ? 1 : -1) : (down_right ? -1 : 1);
     }
     s->has_goal = 0;
     s->moving = 0;

@@ -46,6 +46,14 @@ gitGraph
 ---
 ## 2026-10-18
 
+### 🌳 Park playground at an angle, cleaner doors
+> [!info] Branch `feat/style-a`
+- The park's **swing and slide stand at 45°** into the room (the slide mirrored, sliding down to the front left); Clawds play on them where they are drawn.
+- **Bushes only where there is no fence**, so a fence gate no longer overlaps them.
+- Side doors are drawn column by column: clean edges, a frame, the leaf with its knob; the platform's door sits on the platform floor.
+
+![[2026-10-18 park playground at 45 degrees.png|300]] ![[2026-10-18 coffee door closed and open.png|200]]
+
 ### 🗂️ Notes: plugins, diagrams, callouts
 - Installed the Obsidian plugins ZeLedgerOS uses (Dataview, Templater, Calendar, Hover Editor, make.md, Style Settings, Minimal Theme Settings, CSS Editor, Mermaid ELK Renderer, Git; Git is turned off in this vault).
 - The topic notes got diagrams (mermaid) and callouts; the Dev Log moved into `Docs/`.

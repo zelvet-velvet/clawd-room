@@ -44,7 +44,7 @@ flowchart TB
 | --- | --- | --- |
 | 🏢 **Office** | light walls, a window, a plant, wooden floor boards | a desk with a monitor (the screen shows the tool's colour) |
 | ☕ **Coffee shop** | warm walls, a checker floor, hanging lamps, a shelf of cups | the first session is the **barista** behind a **low bar** with the espresso machine on it; the others sit at **round cafe tables** with a square cushioned chair (and an empty one), a **laptop, tablet or phone**, and a **coffee or matcha** |
-| 🌳 **Park** | sky, clouds, hills, mowed grass, bushes, a big tree, a swing and a slide | a **bench** (phone), a **swing** (tablet) or a **picnic table** (tablet) |
+| 🌳 **Park** | sky, clouds, hills, mowed grass, bushes along the sides (not where a fence is), a big tree, a **swing and a slide standing at 45°** (the slide mirrored, down to the front left) | a **bench** (phone), a **swing** (tablet, also at 45°) or a **picnic table** (tablet) |
 
 > [!tip] Same thing every time
 > The device, drink or park thing for a session is picked from a hash of its id, so a session keeps it.
@@ -81,12 +81,12 @@ Gates sit **on the room's walls, ceiling and floor**, not at the window edge, so
 
 | Way | 🏢 Office / ☕ coffee shop | 🌳 Park |
 | --- | --- | --- |
-| **Side** | a **door** on the side wall facing the neighbour (dark outline, light frame, leaf, knob, so it reads on any wall); **opens while a Clawd passes** | a **fence** along that side with a **gate** |
+| **Side** | a **door** on the side wall facing the neighbour, drawn column by column along the wall (dark outline, light frame and lintel, leaf with a knob; reads on any wall); **opens while a Clawd passes** | a **fence** along that side with a **gate** (the bushes leave that side) |
 | **Up** | **stairs to a half floor** (below) | a **treehouse** in the big tree, a ladder up to it |
 | **Down** | a **stair well** at the front: trapezoid opening, side walls going down, steps dropping away into the dark, a railing | **stone steps** into the ground, low stone walls round them |
 
 > [!example] The stairs, as Zaviel drew them
-> They start a fifth of the way along the back wall (`STAIRS_FOOT` 0.2) and climb to a **platform half way up the wall** (`PLATFORM_UP` 0.5, reached at `STAIRS_TOP` 0.42). The platform runs to the right-hand wall; its front face goes down to the floor (the coffee shop's **menu** hangs on it). A **banister** runs up the stairs and along the platform. The way up is a **door with dark inside** at the platform's right end, behind the banister.
+> They start a fifth of the way along the back wall (`STAIRS_FOOT` 0.2) and climb to a **platform half way up the wall** (`PLATFORM_UP` 0.5, reached at `STAIRS_TOP` 0.42). The platform runs to the right-hand wall; its front face goes down to the floor (the coffee shop's **menu** hangs on it). A **banister** runs up the stairs and along the platform. The way up is a **door with dark inside** at the platform's right end, standing on the platform floor behind the banister.
 >
 > ![[2026-10-18 stairs to a half floor.png|360]]
 

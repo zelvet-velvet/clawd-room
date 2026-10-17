@@ -302,9 +302,9 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
         theme_gate(room->theme, cv, &geo, side, p, side < 2 ? room->door_open[side] : 0);
     }
     { /* the room's name as a sign in the room (after the gates: it hangs in front of the stairs) */
-        int has_up = 0;
-        for (int i = 0; i < room->nnb; i++) if (room->nb[i].side == SIDE_UP) has_up = 1;
-        theme_sign(room->theme, cv, room->title[0] ? room->title : room->theme->name, has_up);
+        int has_up = 0, sides = 0; /* (sides: where the park has a fence instead of bushes) */
+        for (int i = 0; i < room->nnb; i++) { if (room->nb[i].side == SIDE_UP) has_up = 1; if (room->nb[i].side == SIDE_LEFT) sides |= 1; if (room->nb[i].side == SIDE_RIGHT) sides |= 2; }
+        theme_sign(room->theme, cv, room->title[0] ? room->title : room->theme->name, has_up, sides);
     }
     int anyone = 0; /* any live session at all: linked rooms share them out, so this room may have none of its own */
     for (int i = 0; i < room->npool; i++) if (!room->pool[i].has_left) anyone = 1;

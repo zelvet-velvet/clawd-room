@@ -92,6 +92,9 @@ typedef struct {
 #define STAIRS_FOOT 0.2     /* the stairs on the back wall start this far along it ... */
 #define STAIRS_TOP 0.42     /* ... and reach the platform here */
 #define PLATFORM_UP 0.5     /* the platform (a half floor) is this part of the way up the back wall */
+#define PLAY_Y 0.62        /* the park's swing and slide stand this far down the floor */
+#define PLAY_SWING_X 0.23  /* ... the swing this far across, the slide there */
+#define PLAY_SLIDE_X 0.6
 #define WELL_X 0.24        /* the stair well (indoors), as a part of the width */
 #define WELL_H 0.3         /* its depth on screen, as a part of the floor's height */
 #define CAM_MAX_ZOOM 4     /* [ ] camera zoom steps over the room */

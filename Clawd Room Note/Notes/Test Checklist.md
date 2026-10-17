@@ -14,7 +14,8 @@ tags:
 - [ ] Each room (office, coffee shop, park) looks like the mockups at your window size
 - [ ] Seated Clawds show behind their desk / table / bench; the barista behind the bar
 - [ ] Coffee shop: tables, square cushioned chairs, laptop / tablet / phone, coffee / matcha look right
-- [ ] Park: bench, swing and picnic table workspaces; swing and slide for play
+- [ ] Park: bench, swing and picnic table workspaces; the swing and slide stand at 45° and Clawds play on them where they are drawn
+- [ ] Park: with a fence on one side, no bushes on that side
 - [ ] The room's sign reads well; with stairs it hangs in front of them
 - [ ] Dots over heads; the name shows only for a Clawd that needs you
 - [ ] A crowded small room (several gates and Clawds) still reads; nothing collides badly
