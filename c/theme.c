@@ -102,37 +102,30 @@ static void wline(Canvas *c, const View *v, double X0, double Z0, double E0, dou
 static void swing_45(Canvas *c, const View *v, double fx, double fy, Spots *sp) {
     double X, Z;
     view_world(v, fx, fy, &X, &Z);
-    double a = 0.11 * Z, eb = view_e(v, 20) * Z, es = view_e(v, 5) * Z, l = 0.025 * Z; /* half the bar (diagonal), bar and seat heights, leg splay */
+    double a = 0.06 * Z, eb = view_e(v, 16) * Z, es = view_e(v, 4) * Z; /* half the bar (diagonal), bar and seat heights */
     Rgb wood = RGB(112, 88, 64), rope = RGB(150, 140, 120);
     if (sp) { sp->swing.x = (int)view_sx(v, X, Z); sp->swing.y = (int)view_sy(v, Z, es) - 7; sp->swing.bar = (int)view_sy(v, Z, eb); return; }
-    for (int end = -1; end <= 1; end += 2) { /* an A-frame at each end of the bar */
-        double ex = X + end * a, ez = Z + end * a;
-        wline(c, v, ex - l, ez + l, 0, ex, ez, eb, wood);
-        wline(c, v, ex + l, ez - l, 0, ex, ez, eb, wood);
-    }
-    wline(c, v, X - a, Z - a, eb, X + a, Z + a, eb, wood); /* the bar */
-    wline(c, v, X - a * 0.3, Z - a * 0.3, eb, X - a * 0.3, Z - a * 0.3, es, rope);
-    wline(c, v, X + a * 0.3, Z + a * 0.3, eb, X + a * 0.3, Z + a * 0.3, es, rope);
-    wline(c, v, X - a * 0.3, Z - a * 0.3, es, X + a * 0.3, Z + a * 0.3, es, wood); /* the seat */
+    for (int end = -1; end <= 1; end += 2) wline(c, v, X + end * a, Z + end * a, 0, X + end * a, Z + end * a, eb, wood); /* a post at each end */
+    wline(c, v, X - a, Z - a, eb, X + a, Z + a, eb, wood);                                          /* the bar */
+    wline(c, v, X - a * 0.35, Z - a * 0.35, eb, X - a * 0.35, Z - a * 0.35, es, rope);               /* ropes and seat */
+    wline(c, v, X + a * 0.35, Z + a * 0.35, eb, X + a * 0.35, Z + a * 0.35, es, rope);
+    wline(c, v, X - a * 0.35, Z - a * 0.35, es, X + a * 0.35, Z + a * 0.35, es, wood);
 }
 static void slide_45(Canvas *c, const View *v, double fx, double fy, Spots *sp) {
     double X, Z;
     view_world(v, fx, fy, &X, &Z);
-    double lx = X + 0.07 * Z, lz = Z + 0.07 * Z, bx = X - 0.1 * Z, bz = Z - 0.08 * Z, et = view_e(v, 16) * Z, w2 = 0.016 * Z;
+    double lx = X + 0.04 * Z, lz = Z + 0.04 * Z, bx = X - 0.06 * Z, bz = Z - 0.05 * Z, et = view_e(v, 11) * Z, w2 = 0.012 * Z;
     if (sp) {
         sp->slide.base[0] = (int)view_sx(v, lx, lz); sp->slide.base[1] = (int)view_sy(v, lz, 0) - 8;
         sp->slide.top[0] = sp->slide.base[0]; sp->slide.top[1] = (int)view_sy(v, lz, et) - 8;
         sp->slide.bottom[0] = (int)view_sx(v, bx, bz); sp->slide.bottom[1] = (int)view_sy(v, bz, 0) - 8;
         return;
     }
-    Rgb wood = RGB(112, 88, 64), metal = RGB(180, 180, 192), metal_dk = RGB(130, 130, 142);
-    for (int sd = -1; sd <= 1; sd += 2) wline(c, v, lx + sd * w2, lz - sd * w2, 0, lx + sd * w2, lz - sd * w2, et, wood); /* ladder rails */
-    for (int r = 1; r <= 4; r++) { double e = et * r / 5; wline(c, v, lx - w2, lz + w2, e, lx + w2, lz - w2, e, wood); } /* rungs */
+    Rgb wood = RGB(112, 88, 64), metal = RGB(180, 180, 192);
+    for (int sd = -1; sd <= 1; sd += 2) wline(c, v, lx + sd * w2, lz - sd * w2, 0, lx + sd * w2, lz - sd * w2, et, wood); /* the ladder */
+    for (int r = 1; r <= 2; r++) { double e = et * r / 3; wline(c, v, lx - w2, lz + w2, e, lx + w2, lz - w2, e, wood); }
     double q[12] = {lx - w2, lz + w2, et, lx + w2, lz - w2, et, bx + w2, bz - w2, 0, bx - w2, bz + w2, 0};
-    view_quad(c, v, q, metal);                                                                  /* the slide */
-    wline(c, v, lx - w2, lz + w2, et, bx - w2, bz + w2, 0, metal_dk);
-    wline(c, v, lx + w2, lz - w2, et, bx + w2, bz - w2, 0, metal_dk);
-    wline(c, v, lx - w2 * 1.5, lz + w2 * 1.5, et, lx + w2 * 1.5, lz - w2 * 1.5, et, wood);       /* the top platform */
+    view_quad(c, v, q, metal);                                                                       /* the chute */
 }
 
 /* ---- backgrounds ----------------------------------------------------------------------------------------------------- */
@@ -333,13 +326,35 @@ static void fence_gate(Canvas *c, const View *v, int right, double fx, double fy
 void stairs_geometry(const View *v, double *x0, double *x1, double *yl) {
     *x0 = v->bl + (v->br - v->bl) * STAIRS_FOOT; *x1 = v->bl + (v->br - v->bl) * STAIRS_TOP; *yl = v->bb - (v->bb - v->bt) * PLATFORM_UP;
 }
+/* the two stair styles: the coffee shop's wooden stairs with balusters, the office's steel stairs with a glass railing */
+typedef struct { Rgb side, tread, riser, rail, glass; int glass_rail; } StairStyle;
+static const StairStyle WOOD_STAIRS = {{150, 112, 86}, {214, 186, 150}, {166, 130, 98}, {96, 66, 46}, {0, 0, 0}, 0};
+static const StairStyle STEEL_STAIRS = {{110, 116, 128}, {206, 210, 218}, {140, 146, 158}, {70, 76, 88}, {214, 230, 238}, 1};
+
+/* the way up from the platform: an opening in the back wall with the stairs carrying on upwards inside, into the dark,
+ * a warm light at the top; its bottom on the platform floor */
+static void upstairs_opening(Canvas *c, int x, int floor_y, int w, int h, const StairStyle *st) {
+    Rgb dark = RGB(22, 18, 16);
+    canvas_rect(c, x - 1, floor_y - h - 1, w + 2, h + 1, st->rail);         /* the frame */
+    canvas_rect(c, x, floor_y - h, w, h, dark);
+    canvas_rect(c, x + 1, floor_y - h, w - 2, 1, RGB(250, 214, 140));         /* light from upstairs */
+    canvas_px(c, x + w / 2, floor_y - h + 1, RGB(200, 160, 100));
+    int n = 4;
+    for (int i = 0; i < n; i++) {                                             /* steps going up inside, fading into the dark */
+        int sy = floor_y - 1 - i * (h - 3) / n, sx = x + 1 + i * (w - 2) / n, sw = w - 1 - (sx - x);
+        canvas_rect(c, sx, sy, sw, 1, rgb_mix(st->tread, dark, 0.1 + 0.15 * i));
+        canvas_rect(c, sx, sy + 1, 1, (h - 3) / n - 1, rgb_mix(st->riser, dark, 0.3 + 0.15 * i));
+    }
+}
+
 static void back_stairs(Canvas *c, const View *v, int coffee, double p) {
+    const StairStyle *st = coffee ? &WOOD_STAIRS : &STEEL_STAIRS;
     double fx0, fx1, fyl;
     stairs_geometry(v, &fx0, &fx1, &fyl);
     int x0 = (int)fx0, x1 = (int)fx1, xr = (int)v->br, y0 = (int)v->bb - 1, yl = (int)fyl, n = 5;
     int shown = (int)ceil(n * p);
     if (shown <= 0) return;
-    Rgb side = RGB(150, 112, 86), tread = RGB(214, 186, 150), riser = RGB(166, 130, 98), rail = RGB(96, 66, 46);
+    Rgb side = st->side, tread = st->tread, riser = st->riser, rail = st->rail;
     for (int x = x0; x < (p < 1 ? x0 + (x1 - x0) * shown / n : x1); x++) { /* the stairs' side under them */
         int ty = y0 - (y0 - yl) * (x - x0) / (x1 - x0);
         canvas_rect(c, x, ty + 1, 1, y0 - ty, side);
@@ -356,17 +371,21 @@ static void back_stairs(Canvas *c, const View *v, int coffee, double p) {
     canvas_rect(c, x1, yl + 1, xr - x1, 1, riser);
     double dx = (c->w - v->br) * 0.18, fy0 = v->bb + (c->h - v->bb) * 0.18; /* a little forward along the right-hand wall */
     quad(c, v->br, yl - 1, v->br + dx, yl - 1 + (fy0 - v->bb), v->br + dx, fy0, v->br, v->bb, dk(side, 0.18));
-    /* the door on the platform, in the back wall at its right end: a frame and dark inside */
-    int dw = 9, dh = (int)fmin(14, yl - v->bt - 1), dxl = xr - dw - 3;
-    if (dh > 6) {
-        canvas_rect(c, dxl - 1, yl - dh - 2, dw + 2, dh + 1, WOOD_LT);
-        canvas_rect(c, dxl, yl - dh - 1, dw, dh, RGB(20, 16, 14)); /* (its bottom on the platform's floor) */
+    int dw = 12, dh = (int)fmin(15, yl - v->bt - 2), dxl = xr - dw - 3;
+    if (dh > 6) upstairs_opening(c, dxl, yl - 1, dw, dh, st);
+    /* the railing up the stairs and along the platform's edge (the opening is behind it): wooden balusters, or a glass
+     * panel under a thin steel rail */
+    for (int x = x0; x < xr; x++) {
+        int ty = x < x1 ? y0 - (y0 - yl) * (x - x0) / (x1 - x0) : yl - 1;
+        if (st->glass_rail) { canvas_rect(c, x, ty - 5, 1, 5, rgb_mix(st->glass, side, (x / 2) % 3 == 0 ? 0.35 : 0.15)); }
+        else if ((x - x0) % 3 == 1) canvas_rect(c, x, ty - 5, 1, 5, rail);
+        canvas_px(c, x, ty - 6, rail);
+        canvas_px(c, x, ty - 7, lt(rail, 0.15));
     }
-    /* the banister: balusters and a rail 6 px above the stairs and all along the platform's edge (the door is behind it) */
-    for (int x = x0 + 1; x < xr - 1; x += 3) { int ty = x < x1 ? y0 - (y0 - yl) * (x - x0) / (x1 - x0) : yl - 1; canvas_rect(c, x, ty - 5, 1, 5, rail); }
-    for (int x = x0; x < xr; x++) { int ty = x < x1 ? y0 - (y0 - yl) * (x - x0) / (x1 - x0) : yl - 1; canvas_px(c, x, ty - 6, rail); canvas_px(c, x, ty - 7, lt(rail, 0.15)); }
+    if (st->glass_rail) for (int x = x0; x < xr; x += 12) { int ty = x < x1 ? y0 - (y0 - yl) * (x - x0) / (x1 - x0) : yl - 1; canvas_rect(c, x, ty - 6, 1, 6, rail); } /* posts */
     if (coffee && xr - x1 > 20 && y0 - yl >= 11) menu_board(c, (x1 + xr) / 2 - 8, yl + 1 + (y0 - yl - 11) / 2); /* the menu on the platform's face */
 }
+
 /* indoors, down: a stair well at the front: a trapezoid opening, its side walls going down, the steps dropping away and
  * getting darker, a railing on the far three sides; p: the opening grows */
 static void stair_well(Canvas *c, const View *v, double cx, double front_y, double hgt, double p) {

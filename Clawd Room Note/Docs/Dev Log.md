@@ -46,6 +46,14 @@ gitGraph
 ---
 ## 2026-10-18
 
+### 🏢 Steel stairs in the office, a new way up, a smaller playground
+> [!info] Branch `feat/style-a`
+- The office's stairs are **steel with a glass railing**; the coffee shop keeps wooden stairs with balusters.
+- The way up is an **opening where the stairs carry on upwards** into the dark, a warm light at the top (instead of a plain dark door).
+- The park's swing and slide are **about half the size and simpler** (posts instead of A-frames, a plain chute).
+
+![[2026-10-18 office steel stairs.png|300]] ![[2026-10-18 stairs to a half floor.png|300]] ![[2026-10-18 park playground at 45 degrees.png|300]]
+
 ### 🌳 Park playground at an angle, cleaner doors
 > [!info] Branch `feat/style-a`
 - The park's **swing and slide stand at 45°** into the room (the slide mirrored, sliding down to the front left); Clawds play on them where they are drawn.
