@@ -297,7 +297,14 @@ sticker: lucide//book-open
 > - Names on Clawds: zoomed, the words were written after the zoomed picture, so labels and name tags covered Clawds walking past; now they are not drawn over the Clawds' boxes (Clawds stay in front, as at 1x).
 > - iTerm2: Cmd +/- resizes the window because of its own setting `AdjustWindowForFontSizeChange` (on by default); with it off, Cmd +/- changes the font inside the same window, so the room gets more or fewer room pixels.
 
+> [!NOTE] Sixth round: designs picked by Zaviel from rendered mockups (references: Terraria doors, Spelunky-style ladders)
+> - Zaviel: the door and ladder were not logical, too big and covered the furniture. References: in Terraria the wall between rooms is seen edge-on, so a closed door is a thin 1x3-tile plank and an open one swings out to 2 tiles, face-on; platformer ladders are slim with 1 px rails and close rungs, the top poking out of a slot.
+> - **Door A:** the window on the left has a jamb at its edge and the leaf: 1 px edge-on while closed, a 5 px panel with a knob while a Clawd passes (then it closes); the window on the right has a 2 px jamb and a lintel stub. 14 px tall. No glimpse, no slant.
+> - **Ladder A:** upper room: a thin dark slot (13 px) with a wooden lip, the ladder top poking up 7 px; lower room: a slim ladder (`LADDER_HALF` 3, rungs every `RUNG_STEP` 3) from the top edge down to where the floor starts.
+> - Gate size: stays matched across windows (Zaviel's choice); use the same font size in linked windows to keep gates small.
+
 > [!TODO] Test (by eye)
+> - [ ] Door A and Ladder A look like the mockups in real windows; nothing covers the desks badly
 > - [ ] Slanted door / thin slanted frame / slanted hole look right together; rungs look evenly spaced across stacked windows
 > - [ ] Zoomed: a Clawd walking past a desk label stays in front of it
 > - [ ] Side by side: the left window shows a closed door, the right window a frame; `g` from either: the door swings open as the Clawd comes through and closes after

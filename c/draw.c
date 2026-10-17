@@ -20,8 +20,9 @@ const SpriteFile *draw_frames(void) { return g_frames; }
 #define DOOR_LEAF RGB(132, 94, 62)
 #define DOOR_EDGE RGB(96, 68, 46)
 #define DOOR_KNOB RGB(230, 190, 90)
-#define DOOR_JAMB 4    /* columns of the thin door frame in the window on the right (under 5) */
-#define RUNG_STEP 4    /* room pixels between ladder rungs, the same in both windows */
+#define RUNG_STEP 3    /* room pixels between ladder rungs, the same in both windows */
+#define LADDER_HALF 3  /* the ladder rails are this far from its centre (a slim ladder; a Clawd is 14 wide) */
+#define WOOD_LIP RGB(110, 86, 64)
 #define DOOR_NEAR 18   /* a Clawd this close (room pixels) to a door opens it */
 #define DOOR_SWING 0.3 /* seconds the leaf takes to open or close */
 
@@ -64,74 +65,43 @@ static int sc(int v, double g) { return imax(1, pyround(v * g)); }
 
 /* a rectangle measured from the room's edge inwards (the right-hand door is the mirror of the left one) */
 static void edge_rect(Canvas *cv, int left, int xl, int y, int w, int h, Rgb c) { canvas_rect(cv, left ? xl : cv->w - xl - w, y, w, h, c); }
-static Rgb mixc(Rgb a, Rgb b, double f) { return RGB((int)(a.r + (b.r - a.r) * f), (int)(a.g + (b.g - a.g) * f), (int)(a.b + (b.b - a.b) * f)); }
 
-/* a column of the door, measured from the room's edge inwards, `lift` pixels higher (the slant of the parallelograms) */
-static void edge_col(Canvas *cv, int left, int xl, int y0, int y1, int lift, Rgb c) { if (y1 > y0) edge_rect(cv, left, xl, y0 - lift, 1, y1 - y0, c); }
-
-/* a side door, drawn slanted (a parallelogram: the top and the bottom rise towards the edge between the windows). It is one
- * door between two windows: the window on the left (its door is on its right edge) has the door itself (frame, the leaf
- * hinged at the post on the room side, closed unless a Clawd is passing: `open` 0..1, and through it, when open, a glimpse
- * of the next room); the window on the right has only a thin slanted frame (DOOR_JAMB columns) carrying the same slant on.
- * p (0..1) is how far it has appeared: it rises from the floor. */
+/* a side door, Terraria-like: the wall between the two windows is seen edge-on, so is the door in it. The window on the
+ * left (its door is on its right edge) has the door: a jamb at the edge and the leaf, a thin plank while closed that
+ * swings open into the room as a panel with a knob while a Clawd passes (`open` 0..1), then closes. The window on the
+ * right has only the jamb and a lintel stub. 14 room pixels tall; p (0..1): it rises from the floor. */
 static void draw_door(Canvas *cv, int left, double door_y, const char *theme_name, double g, double p, double open) {
-    const Theme *th = theme_get(theme_name);
-    int w = sc(8, g), cy = (int)(door_y + 5.5);
-    int up = sc(7, g), down = sc(7, g), lint = sc(2, g), post = sc(1, g), opening = w - post, floor_h = sc(4, g);
-    int full = up + down, hgt = (int)(full * p + 0.5), top = cy + down - hgt, bottom = cy + down;
+    (void)theme_name;
+    int cy = (int)(door_y + 5.5), full = sc(14, g), hgt = (int)(full * p + 0.5), bottom = cy + sc(7, g), top = bottom - hgt;
+    int px1 = sc(1, g);
     if (hgt <= 0) return;
-    if (left) { /* the window on the right: the frame carries on the left window's slant, rising away from the edge */
-        int jw = sc(DOOR_JAMB, g);
-        for (int xl = 0; xl < jw; xl++) {
-            int lift = (opening + xl) / 2 + 1;
-            edge_col(cv, left, xl, bottom, bottom + post, lift, WOOD); /* sill */
-            if (p >= 1.0) edge_col(cv, left, xl, top - lint, top, lift, WOOD); /* lintel */
-        }
-        edge_col(cv, left, jw - 1, top, bottom, (opening + jw - 1) / 2 + 1, WOOD); /* the jamb */
-        return;
-    }
-    int lw = imax(post, (int)(opening * (1.0 - open) + 0.5)); /* the leaf, from the hinge towards the edge */
-    for (int xl = 0; xl <= opening; xl++) { /* xl 0 = the edge, opening = the post on the room side (the hinge) */
-        int lift = (opening - xl) / 2; /* higher towards the edge */
-        edge_col(cv, left, xl, bottom, bottom + post, lift, WOOD); /* sill */
-        if (p >= 1.0) edge_col(cv, left, xl, top - lint, top, lift, WOOD); /* lintel */
-        if (xl == opening) { edge_col(cv, left, xl, top, bottom, lift, WOOD); continue; } /* post */
-        int fy = imax(top, bottom - floor_h);
-        edge_col(cv, left, xl, top, fy, lift, mixc(th->wall, RGB(0, 0, 0), 0.3)); /* the next room, seen through the door */
-        edge_col(cv, left, xl, fy, bottom, lift, mixc(th->floor, RGB(0, 0, 0), 0.25));
-        if (xl >= opening - lw) edge_col(cv, left, xl, top, bottom, lift, xl == opening - lw && lw > post ? DOOR_EDGE : DOOR_LEAF);
-    }
-    if (lw > sc(3, g) && hgt > down) { int xk = opening - lw + sc(1, g); edge_col(cv, left, xk, cy, cy + post, (opening - xk) / 2, DOOR_KNOB); }
+    if (p >= 1.0) edge_rect(cv, left, 0, top - px1, sc(4, g), px1, WOOD); /* lintel stub */
+    if (left) { edge_rect(cv, left, 0, top, sc(2, g), hgt, WOOD); return; } /* the window on the right: the jamb */
+    edge_rect(cv, left, 0, top, px1, hgt, WOOD); /* jamb at the edge */
+    int lw = sc(1, g) + (int)(sc(4, g) * open + 0.5); /* the leaf: 1 wide edge-on (closed) .. 5 wide face-on (open) */
+    edge_rect(cv, left, px1, top, lw, hgt, DOOR_LEAF);
+    edge_rect(cv, left, px1 + lw - px1, top, px1, hgt, DOOR_EDGE); /* its free edge */
+    if (lw >= sc(3, g) && hgt > full / 2) edge_rect(cv, left, px1 + lw - 2 * px1, top + hgt / 2, px1, px1, DOOR_KNOB);
 }
 
-/* the top gate: the ladder from the room above coming down from the window's top edge to where the floor starts (no hatch
- * here: the hole is in the floor of the room above); p (0..1): it slides down */
+/* the top gate (the room below): a slim ladder from the window's top edge down to where the floor starts, coming through
+ * the slot in the floor of the room above; p (0..1): it slides down */
 static void draw_rope(Canvas *cv, int x, int top, int end, double g, double p) {
-    int rail = sc(7, g), thick = sc(1, g);
-    int len = (int)((end - top) * p + 0.5);
+    int rail = sc(LADDER_HALF, g), thick = sc(1, g), len = (int)((end - top) * p + 0.5); /* grows down from the edge */
     if (len <= 0) return;
-    int rx[2] = {x - rail, x + rail};
-    for (int i = 0; i < 2; i++) canvas_rect(cv, rx[i], top, thick, len, ROPE); /* the two rails */
-    for (int y = top + sc(3, g); y < top + len; y += sc(RUNG_STEP, g)) canvas_rect(cv, x - rail + thick, y, 2 * rail - thick, thick, RUNG); /* rungs */
+    for (int i = -1; i <= 1; i += 2) canvas_rect(cv, x + i * rail, top, thick, len, ROPE);
+    for (int y = top + sc(2, g); y < top + len; y += sc(RUNG_STEP, g)) canvas_rect(cv, x - rail + thick, y, 2 * rail - thick, thick, RUNG);
 }
 
-/* the bottom gate: a hole in the floor, slanted like the doors (a parallelogram: each row a little further right towards
- * the back), with the ladder going down into it (the room below sees the ladder come through its ceiling); the rails and
- * rungs are spaced like that ladder. p (0..1): it rises up from the bottom edge */
+/* the bottom gate (the room above): a thin dark slot in the floor with a wooden lip, and the top of the ladder poking up
+ * out of it; p (0..1): it rises up from the bottom edge */
 static void draw_stairs(Canvas *cv, int x, int h, double g, double p) {
-    int half = sc(9, g), rail = sc(7, g), thick = sc(1, g), depth = (int)(sc(6, g) * p + 0.5), side = sc(2, g);
-    if (depth <= 0) return;
-    for (int r = -thick; r < depth; r++) { /* row by row, from the back (top) to the front */
-        int y = h - depth + r, shift = (depth - 1 - r) / 2; /* the back rows lean right */
-        int x0 = x - half + shift, x1 = x + half + shift;
-        if (r < 0) { canvas_rect(cv, x0, y, x1 - x0 + 1, 1, WOOD); continue; } /* back edge of the frame */
-        canvas_rect(cv, x0, y, side, 1, WOOD);
-        canvas_rect(cv, x1 - side + 1, y, side, 1, WOOD);
-        canvas_rect(cv, x0 + side, y, x1 - x0 + 1 - 2 * side, 1, HOLE); /* the dark shaft */
-    }
-    int rx[2] = {x - rail, x + rail};
-    for (int i = 0; i < 2; i++) canvas_rect(cv, rx[i], h - depth, thick, depth, ROPE); /* the ladder goes down into it */
-    for (int y = h - sc(1, g); y > h - depth; y -= sc(RUNG_STEP, g)) canvas_rect(cv, x - rail + thick, y, 2 * rail - thick, thick, RUNG);
+    int rail = sc(LADDER_HALF, g), thick = sc(1, g), lip = sc(7, g), slot = sc(6, g), up = sc(7, g);
+    int drop = (int)((1.0 - p) * (up + sc(3, g)) + 0.5), base = h + drop; /* everything slides up into place */
+    canvas_rect(cv, x - lip, base - sc(3, g), 2 * lip + 1, thick, WOOD_LIP); /* the lip */
+    canvas_rect(cv, x - slot, base - sc(2, g), 2 * slot + 1, sc(2, g), HOLE); /* the slot */
+    for (int i = -1; i <= 1; i += 2) canvas_rect(cv, x + i * rail, base - up, thick, up, ROPE); /* the ladder top */
+    for (int y = base - up + sc(1, g); y < base; y += sc(RUNG_STEP, g)) canvas_rect(cv, x - rail + thick, y, 2 * rail - thick, thick, RUNG);
 }
 
 /* ---- desks, bubbles, props ------------------------------------------------------------------- */
