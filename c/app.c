@@ -25,15 +25,16 @@
 #define REPLAY_SECONDS 600
 #define DEFAULT_EVENTS "/.clawd-room/events.jsonl"
 
-static const char *RATIO_CHOICES[] = {"auto", "3:1", "2:1", "16:9", "4:3", "1:1", "3:4"};
-#define N_RATIOS 7
+static const char *RATIO_CHOICES[] = {"auto", "3:1", "2:1", "16:9", "4:3", "1:1", "3:4", "large", "huge"};
+static const char *const RATIO_LABELS[] = {"FIT WINDOW", "3:1  144X48", "2:1  120X60", "16:9 128X72", "4:3  128X96", "1:1  120X120", "3:4  96X128", "LARGE 192X108", "HUGE 256X144"};
+#define N_RATIOS 9
 
 typedef struct {
     char events[512];
     int has_at; double at;
     const char *room, *theme;
     char ratio[8];
-    int scale, no_auto, no_detect, no_split;
+    int scale, zoom, no_auto, no_detect, no_split;
     const char *dump;
     int build_art, export_sprites, force, add, list_windows;
     int font, profile_font, near, opened;
@@ -85,7 +86,8 @@ static void show(const Cells *cur, const Cells *prev, int sync) { /* one write p
     free(d); free(out);
 }
 
-/* what is waiting on the keyboard: the useful keys as characters (a lone Esc is q; escape sequences are ignored).
+/* what is waiting on the keyboard: the useful keys as characters (a lone Esc is 27, the arrows are w a s d, Enter is \r,
+ * other escape sequences are skipped).
  * The terminal's answers to our size questions (CSI 4;h;w t = text area, CSI 6;h;w t = cell, in pixels) go to `rep`. */
 static int read_keys(char *keys, size_t n, Reports *rep) {
     char data[256];
@@ -111,9 +113,19 @@ static int read_keys(char *keys, size_t n, Reports *rep) {
         data[len++] = data[i++];
     }
     size_t k = 0;
-    if (len == 1 && data[0] == 27) { keys[k++] = 'q'; keys[k] = 0; return 1; }
-    if (len > 0 && data[0] == 27) { keys[0] = 0; return 0; }
-    for (int i = 0; i < len && k + 1 < n; i++) if (data[i] && strchr("qpfgr?[]", data[i])) keys[k++] = data[i];
+    if (len == 1 && data[0] == 27) { keys[k++] = 27; keys[k] = 0; return 1; }
+    for (int i = 0; i < len && k + 1 < n; i++) {
+        char c = data[i];
+        if (c == 27) { /* ESC [ A..D or ESC O A..D: an arrow; anything else starting with ESC is skipped */
+            if (i + 2 < len && (data[i + 1] == '[' || data[i + 1] == 'O') && data[i + 2] >= 'A' && data[i + 2] <= 'D') { keys[k++] = "wsda"[data[i + 2] - 'A']; i += 2; continue; }
+            if (i + 1 < len && data[i + 1] == '[') { i += 2; while (i < len && !(data[i] >= 0x40 && data[i] <= 0x7e)) i++; }
+            else i++;
+            continue;
+        }
+        if (c && strchr("WASD", c)) c += 32;
+        if (c == '\n') c = '\r';
+        if (c && strchr("qpfgr?[]wasd\r", c)) keys[k++] = c;
+    }
     keys[k] = 0;
     return (int)k;
 }
@@ -171,6 +183,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
     int font_set = desk.has_tool && !a->no_auto && a->font; /* we changed the terminal font: put it back on exit */
     int auto_ = !a->scale; /* the TUI scale follows the window until [ ] is pressed */
     room.scale = a->scale ? a->scale : 1;
+    room.cam_zoom = a->zoom;
     struct { int has; double t; int has_cell, cell[2]; int prescale; } pend = {0};
     char flash[96] = "";
     double flash_until = 0;
@@ -196,7 +209,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
     if (desk.has_watcher) { char t[160]; snprintf(t, sizeof t, "\x1b[22;0t\x1b]2;%s\x07", title); puts_(t); } /* window title = how we are found */
     screen_on();
     double t0 = mono(), frozen_now = 0, frozen_t = 0;
-    int paused = 0, help_on = 0, dirty = 1, cols = 0, rows = 0;
+    int paused = 0, help_on = 0, dirty = 1, cols = 0, rows = 0, size_menu = 0, size_pick = 0;
     Cells prev = {0, 0, NULL};
     int have_prev = 0;
     while (!g_quit) {
@@ -207,37 +220,51 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
             for (char *kp = keys; *kp; kp++) {
                 char k = *kp;
                 if (k == 'q') { g_quit = 1; break; }
+                if (size_menu) { /* the ROOM SIZE list takes the keys while it is open */
+                    if (k == 'w' || k == 'a') size_pick = (size_pick + N_RATIOS - 1) % N_RATIOS;
+                    else if (k == 's' || k == 'd') size_pick = (size_pick + 1) % N_RATIOS;
+                    else if (k == '\r') {
+                        snprintf(room.ratio, sizeof room.ratio, "%s", RATIO_CHOICES[size_pick]);
+                        room.cam_zoom = 1; room.cam_set = 0;
+                        snprintf(flash, sizeof flash, "ROOM SIZE %s%s", RATIO_LABELS[size_pick], size_pick ? "  (F FITS THE WINDOW)" : "");
+                        flash_until = wall() + 4; have_prev = 0;
+                        puts_("\x1b[0m\x1b[2J");
+                        size_menu = 0;
+                    } else if (k == 27 || k == 'r') size_menu = 0;
+                    dirty = 1;
+                    continue;
+                }
+                if (k == 27) { g_quit = 1; break; }
                 if (k == 'p') { paused = !paused; frozen_now = now; frozen_t = t; dirty = 1; }
                 else if (k == '?') { help_on = !help_on; dirty = 1; }
-                else if (k == 'r') { /* next room shape: auto, 3:1, 2:1 ... */
-                    int i = 0;
-                    while (i < N_RATIOS && strcmp(RATIO_CHOICES[i], room.ratio)) i++;
-                    snprintf(room.ratio, sizeof room.ratio, "%s", RATIO_CHOICES[(i + 1) % N_RATIOS]);
-                    char up[16];
-                    snprintf(up, sizeof up, "%s", room.ratio);
-                    for (char *p = up; *p; p++) if (*p >= 'a' && *p <= 'z') *p -= 32;
-                    snprintf(flash, sizeof flash, "ROOM SHAPE %s  (f fits the window)", up);
-                    flash_until = wall() + 4; have_prev = 0; dirty = 1;
-                    puts_("\x1b[0m\x1b[2J");
+                else if (k == 'r') { /* open the ROOM SIZE list at the current size */
+                    size_pick = 0;
+                    while (size_pick < N_RATIOS - 1 && strcmp(RATIO_CHOICES[size_pick], room.ratio)) size_pick++;
+                    size_menu = 1; dirty = 1;
+                } else if (k == 'w' || k == 'a' || k == 's' || k == 'd') { /* move the camera a quarter of the view */
+                    if (!room.cam_vw || (room.cam_vw >= room.size_w && room.cam_vh >= room.size_h)) { snprintf(flash, sizeof flash, "ALL OF THE ROOM IS SHOWN: ] ZOOMS IN"); flash_until = wall() + 3; }
+                    else {
+                        int sx = room.cam_vw / 4 > 1 ? room.cam_vw / 4 : 1, sy = room.cam_vh / 4 > 1 ? room.cam_vh / 4 : 1;
+                        room.cam_x += k == 'a' ? -sx : k == 'd' ? sx : 0;
+                        room.cam_y += k == 'w' ? -sy : k == 's' ? sy : 0;
+                    }
+                    dirty = 1;
                 } else if (k == 'g') { /* send a Clawd next door right now (to try crossing) */
                     char buf[64];
                     room_order(&room);
                     snprintf(flash, sizeof flash, "%s", room.has_geo ? room_send_one(&room, &room.geo, now, buf, sizeof buf) : "NO WINDOW NEXT TO THIS ONE");
                     flash_until = wall() + 4; dirty = 1;
-                } else if (k == '[' || k == ']') {
-                    if (strcmp(room.ratio, "auto")) { snprintf(flash, sizeof flash, "SCALE NEEDS THE AUTO ROOM SHAPE (R)"); flash_until = wall() + 4; }
-                    else {
-                        int s = room.scale + (k == ']' ? 1 : -1);
-                        room.scale = s < 1 ? 1 : s > MAX_SCALE ? MAX_SCALE : s;
-                        auto_ = 0;
-                        snprintf(flash, sizeof flash, "SCALE %dX  (F = AUTO)", room.scale);
-                        flash_until = wall() + 4; have_prev = 0;
-                        puts_("\x1b[0m\x1b[2J");
-                    }
+                } else if (k == '[' || k == ']') { /* camera zoom: the room keeps its layout, the view gets closer */
+                    int z = (room.cam_zoom > 1 ? room.cam_zoom : 1) + (k == ']' ? 1 : -1);
+                    room.cam_zoom = z < 1 ? 1 : z > CAM_MAX_ZOOM ? CAM_MAX_ZOOM : z;
+                    if (room.cam_zoom > 1) snprintf(flash, sizeof flash, "ZOOM %dX  ARROWS/WASD MOVE", room.cam_zoom);
+                    else snprintf(flash, sizeof flash, "ZOOM 1X");
+                    flash_until = wall() + 3; have_prev = 0; dirty = 1;
+                    puts_("\x1b[0m\x1b[2J");
                 } else if (k == 'f') {
-                    if (!desk.has_watcher) { snprintf(flash, sizeof flash, "FIT ONLY WORKS ON WSL"); flash_until = wall() + 3; }
+                    if (!desk.has_watcher) { snprintf(flash, sizeof flash, "FIT NEEDS WSL OR ITERM2"); flash_until = wall() + 3; }
                     else if (!strcmp(room.ratio, "auto")) { /* automatic font and scale again (the window is left as it is) */
-                        auto_ = 1;
+                        auto_ = 1; room.cam_zoom = 1;
                         opensetup_init(&setup, &desk.tool, title, a->font, a->size, &reports, 0, a->profile_font); has_setup = 1;
                         font_set = font_set || a->font;
                         room_order(&room);
@@ -247,7 +274,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                         puts_("\x1b[0m\x1b[2J");
                     } else { /* fixed shape: zoom the font, then size the window to the exact grid */
                         int sw = 0, sh = 0;
-                        static const struct { const char *k; int w, h; } RS[] = {{"3:1", 144, 48}, {"2:1", 120, 60}, {"16:9", 128, 72}, {"4:3", 128, 96}, {"1:1", 120, 120}, {"3:4", 96, 128}};
+                        static const struct { const char *k; int w, h; } RS[] = {{"3:1", 144, 48}, {"2:1", 120, 60}, {"16:9", 128, 72}, {"4:3", 128, 96}, {"1:1", 120, 120}, {"3:4", 96, 128}, {"large", BIG_ROOM_W, BIG_ROOM_H}, {"huge", HUGE_ROOM_W, HUGE_ROOM_H}};
                         for (size_t q = 0; q < sizeof RS / sizeof RS[0]; q++) if (!strcmp(RS[q].k, room.ratio)) { sw = RS[q].w; sh = RS[q].h; }
                         fitter_init(&fitter, &desk.tool, title, sw, sh / 2); has_fitter = 1;
                         snprintf(flash, sizeof flash, "FITTING WINDOW...");
@@ -428,6 +455,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                 double shown_now = paused ? frozen_now : now, shown_t = paused ? frozen_t : t;
                 char note[32], over[512];
                 Canvas cv = render(cols, rows, &room, shown_now, shown_t, note, sizeof note);
+                if (size_menu) draw_size_menu(&cv, RATIO_LABELS, N_RATIOS, size_pick);
                 overlay_text(over, sizeof over, paused, help_on, note, wall() < flash_until ? flash : "");
                 Cells cells = cells_from_canvas(&cv, over);
                 show(&cells, have_prev ? &prev : NULL, 1);
@@ -538,8 +566,8 @@ static int choose_scene(Args *a, const char **scene, const char **room_name) {
 /* ---- arguments --------------------------------------------------------------------------------- */
 static void usage(void) {
     fprintf(stderr,
-        "usage: clawd-room [--events FILE] [--at TS] [--room NAME] [--theme office|coffee|park] [--ratio auto|3:1|2:1|16:9|4:3|1:1|3:4]\n"
-        "                  [--scale N] [--no-auto] [--no-detect] [--dump COLSxROWS]\n"
+        "usage: clawd-room [--events FILE] [--at TS] [--room NAME] [--theme office|coffee|park] [--ratio auto|3:1|2:1|16:9|4:3|1:1|3:4|large|huge]\n"
+        "                  [--scale N] [--zoom 1-4] [--no-auto] [--no-detect] [--dump COLSxROWS]\n"
         "  (accepted, not used yet by the C version: --left/--right/--up/--down NAME, --no-split, --size, --font, --profile-font, --near)\n");
 }
 
@@ -557,7 +585,7 @@ int app_main(int argc, char **argv) {
         {"up", 1, 0, 'U'}, {"down", 1, 0, 'D'}, {"no-split", 0, 0, 'S'}, {"ratio", 1, 0, 'x'}, {"size", 1, 0, 'z'}, {"font", 1, 0, 'f'},
         {"profile-font", 1, 0, 'p'}, {"scale", 1, 0, 'c'}, {"no-auto", 0, 0, 'A'}, {"no-detect", 0, 0, 'N'}, {"near", 1, 0, 'n'},
         {"dump", 1, 0, 'd'}, {"build-art", 0, 0, 'B'}, {"export-sprites", 0, 0, 'X'}, {"force", 0, 0, 'F'}, {"add", 0, 0, 'P'},
-        {"list-windows", 0, 0, 'W'}, {"help", 0, 0, 'h'}, {0, 0, 0, 0}};
+        {"list-windows", 0, 0, 'W'}, {"zoom", 1, 0, 'Z'}, {"help", 0, 0, 'h'}, {0, 0, 0, 0}};
     int o;
     while ((o = getopt_long(argc, argv, "h", opts, NULL)) != -1) {
         switch (o) {
@@ -572,6 +600,7 @@ int app_main(int argc, char **argv) {
         case 'f': a.font = atoi(optarg); break;
         case 'p': a.profile_font = atoi(optarg); break;
         case 'c': a.scale = atoi(optarg); break;
+        case 'Z': a.zoom = atoi(optarg); break;
         case 'A': a.no_auto = 1; break;
         case 'N': a.no_detect = 1; break;
         case 'n': a.near = atoi(optarg); break;
@@ -627,6 +656,7 @@ int app_main(int argc, char **argv) {
         room_init(&room);
         room.theme = theme_pick(a.room, a.theme);
         snprintf(room.ratio, sizeof room.ratio, "%s", a.ratio);
+        room.cam_zoom = a.zoom;
         double now = a.has_at ? a.at : wall();
         static Event ev[4096];
         Tail tail;

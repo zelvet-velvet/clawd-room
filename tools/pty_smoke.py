@@ -3,7 +3,7 @@
 
     python3 tools/pty_smoke.py
 
-Checks: it starts and draws, shows a new event, answers p ? [ ] r g f, quits on q, restores the terminal. Also the start menu.
+Checks: it starts and draws, shows a new event, answers p ? [ ] arrows r (room size list) g f, quits on q, restores the terminal. Also the start menu.
 """
 import fcntl
 import json
@@ -89,7 +89,7 @@ with tempfile.TemporaryDirectory() as tmp:
     def add_event():
         with open(events, "a") as f:
             f.write(ev + "\n")
-    pid_keys = [(1.0, b"p"), (1.3, b"p"), (1.6, b"?"), (1.9, b"?"), (2.2, b"]"), (2.5, b"["), (2.8, b"r"), (3.1, b"r"), (3.4, b"g"), (3.7, b"f"), (4.0, b"\x1b[A"), (4.6, b"q")]
+    pid_keys = [(1.0, b"p"), (1.3, b"p"), (1.6, b"?"), (1.9, b"?"), (2.2, b"]"), (2.4, b"\x1b[A"), (2.5, b"d"), (2.6, b"["), (2.8, b"r"), (2.95, b"\x1b[B"), (3.1, b"\r"), (3.4, b"g"), (3.7, b"f"), (4.0, b"\x1b[A"), (4.6, b"q")]
     import threading
     threading.Timer(0.8, add_event).start()
     out, st = run(["--theme", "office", "--events", events], pid_keys)
@@ -101,8 +101,10 @@ with tempfile.TemporaryDirectory() as tmp:
     check("a new event changes the picture", out.count(b"\x1b[") > 1000)
     check("the help line appears (?)", b"q/esc quit" in out)
     check("PAUSED appears (p)", b"PAUSED" in out)
-    check("scale message appears (])", b"SCALE 2X" in out)
-    check("room shape message appears (r)", b"ROOM SHAPE" in out)
+    check("zoom message appears (])", b"ZOOM 2X" in out)
+    check("room size list picks a size (r, down, Enter)", b"ROOM SIZE 3:1" in out)
+    out, st = run(["--theme", "office", "--events", events], [(1.0, b"r"), (1.3, b"\x1b"), (1.6, b"]"), (2.2, b"q")])
+    check("Esc closes the room size list, not the room", st == 0 and b"ZOOM 2X" in out)
     # 2. a lone Esc quits too
     out, st = run(["--theme", "park", "--events", events], [(1.0, b"\x1b")])
     check("Esc quits", st == 0)

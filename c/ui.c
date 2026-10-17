@@ -12,7 +12,7 @@ void overlay_text(char *out, size_t n, int paused, int help_on, const char *note
     const char *parts[4];
     int k = 0;
     if (paused) parts[k++] = "PAUSED";
-    if (help_on) parts[k++] = "q/esc quit   p pause   r room shape   [ ] scale   ctrl +/- font   f auto font+scale   g send a Clawd   ? help";
+    if (help_on) parts[k++] = "q/esc quit   p pause   r room size   [ ] zoom   arrows/wasd move   ctrl +/- font   f auto font+scale   g send a Clawd   ? help";
     if (note && note[0]) parts[k++] = note;
     if (flash && flash[0]) parts[k++] = flash;
     for (int i = 0; i < k; i++) {
@@ -37,6 +37,26 @@ int auto_scale(int pw, int ph, int n) {
         if (per_row * rows_shown >= (n > 1 ? n : 1) && w >= ROAM_W && h >= ROAM_H) return k;
     }
     return 1;
+}
+
+void draw_size_menu(Canvas *cv, const char *const *labels, int n, int pick) {
+    const int LINE = 7, PAD = 3;
+    int fit = (cv->h - 2 * PAD - 9) / LINE; /* the lines that fit: the list scrolls with the pick */
+    int shown = n < fit ? n : fit > 1 ? fit : 1, first = pick - shown / 2;
+    if (first > n - shown) first = n - shown;
+    if (first < 0) first = 0;
+    int w = text_width("ROOM SIZE");
+    for (int i = 0; i < n; i++) if (text_width(labels[i]) + 6 > w) w = text_width(labels[i]) + 6;
+    w += 2 * PAD;
+    int h = 2 * PAD + 9 + shown * LINE, x = (cv->w - w) / 2, y = (cv->h - h) / 2;
+    canvas_rect(cv, x - 1, y - 1, w + 2, h + 2, C_GREY);
+    canvas_rect(cv, x, y, w, h, RGB(20, 20, 28));
+    canvas_text(cv, x + (w - text_width("ROOM SIZE")) / 2, y + PAD, "ROOM SIZE", C_YELLOW);
+    for (int i = 0; i < shown; i++) {
+        int q = first + i, ly = y + PAD + 9 + i * LINE;
+        if (q == pick) canvas_text(cv, x + PAD, ly, ">", C_YELLOW);
+        canvas_text(cv, x + PAD + 6, ly, labels[q], q == pick ? C_WHITE : C_GREY);
+    }
 }
 
 static Rgb dim(Rgb c, double f) { return RGB((int)(c.r * f), (int)(c.g * f), (int)(c.b * f)); }
