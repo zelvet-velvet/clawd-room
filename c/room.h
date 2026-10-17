@@ -88,6 +88,8 @@ typedef struct {
 #define WALK_MIN 16        /* room pixels of floor kept in front of the last row to walk on */
 #define TREE_X 0.76        /* the park's treehouse tree, as a part of the width */
 #define TREEHOUSE_UP 18    /* how far above the back of the floor the treehouse door is */
+#define STAIRS_FOOT 0.2     /* the stairs on the back wall start this far along it ... */
+#define STAIRS_TOP 0.45     /* ... and reach the landing under the ceiling here */
 #define WELL_X 0.24        /* the stair well (indoors), as a part of the width */
 #define WELL_H 0.3         /* its depth on screen, as a part of the floor's height */
 #define CAM_MAX_ZOOM 4     /* [ ] camera zoom steps over the room */
@@ -100,6 +102,7 @@ void layout_slots(int w, int h, int n, int *banner, int *per_row, int *slot_w, i
 void geo_init(Geo *g, const Room *room, int w, int h);
 /* a gate in this theme (door / fence gate, stairs / treehouse, stair well / stone steps); p 0..1 how far it has appeared */
 void theme_gate(const Theme *th, Canvas *cv, const Geo *g, int side, double p, double open);
+void stairs_geometry(const View *v, double *x0, double *x1, double *yl); /* the stairs on the back wall: foot x, top x, landing y */
 int geo_home(const Geo *g, const Room *room, const Session *s, int *cx, int *by); /* 1 if it has a desk */
 const char *geo_role(const Geo *g, const Room *room, const Session *s);
 

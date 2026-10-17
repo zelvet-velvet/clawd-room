@@ -241,9 +241,10 @@ void geo_init(Geo *g, const Room *room, int w, int h) {
         g->gate_in[SIDE_UP][0] = lx; g->gate_in[SIDE_UP][1] = v->bb + 6;
         g->gate_out[SIDE_UP][0] = lx; g->gate_out[SIDE_UP][1] = v->bb - TREEHOUSE_UP;
     } else {
-        double x0 = v->bl + (v->br - v->bl) * 2 / 3;
-        g->gate_in[SIDE_UP][0] = x0 + 4; g->gate_in[SIDE_UP][1] = v->bb + 2;
-        g->gate_out[SIDE_UP][0] = v->br - 5; g->gate_out[SIDE_UP][1] = v->bt + 4;
+        double x0, x1, yl;
+        stairs_geometry(v, &x0, &x1, &yl);
+        g->gate_in[SIDE_UP][0] = x0 - 4; g->gate_in[SIDE_UP][1] = v->bb + 2;
+        g->gate_out[SIDE_UP][0] = x1 + 6; g->gate_out[SIDE_UP][1] = yl;
     }
     double wx = w * (park ? 0.5 : WELL_X), wh = (h - v->bb) * WELL_H;
     g->gate_in[SIDE_DOWN][0] = wx; g->gate_in[SIDE_DOWN][1] = h - 1;
@@ -257,7 +258,7 @@ void geo_init(Geo *g, const Room *room, int w, int h) {
 static void draw_background(Canvas *cv, const Room *room, int banner, int count) {
     (void)count;
     theme_background(room->theme, cv, banner);
-    theme_sign(room->theme, cv, room->title[0] ? room->title : room->theme->name); /* the room's name as a sign in the room */
+
 }
 
 void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t note_n) {
@@ -298,6 +299,11 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
         int side = room->nb[i].side;
         double p = fmin(1.0, fmax(0.0, (t - room->gate_t0[side]) / GATE_ANIM));
         theme_gate(room->theme, cv, &geo, side, p, side < 2 ? room->door_open[side] : 0);
+    }
+    { /* the room's name as a sign in the room (after the gates: it hangs in front of the stairs) */
+        int has_up = 0;
+        for (int i = 0; i < room->nnb; i++) if (room->nb[i].side == SIDE_UP) has_up = 1;
+        theme_sign(room->theme, cv, room->title[0] ? room->title : room->theme->name, has_up);
     }
     int anyone = 0; /* any live session at all: linked rooms share them out, so this room may have none of its own */
     for (int i = 0; i < room->npool; i++) if (!room->pool[i].has_left) anyone = 1;

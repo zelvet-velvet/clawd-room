@@ -118,7 +118,7 @@ static void paint_coffee(const Theme *th, Canvas *c, const View *v) {
         int sx0 = (int)(v->bl + (v->br - v->bl) * 0.36), sy0 = (int)v->bb - 9; /* a shelf of cups and beans */
         canvas_rect(c, sx0, sy0, 24, 1, RGB(120, 92, 66));
         for (int i = 0; i < 5; i++) canvas_rect(c, sx0 + 1 + i * 5, sy0 - 3, 3, 3, i % 2 ? C_WHITE : RGB(120, 80, 50));
-        menu_board(c, (int)(v->bl + (v->br - v->bl) * 0.76), (int)v->bt + 4); /* (the stairs cover it when they are there) */
+
     }
 }
 
@@ -270,24 +270,20 @@ void theme_furniture(const Theme *th, Canvas *cv, int cx, int by, int on, Rgb co
 }
 
 /* ---- the gates ------------------------------------------------------------------------------------------------------- */
-/* a door on a side wall, in the wall's plane: on the right-hand wall the door itself (frame, panelled leaf, knob; the leaf
- * opens towards the room, `open`), on the left-hand wall only the frame round a dark doorway; p: it rises from the floor */
+/* a door on a side wall, in the wall's plane: a wooden frame, a panelled leaf with a knob; the leaf swings into the room
+ * (narrowing towards its hinge at the back) while a Clawd passes (`open`), showing the dark doorway; p: it rises from the floor */
 static void wall_door(Canvas *c, const View *v, int right, double fx, double fy, double p, double open) {
     double X, Z;
     view_world(v, fx, fy, &X, &Z);
-    double xw = right ? v->xw : -v->xw, z0 = Z - 0.06 * Z, z1 = Z + 0.06 * Z, e = view_e(v, 17) * p;
+    double xw = right ? v->xw : -v->xw, z0 = Z - 0.1 * Z, z1 = Z + 0.1 * Z, e = view_e(v, 17) * p, fr = 0.02 * Z, fe = view_e(v, 2);
     if (e <= 0) return;
-    wq(c, v, xw, z0, 0, xw, z1, 0, xw, z1, e + view_e(v, 1), xw, z0, e + view_e(v, 1), WOOD_LT);
-    double i0 = z0 + 0.012 * Z, i1 = z1 - 0.012 * Z;
-    if (!right) { wq(c, v, xw, i0, 0, xw, i1, 0, xw, i1, e, xw, i0, e, RGB(60, 50, 44)); return; }
-    wq(c, v, xw, i0, 0, xw, i1, 0, xw, i1, e, xw, i0, e, RGB(60, 50, 44)); /* the doorway behind the leaf */
-    double lz = i0 + (i1 - i0) * (1 - open * 0.85); /* the leaf narrows towards its hinge (at the back) as it opens */
-    wq(c, v, xw, lz, 0, xw, i1, 0, xw, i1, e, xw, lz, e, LEAF);
-    if (open < 0.5 && p >= 1) {
-        wq(c, v, xw, i0 + 0.02 * Z, e * 0.55, xw, i1 - 0.02 * Z, e * 0.55, xw, i1 - 0.02 * Z, e * 0.88, xw, i0 + 0.02 * Z, e * 0.88, LEAF_DK);
-        wq(c, v, xw, i0 + 0.02 * Z, e * 0.12, xw, i1 - 0.02 * Z, e * 0.12, xw, i1 - 0.02 * Z, e * 0.45, xw, i0 + 0.02 * Z, e * 0.45, LEAF_DK);
-        canvas_px(c, (int)view_sx(v, xw, i0 + 0.025 * Z), (int)view_sy(v, i0 + 0.025 * Z, e * 0.5), KNOB);
-    }
+    wq(c, v, xw, z0, 0, xw, z1, 0, xw, z1, e + fe, xw, z0, e + fe, RGB(124, 92, 66));           /* the frame */
+    double i0 = z0 + fr, i1 = z1 - fr;
+    wq(c, v, xw, i0, 0, xw, i1, 0, xw, i1, e, xw, i0, e, RGB(40, 32, 28));                         /* the doorway */
+    double lz = i1 - (i1 - i0) * (1 - open * 0.8);                                               /* the leaf, hinged at the back */
+    wq(c, v, xw, i0 + (i1 - i0) * open * 0.8, 0, xw, i1, 0, xw, i1, e, xw, i0 + (i1 - i0) * open * 0.8, e, LEAF);
+    (void)lz;
+    if (open < 0.4 && p >= 1) { double kz = i0 + 0.03 * Z; canvas_px(c, (int)view_sx(v, xw, kz), (int)view_sy(v, kz, e * 0.5), KNOB); }
 }
 static void fence_gate(Canvas *c, const View *v, int right, double fx, double fy, double p) { /* the park: a fence along that side with a gate */
     double xw = right ? v->xw : -v->xw, X, Z, zf = 1.0, zb = v->zb, e = view_e(v, 8) * p;
@@ -299,23 +295,44 @@ static void fence_gate(Canvas *c, const View *v, int right, double fx, double fy
     wq(c, v, xw, g0, 0, xw, g1, 0, xw, g1, ge, xw, g0, ge, RGB(150, 118, 80));
     wq(c, v, xw, g0 + 0.01, view_e(v, 1), xw, g1 - 0.01, view_e(v, 1), xw, g1 - 0.01, ge * 0.85, xw, g0 + 0.01, ge * 0.85, RGB(226, 200, 150));
 }
-/* indoors, up: stairs against the back wall from two thirds along it up to the right-hand wall and an opening in the
- * ceiling (the coffee shop's menu on their side wall); p: the steps appear one by one */
+/* indoors, up (as Zaviel drew it): stairs against the back wall, climbing steeply from about a fifth along it to just under
+ * the ceiling, then a landing along under the ceiling to the right-hand wall; the stairs' side wall fills the shape down to
+ * the floor (the coffee shop's menu hangs on it); a banister (hand rail and balusters) up the stairs and along the landing;
+ * the way up is an opening in the ceiling at the top of the stairs. p: the steps appear one by one from the bottom */
+void stairs_geometry(const View *v, double *x0, double *x1, double *yl) {
+    *x0 = v->bl + (v->br - v->bl) * STAIRS_FOOT; *x1 = v->bl + (v->br - v->bl) * STAIRS_TOP; *yl = v->bt + 3;
+}
 static void back_stairs(Canvas *c, const View *v, int coffee, double p) {
-    int n = 6, x0 = (int)(v->bl + (v->br - v->bl) * 2 / 3), y0 = (int)v->bb - 1, x1 = (int)v->br, y1 = (int)v->bt + 2;
+    double fx0, fx1, fyl;
+    stairs_geometry(v, &fx0, &fx1, &fyl);
+    int x0 = (int)fx0, x1 = (int)fx1, xr = (int)v->br, y0 = (int)v->bb - 1, yl = (int)fyl, n = 7;
     int shown = (int)ceil(n * p);
     if (shown <= 0) return;
-    for (int x = x0; x < x1; x++) { int ty = y0 - (y0 - y1) * (x - x0) / (x1 - x0); if ((x - x0) * n < (x1 - x0) * shown) canvas_rect(c, x, ty, 1, y0 - ty + 1, RGB(146, 108, 82)); }
-    if (p >= 1) quad(c, x1 - 10, v->bt - 3, x1 + 8, v->bt - 3, x1 + 4, v->bt + 2, x1 - 10, v->bt + 2, RGB(40, 30, 26)); /* the opening */
-    for (int i = 0; i < shown; i++) {
-        int x = x0 + (x1 - x0) * i / n, w = (x1 - x0) / n + 1, y = y0 - (y0 - y1) * (i + 1) / n;
-        canvas_rect(c, x, y, w, 1, RGB(214, 186, 150));
-        canvas_rect(c, x, y + 1, w, 2, RGB(170, 134, 102));
+    Rgb side = RGB(150, 112, 86), tread = RGB(214, 186, 150), riser = RGB(166, 130, 98), rail = RGB(96, 66, 46);
+    int topx = x0 + (x1 - x0) * shown / n;
+    for (int x = x0; x < xr; x++) { /* the side wall under the stairs and the landing */
+        int ty = x < x1 ? y0 - (y0 - yl) * (x - x0) / (x1 - x0) : yl;
+        if (x >= topx && p < 1) break;
+        canvas_rect(c, x, ty + 2, 1, y0 - ty - 1, side);
     }
-    if (p >= 1) {
-        for (int k = 0; k <= 30; k++) { double f = k / 30.0; canvas_px(c, (int)(x0 + (x1 - x0) * f), (int)(y0 - 7 - (y0 - y1) * f), RGB(90, 64, 46)); } /* hand rail */
-        if (coffee && x1 - x0 > 20) menu_board(c, x1 - 17, y0 - 12);
+    for (int i = 0; i < shown; i++) { /* treads and risers up the slanted edge */
+        int sx = x0 + (x1 - x0) * i / n, sw = (x1 - x0) / n + 1, sy = y0 - (y0 - yl) * (i + 1) / n, rh = (y0 - yl) / n;
+        canvas_rect(c, sx, sy, sw + 1, 1, tread);
+        canvas_rect(c, sx, sy + 1, 1, rh, riser);
     }
+    if (p < 1) return;
+    canvas_rect(c, x1, yl, xr - x1, 1, tread); /* the landing */
+    canvas_rect(c, x1, yl + 1, xr - x1, 2, riser);
+    /* the opening in the ceiling at the top of the stairs, with a wooden trim */
+    quad(c, x1 - 2, yl - 1, x1 + 16, yl - 1, x1 + 18, yl - 6, x1, yl - 6, RGB(36, 28, 24));
+    canvas_rect(c, x1 - 3, yl - 1, 22, 1, WOOD_LT);
+    /* the banister: balusters from the treads up to the rail, the rail 6 px above the stairs and along the landing */
+    for (int x = x0 + 1; x < xr - 1; x += 3) {
+        int ty = x < x1 ? y0 - (y0 - yl) * (x - x0) / (x1 - x0) : yl;
+        canvas_rect(c, x, ty - 5, 1, 5, rail);
+    }
+    for (int x = x0; x < xr; x++) { int ty = x < x1 ? y0 - (y0 - yl) * (x - x0) / (x1 - x0) : yl; canvas_px(c, x, ty - 6, rail); canvas_px(c, x, ty - 7, lt(rail, 0.15)); }
+    if (coffee && xr - x1 > 18) menu_board(c, (x1 + xr) / 2 - 8, (yl + y0) / 2 - 3); /* the menu on the stairs' side wall */
 }
 /* indoors, down: a stair well at the front: a trapezoid opening, its side walls going down, the steps dropping away and
  * getting darker, a railing on the far three sides; p: the opening grows */
@@ -386,7 +403,7 @@ void theme_gate(const Theme *th, Canvas *cv, const Geo *g, int side, double p, d
 }
 
 /* ---- the room's sign: an office plaque, the coffee shop's sign, a park signpost --------------------------------------- */
-void theme_sign(const Theme *th, Canvas *c, const char *title) {
+void theme_sign(const Theme *th, Canvas *c, const char *title, int has_up) {
     View v;
     view_init(&v, c->w, c->h);
     char t[24];
@@ -401,8 +418,12 @@ void theme_sign(const Theme *th, Canvas *c, const char *title) {
         canvas_text(c, gx - w / 2 + 3, gy - 18, t, RGB(250, 236, 200));
         return;
     }
+    if (th == &COFFEE && !has_up && v.bb - v.bt > 16) menu_board(c, (int)(v.bl + (v.br - v.bl) * 0.76), (int)v.bt + 4); /* (with stairs it hangs on them) */
     Rgb board = th == &COFFEE ? RGB(120, 70, 48) : RGB(70, 84, 110), ink = th == &COFFEE ? RGB(250, 226, 170) : RGB(235, 240, 250);
-    int cx = th == &COFFEE ? (int)(v.bl + (v.br - v.bl) * 0.32) : c->w / 2, y = (int)v.bt + 2;
+    /* centred on the back wall; with the stairs there, in the free space at the top left (above the stairs' foot) */
+    int cx = has_up ? (int)(v.bl + (v.br - v.bl) * 0.16) + 4 : th == &COFFEE ? (int)(v.bl + (v.br - v.bl) * 0.32) : c->w / 2, y = (int)v.bt + (has_up ? 1 : 2);
+    if (cx - w / 2 < (int)v.bl - 6) cx = (int)v.bl - 6 + w / 2;
+    if (has_up) { canvas_px(c, cx - w / 2 + 2, y - 1, RGB(70, 56, 46)); canvas_px(c, cx + w / 2 - 3, y - 1, RGB(70, 56, 46)); canvas_px(c, cx - w / 2 + 2, y - 2, RGB(70, 56, 46)); canvas_px(c, cx + w / 2 - 3, y - 2, RGB(70, 56, 46)); } /* cords: it hangs in front of the stairs */
     canvas_rect(c, cx - w / 2, y, w, 9, board);
     canvas_rect(c, cx - w / 2, y + 8, w, 1, dk(board, 0.35));
     canvas_text(c, cx - w / 2 + 3, y + 2, t, ink);
