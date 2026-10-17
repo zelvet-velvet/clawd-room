@@ -23,7 +23,7 @@ idle 90 s (asleep), session end (walks out). A session with no events for 30 min
     ./clawd-room.sh                           # draws in the terminal (works in a 60x20 pane or fullscreen); builds c/ on the first start
     ./clawd-room.sh --dump 100x30 --events /tmp/e.jsonl --at 1800000010   # one plain-text frame, for tests
 
-Keys: `q` or Esc quit, `p` pause, `?` help line, `r` room size list, `[` `]` camera zoom, `z` auto zoom, Tab follow the next Clawd, `c` auto follow, arrows or W A S D move the camera freely, `g` send a Clawd next door, `b` call your Clawds back (or send visitors home), `f` fit. Needs at least 44x20 cells. The hook must be
+Keys: `q` or Esc quit, `p` pause, `?` help line, `r` room size list, `[` `]` camera zoom, `z` auto zoom, left / right (A / D) or Tab pick the Clawd the camera follows, `c` follow / free camera (then the arrows or W A S D move it), `g` send a Clawd next door, `b` call your Clawds back (or send visitors home), `f` fit. Needs at least 44x20 cells. The hook must be
 installed once (`python3 install_hooks.py` shows what it would change) or the room stays empty.
 Needs a truecolor terminal (Windows Terminal is fine). It only reads the events file.
 
@@ -76,10 +76,11 @@ list (up/down or W/S, Enter picks, Esc or `r` closes; `--room-size auto|s|m|l|xl
 Camera: `[` and `]` zoom a camera into the room (1x to 4x; `--zoom N` starts zoomed); the room keeps its layout, only the
 view gets closer. When zoomed the camera follows a Clawd and only moves when that Clawd nears the edge of the view. Auto
 follow (default) picks the Clawd that needs you, else the one that just finished, else the most recently active one, and
-takes turns every 10 s when nothing happens. Tab locks on the next Clawd, the arrows or W A S D move the camera freely, `c`
-goes back to auto follow. `z` turns auto zoom on or off: the zoom then frames the busy Clawds (close on one, wider for several).
-A Clawd walking out through a gate takes the camera to the door, rope or stairs; once it has crossed the camera goes back to
-what it was doing (not in free mode). Zooming never moves the gates: they line up with the next window as at 1x.
+takes turns every 10 s when nothing happens; visitors count too (a room with only a visitor follows it). While following,
+left / right (A / D) or Tab pick the previous / next Clawd and stay on it; `c` switches to a free camera (only then do the
+arrows or W A S D move the view) and back to auto follow. `z` turns auto zoom on or off: the zoom then frames the busy Clawds (close on one, wider for several).
+A Clawd walking out through a gate takes the camera to the door, rope or stairs; once it has crossed the camera zooms out to
+the whole room (not in free mode). Zooming never moves the gates: they line up with the next window as at 1x.
 
 Font size follows the window (WSL, Windows Terminal): when you stop resizing, a window with fewer
 than 110 columns gets a smaller font and one with more than 170 a bigger one (it sends the

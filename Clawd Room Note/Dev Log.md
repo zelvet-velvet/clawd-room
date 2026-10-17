@@ -241,10 +241,18 @@ sticker: lucide//book-open
 > - **The camera follows a Clawd through a gate:** while zoomed (auto or locked, not free), a Clawd heading out (`has_travel`: sent with `g` or visiting on its own; or a visitor going home) takes the camera to the door / rope / stairs; when it has crossed (gone from the room) the camera goes back to what it was doing. `Camera.cross_sid`; the `CLAWD_SIZE_LOG` camera line shows `cross SID`.
 > - Checked in ptys (two linked rooms, alpha at 3x, `g`): `cross sess4` while it walked out, back to `cross -` about 3 s later, auto follow went on. Snapshots unchanged.
 
+> [!NOTE] Second round (Zaviel: a room with one visitor and no desk did not follow; no zoom-out after a crossing; `c` / arrows)
+> - Visitors are candidates everywhere (auto follow, Tab, left/right, auto zoom, crossings): a room with only a visitor follows it.
+> - When the Clawd followed to a gate has crossed, the camera **zooms out to the whole room** (zoom 1, auto zoom off).
+> - **`c` = follow <-> free camera.** Auto follow -> `c` -> free (only now the arrows / WASD move the view) -> `c` -> auto follow; a picked Clawd -> `c` -> auto follow. While following, left / right (A / D) or Tab pick the previous / next Clawd (`camera_step`, locked); up / down only say how to steer.
+> - Checked in ptys (two linked rooms, one session, both 3x): beta followed its Clawd to the door and went to zoom 1 when it had crossed; alpha (no desk) followed the visitor; `d` locked, `c` back to auto, left arrow picked again. `ui.txt` help line changed.
+
 > [!TODO] Test (by eye)
 > - [ ] A new iTerm2 room opens narrower (about 40% of the screen wide)
 > - [ ] Zoom in (`]`) in alpha: the gate next to beta stays where it was (beta's gate does not move or close)
-> - [ ] Zoomed, `g`: the camera goes with the Clawd to the door (or rope / stairs when stacked), then back to the Clawd it was following
+> - [ ] Zoomed, `g`: the camera goes with the Clawd to the door (or rope / stairs when stacked), then zooms out to the whole room
+> - [ ] The room receiving the visitor (no desk of its own), zoomed: the camera follows the visitor
+> - [ ] Following: left / right pick another Clawd, the view does not move by hand; `c`: free camera, the arrows move it; `c` again: auto follow
 > - [ ] A visitor going home in a zoomed room: the camera takes it to its door too
 
 ---

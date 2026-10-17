@@ -253,9 +253,13 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                 if (k == 'p') { paused = !paused; frozen_now = now; frozen_t = t; dirty = 1; }
                 else if (k == '?') { help_on = !help_on; dirty = 1; }
                 else if (k == 'r') { size_pick = size; size_menu = 1; dirty = 1; } /* open the ROOM SIZE list at the current size */
-                else if (k == '\t' || k == 'c') { /* follow: the next Clawd (locked) or back to auto */
-                    const char *nm = k == 'c' ? "AUTO" : camera_next(&cam, &room, now);
-                    if (k == 'c') { cam.mode = CAM_AUTO; cam.sid[0] = 0; }
+                else if (k == 'c') { /* follow (auto) <-> free camera; from a chosen Clawd back to auto */
+                    if (cam.mode == CAM_AUTO) { cam.mode = CAM_FREE; snprintf(flash, sizeof flash, "FREE CAMERA  ARROWS MOVE  (C = FOLLOW)"); }
+                    else { cam.mode = CAM_AUTO; cam.sid[0] = 0; snprintf(flash, sizeof flash, "AUTO FOLLOW  < > PICK A CLAWD%s", room.cam_zoom > 1 || cam.autozoom ? "" : "  (] ZOOMS IN)"); }
+                    flash_until = wall() + 3; dirty = 1;
+                } else if (k == '\t' || ((k == 'a' || k == 'd') && cam.mode != CAM_FREE)) { /* following: the previous / next Clawd */
+                    if (cam.mode == CAM_FREE) cam.mode = CAM_AUTO;
+                    const char *nm = camera_step(&cam, &room, now, k == 'a' ? -1 : 1);
                     char up[48];
                     snprintf(up, sizeof up, "%s", nm ? nm : "NOBODY");
                     for (char *p = up; *p; p++) if (*p >= 'a' && *p <= 'z') *p -= 32;
@@ -267,10 +271,13 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                     snprintf(flash, sizeof flash, "AUTO ZOOM %s", cam.autozoom ? "ON" : "OFF");
                     flash_until = wall() + 3; have_prev = 0; dirty = 1;
                     wipe();
-                } else if (k == 'w' || k == 'a' || k == 's' || k == 'd') { /* free camera: move a quarter of the view */
+                } else if (k == 'w' || k == 's') { /* following: up / down do nothing but say how to steer */
+                    if (cam.mode != CAM_FREE) { snprintf(flash, sizeof flash, "FOLLOWING: < > PICK A CLAWD, C = FREE CAMERA"); flash_until = wall() + 3; dirty = 1; continue; }
+                    goto pan;
+                } else if (k == 'a' || k == 'd') { /* (free camera only: following takes them above) */
+                pan: /* free camera: move a quarter of the view */
                     if (!room.cam_vw || (room.cam_vw >= room.size_w && room.cam_vh >= room.size_h)) { snprintf(flash, sizeof flash, "ALL OF THE ROOM IS SHOWN: ] ZOOMS IN"); flash_until = wall() + 3; }
                     else {
-                        if (cam.mode != CAM_FREE) { cam.mode = CAM_FREE; snprintf(flash, sizeof flash, "FREE CAMERA  (C = AUTO FOLLOW)"); flash_until = wall() + 3; }
                         int sx = room.cam_vw / 4 > 1 ? room.cam_vw / 4 : 1, sy = room.cam_vh / 4 > 1 ? room.cam_vh / 4 : 1;
                         room.cam_x += k == 'a' ? -sx : k == 'd' ? sx : 0;
                         room.cam_y += k == 'w' ? -sy : k == 's' ? sy : 0;

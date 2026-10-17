@@ -1,9 +1,10 @@
 /* Where the camera looks when it is zoomed in (draw.c shows the view): it follows a Clawd, or the busy ones.
  * Auto follow picks who: the one that needs you (wait) > the one that just finished (cheer) > the most recently active
- * (work, think) > if nothing happens, the next Clawd every CAM_CYCLE seconds. Tab locks on one Clawd, the arrows make the
- * camera free, c goes back to auto. Auto zoom (z) also sets the zoom so the busy Clawds fit in the view.
+ * (work, think) > if nothing happens, the next Clawd every CAM_CYCLE seconds. Visitors count too. While following,
+ * left / right (A / D) or Tab pick the previous / next Clawd and stay on it; c switches between following and a free
+ * camera (only then do the arrows move the view). Auto zoom (z) also sets the zoom so the busy Clawds fit in the view.
  * A Clawd walking out through a gate (sent next door, visiting, or a visitor going home) takes the camera until it has
- * crossed; then the camera goes back to what it was doing (not in free mode). */
+ * crossed; then the camera zooms out to the whole room (not in free mode). */
 #ifndef CAMERA_H
 #define CAMERA_H
 #include "room.h"
@@ -28,6 +29,6 @@ typedef struct {
 void camera_init(Camera *c);
 /* picks the target and moves room->cam_x / cam_y (and cam_zoom with auto zoom); call once a frame before drawing */
 void camera_update(Camera *c, Room *room, double now);
-/* Tab: lock on the next Clawd after the current one; returns its name (or NULL if the room is empty) */
-const char *camera_next(Camera *c, Room *room, double now);
+/* Tab, right, left: lock on the next (dir 1) or previous (dir -1) Clawd; returns its name (or NULL if the room is empty) */
+const char *camera_step(Camera *c, Room *room, double now, int dir);
 #endif
