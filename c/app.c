@@ -207,6 +207,8 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
     char still_sig[1024] = "";
     int still_has_sig = 0;
     double still_since = wall(); /* when the windows last moved (gates wait until they are still) */
+    static char rect_sig[512];
+    double rect_still = wall(); /* when the windows themselves last moved (the gate animations start from this) */
 
     RawTerm rt = {0};
     struct sigaction sa;
@@ -424,6 +426,18 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                 }
             }
             if (has_sig != still_has_sig || strcmp(sig, still_sig)) { still_has_sig = has_sig; snprintf(still_sig, sizeof still_sig, "%s", sig); still_since = wall(); }
+            { /* the windows alone (no grids from the link): both rooms see them stop at the same moment, so their gate animations start together */
+                char rs[512] = "";
+                int o = 0;
+                if (mine_area) o += snprintf(rs + o, sizeof rs - (size_t)o, "%d,%d,%d,%d|", floordiv(mine_area[0], 4), floordiv(mine_area[1], 4), floordiv(mine_area[2], 4), floordiv(mine_area[3], 4));
+                for (int q = 0; q < room.nnb && mine_area; q++) {
+                    const int *pa = watcher_area(&desk.w, room.nb[q].id);
+                    if (pa) o += snprintf(rs + o, sizeof rs - (size_t)o, "%d,%d,%d,%d|", floordiv(pa[0], 4), floordiv(pa[1], 4), floordiv(pa[2], 4), floordiv(pa[3], 4));
+                }
+                if (strcmp(rs, rect_sig)) { snprintf(rect_sig, sizeof rect_sig, "%s", rs); rect_still = wall(); }
+                room.has_gate_sync = mine_area != NULL;
+                room.gate_sync_t = rect_still + 1.0 - (wall() - t); /* (wall clock -> draw time) */
+            }
             Passages ps;
             memset(&ps, 0, sizeof ps);
             if (wall() - still_since < 1.0) { /* pending: no gates until the windows have been still */

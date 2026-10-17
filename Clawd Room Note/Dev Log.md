@@ -282,8 +282,13 @@ sticker: lucide//book-open
 > - One door between two windows: only the window on the left draws the leaf (its door is on its right edge); the window on the right shows the open doorway rising in. Doormat removed.
 > - iTerm2 default window: a quarter tile (`SCREEN_W_PERCENT` / `SCREEN_H_PERCENT` 50), snapped into the quarter of the screen its centre is in, so two rooms land next to each other.
 
+> [!NOTE] Third round (Zaviel: the two windows' animations lag each other; the lower room's ladder should start at the window edge and land at the top of the floor; redesign the side without a leaf)
+> - **In step:** each room used to start the animation when it noticed the gate (different moments). Now the start is when the windows themselves stopped moving + 1 s: a signature of only the window rectangles (mine and the neighbours', no grids from the link), so both rooms see the same moment, give or take one watcher poll (0.25 s). `Room.has_gate_sync / gate_sync_t`. Without the window helper (`--left` etc.) a room starts when it sees the gate, as before.
+> - **Ladder** in the lower room: from the window's top edge (y 0, over the banner) to the top of the floor (`floor_y` + 2); slides down from the edge when it appears. Clawds still climb on down to their walking strip.
+> - **Double door:** each window draws one half, hinged at its own post on the room side; the halves meet at the edge between the windows; when it appears, both closed halves rise, then swing open into their rooms at the same time. (Replaces "only the left window draws the leaf".)
+
 > [!TODO] Test (by eye)
-> - [ ] Push two windows together: the door rises and the left window's leaf opens (side by side); the ladder slides down in the lower room and the framed hole rises in the upper room (stacked)
+> - [ ] Push two windows together side by side: both door halves rise and open at the same moment; stacked: the ladder slides down from the top edge in the lower room while the framed hole rises in the upper room, together
 > - [ ] The open door shows a bit of the other room (office / coffee / park colours)
 > - [ ] A new room opens as a quarter of the screen, in the quarter it was in
 > - [ ] Gates that are there when a room starts are simply there (no animation)

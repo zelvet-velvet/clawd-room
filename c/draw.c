@@ -62,10 +62,10 @@ static int sc(int v, double g) { return imax(1, pyround(v * g)); }
 static void edge_rect(Canvas *cv, int left, int xl, int y, int w, int h, Rgb c) { canvas_rect(cv, left ? xl : cv->w - xl - w, y, w, h, c); }
 static Rgb mixc(Rgb a, Rgb b, double f) { return RGB((int)(a.r + (b.r - a.r) * f), (int)(a.g + (b.g - a.g) * f), (int)(a.b + (b.b - a.b) * f)); }
 
-/* a side door: a wooden frame with a glimpse of the next room (its wall and floor). It is one door between two windows, so
- * only the window on the left draws the leaf (its door is on its right edge), hinged at the edge; the window on the right
- * shows the open doorway. p (0..1) is how far it has appeared: the doorway rises from the floor (with the closed leaf, on
- * the left window), then the leaf swings open towards the next room (1 = standing open, a thin edge at the hinge). */
+/* a side door: one half of a double door between two windows. Each window has a wooden frame with a glimpse of the next
+ * room (its wall and floor) and a leaf hinged at its own post on the room side; the two halves meet at the edge between the
+ * windows. p (0..1) is how far it has appeared: the closed door rises from the floor, then the leaf swings open into the
+ * room (narrowing towards its hinge), in both windows at the same time. */
 static void draw_door(Canvas *cv, int left, double door_y, const char *theme_name, double g, double p) {
     const Theme *th = theme_get(theme_name);
     int w = sc(8, g), cy = (int)(door_y + 5.5);
@@ -78,17 +78,16 @@ static void draw_door(Canvas *cv, int left, double door_y, const char *theme_nam
     if (fy > top) edge_rect(cv, left, 0, top, opening, fy - top, mixc(th->wall, RGB(0, 0, 0), 0.3));
     edge_rect(cv, left, 0, fy, opening, cy + down - fy, mixc(th->floor, RGB(0, 0, 0), 0.25));
     edge_rect(cv, left, 0, cy + down - post, opening, post, mixc(th->floor2, RGB(0, 0, 0), 0.25));
-    edge_rect(cv, left, opening, top, post, hgt, WOOD); /* post on the room side */
+    edge_rect(cv, left, opening, top, post, hgt, WOOD); /* post on the room side (the hinge) */
     if (rise >= 1.0) edge_rect(cv, left, 0, cy - up - lint, w, lint, WOOD); /* lintel */
-    if (left) return; /* the window on the right: just the doorway */
-    int lw = imax(post, (int)(opening * (1.0 - swing) + 0.5)); /* the leaf, hinged at the edge */
-    edge_rect(cv, left, 0, top, lw, hgt, DOOR_LEAF);
-    if (lw > post) edge_rect(cv, left, lw - post, top, post, hgt, DOOR_EDGE);
-    if (lw > sc(3, g) && hgt > down) edge_rect(cv, left, lw - sc(2, g), cy, post, post, DOOR_KNOB);
+    int lw = imax(post, (int)(opening * (1.0 - swing) + 0.5)); /* the leaf, from the hinge towards the edge */
+    edge_rect(cv, left, opening - lw, top, lw, hgt, DOOR_LEAF);
+    if (lw > post) edge_rect(cv, left, opening - lw, top, post, hgt, DOOR_EDGE); /* where the two halves meet */
+    if (lw > sc(3, g) && hgt > down) edge_rect(cv, left, opening - lw + sc(1, g), cy, post, post, DOOR_KNOB);
 }
 
-/* the top gate: the ladder from the room above coming down through the ceiling (no hatch here: the hole is in the floor
- * of the room above); p (0..1): it slides down */
+/* the top gate: the ladder from the room above coming down from the window's top edge to where the floor starts (no hatch
+ * here: the hole is in the floor of the room above); p (0..1): it slides down */
 static void draw_rope(Canvas *cv, int x, int top, int end, double g, double p) {
     int rail = sc(7, g), thick = sc(1, g);
     int len = (int)((end - top) * p + 0.5);
@@ -303,7 +302,10 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
         int present[SIDES] = {0};
         for (int i = 0; i < room->nnb; i++) present[room->nb[i].side] = 1;
         for (int sd = 0; sd < SIDES; sd++) {
-            if (present[sd] && !room->gate_seen[sd]) { room->gate_seen[sd] = 1; room->gate_t0[sd] = room->drawn ? t : t - GATE_ANIM; }
+            if (present[sd] && !room->gate_seen[sd]) { /* starts when the windows stopped moving (+1 s), the same moment for both rooms */
+                room->gate_seen[sd] = 1;
+                room->gate_t0[sd] = !room->drawn ? t - GATE_ANIM : room->has_gate_sync && room->gate_sync_t > t - GATE_ANIM ? room->gate_sync_t : t;
+            }
             else if (!present[sd]) room->gate_seen[sd] = 0;
         }
         room->drawn = 1;
@@ -313,7 +315,7 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
         double g = room->has_gate[side] ? room->gate_scale[side] : 1.0;
         double p = fmin(1.0, fmax(0.0, (t - room->gate_t0[side]) / GATE_ANIM));
         if (side == SIDE_LEFT || side == SIDE_RIGHT) draw_door(cv, side == SIDE_LEFT, geo.door_y[side], room->nb[i].theme, g, p);
-        else if (side == SIDE_UP) draw_rope(cv, geo.rope_x, geo.banner, geo.rope_end, g, p);
+        else if (side == SIDE_UP) draw_rope(cv, geo.rope_x, 0, imax(geo.floor_y + 2, sc(6, g)), g, p);
         else draw_stairs(cv, geo.stairs_x, cv->h, g, p);
     }
     int anyone = 0; /* any live session at all: linked rooms share them out, so this room may have none of its own */
