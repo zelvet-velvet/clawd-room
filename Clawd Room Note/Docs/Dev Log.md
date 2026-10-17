@@ -22,20 +22,47 @@ What changed and when, in short. How things work now is in the topic notes:
 
 Pictures are in `Screenshots/`. Details of every change: `git log`.
 
+> [!info] Where the work is (branches)
+> `main` has everything up to macOS support. The newer work waits on two branches for Zaviel's checks.
+
+```mermaid
+gitGraph
+    commit id: "C room"
+    commit id: "fixes"
+    branch macos-iterm
+    commit id: "macOS build"
+    commit id: "iTerm2 helper"
+    commit id: "camera, room size"
+    checkout main
+    merge macos-iterm id: "merged 10-17"
+    branch camera-gates
+    commit id: "camera at gates"
+    commit id: "doors, ladders"
+    branch style-a
+    commit id: "perspective rooms"
+    commit id: "stairs to a half floor"
+```
+
 ---
 ## 2026-10-18
 
+### 🗂️ Notes: plugins, diagrams, callouts
+- Installed the Obsidian plugins ZeLedgerOS uses (Dataview, Templater, Calendar, Hover Editor, make.md, Style Settings, Minimal Theme Settings, CSS Editor, Mermaid ELK Renderer, Git; Git is turned off in this vault).
+- The topic notes got diagrams (mermaid) and callouts; the Dev Log moved into `Docs/`.
+
 ### 🪜 The stairs go up to a half floor
-*Branch `feat/style-a`.*
-- The stairs now climb to a **platform half way up the back wall**; it runs to the right-hand wall, and the way up is a **door with dark inside** at the platform's end (no more hole in the ceiling).
+> [!info] Branch `feat/style-a`
+- The stairs now climb to a **platform half way up the back wall**; it runs to the right-hand wall, and the way up is a **door with dark inside** at the platform's end, behind the banister (no more hole in the ceiling).
 - A Clawd going up walks up the stairs, along the platform and through the door; coming down it does the reverse.
+- Side doors got a dark outline and a light frame: the coffee shop's doors had melted into its brown walls.
 
 ![[2026-10-18 half floor sketch (Zaviel).png|300]] ![[2026-10-18 stairs to a half floor.png|300]]
+![[2026-10-18 coffee door closed and open.png|200]]
 
 → [[Rooms and Art]]
 
 ### 🏛️ The rooms in perspective are built
-*Branch `feat/style-a` (on top of `feat/camera-gates`), not merged yet.*
+> [!info] Branch `feat/style-a` (on top of `feat/camera-gates`), not merged yet
 - The three rooms are drawn in one-point perspective: workspaces in rows on the floor, Clawds sitting behind them, a sign with the room's name instead of the top banner, a dot over each head.
 - Coffee shop and park have their own activities: a barista at a low bar; customers at cafe tables with a laptop, tablet or phone and a coffee or matcha; park Clawds on a bench, a swing or a picnic table.
 - Gates live on the walls, ceiling and floor: doors that open while a Clawd passes, stairs on the back wall (drawn the way Zaviel sketched them, with a landing, a banister and an opening in the ceiling), a stair well, and in the park a fence gate, a treehouse and stone steps.
@@ -64,7 +91,7 @@ Zaviel's sketch for the stairs and the doors that needed fixing:
 ## 2026-10-17
 
 ### 🎬 The camera at the gates
-*Branch `feat/camera-gates`, not merged yet.*
+> [!info] Branch `feat/camera-gates`, not merged yet
 - A Clawd walking out through a gate takes the camera with it; afterwards the camera zooms out to the whole room.
 - Zooming never moves the gates. A room with only a visitor follows the visitor; an empty zoomed room waits for the first Clawd.
 - `c` switches auto follow / free camera; ← → or Tab pick a Clawd; the status line shows what the camera does.
@@ -95,7 +122,7 @@ Zaviel's sketch for the stairs and the doors that needed fixing:
 - On macOS the window helper is `osascript`: it finds iTerm2 windows and split panes, so gates work there too.
 
 ### 🍎 Runs on macOS
-*Branch `feat/macos-iterm`, merged into `main`.*
+> [!success] Branch `feat/macos-iterm`, merged into `main`
 - Builds and passes all tests on macOS; the scripts are executable; the hook works unchanged.
 
 ---
@@ -114,14 +141,16 @@ Zaviel's sketch for the stairs and the doors that needed fixing:
 ---
 ## ⏳ Pending
 
-- Merge `feat/camera-gates` and `feat/style-a` into `main` (after Zaviel's checks).
-- `README.md` still describes the old flat look in places (banner, gates at the window edge).
-- WSL: the profile from the dropdown opens at Windows Terminal's default size, then jumps once; planned a shortcut with `wt.exe -w new --size 60,18 -p "Clawd Room"`.
-- The room can block writing if the terminal stops reading (seen with iTerm2 in full screen).
-- Windows Terminal split panes are not seen separately yet.
+> [!todo] Waiting
+> - Merge `feat/camera-gates` and `feat/style-a` into `main` (after Zaviel's checks).
+> - `README.md` still describes the old flat look in places (banner, gates at the window edge).
+> - WSL: the profile from the dropdown opens at Windows Terminal's default size, then jumps once; planned a shortcut with `wt.exe -w new --size 60,18 -p "Clawd Room"`.
+> - The room can block writing if the terminal stops reading (seen with iTerm2 in full screen).
+> - Windows Terminal split panes are not seen separately yet.
 
 ## 💡 Ideas
 
-- A seesaw in the park; an empty-desk look for Clawds that are away.
-- Camera polish: smooth zoom, a slight lead in the walking direction, a small bounce when a Clawd finishes, parallax in the park.
-- Full screen: a "hub" room that others visit, or several rooms side by side in one window.
+> [!question] Maybe later
+> - A seesaw in the park; an empty-desk look for Clawds that are away.
+> - Camera polish: smooth zoom, a slight lead in the walking direction, a small bounce when a Clawd finishes, parallax in the park.
+> - Full screen: a "hub" room that others visit, or several rooms side by side in one window.

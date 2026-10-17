@@ -6,10 +6,11 @@ tags:
 ---
 # 🎮 Interaction
 
-What the keys do and how Clawds, the camera and linked windows behave. Looks are in [[Rooms and Art]], window handling in [[Platforms and Windows]].
+> [!abstract] In short
+> Every Claude Code session is a Clawd. Keys zoom and steer a camera, pick the room size, and send Clawds to linked windows. Linked windows find each other by themselves; Clawds walk through doors and stairs between them. Looks are in [[Rooms and Art]], window handling in [[Platforms and Windows]].
 
 ---
-## Keys
+## ⌨️ Keys
 
 | Key | Does |
 | --- | --- |
@@ -20,43 +21,126 @@ What the keys do and how Clawds, the camera and linked windows behave. Looks are
 | `[` `]` | **camera zoom** 1x–4x (the room keeps its layout; only the view gets closer) |
 | `z` | **auto zoom** on / off (frames the busy Clawds) |
 | ← → or A D, Tab | while following: pick the previous / next Clawd (the camera stays on it) |
-| `c` | switch **auto follow ↔ free camera** (in a room with nobody to follow it stays on auto follow, waiting) |
+| `c` | switch **auto follow ↔ free camera** |
 | arrows / W A S D | free camera only: move the view a quarter at a time |
 | `g` | send an idle Clawd to the next window |
 | `b` | **call back**: our Clawds next door walk home; with none away, visitors here are sent home |
 | `f` | auto font and scale again (WSL and iTerm2), camera back to 1x |
 
-## Room size and resizing
+> [!tip] Zoom tips
+> - `]` then wait: the camera finds the Clawd that needs you by itself.
+> - In an empty zoomed room, `c` keeps the camera waiting for the first Clawd to come in.
+
+---
+## 📐 Room size and resizing
 
 - The room **always fills the window** and takes its shape; dragging the window re-lays it out at once.
 - **Grow, then scale:** the room gains floor up to the chosen size, past that every room pixel gets bigger.
-- **AUTO** (default) is just big enough to seat every session with floor to walk on, and changes when sessions come and go. **S / M / L / XL** are maximum sizes: 120x60, 160x90, 220x120, 300x160 room pixels (an 80x25 window is 80x50). Flag: `--room-size`.
 
-## The camera
+```mermaid
+%%{init: {"flowchart": {"defaultRenderer": "elk"}}}%%
+flowchart LR
+    Drag["🖱️ window resized"] --> Fits{"room smaller than<br/>the chosen size?"}
+    Fits -->|yes| Grow["🧱 more floor and desks<br/>(1 room pixel = 1 cell)"]
+    Fits -->|no| Scale["🔍 bigger pixels<br/>(2x, 3x …)"]
+```
 
-- When zoomed, the camera **follows a Clawd** and only moves when that Clawd nears the edge of the view (dead zone a quarter of the view, smooth).
-- **Auto follow** picks, in order: the Clawd that **needs you**, then the one that **just finished**, then the most recently **busy** one; when nothing happens it moves to the next Clawd every 10 s. Visitors count too.
-- A Clawd **walking out through a gate** takes the camera to the door / stairs / well; once it has gone through, the camera **zooms out to the whole room**.
-- While zoomed the status line says what the camera does: `AUTO FOLLOW (WAITING)`, `AUTO: NAME`, `FOLLOW NAME`, `WITH NAME TO THE GATE`, `FREE CAMERA`.
+| Size | Biggest room (room pixels) |
+| --- | --- |
+| **AUTO** (default) | just big enough to seat every session with floor to walk on; changes when sessions come and go |
+| S / M / L / XL | 120x60 / 160x90 / 220x120 / 300x160 (an 80x25 window is 80x50) |
+
+---
+## 🎥 The camera
+
+When zoomed, the camera **follows a Clawd** and only moves when that Clawd nears the edge of the view (dead zone a quarter of the view, smooth).
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> Auto
+    Auto --> Free: c
+    Free --> Auto: c
+    Auto --> Locked: ← → / Tab
+    Locked --> Auto: c, or the Clawd left
+    Locked --> Locked: ← → / Tab
+    note right of Auto: picks who to follow by itself
+    note right of Free: arrows / WASD move the view
+```
+
+**Who auto follow picks:**
+
+```mermaid
+%%{init: {"flowchart": {"defaultRenderer": "elk"}}}%%
+flowchart TD
+    Gate{"a Clawd walking out<br/>through a gate?"} -->|yes| Go["🚪 go with it, then zoom out"]
+    Gate -->|no| Need{"one needs you?"}
+    Need -->|yes| N["🟡 follow it"]
+    Need -->|no| Done{"one just finished?"}
+    Done -->|yes| D["🎉 follow it"]
+    Done -->|no| Busy{"one is busy?"}
+    Busy -->|yes| B["🟢 the most recent one"]
+    Busy -->|no| Turn["⏱️ next Clawd every 10 s"]
+```
+
+> [!info] What the status line says while zoomed
+> `AUTO FOLLOW (WAITING)` · `AUTO: NAME` · `FOLLOW NAME` · `WITH NAME TO THE GATE` · `FREE CAMERA`
+
+- Visitors count too: a room with only a visitor follows it.
 - Words (names, `+N MORE`) stay normal size when zoomed and never cover a Clawd.
 
-## Linked windows
+---
+## 🔗 Linked windows and crossing
 
-- Rooms started with `--room NAME` find each other through files in `~/.clawd-room/link/` (no network). Linked rooms **share the sessions**: each shows its own part.
-- With the window helper (WSL or iTerm2), a gate appears when two windows are **next to each other** (gap up to 30 px; an attached pair stays attached until 45 px) and have been **still for 1 s**. Stacked windows get up / down gates, side by side ones get doors. iTerm2 **split panes** count as windows.
-- Both windows **start the gate's appear animation together**, from the moment the windows stopped moving.
-- Windows are **never moved** to attach them.
+Rooms started with `--room NAME` find each other through files in `~/.clawd-room/link/` (no network) and **share the sessions** (each shows its own part). With the window helper (WSL or iTerm2) a gate appears when two windows are **next to each other** (gap up to 30 px, stays attached until 45 px) and **still for 1 s**; both windows animate it in together. iTerm2 **split panes** count as windows.
 
-## Crossing
+Each gate has an **in** point (where a Clawd steps on, on the floor) and an **out** point (the side door, the door on the stairs' platform, the treehouse door, the bottom of the well). The stairs also have a point in between (their top).
 
-- Each gate has an **in** point (where a Clawd steps on, on the floor) and an **out** point (the side door, the door on the stairs' platform, the treehouse door, the bottom of the well). The stairs also have a point in between (their top), so a Clawd walks up the stairs and along the platform.
-- **Going out:** the Clawd walks to "in", then to "out"; when it gets there it has crossed and appears in the other window at that window's matching gate.
-- **Coming in:** it appears at "out" and walks to "in", then into the room.
+```mermaid
+%%{init: {"flowchart": {"defaultRenderer": "elk"}}}%%
+flowchart LR
+    subgraph A["🏢 this window"]
+        Floor["walking floor"] --> In["in<br/>(foot of the gate)"]
+        In --> Mid["mid<br/>(top of the stairs)"]
+        Mid --> Out["out<br/>(the door)"]
+    end
+    Out -->|"walk message<br/>via link files"| Out2
+    subgraph B["☕ next window"]
+        Out2["out<br/>(its matching gate)"] --> In2["in"] --> Floor2["walking floor"]
+    end
+```
+
 - A side door **opens while a Clawd is near it** and closes after.
-- Idle Clawds visit the next window by themselves sometimes (20% of their plans when a gate is there). A visitor stays 25–45 s, then walks home; `b` ends visits early.
+- Idle Clawds visit by themselves sometimes (20% of their plans when a gate is there). A visitor stays 25–45 s, then walks home; `b` ends visits early.
 
-## Sessions and states
+> [!warning] Windows are never moved
+> The room never moves or snaps windows to attach them; gates appear only when you place windows next to each other.
 
-- Each Claude Code session is a Clawd. States: working / thinking (at its workspace), needs you (yellow), just finished (cheer, 2.5 s), idle (walks, visits, plays), asleep after 90 s idle, gone after 30 min without events.
-- **NO SESSIONS / START CLAUDE** shows only when **no session runs anywhere**; a linked room whose share happens to be empty just shows an empty room.
-- Idle play: wave, dance, stretch, jump; in the park also the swing and the slide; in the coffee shop customers order from the barista.
+---
+## 🫧 Sessions and states
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> Working: session starts
+    Working --> NeedsYou: asks for OK
+    NeedsYou --> Working: you answer
+    Working --> Cheer: done
+    Cheer --> Idle: 2.5 s
+    Idle --> Working: new prompt
+    Idle --> Asleep: 90 s quiet
+    Asleep --> Working: new prompt
+    Idle --> [*]: 30 min without events
+```
+
+| State | Where | Over the head |
+| --- | --- | --- |
+| working / thinking | at its workspace | 🟢 dot |
+| needs you | walks about | 🟡 sign and its **name** |
+| just finished | cheers, sparks | 🟢 dot |
+| idle | walks, visits, plays (wave, dance, stretch, jump; swing and slide in the park; ordering coffee) | ⚪ grey dot |
+| asleep | at its workspace, Z Z Z | ⚪ grey dot |
+| visitor | from another window | 🔵 blue dot |
+
+> [!note] NO SESSIONS
+> **NO SESSIONS / START CLAUDE** shows only when **no session runs anywhere**; a linked room whose share happens to be empty just shows an empty room.

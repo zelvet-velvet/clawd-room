@@ -6,7 +6,8 @@ tags:
 ---
 # ✅ Test Checklist
 
-Things only a person can check by looking. Ticked = Zaviel confirmed it. Automatic tests are in [[Engine and Tests]].
+> [!info] How to use this
+> Things only a person can check by looking. **Ticked = Zaviel confirmed it** (nobody else ticks). Automatic tests are in [[Engine and Tests]]. Checks for things that were replaced are removed.
 
 ---
 ## Rooms and art ([[Rooms and Art]])

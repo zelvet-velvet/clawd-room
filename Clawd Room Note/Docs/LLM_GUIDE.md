@@ -49,8 +49,8 @@ room.py + run.sh    the original pygame-ce window (needs .venv). Leave alone
 wt_settings.py      print-only: Windows Terminal settings that hide the tab bar / scroll bar
 setup_profile.py    prints / writes (--apply) / removes (--remove) a "Clawd Room" Windows Terminal profile fragment (scroll bar hidden, generated pixel Clawd-in-a-room `.ico`; the 512 px picture is `clawd-room-512px.png` as tab icon); `--apply-global` edits settings.json (tab bar off, with backup)
 Clawd Room Note/    this Obsidian vault (open this folder in Obsidian; plugin code is not in git):
-                      Dev Log.md (short dated entries), Notes/ (one note per subject), Screenshots/ (pictures linked from the log),
-                      Animations/ (frames), Docs/ (this guide)
+                      Docs/Dev Log.md (short dated entries) and this guide, Notes/ (one note per subject),
+                      Screenshots/ (pictures linked from the log), Animations/ (frames)
 CLAUDE.md           points here
 ```
 
@@ -123,9 +123,9 @@ The repo is private on GitHub (`zelvet-velvet/clawd-room`). History starts clean
 When the user sends **`CMD_SYNC`**, update the notes for every feature or change added since the last sync:
 
 1. Find what changed: `git status`, `git log` since the previous `docs(vault): sync` commit, and the conversation so far.
-2. **[[Dev Log]]:** one short entry per change under its date (newest first): a title, two to four plain bullets of what changed for the user, the branch if not merged, a link to the topic note. No code details, no rounds of back and forth; superseded attempts get one line.
+2. **[[Dev Log]]** (`Docs/Dev Log.md`): one short entry per change under its date (newest first): a title, two to four plain bullets of what changed for the user, the branch if not merged, a link to the topic note. No code details, no rounds of back and forth; superseded attempts get one line.
 3. **Pictures:** put screenshots (the user's, renders from the real program, chosen mockups) in `Screenshots/` named `YYYY-MM-DD subject.png` (the user's own: `... (Zaviel).png`, scaled to 1400 px) and embed them in the Dev Log entry (`![[name.png|250]]`).
-4. **Topic notes** (`Notes/`): update the note(s) the change belongs to so they describe how things work *now* (rewrite, do not append history): [[Rooms and Art]], [[Interaction]], [[Platforms and Windows]], [[Engine and Tests]]. Constants go in the tables there.
+4. **Topic notes** (`Notes/`): update the note(s) the change belongs to so they describe how things work *now* (rewrite, do not append history; use mermaid diagrams (flowcharts with `%%{init: {"flowchart": {"defaultRenderer": "elk"}}}%%`, state and sequence diagrams) and callouts where they explain better than text): [[Rooms and Art]], [[Interaction]], [[Platforms and Windows]], [[Engine and Tests]]. Constants go in the tables there.
 5. **[[Test Checklist]]:** add what the user still has to check by eye, under its subject; drop checks for things that were replaced. Do not tick anything; only the user's yes does that.
 6. Update `README.md` if commands, flags or keys changed, and this guide if a rule changed.
 7. Commit and push as `docs(vault): sync`, then finish with a short list of what was added.
