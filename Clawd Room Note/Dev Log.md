@@ -292,7 +292,14 @@ sticker: lucide//book-open
 > - **Rails line up:** the framed hole's ladder now has its rails 7 from the centre, like the ladder in the room below.
 > - **Door:** the window on the left (door on its right edge) has the door: frame, the leaf (closed), and through it, only when open, a glimpse of the next room. The leaf **opens while a Clawd is within `DOOR_NEAR` 18 px** of the door and closes after it (`DOOR_SWING` 0.3 s, `Room.door_open`). The window on the right shows **only the frame** (posts, lintel, sill; no leaf, no colours from the other room). Appearing: both rise from the floor, together (synced as before). (Replaces the double door.)
 
+> [!NOTE] Fifth round (Zaviel: parallelogram door in the left window, a thin parallelogram frame under 5 px in the right one; the hole a parallelogram too; the same rung spacing on both sides; why is a Clawd's name text on it)
+> - Door drawn column by column, slanted (top and bottom rise towards the edge between the windows); the right window's frame (`DOOR_JAMB` 4 columns) carries the same slant on. The hole in the upper room is a parallelogram (rows lean back), rails vertical. Rungs every `RUNG_STEP` 4 px in both rooms.
+> - Names on Clawds: zoomed, the words were written after the zoomed picture, so labels and name tags covered Clawds walking past; now they are not drawn over the Clawds' boxes (Clawds stay in front, as at 1x).
+> - iTerm2: Cmd +/- resizes the window because of its own setting `AdjustWindowForFontSizeChange` (on by default); with it off, Cmd +/- changes the font inside the same window, so the room gets more or fewer room pixels.
+
 > [!TODO] Test (by eye)
+> - [ ] Slanted door / thin slanted frame / slanted hole look right together; rungs look evenly spaced across stacked windows
+> - [ ] Zoomed: a Clawd walking past a desk label stays in front of it
 > - [ ] Side by side: the left window shows a closed door, the right window a frame; `g` from either: the door swings open as the Clawd comes through and closes after
 > - [ ] Stacked with a door near the corner: the ladder stays clear of the door; the hole's rails line up with the ladder below
 > - [ ] Push two windows together side by side: both door halves rise and open at the same moment; stacked: the ladder slides down from the top edge in the lower room while the framed hole rises in the upper room, together

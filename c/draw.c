@@ -20,6 +20,8 @@ const SpriteFile *draw_frames(void) { return g_frames; }
 #define DOOR_LEAF RGB(132, 94, 62)
 #define DOOR_EDGE RGB(96, 68, 46)
 #define DOOR_KNOB RGB(230, 190, 90)
+#define DOOR_JAMB 4    /* columns of the thin door frame in the window on the right (under 5) */
+#define RUNG_STEP 4    /* room pixels between ladder rungs, the same in both windows */
 #define DOOR_NEAR 18   /* a Clawd this close (room pixels) to a door opens it */
 #define DOOR_SWING 0.3 /* seconds the leaf takes to open or close */
 
@@ -64,27 +66,42 @@ static int sc(int v, double g) { return imax(1, pyround(v * g)); }
 static void edge_rect(Canvas *cv, int left, int xl, int y, int w, int h, Rgb c) { canvas_rect(cv, left ? xl : cv->w - xl - w, y, w, h, c); }
 static Rgb mixc(Rgb a, Rgb b, double f) { return RGB((int)(a.r + (b.r - a.r) * f), (int)(a.g + (b.g - a.g) * f), (int)(a.b + (b.b - a.b) * f)); }
 
-/* a side door. It is one door between two windows: the window on the left (its door is on its right edge) has the door
- * itself (frame, a glimpse of the next room through it, the leaf hinged at the post on the room side, closed unless a Clawd
- * is passing: `open` 0..1); the window on the right shows only the door frame. p (0..1) is how far it has appeared: it rises
- * from the floor. */
+/* a column of the door, measured from the room's edge inwards, `lift` pixels higher (the slant of the parallelograms) */
+static void edge_col(Canvas *cv, int left, int xl, int y0, int y1, int lift, Rgb c) { if (y1 > y0) edge_rect(cv, left, xl, y0 - lift, 1, y1 - y0, c); }
+
+/* a side door, drawn slanted (a parallelogram: the top and the bottom rise towards the edge between the windows). It is one
+ * door between two windows: the window on the left (its door is on its right edge) has the door itself (frame, the leaf
+ * hinged at the post on the room side, closed unless a Clawd is passing: `open` 0..1, and through it, when open, a glimpse
+ * of the next room); the window on the right has only a thin slanted frame (DOOR_JAMB columns) carrying the same slant on.
+ * p (0..1) is how far it has appeared: it rises from the floor. */
 static void draw_door(Canvas *cv, int left, double door_y, const char *theme_name, double g, double p, double open) {
     const Theme *th = theme_get(theme_name);
     int w = sc(8, g), cy = (int)(door_y + 5.5);
     int up = sc(7, g), down = sc(7, g), lint = sc(2, g), post = sc(1, g), opening = w - post, floor_h = sc(4, g);
-    int full = up + down, hgt = (int)(full * p + 0.5), top = cy + down - hgt;
-    edge_rect(cv, left, 0, cy + down, w, post, WOOD); /* sill */
+    int full = up + down, hgt = (int)(full * p + 0.5), top = cy + down - hgt, bottom = cy + down;
     if (hgt <= 0) return;
-    edge_rect(cv, left, opening, top, post, hgt, WOOD); /* post on the room side */
-    if (p >= 1.0) edge_rect(cv, left, 0, cy - up - lint, w, lint, WOOD); /* lintel */
-    if (left) { edge_rect(cv, left, 0, top, post, hgt, WOOD); return; } /* the window on the right: just the frame */
-    int fy = imax(top, cy + down - floor_h); /* the next room, seen through the open door (a little darker, further away) */
-    if (fy > top) edge_rect(cv, left, 0, top, opening, fy - top, mixc(th->wall, RGB(0, 0, 0), 0.3));
-    edge_rect(cv, left, 0, fy, opening, cy + down - fy, mixc(th->floor, RGB(0, 0, 0), 0.25));
+    if (left) { /* the window on the right: the frame carries on the left window's slant, rising away from the edge */
+        int jw = sc(DOOR_JAMB, g);
+        for (int xl = 0; xl < jw; xl++) {
+            int lift = (opening + xl) / 2 + 1;
+            edge_col(cv, left, xl, bottom, bottom + post, lift, WOOD); /* sill */
+            if (p >= 1.0) edge_col(cv, left, xl, top - lint, top, lift, WOOD); /* lintel */
+        }
+        edge_col(cv, left, jw - 1, top, bottom, (opening + jw - 1) / 2 + 1, WOOD); /* the jamb */
+        return;
+    }
     int lw = imax(post, (int)(opening * (1.0 - open) + 0.5)); /* the leaf, from the hinge towards the edge */
-    edge_rect(cv, left, opening - lw, top, lw, hgt, DOOR_LEAF);
-    if (lw > post) edge_rect(cv, left, opening - lw, top, post, hgt, DOOR_EDGE);
-    if (lw > sc(3, g) && hgt > down) edge_rect(cv, left, opening - lw + sc(1, g), cy, post, post, DOOR_KNOB);
+    for (int xl = 0; xl <= opening; xl++) { /* xl 0 = the edge, opening = the post on the room side (the hinge) */
+        int lift = (opening - xl) / 2; /* higher towards the edge */
+        edge_col(cv, left, xl, bottom, bottom + post, lift, WOOD); /* sill */
+        if (p >= 1.0) edge_col(cv, left, xl, top - lint, top, lift, WOOD); /* lintel */
+        if (xl == opening) { edge_col(cv, left, xl, top, bottom, lift, WOOD); continue; } /* post */
+        int fy = imax(top, bottom - floor_h);
+        edge_col(cv, left, xl, top, fy, lift, mixc(th->wall, RGB(0, 0, 0), 0.3)); /* the next room, seen through the door */
+        edge_col(cv, left, xl, fy, bottom, lift, mixc(th->floor, RGB(0, 0, 0), 0.25));
+        if (xl >= opening - lw) edge_col(cv, left, xl, top, bottom, lift, xl == opening - lw && lw > post ? DOOR_EDGE : DOOR_LEAF);
+    }
+    if (lw > sc(3, g) && hgt > down) { int xk = opening - lw + sc(1, g); edge_col(cv, left, xk, cy, cy + post, (opening - xk) / 2, DOOR_KNOB); }
 }
 
 /* the top gate: the ladder from the room above coming down from the window's top edge to where the floor starts (no hatch
@@ -95,21 +112,26 @@ static void draw_rope(Canvas *cv, int x, int top, int end, double g, double p) {
     if (len <= 0) return;
     int rx[2] = {x - rail, x + rail};
     for (int i = 0; i < 2; i++) canvas_rect(cv, rx[i], top, thick, len, ROPE); /* the two rails */
-    for (int y = top + sc(3, g); y < top + len; y += sc(5, g)) canvas_rect(cv, x - rail + thick, y, 2 * rail - thick, thick, RUNG); /* rungs */
+    for (int y = top + sc(3, g); y < top + len; y += sc(RUNG_STEP, g)) canvas_rect(cv, x - rail + thick, y, 2 * rail - thick, thick, RUNG); /* rungs */
 }
 
-/* the bottom gate: a framed hole in the floor with the ladder going down into it (the room below sees the ladder come
- * through its ceiling); p (0..1): it rises up from the bottom edge */
+/* the bottom gate: a hole in the floor, slanted like the doors (a parallelogram: each row a little further right towards
+ * the back), with the ladder going down into it (the room below sees the ladder come through its ceiling); the rails and
+ * rungs are spaced like that ladder. p (0..1): it rises up from the bottom edge */
 static void draw_stairs(Canvas *cv, int x, int h, double g, double p) {
-    int half = sc(9, g), rail = sc(7, g), thick = sc(1, g), depth = (int)(sc(6, g) * p + 0.5); /* rails as wide apart as the ladder below */
+    int half = sc(9, g), rail = sc(7, g), thick = sc(1, g), depth = (int)(sc(6, g) * p + 0.5), side = sc(2, g);
     if (depth <= 0) return;
-    canvas_rect(cv, x - half, h - depth - thick, 2 * half + 1, thick, WOOD); /* frame */
-    canvas_rect(cv, x - half, h - depth, sc(2, g), depth, WOOD);
-    canvas_rect(cv, x + half - sc(2, g) + 1, h - depth, sc(2, g), depth, WOOD);
-    canvas_rect(cv, x - half + sc(2, g), h - depth, 2 * (half - sc(2, g)) + 1, depth, HOLE); /* the dark shaft */
+    for (int r = -thick; r < depth; r++) { /* row by row, from the back (top) to the front */
+        int y = h - depth + r, shift = (depth - 1 - r) / 2; /* the back rows lean right */
+        int x0 = x - half + shift, x1 = x + half + shift;
+        if (r < 0) { canvas_rect(cv, x0, y, x1 - x0 + 1, 1, WOOD); continue; } /* back edge of the frame */
+        canvas_rect(cv, x0, y, side, 1, WOOD);
+        canvas_rect(cv, x1 - side + 1, y, side, 1, WOOD);
+        canvas_rect(cv, x0 + side, y, x1 - x0 + 1 - 2 * side, 1, HOLE); /* the dark shaft */
+    }
     int rx[2] = {x - rail, x + rail};
     for (int i = 0; i < 2; i++) canvas_rect(cv, rx[i], h - depth, thick, depth, ROPE); /* the ladder goes down into it */
-    for (int y = h - sc(1, g); y > h - depth; y -= sc(2, g)) canvas_rect(cv, x - rail + thick, y, 2 * rail - thick, thick, RUNG);
+    for (int y = h - sc(1, g); y > h - depth; y -= sc(RUNG_STEP, g)) canvas_rect(cv, x - rail + thick, y, 2 * rail - thick, thick, RUNG);
 }
 
 /* ---- desks, bubbles, props ------------------------------------------------------------------- */
@@ -423,8 +445,10 @@ static int ratio_size(const char *r, int *w, int *h) {
     return 0;
 }
 
-/* text at k times the pixel size (the font is 3x5), only the lit pixels, clipped to [cx0, cx1) x [cy0, cy1) */
-static void text_scaled(Canvas *cv, int x, int y, const char *s, Rgb c, int k, int cx0, int cy0, int cx1, int cy1) {
+typedef struct { int x0, y0, x1, y1; } SRect;
+/* text at k times the pixel size (the font is 3x5), only the lit pixels, clipped to [cx0, cx1) x [cy0, cy1), and not over
+ * the Clawds (`behind`: their boxes on screen), so Clawds walking past stay in front of the words as they do at 1x */
+static void text_scaled(Canvas *cv, int x, int y, const char *s, Rgb c, int k, int cx0, int cy0, int cx1, int cy1, const SRect *behind, int nb) {
     const Rgb KEY = RGB(1, 2, 3);
     int tw = text_width(s);
     if (tw <= 0) return;
@@ -435,7 +459,10 @@ static void text_scaled(Canvas *cv, int x, int y, const char *s, Rgb c, int k, i
         if (rgb_eq(p, KEY)) continue;
         for (int dy = 0; dy < k; dy++) for (int dx = 0; dx < k; dx++) {
             int X = x + tx * k + dx, Y = y + ty * k + dy;
-            if (X >= cx0 && X < cx1 && Y >= cy0 && Y < cy1) cv->p[Y * cv->w + X] = p;
+            if (X < cx0 || X >= cx1 || Y < cy0 || Y >= cy1) continue;
+            int hidden = 0;
+            for (int b = 0; b < nb && !hidden; b++) hidden = X >= behind[b].x0 && X < behind[b].x1 && Y >= behind[b].y0 && Y < behind[b].y1;
+            if (!hidden) cv->p[Y * cv->w + X] = p;
         }
     }
     canvas_free(&t);
@@ -477,11 +504,18 @@ static Canvas render_camera(int pw, int ph, Room *room, double now, double t, ch
     /* the gates count as not zoomed: they line up with the next window by where the room sits at 1x */
     room->view_x = ox; room->view_y = oy; room->view_k = k;
     double zx = vx - x0 * s, zy = vy - y0 * s; /* screen = (zx, zy) + room pixel * s, for the words */
-    for (int i = 0; i < g_nwt; i++) { /* the words: same centre, normal size */
+    static SRect boxes[MAX_SESS + MAX_GUESTS];
+    int nbox = 0;
+    for (int i = 0; i < room->n + room->ng; i++) { /* where the Clawds are on screen (their 14x8 sprite, arms and legs) */
+        const Session *q = i < room->n ? room->s[i] : room->guests[i - room->n];
+        if (!q->has_pos || q->has_away) continue;
+        boxes[nbox++] = (SRect){(int)(zx + (q->px - 7) * s), (int)(zy + (q->py - 1) * s), (int)(zx + (q->px + 8) * s), (int)(zy + (q->py + 9) * s)};
+    }
+    for (int i = 0; i < g_nwt; i++) { /* the words: same centre, normal size, behind the Clawds */
         const WText *q = &texts[i];
         int tw = text_width(q->s);
         double cx = zx + (q->x + tw / 2.0) * s, top = zy + q->y * s;
-        text_scaled(&full, (int)(cx - tw * k / 2.0), (int)top, q->s, q->c, k, vx, vy, vx + vw * s, vy + vh * s);
+        text_scaled(&full, (int)(cx - tw * k / 2.0), (int)top, q->s, q->c, k, vx, vy, vx + vw * s, vy + vh * s, boxes, nbox);
     }
     canvas_free(&rc);
     return full;
