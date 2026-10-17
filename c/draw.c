@@ -425,11 +425,13 @@ static Canvas render_camera(int pw, int ph, Room *room, double now, double t, ch
         Rgb *dst = full.p + (size_t)(vy + y) * (size_t)pw + vx;
         for (int x = 0; x < vw * s; x++) dst[x] = src[x / s];
     }
-    room->view_x = vx - x0 * s; room->view_y = vy - y0 * s; room->view_k = s; /* screen = view + room pixel * k, as the gates expect */
+    /* the gates count as not zoomed: they line up with the next window by where the room sits at 1x */
+    room->view_x = ox; room->view_y = oy; room->view_k = k;
+    double zx = vx - x0 * s, zy = vy - y0 * s; /* screen = (zx, zy) + room pixel * s, for the words */
     for (int i = 0; i < g_nwt; i++) { /* the words: same centre, normal size */
         const WText *q = &texts[i];
         int tw = text_width(q->s);
-        double cx = room->view_x + (q->x + tw / 2.0) * s, top = room->view_y + q->y * s;
+        double cx = zx + (q->x + tw / 2.0) * s, top = zy + q->y * s;
         text_scaled(&full, (int)(cx - tw * k / 2.0), (int)top, q->s, q->c, k, vx, vy, vx + vw * s, vy + vh * s);
     }
     canvas_free(&rc);

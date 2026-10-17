@@ -68,10 +68,27 @@ static void frame_busy(Camera *c, Room *room, double now, double *tx, double *ty
     if (z != cur && now - c->zoom_at >= CAM_ZOOM_EVERY) { room->cam_zoom = z; c->zoom_at = now; }
 }
 
+static int heading_out(const Session *s) { return s->has_pos && (s->has_travel || (s->guest && s->returning && s->leaving)); }
+
+/* the Clawd walking out through a gate: keep the one already followed while it is still on its way, else the first one */
+static Session *crossing(Camera *c, Room *room) {
+    Session *first = NULL;
+    for (int i = 0; i < room->n + room->ng; i++) {
+        Session *s = i < room->n ? room->s[i] : room->guests[i - room->n];
+        if (!heading_out(s)) continue;
+        if (c->cross_sid[0] && !strcmp(s->sid, c->cross_sid)) return s;
+        if (!first) first = s;
+    }
+    return first;
+}
+
 void camera_update(Camera *c, Room *room, double now) {
     double tx = -1, ty = -1;
     if (c->autozoom) frame_busy(c, room, now, &tx, &ty);
-    if (room->cam_zoom <= 1 || !room->size_w || c->mode == CAM_FREE) return; /* the whole room is shown, or the user steers */
+    if (room->cam_zoom <= 1 || !room->size_w || c->mode == CAM_FREE) { c->cross_sid[0] = 0; return; } /* the whole room is shown, or the user steers */
+    Session *out = crossing(c, room); /* to the gate with it; when it has crossed (gone), back to normal */
+    snprintf(c->cross_sid, sizeof c->cross_sid, "%s", out ? out->sid : "");
+    if (out) { tx = out->px; ty = out->py + 4; }
     if (tx < 0) { /* not framing a group: follow one Clawd */
         Session *s = c->mode == CAM_LOCKED ? by_sid(room, c->sid) : NULL;
         if (!s) { c->mode = CAM_AUTO; s = choose(c, room, now); } /* the locked Clawd left: back to auto */

@@ -56,8 +56,8 @@ get a gate between them, like two attached windows. iTerm2 does not say where a 
 worked out from the window size, the title and tab bar and iTerm2's margins (simple splits only: a row of side-by-side
 panes or a column of stacked ones). `f` resizes the window there too. The room leaves the iTerm2 font alone unless you
 pass `--font PT` (that sends Cmd -/+ to the room's own window when it has the focus, and needs Accessibility for iTerm2).
-When a room opens in iTerm2 its window is sized from the screen (`--size screen`, the default there): 55% of the usable
-width and height, at least 44x20 cells, moved only as far as needed to stay on screen. `--size COLSxROWS` or `--size off`
+When a room opens in iTerm2 its window is sized from the screen (`--size screen`, the default there): 40% of the usable
+width and 55% of its height, at least 44x20 cells, moved only as far as needed to stay on screen. `--size COLSxROWS` or `--size off`
 as on WSL.
 
 Themes (`--theme office|coffee|park`, by default guessed from the room name):
@@ -78,6 +78,8 @@ view gets closer. When zoomed the camera follows a Clawd and only moves when tha
 follow (default) picks the Clawd that needs you, else the one that just finished, else the most recently active one, and
 takes turns every 10 s when nothing happens. Tab locks on the next Clawd, the arrows or W A S D move the camera freely, `c`
 goes back to auto follow. `z` turns auto zoom on or off: the zoom then frames the busy Clawds (close on one, wider for several).
+A Clawd walking out through a gate takes the camera to the door, rope or stairs; once it has crossed the camera goes back to
+what it was doing (not in free mode). Zooming never moves the gates: they line up with the next window as at 1x.
 
 Font size follows the window (WSL, Windows Terminal): when you stop resizing, a window with fewer
 than 110 columns gets a smaller font and one with more than 170 a bigger one (it sends the

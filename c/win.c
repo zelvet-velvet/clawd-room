@@ -263,7 +263,7 @@ void tool_zoom(Tool *t, const char *title, int step, int only_if_focused, int li
     snprintf(b, sizeof b, "%s|%s|%d", live ? "zoomlive" : only_if_focused ? "zoomfg" : "zoom", title, step);
     tool_send(t, b);
 }
-void tool_screen(Tool *t, const char *title, int percent) { char b[300]; snprintf(b, sizeof b, "screen|%s|%d", title, percent); tool_send(t, b); }
+void tool_screen(Tool *t, const char *title, int w_percent, int h_percent) { char b[300]; snprintf(b, sizeof b, "screen|%s|%d|%d", title, w_percent, h_percent); tool_send(t, b); }
 void tool_reset_zoom(Tool *t, const char *title) { char b[300]; snprintf(b, sizeof b, "resetfg|%s|0", title); tool_send(t, b); }
 void tool_stop(Tool *t) {
     if (t->fd >= 0) close(t->fd);
@@ -348,7 +348,7 @@ int opensetup_update(OpenSetup *o, double now, int cols, int rows, const int *re
         o->stage = ST_PROBE; o->wait_until = now + 0.6;
     } else if (o->stage == ST_PROBE) {
         if (o->size_off) o->stage = ST_FONT;
-        else if (o->size_screen) { tool_screen(o->tool, o->title, SCREEN_PERCENT); o->stage = ST_FONT; }
+        else if (o->size_screen) { tool_screen(o->tool, o->title, SCREEN_W_PERCENT, SCREEN_H_PERCENT); o->stage = ST_FONT; }
         else if (now >= o->wait_until) {
             double px[2];
             int have = opensetup_window_px(o, rect, area, cols, rows, px) != 0;

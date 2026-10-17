@@ -497,7 +497,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                 if (getenv("CLAWD_SIZE_LOG")) { /* test hook: note who the camera follows whenever that changes */
                     static char logged_cam[128];
                     char cur[128];
-                    snprintf(cur, sizeof cur, "cam %d %s zoom %d", cam.mode, cam.sid, room.cam_zoom);
+                    snprintf(cur, sizeof cur, "cam %d %s zoom %d cross %s", cam.mode, cam.sid, room.cam_zoom, cam.cross_sid[0] ? cam.cross_sid : "-");
                     if (strcmp(cur, logged_cam)) { snprintf(logged_cam, sizeof logged_cam, "%s", cur); FILE *lf = fopen(getenv("CLAWD_SIZE_LOG"), "a"); if (lf) { fprintf(lf, "%.1f %s\n", wall(), cur); fclose(lf); } }
                 }
                 char note[32], over[512];

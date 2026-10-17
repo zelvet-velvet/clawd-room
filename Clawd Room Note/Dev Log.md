@@ -233,6 +233,20 @@ sticker: lucide//book-open
 > [!TODO] Test
 > - [ ] Two linked rooms, one session: the room without a Clawd shows an empty room, no NO SESSIONS text; quit all Claude Code sessions: both rooms show NO SESSIONS
 
+## 🎬 Camera at the gates, narrower window (2026-10-17, branch feat/camera-gates)
+
+> [!NOTE] What changed (Zaviel's asks)
+> - **Narrower default window (iTerm2):** `--size screen` is now 40% of the usable width (`SCREEN_W_PERCENT`) and 55% of the height (`SCREEN_H_PERCENT`); the tool command is `screen|title|w|h`.
+> - **Gates count as not zoomed:** `render_camera()` hands the gate maths (`view_x / view_y / view_k`, the grid sent to the next window, `my_band`) the room's 1x placement, so zooming in one window never moves or closes the gates; the words over the zoomed room use the zoomed transform themselves.
+> - **The camera follows a Clawd through a gate:** while zoomed (auto or locked, not free), a Clawd heading out (`has_travel`: sent with `g` or visiting on its own; or a visitor going home) takes the camera to the door / rope / stairs; when it has crossed (gone from the room) the camera goes back to what it was doing. `Camera.cross_sid`; the `CLAWD_SIZE_LOG` camera line shows `cross SID`.
+> - Checked in ptys (two linked rooms, alpha at 3x, `g`): `cross sess4` while it walked out, back to `cross -` about 3 s later, auto follow went on. Snapshots unchanged.
+
+> [!TODO] Test (by eye)
+> - [ ] A new iTerm2 room opens narrower (about 40% of the screen wide)
+> - [ ] Zoom in (`]`) in alpha: the gate next to beta stays where it was (beta's gate does not move or close)
+> - [ ] Zoomed, `g`: the camera goes with the Clawd to the door (or rope / stairs when stacked), then back to the Clawd it was following
+> - [ ] A visitor going home in a zoomed room: the camera takes it to its door too
+
 ---
 ## ⏳ Pending (last step)
 
