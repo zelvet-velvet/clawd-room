@@ -46,6 +46,14 @@ gitGraph
 ---
 ## 2026-10-18
 
+### 🛝 A real swing, the park's well at the back right
+> [!info] Branch `feat/style-a`
+- The **swing** is a small swing set seen from the front: splayed wooden posts, a bar, chains and a red seat. At a swing workspace the Clawd **sits on the seat** between the chains; on the playground swing it swings towards you and back.
+- The park's well moved to the **back right** like indoors, and the rows near the back **stop short of the well**: it no longer lands on a workspace (in any room).
+- The Clawd Room profile **ignores Cmd = + − 0**, so iTerm2's font keys cannot change the pixel size.
+
+![[2026-10-18 park swing set and well clear of workspaces.png|300]] ![[2026-10-18 park swing set.png|300]] ![[2026-10-18 swing workspace close-up.png|200]]
+
 ### 🔲 iTerm2: a fixed pixel size
 > [!info] Branch `feat/style-a`
 - On iTerm2 the room runs in **its own window with a "Clawd Room" profile** (Menlo 6, line spacing 1.1): every cell is 4x8 pt, so a **room pixel is always a square 4x4 pt** and the pixel art lines up the same each time. `--here` keeps the current window.

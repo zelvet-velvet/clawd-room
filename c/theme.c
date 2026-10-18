@@ -92,24 +92,35 @@ static void menu_board(Canvas *c, int x, int y) {
     canvas_rect(c, x + 2, y + 8, 10, 1, RGB(150, 150, 140));
 }
 
-/* ---- the playground, at 45 degrees into the room ---------------------------------------------------------------------
- * A swing set whose bar runs diagonally back to the right, and a slide (mirrored: its ladder at the back right, sliding down
- * to the front left). Both are built from world points around the floor point (fx, fy); `sp` (if given) gets where a
- * Clawd sits / climbs / slides, for theme_spots. */
+/* ---- the playground --------------------------------------------------------------------------------------------------
+ * A small swing set seen from the front, and a slide at 45 degrees (mirrored: its ladder at the back right, sliding down to
+ * the front left, built from world points around the floor point (fx, fy)); `sp` (if given) gets where a Clawd sits /
+ * climbs / slides, for theme_spots. */
 static void wline(Canvas *c, const View *v, double X0, double Z0, double E0, double X1, double Z1, double E1, Rgb col) {
     canvas_line(c, (int)view_sx(v, X0, Z0), (int)view_sy(v, Z0, E0), (int)view_sx(v, X1, Z1), (int)view_sy(v, Z1, E1), col);
 }
-static void swing_45(Canvas *c, const View *v, double fx, double fy, Spots *sp) {
-    double X, Z;
-    view_world(v, fx, fy, &X, &Z);
-    double a = 0.06 * Z, eb = view_e(v, 16) * Z, es = view_e(v, 4) * Z; /* half the bar (diagonal), bar and seat heights */
-    Rgb wood = RGB(112, 88, 64), rope = RGB(150, 140, 120);
-    if (sp) { sp->swing.x = (int)view_sx(v, X, Z); sp->swing.y = (int)view_sy(v, Z, es) - 7; sp->swing.bar = (int)view_sy(v, Z, eb); return; }
-    for (int end = -1; end <= 1; end += 2) wline(c, v, X + end * a, Z + end * a, 0, X + end * a, Z + end * a, eb, wood); /* a post at each end */
-    wline(c, v, X - a, Z - a, eb, X + a, Z + a, eb, wood);                                          /* the bar */
-    wline(c, v, X - a * 0.35, Z - a * 0.35, eb, X - a * 0.35, Z - a * 0.35, es, rope);               /* ropes and seat */
-    wline(c, v, X + a * 0.35, Z + a * 0.35, eb, X + a * 0.35, Z + a * 0.35, es, rope);
-    wline(c, v, X - a * 0.35, Z - a * 0.35, es, X + a * 0.35, Z + a * 0.35, es, wood);
+/* a small swing set, seen from the front (like the sprites, the same size at any depth): splayed posts, a bar, two
+ * chains and a seat whose top is at seat_y; the posts stand on gy */
+static void swing_set(Canvas *c, int cx, int gy, int half, int seat_y) {
+    Rgb post = RGB(120, 84, 56), post_lt = RGB(160, 118, 80), bar = RGB(92, 64, 44), chain = RGB(164, 164, 176), seat = RGB(196, 76, 62);
+    int top = seat_y - 13;
+    for (int sd = -1; sd <= 1; sd += 2) {
+        int x = cx + sd * half;
+        canvas_line(c, x, top, x + sd * 3, gy, post);         /* the front leg, splayed out */
+        canvas_line(c, x - sd, top, x + sd * 2 - sd, gy, post_lt);
+        canvas_line(c, x, top + 1, x - sd * 2, gy - 1, dk(post, 0.25)); /* the back leg */
+    }
+    canvas_rect(c, cx - half - 1, top - 1, 2 * half + 3, 1, lt(bar, 0.25)); /* the bar */
+    canvas_rect(c, cx - half - 1, top, 2 * half + 3, 1, bar);
+    for (int sd = -1; sd <= 1; sd += 2) for (int y = top + 1; y < seat_y; y++) canvas_px(c, cx + sd * 6, y, y % 2 ? chain : dk(chain, 0.2));
+    canvas_rect(c, cx - 7, seat_y, 15, 1, seat);
+    canvas_rect(c, cx - 7, seat_y + 1, 15, 1, dk(seat, 0.3));
+}
+/* the playground's swing set: where it stands and where a Clawd on it is (for theme_spots) */
+static void play_swing(Canvas *c, const View *v, int w, int h, Spots *sp) {
+    int cx = (int)(w * PLAY_SWING_X), gy = (int)(v->bb + (h - v->bb) * PLAY_Y), seat_y = gy - 4;
+    if (sp) { sp->swing.x = cx; sp->swing.y = seat_y - 8; sp->swing.bar = seat_y - 13; return; }
+    swing_set(c, cx, gy, 12, seat_y);
 }
 static void slide_45(Canvas *c, const View *v, double fx, double fy, Spots *sp) {
     double X, Z;
@@ -175,7 +186,7 @@ static void paint_park(const Theme *th, Canvas *c, const View *v) {
     canvas_rect(c, tx - 2, ty - 26, 5, 26, RGB(120, 86, 56));
     blob(c, tx, ty - 30, 6, RGB(70, 140, 70));
     blob(c, tx - 8, ty - 25, 4, RGB(66, 132, 66));
-    swing_45(c, v, w * PLAY_SWING_X, v->bb + (h - v->bb) * PLAY_Y, NULL);
+    play_swing(c, v, w, h, NULL);
     slide_45(c, v, w * PLAY_SLIDE_X, v->bb + (h - v->bb) * PLAY_Y, NULL);
 }
 
@@ -260,9 +271,9 @@ static void park_spot(const Theme *th, Canvas *c, const View *v, int cx, int by,
         floor_box(c, v, cx, by, 26, 3, 2, th->desk_top, th->desk, dk(th->desk, 0.2));
         canvas_rect(c, cx - 12, by - 1, 2, 2, th->desk); canvas_rect(c, cx + 10, by - 1, 2, 2, th->desk);
         phone(c, cx + 1, by - 9, on);
-    } else if (k == 1) { /* a swing (at 45 degrees), a tablet */
-        swing_45(c, v, cx - 5, by - 1, NULL);
-        tablet(c, cx + 1, by - 10, on);
+    } else if (k == 1) { /* a swing, the Clawd on its seat with a tablet */
+        swing_set(c, cx - 5, by, 11, by + SEAT_DY + 8); /* (a seated Clawd sits at cx - 5) */
+        tablet(c, cx + 1, by - 9, on);
     } else { /* a picnic table, a tablet on it */
         floor_box(c, v, cx, by, 26, 4, 3, th->desk_top, th->desk, dk(th->desk, 0.2));
         canvas_rect(c, cx - 12, by - 1, 2, 2, th->desk); canvas_rect(c, cx + 10, by - 1, 2, 2, th->desk);
@@ -468,7 +479,7 @@ Spots theme_spots(const Theme *th, int w, int h) { /* the park's swing and slide
     View v;
     view_init(&v, w, h);
     s.has = 1;
-    swing_45(NULL, &v, w * PLAY_SWING_X, v.bb + (h - v.bb) * PLAY_Y, &s);
+    play_swing(NULL, &v, w, h, &s);
     slide_45(NULL, &v, w * PLAY_SLIDE_X, v.bb + (h - v.bb) * PLAY_Y, &s);
     return s;
 }

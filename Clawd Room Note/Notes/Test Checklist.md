@@ -14,7 +14,8 @@ tags:
 - [ ] Each room (office, coffee shop, park) looks like the mockups at your window size
 - [ ] Seated Clawds show behind their desk / table / bench; the barista behind the bar
 - [ ] Coffee shop: tables, square cushioned chairs, laptop / tablet / phone, coffee / matcha look right
-- [ ] Park: bench, swing and picnic table workspaces; the swing and slide stand at 45° and Clawds play on them where they are drawn
+- [ ] Park: bench, swing and picnic table workspaces; at a swing workspace the Clawd sits on the seat between the chains
+- [ ] Park playground: the small swing set (a Clawd on it swings towards you and back) and the slide at 45°
 - [ ] Park: with a fence on one side, no bushes on that side
 - [ ] The room's sign reads well; with stairs it hangs in front of them
 - [ ] Dots over heads; the name shows only for a Clawd that needs you
@@ -24,8 +25,9 @@ tags:
 ## Gates and crossing ([[Interaction]])
 - [x] Two linked windows side by side: gates appear, `g` sends a Clawd across (2026-10-17, older gates)
 - [ ] Side by side: a door on each room's facing wall; `g`: the Clawd walks to the door, it opens, the Clawd goes through and comes out of the other room's door
-- [ ] Stacked: the upper room shows the small stair well at the back right (office / coffee) or a small stone well between the swing and the slide (park); the lower room shows the stairs on the back wall (office / coffee) or the treehouse (park)
+- [ ] Stacked: the upper room shows the small stair well at the back right (office / coffee) or a small stone well at the back right (park); the lower room shows the stairs on the back wall (office / coffee) or the treehouse (park)
 - [ ] Office stairs are steel with slim steel balusters (no glass), coffee shop stairs wooden; the way up is a tall opening at the right end of the platform with steps going up and a light
+- [ ] With many sessions no workspace sits on the stair well
 - [ ] Side doors look tall enough for a Clawd; the stair well sits on open floor with a wooden rim and reads as a hole with steps going down
 - [ ] Going up: the Clawd climbs the stairs to the half floor, walks along it and goes through the opening (or up the treehouse ladder); coming down the other way round; going down: it walks into the well / steps
 - [ ] Gates appearing animate in, in both windows at the same moment; gates there at start are simply there

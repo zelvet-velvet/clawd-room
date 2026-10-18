@@ -423,8 +423,8 @@ static void play(Session *s, const Geo *geo, double now) { /* swing back and for
     double u = now - s->emote_start;
     if (!strcmp(s->emote, "swing")) {
         double ph = u * 3.2;
-        s->px = geo->spots.swing.x + 6 * sin(ph);
-        s->py = geo->spots.swing.y - 2 * fabs(sin(ph));
+        s->px = geo->spots.swing.x;              /* the swing set faces us: towards us and back */
+        s->py = geo->spots.swing.y + 2 * sin(ph);
     } else {
         double bx = geo->spots.slide.base[0], by = geo->spots.slide.base[1], tx = geo->spots.slide.top[0], ty = geo->spots.slide.top[1];
         double ex = geo->spots.slide.bottom[0], ey = geo->spots.slide.bottom[1];

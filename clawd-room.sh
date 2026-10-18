@@ -23,7 +23,7 @@ if [ "$stale" = 1 ]; then
 fi
 # iTerm2: the room runs in its own window with the "Clawd Room" profile (Menlo 6 at 1.1 line spacing: 4x8 pt cells, so a
 # room pixel is always a square 4x4 pt). iTerm2 ignores the escape code that switches an open window's profile, so a new
-# window is opened instead. --here (or CLAWD_HERE=1) keeps the current window; so does a run that only prints.
+# window is opened instead. The profile ignores Cmd = + - 0 (iTerm2's font size keys), so the pixel size stays. --here (or CLAWD_HERE=1) keeps the current window; so does a run that only prints.
 here_only=0
 for a in "$@"; do case "$a" in --here) here_only=1 ;; --dump*|--build-art*|-h|--help|--version) here_only=1 ;; esac; done
 for a in "$@"; do shift; [ "$a" = --here ] || set -- "$@" "$a"; done
@@ -31,7 +31,7 @@ if [ "$(uname -s)" = Darwin ] && [ "$TERM_PROGRAM" = iTerm.app ] && [ -z "$TMUX"
    && [ "${CLAWD_HERE:-0}" = 0 ] && [ "$ITERM_PROFILE" != "Clawd Room" ] && [ -x "$bin" ] && command -v osascript >/dev/null 2>&1; then
   dyn="$HOME/Library/Application Support/iTerm2/DynamicProfiles"
   prof="$dyn/clawd-room.json"
-  want='{"Profiles": [{"Name": "Clawd Room", "Guid": "clawd-room-profile-1", "Normal Font": "Menlo 6", "Horizontal Spacing": 1.0, "Vertical Spacing": 1.1, "Use Non-ASCII Font": false}]}'
+  want='{"Profiles": [{"Name": "Clawd Room", "Guid": "clawd-room-profile-1", "Normal Font": "Menlo 6", "Horizontal Spacing": 1.0, "Vertical Spacing": 1.1, "Use Non-ASCII Font": false, "Keyboard Map": {"0x3d-0x100000": {"Action": 13, "Text": ""}, "0x2b-0x120000": {"Action": 13, "Text": ""}, "0x3d-0x120000": {"Action": 13, "Text": ""}, "0x2d-0x100000": {"Action": 13, "Text": ""}, "0x30-0x100000": {"Action": 13, "Text": ""}}}]}'
   if [ "$(cat "$prof" 2>/dev/null)" != "$want" ]; then
     mkdir -p "$dyn" && printf '%s\n' "$want" > "$prof" && sleep 1.5 # (iTerm2 picks the file up by itself)
   fi

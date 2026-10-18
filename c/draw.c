@@ -125,9 +125,10 @@ static void draw_extras(Canvas *cv, const Session *s, const char *state, double 
         canvas_px(cv, cx + 8, y + 3 - (int)(t * 2) % 3, RGB(200, 200, 210));
     }
     if (!strcmp(s->emote, "swing") && spots->has) { /* ropes from the bar to the hands */
-        canvas_line(cv, spots->swing.x - 6, spots->swing.bar + 2, cx - 6, y + 3, RGB(150, 140, 120));
-        canvas_line(cv, spots->swing.x + 6, spots->swing.bar + 2, cx + 6, y + 3, RGB(150, 140, 120));
-        canvas_rect(cv, cx - 6, y + 8, 13, 1, RGB(112, 88, 64)); /* the seat */
+        canvas_line(cv, spots->swing.x - 6, spots->swing.bar + 1, cx - 6, y + 4, RGB(164, 164, 176));
+        canvas_line(cv, spots->swing.x + 6, spots->swing.bar + 1, cx + 6, y + 4, RGB(164, 164, 176));
+        canvas_rect(cv, cx - 7, y + 8, 15, 1, RGB(196, 76, 62)); /* the seat */
+        canvas_rect(cv, cx - 7, y + 9, 15, 1, RGB(137, 53, 43));
     }
     if (!strcmp(state, "think")) {
         for (int i = 0; i < 3; i++) canvas_rect(cv, cx + 8 + i * 3, y - 5 - i, 2, 2, i < (int)(t * 3) % 4 ? C_WHITE : RGB(90, 90, 120));
@@ -174,12 +175,27 @@ static void draw_extras(Canvas *cv, const Session *s, const char *state, double 
 
 /* rows of workspaces on the floor, from the back: each row's front edge (y) and how many fit across it */
 typedef struct { int n; int by[16], count[16]; double x0[16], x1[16]; } Rows;
+/* the stair well at the back right (every room; the park's is stone): its front edge's y and middle x, and how far it
+ * reaches across on screen */
+static void well_place(const View *v, double *fy, double *wx, double *x0, double *x1) {
+    double xl, xr, X, Z;
+    *fy = v->bb + WELL_BACK;
+    view_floor_span(v, *fy, &xl, &xr);
+    *wx = xr - WELL_SIDE;
+    view_world(v, *wx, *fy, &X, &Z);
+    *x0 = view_sx(v, X - WELL_HALF_W - 0.02, Z); *x1 = view_sx(v, X + WELL_HALF_W + 0.02, Z);
+}
+
 static void floor_rows(const View *v, int w, int h, Rows *r) {
+    double wfy, wwx, wx0, wx1;
+    well_place(v, &wfy, &wwx, &wx0, &wx1);
+    (void)wwx;
     r->n = 0;
     for (double by = v->bb + fmax(9.0, (h - v->bb) * 0.24); by <= h - WALK_MIN && r->n < 16; by += ROW_PITCH) {
         double xl, xr;
         view_floor_span(v, by, &xl, &xr);
         double x0 = xl + ROW_MARGIN, x1 = xr - ROW_MARGIN;
+        if (by - 22 < wfy) x1 = fmin(x1, wx0 - 3); /* a row whose workspaces would reach the stair well stops short of it */
         int cnt = imin(PER_ROW, (int)((x1 - x0) / SLOT_MIN_W));
         if (cnt < 1) continue;
         r->by[r->n] = (int)by; r->count[r->n] = cnt; r->x0[r->n] = x0; r->x1[r->n] = x1; r->n++;
@@ -247,12 +263,10 @@ void geo_init(Geo *g, const Room *room, int w, int h) {
         g->gate_has_mid[SIDE_UP] = 1; g->gate_mid[SIDE_UP][0] = x1 + 2; g->gate_mid[SIDE_UP][1] = yl - 1; /* up the stairs, then along the platform */
         g->gate_out[SIDE_UP][0] = v->br - ARCH_IN - ARCH_W / 2.0; g->gate_out[SIDE_UP][1] = yl - 1;       /* along it to the opening at its right end */
     }
-    { /* the stair well at the back right (park: stone, between the swing and the slide, clear of the tree): in beside its back edge, over
-       * to the top step, down to its front */
-        double fy = v->bb + WELL_BACK, xl, xr;
-        view_floor_span(v, fy, &xl, &xr);
-        double wx = park ? w * PARK_WELL_X : xr - WELL_SIDE, in = park ? 12 : -12;
-        g->gate_in[SIDE_DOWN][0] = wx + in; g->gate_in[SIDE_DOWN][1] = fy - WELL_DEEP + 1;
+    { /* the stair well at the back right (the park's is stone): in beside its back edge, over to the top step, down to its front */
+        double fy, wx, wx0, wx1;
+        well_place(v, &fy, &wx, &wx0, &wx1);
+        g->gate_in[SIDE_DOWN][0] = wx - 12; g->gate_in[SIDE_DOWN][1] = fy - WELL_DEEP + 1;
         g->gate_has_mid[SIDE_DOWN] = 1; g->gate_mid[SIDE_DOWN][0] = wx; g->gate_mid[SIDE_DOWN][1] = fy - WELL_DEEP + 1;
         g->gate_out[SIDE_DOWN][0] = wx; g->gate_out[SIDE_DOWN][1] = fy;
     }

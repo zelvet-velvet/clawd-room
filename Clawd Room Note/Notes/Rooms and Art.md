@@ -44,7 +44,7 @@ flowchart TB
 | --- | --- | --- |
 | 🏢 **Office** | light walls, a window, a plant, wooden floor boards | a desk with a monitor (the screen shows the tool's colour) |
 | ☕ **Coffee shop** | warm walls, a checker floor, hanging lamps, a shelf of cups | the first session is the **barista** behind a **low bar** with the espresso machine on it; the others sit at **round cafe tables** with a square cushioned chair (and an empty one), a **laptop, tablet or phone**, and a **coffee or matcha** |
-| 🌳 **Park** | sky, clouds, hills, mowed grass, bushes along the sides (not where a fence is), a big tree, a small **swing and slide standing at 45°** (simple posts and chute; the slide mirrored, down to the front left) | a **bench** (phone), a **swing** (tablet, also at 45°) or a **picnic table** (tablet) |
+| 🌳 **Park** | sky, clouds, hills, mowed grass, bushes along the sides (not where a fence is), a big tree, a small **swing set seen from the front** (splayed wooden posts, a bar, chains, a red seat) and a **slide at 45°** (mirrored, down to the front left) | a **bench** (phone), a **swing** (the same small swing set, the Clawd on its seat with a tablet) or a **picnic table** (tablet) |
 
 > [!tip] Same thing every time
 > The device, drink or park thing for a session is picked from a hash of its id, so a session keeps it.
@@ -56,6 +56,7 @@ flowchart TB
 
 - Workspaces stand in **rows on the floor**, filled from the back; the **walking strip** is in front of the last row, down to the front edge.
 - A Clawd **sits behind its workspace** (its lower half hidden by the furniture).
+- Rows near the back **stop short of the stair well** (back right), so no workspace lands on it.
 - When there are more sessions than places, the last place says **+N MORE**.
 
 | Constant | Value | Meaning |
@@ -83,7 +84,7 @@ Gates sit **on the room's walls, ceiling and floor**, not at the window edge, so
 | --- | --- | --- |
 | **Side** | a **door** on the side wall facing the neighbour, a normal door's width and 22 room pixels tall, drawn column by column along the wall (dark outline, light frame and lintel, leaf with a knob; reads on any wall); **opens while a Clawd passes** | a **fence** along that side with a **gate** (the bushes leave that side) |
 | **Up** | **stairs to a half floor** (below): **steel with slim steel balusters** in the office, **wooden with balusters** in the coffee shop | a **treehouse** in the big tree, a ladder up to it |
-| **Down** | a small **stair well** on the floor at the back right (in front of the platform's end, on open floor): trapezoid opening with a **wooden rim all round**, side walls going down, steps going down from its back edge towards the front | the same small **well** with a **stone rim and steps**, at the back of the lawn between the swing and the slide |
+| **Down** | a small **stair well** on the floor at the back right (in front of the platform's end, on open floor): trapezoid opening with a **wooden rim all round**, side walls going down, steps going down from its back edge towards the front | the same small **well** with a **stone rim and steps**, at the back right like indoors |
 
 > [!example] The stairs, as Zaviel drew them
 > They start a fifth of the way along the back wall (`STAIRS_FOOT` 0.2) and climb to a **platform** 40% of the way up the wall (`PLATFORM_UP` 0.4, reached at `STAIRS_TOP` 0.42). The platform runs to the right-hand wall; its front face goes down to the floor (the coffee shop's **menu** hangs on it). A **banister** runs up the stairs and along the platform. The way up is an **opening where the stairs carry on upwards** (steps into the dark, a warm light at the top) at the right end of the platform (up to 16 room pixels tall), standing on the platform floor behind the railing (kept by Zaviel after mockups of other ideas).

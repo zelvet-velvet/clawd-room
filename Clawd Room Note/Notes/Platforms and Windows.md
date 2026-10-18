@@ -67,6 +67,7 @@ sequenceDiagram
 - **New windows open as a quarter of the screen** (like macOS's four-window tiling), snapped into the quarter their centre is in, so two rooms land next to each other.
 - **A fixed pixel size:** `./clawd-room.sh` started from a normal iTerm2 window opens the room in **its own window with the "Clawd Room" profile**: Menlo 6 at line spacing 1.1, so every cell is **4x8 pt** and a room pixel a square **4x4 pt** (8x8 screen pixels on Retina). The pixel art lines up the same on every run. `--here` keeps the current window.
 - The profile is a separate file, `~/Library/Application Support/iTerm2/DynamicProfiles/clawd-room.json`, written by `clawd-room.sh` (delete it to remove the profile); the user's own profiles are not touched.
+- The profile **ignores Cmd = + − 0** (iTerm2's font size keys), so the pixel size cannot drift. iTerm2 reloads the file by itself, so open room windows pick up a change at once.
 
 > [!info] Why a new window (tested 2026-10-18, iTerm2 3.5.14)
 > iTerm2 **ignores** the escape code that switches an open window's profile (`OSC 1337;SetProfile=…`; other `1337` codes work), and AppleScript cannot change a session's font or profile. Opening a window **with** a profile works.
