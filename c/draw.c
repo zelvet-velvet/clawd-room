@@ -627,8 +627,15 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
     Geo geo;
     room_order(room);
     geo_init(&geo, room, cv->w, cv->h);
+    Session *laid[MAX_SESS];
+    int nlaid = room->n;
+    memcpy(laid, room->s, sizeof(Session *) * (size_t)nlaid);
     if (!room->freeze) { room->geo = geo; room->has_geo = 1; room_step(room, &room->geo, now); } /* everybody moves a little before they are drawn */
     room_order(room); /* (visitors may have come or gone) */
+    if (room->n != nlaid || memcmp(laid, room->s, sizeof(Session *) * (size_t)nlaid)) { /* ... or one of ours left (moved to another room): the desks as they are now */
+        geo_init(&geo, room, cv->w, cv->h);
+        if (!room->freeze) room->geo = geo;
+    }
     note[0] = 0;
     int active = 0;
     for (int i = 0; i < room->n; i++) if (!room->s[i]->has_left) active++;
