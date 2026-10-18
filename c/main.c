@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "canvas.h"
+#include "theme.h"
 #include "clawd.h"
 #include "term.h"
 #include "fixture.h"
@@ -276,6 +277,9 @@ int main(int argc, char **argv) {
     SpriteFile frames = sprites_load(path), items;
     snprintf(path, sizeof path, "%s/items.txt", dir);
     items = sprites_load(path);
+    snprintf(path, sizeof path, "%s/props.txt", dir);
+    SpriteFile props = sprites_load(path);
+    theme_set_props(&props);
     int rc = 0;
     if (argc > 1 && !strcmp(argv[1], "--golden")) rc = golden(argc > 2 && !strcmp(argv[2], "--code") ? NULL : &frames);
     else if (argc > 2 && !strcmp(argv[1], "--fixture")) rc = run_fixtures(argc - 2, argv + 2, &frames, &items);
@@ -289,5 +293,6 @@ int main(int argc, char **argv) {
     else { fprintf(stderr, "usage: clawd-room --golden [--code] | --golden-term\n"); rc = 1; }
     sprites_free(&frames);
     sprites_free(&items);
+    sprites_free(&props);
     return rc;
 }

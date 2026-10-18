@@ -489,6 +489,11 @@ void theme_gate(const Theme *th, Canvas *cv, const Geo *g, int side, double p, d
     }
 }
 
+/* ---- props drawn from sprites/props.txt when it has them (else by the code below) ---------------------------------- */
+static const SpriteFile *g_props;
+void theme_set_props(const SpriteFile *props) { g_props = props; }
+static const Sprite *prop(const char *kind) { return g_props ? sprites_by_name(g_props, kind) : NULL; }
+
 /* ---- the rooms' wall items, as data (place.h): what, how big, where it would like to be, how much it matters ----------- */
 static const WallSpec OFFICE_WALL[] = {
     {"sign", 0, 9, BAND_TOP, 0.5, 0.2, 9, WHEN_ALWAYS},
@@ -517,6 +522,8 @@ int theme_wall_specs(const Theme *th, const char *title, WallSpec *out, int max)
     for (int i = 0; i < n && i < max; i++) {
         out[i] = src[i];
         if (out[i].w == 0) out[i].w = text_width(t) + 6; /* the sign: as wide as its words */
+        const Sprite *sp = prop(out[i].kind);
+        if (sp) { out[i].w = sp->w; out[i].h = sp->h; } /* (an edited prop: its own size) */
     }
     return n < max ? n : max;
 }
@@ -537,7 +544,8 @@ void theme_wall_item(const Theme *th, Canvas *c, const Placed *pl, const char *t
         canvas_rect(c, x0, gy - 20, w, 9, RGB(150, 112, 72));
         canvas_rect(c, x0, gy - 12, w, 1, RGB(110, 80, 52));
         canvas_text(c, x0 + 3, gy - 18, t, RGB(250, 236, 200));
-    } else if (!strcmp(pl->kind, "window")) {
+    } else if (prop(pl->kind)) sprite_blit(c, prop(pl->kind), x0, y0, C_CLAWD); /* edited in sprites/props.txt */
+    else if (!strcmp(pl->kind, "window")) {
         canvas_rect(c, x0, y0, 14, 9, RGB(240, 244, 250));
         canvas_rect(c, x0 + 1, y0 + 1, 12, 7, RGB(150, 200, 236));
         canvas_rect(c, x0 + 6, y0, 1, 9, RGB(240, 244, 250));

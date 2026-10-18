@@ -25,6 +25,8 @@ void theme_background(const Theme *th, Canvas *cv, int banner);
 /* a workspace whose front edge is (cx, by); variant (a hash of the session) picks the device / drink / park thing */
 void theme_furniture(const Theme *th, Canvas *cv, int cx, int by, int on, Rgb color, double t, const char *role, unsigned variant);
 #include "place.h"
+#include "sprites.h"
+void theme_set_props(const SpriteFile *props); /* sprites/props.txt: wall items drawn from it when it has them */
 int theme_wall_specs(const Theme *th, const char *title, WallSpec *out, int max); /* the room's wall items, as data */
 void theme_wall_item(const Theme *th, Canvas *c, const Placed *pl, const char *title, int has_up); /* one, drawn where the placer put it */
 int theme_bushes(const Theme *th, const View *v, int fence_sides, int (*out)[4], int max); /* the park's bushes: x, y, size, right side */

@@ -1,0 +1,70 @@
+# Props on the back wall (window, plant, menu, lamp, shelf). Edit with: ./clawd-room.sh --edit NAME.
+# A prop's size is its grid's size; the placer finds it a place (rooms/*.txt).
+: B = body
+: W = 235,235,245
+: c = 240,244,250
+: s = 150,200,236
+: t = 90,150,90
+: m = 170,110,80
+: z = 110,84,60
+: d = 40,60,46
+: y = 235,235,210
+: h = 150,150,140
+: v = 80,60,48
+: x = 230,190,110
+: q = 255,230,150
+: r = 120,80,50
+: n = 120,92,66
+
+@ window | window
+cccccccccccccc
+cssssscssssssc
+cssssscssssssc
+cssssscssssssc
+cssssscssssssc
+cssssscssssssc
+cssssscssssssc
+cssssscssssssc
+cccccccccccccc
+
+@ plant | plant
+tttttt
+tttttt
+tttttt
+tttttt
+tttttt
+tttttt
+tttttt
+tttttt
+.mmmm.
+.mmmm.
+.mmmm.
+.mmmm.
+
+@ menu | menu
+zzzzzzzzzzzzzzzz
+zddddddddddddddz
+zydydyyydyyddydy
+zyyydydddydydydy
+zyyydyyddydydydy
+zydydydddydydydy
+zydydyyydydydyyy
+zddddddddddddddz
+zdhhhhhhhhhhdddz
+zddddddddddddddz
+zzzzzzzzzzzzzzzz
+
+@ lamp | lamp
+..v..
+..v..
+..v..
+..v..
+xxxxx
+xxxxx
+..q..
+
+@ shelf | shelf
+.rrr..WWW..rrr..WWW..rrr
+.rrr..WWW..rrr..WWW..rrr
+.rrr..WWW..rrr..WWW..rrr
+nnnnnnnnnnnnnnnnnnnnnnnn

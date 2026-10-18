@@ -1,4 +1,5 @@
 #include "art.h"
+#include "theme.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -396,6 +397,20 @@ int art_export(const char *dir, int force, int add) {
     snprintf(inm[ni], 64, "sign-wait"); snprintf(iky[ni], 128, "sign-wait"); ni++;
     snprintf(path, sizeof path, "%s/items.txt", dir);
     rc |= export_one(path, "Items Clawd carries or shows (bubbles, cup, sign). Top-left corner = where the code puts it.", ic, inm, iky, ni, force, add);
+    /* the props on the back wall (the placer finds them a place; the sign and the signpost have words, so stay code) */
+    static const struct { const char *kind, *theme; int w, h; } P[] = {{"window", "office", 14, 9}, {"plant", "office", 6, 12}, {"menu", "coffee", 16, 11}, {"lamp", "coffee", 5, 7}, {"shelf", "coffee", 24, 4}};
+    static Canvas *pc[8];
+    static char pnm[8][64], pky[8][128];
+    int np = 0;
+    theme_set_props(NULL);
+    for (size_t q = 0; q < sizeof P / sizeof P[0]; q++) {
+        pc[np] = malloc(sizeof(Canvas)); *pc[np] = canvas_new(P[q].w, P[q].h, TRANSPARENT);
+        Placed pl = {P[q].kind, {0, 0, P[q].w, P[q].h}};
+        theme_wall_item(theme_get(P[q].theme), pc[np], &pl, "", 0);
+        snprintf(pnm[np], 64, "%s", P[q].kind); snprintf(pky[np], 128, "%s", P[q].kind); np++;
+    }
+    snprintf(path, sizeof path, "%s/props.txt", dir);
+    rc |= export_one(path, "Props on the back wall (window, plant, menu, lamp, shelf). Edit with: ./clawd-room.sh --edit NAME.\nA prop's size is its grid's size; the placer finds it a place (rooms/*.txt).", pc, pnm, pky, np, force, add);
     return rc;
 }
 

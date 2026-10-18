@@ -5,6 +5,10 @@
 #include <math.h>
 #include <signal.h>
 #include <stdio.h>
+#include <sys/stat.h>
+#ifdef __APPLE__
+#include <mach-o/dyld.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>
@@ -152,6 +156,33 @@ static int key_ready(double wait) {
 static int floordiv(int a, int b) { int q = a / b; return (a % b != 0 && ((a < 0) != (b < 0))) ? q - 1 : q; }
 static int in_ids(char ids[][40], int n, const char *id) { for (int i = 0; i < n; i++) if (!strcmp(ids[i], id)) return 1; return 0; }
 
+/* ---- the sprite files, reloaded when they change ------------------------------------------------------------------ */
+static struct { char dir[512]; SpriteFile *f[3]; time_t mt[3]; double next; } g_sw;
+static const char *const SW_NAME[3] = {"clawd.txt", "items.txt", "props.txt"};
+static time_t mtime_of(const char *path) { struct stat st; return stat(path, &st) == 0 ? st.st_mtime : 0; }
+void sprites_watch(const char *dir, SpriteFile *frames, SpriteFile *items, SpriteFile *props) {
+    snprintf(g_sw.dir, sizeof g_sw.dir, "%s", dir);
+    g_sw.f[0] = frames; g_sw.f[1] = items; g_sw.f[2] = props;
+    char path[700];
+    for (int i = 0; i < 3; i++) { snprintf(path, sizeof path, "%s/%s", dir, SW_NAME[i]); g_sw.mt[i] = mtime_of(path); }
+}
+int sprites_reload_changed(void) {
+    if (!g_sw.dir[0] || wall() < g_sw.next) return 0;
+    g_sw.next = wall() + 0.5;
+    int any = 0;
+    char path[700];
+    for (int i = 0; i < 3; i++) {
+        snprintf(path, sizeof path, "%s/%s", g_sw.dir, SW_NAME[i]);
+        time_t m = mtime_of(path);
+        if (m == g_sw.mt[i]) continue;
+        g_sw.mt[i] = m;
+        sprites_free(g_sw.f[i]);
+        *g_sw.f[i] = sprites_load(path); /* (same struct: the drawing code keeps its pointer) */
+        any = 1;
+    }
+    return any;
+}
+
 /* the windows: where they are, the font and size helpers (WSL or iTerm2) */
 typedef struct { Watcher w; Tool tool; int has_watcher, has_tool; } Desktop;
 
@@ -232,6 +263,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
     int have_prev = 0;
     while (!g_quit) {
         double frame_start = mono(), t = frame_start - t0, now = a->has_at ? a->at + t : wall();
+        if (sprites_reload_changed()) { dirty = 1; have_prev = 0; } /* an edited sprite file shows at once (the pixel editor saves as you draw) */
         if (desk.has_watcher) watcher_poll(&desk.w);
         char keys[256];
         if (key_ready(0) && read_keys(keys, sizeof keys, &reports)) {
@@ -754,7 +786,12 @@ int app_main(int argc, char **argv) {
     char path[600];
     static char dirbuf[512];
     if (!dir) { /* the sprites folder next to the program's folder (c/ and sprites/ are siblings) */
+#ifdef __APPLE__
+        char exe[1024]; uint32_t sz = sizeof exe; ssize_t n = -1;
+        if (_NSGetExecutablePath(exe, &sz) == 0 && realpath(exe, dirbuf)) n = (ssize_t)strlen(dirbuf); /* (no /proc on macOS) */
+#else
         ssize_t n = readlink("/proc/self/exe", dirbuf, sizeof dirbuf - 20);
+#endif
         if (n > 0) { dirbuf[n] = 0; char *s = strrchr(dirbuf, '/'); if (s) { *s = 0; s = strrchr(dirbuf, '/'); if (s) { strcpy(s, "/sprites"); dir = dirbuf; } } }
         if (!dir) dir = "../sprites";
     }
@@ -762,6 +799,11 @@ int app_main(int argc, char **argv) {
     SpriteFile frames = sprites_load(path), items;
     snprintf(path, sizeof path, "%s/items.txt", dir);
     items = sprites_load(path);
+    static SpriteFile props;
+    snprintf(path, sizeof path, "%s/props.txt", dir);
+    props = sprites_load(path);
+    theme_set_props(&props);
+    sprites_watch(dir, &frames, &items, &props);
     int rc = 0;
     if (a.build_art || a.export_sprites) { /* the sprite files and the pictures made from them */
         char root[600], art[700];
