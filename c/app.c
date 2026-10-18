@@ -804,6 +804,7 @@ int app_main(int argc, char **argv) {
     props = sprites_load(path);
     theme_set_props(&props);
     sprites_watch(dir, &frames, &items, &props);
+    { char rd[600]; snprintf(rd, sizeof rd, "%s", dir); char *sl = strrchr(rd, '/'); if (sl) strcpy(sl, "/rooms"); else strcpy(rd, "../rooms"); theme_set_rooms_dir(rd); } /* (rooms/ next to sprites/) */
     int rc = 0;
     if (a.build_art || a.export_sprites) { /* the sprite files and the pictures made from them */
         char root[600], art[700];

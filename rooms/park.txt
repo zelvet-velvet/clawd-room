@@ -1,0 +1,10 @@
+# The park: the things on its back wall. The placer gives each a free place (most important first), away from the gates
+# and from each other; one that does not fit is left out (priority 9: never left out). Saved changes show at once.
+#   kind       the prop (sprites/props.txt), or sign / signpost (the room's name)
+#   w h        its size in room pixels (0 0: the sprite's size, or as wide as the words)
+#   band       top (near the top of the wall), ceil (hanging from the ceiling), floor (standing against the wall),
+#              shelf (at shelf height), post (standing on the ground in front: the park)
+#   prefer     where it would like to be, as a part of the back wall's width (0 left, 1 right); prefer_up: with stairs
+#   when       always, up (only with stairs up), no-up (only without)
+# kind      w   h   band    prefer  prefer_up  priority  when
+signpost    0  20   post    0.12    0.12       9         always

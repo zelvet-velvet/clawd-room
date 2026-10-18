@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <time.h>
 #include "persp.h"
 #include "room.h"
 
@@ -514,16 +516,61 @@ static void sign_words(const char *title, char *t, size_t n) {
     snprintf(t, n, "%.12s", title);
     for (char *p = t; *p; p++) if (*p >= 'a' && *p <= 'z') *p -= 32;
 }
+/* rooms/<room>.txt: the same, as a text file you can edit (read again when it changes; missing: the tables above) */
+static char g_rooms_dir[512];
+void theme_set_rooms_dir(const char *dir) { snprintf(g_rooms_dir, sizeof g_rooms_dir, "%s", dir ? dir : ""); }
+static int room_file(const Theme *th, const WallSpec **out) {
+    static struct { const Theme *th; time_t mt; double checked; WallSpec spec[MAX_PLACED]; char kind[MAX_PLACED][16]; int n, ok; } F[3];
+    int k = th == &COFFEE ? 1 : th == &PARK ? 2 : 0;
+    if (!g_rooms_dir[0]) return -1;
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    double now = ts.tv_sec + ts.tv_nsec / 1e9;
+    if (F[k].th == th && now < F[k].checked + 0.5) { *out = F[k].spec; return F[k].ok ? F[k].n : -1; }
+    F[k].th = th; F[k].checked = now;
+    char path[600];
+    snprintf(path, sizeof path, "%s/%s.txt", g_rooms_dir, th->name);
+    struct stat st;
+    if (stat(path, &st) != 0) { F[k].ok = 0; return -1; }
+    if (F[k].ok && st.st_mtime == F[k].mt) { *out = F[k].spec; return F[k].n; }
+    FILE *f = fopen(path, "r");
+    if (!f) { F[k].ok = 0; return -1; }
+    F[k].mt = st.st_mtime; F[k].n = 0;
+    char line[256];
+    while (fgets(line, sizeof line, f) && F[k].n < MAX_PLACED) {
+        char kind[32], band[16], when[16];
+        int w, h, pri;
+        double pr, pu;
+        if (line[0] == '#' || sscanf(line, "%31s %d %d %15s %lf %lf %d %15s", kind, &w, &h, band, &pr, &pu, &pri, when) != 8) continue;
+        WallSpec *sp = &F[k].spec[F[k].n];
+        snprintf(F[k].kind[F[k].n], sizeof F[k].kind[0], "%s", kind);
+        sp->kind = F[k].kind[F[k].n]; sp->w = w; sp->h = h; sp->prefer = pr; sp->prefer_up = pu; sp->priority = pri;
+        sp->band = !strcmp(band, "ceil") ? BAND_CEIL : !strcmp(band, "floor") ? BAND_FLOOR : !strcmp(band, "shelf") ? BAND_SHELF : !strcmp(band, "post") ? BAND_POST : BAND_TOP;
+        sp->when = !strcmp(when, "up") ? WHEN_UP : !strcmp(when, "no-up") ? WHEN_NO_UP : WHEN_ALWAYS;
+        F[k].n++;
+    }
+    fclose(f);
+    F[k].ok = 1;
+    *out = F[k].spec;
+    return F[k].n;
+}
 int theme_wall_specs(const Theme *th, const char *title, WallSpec *out, int max) {
     const WallSpec *src = th == &COFFEE ? COFFEE_WALL : th == &PARK ? PARK_WALL : OFFICE_WALL;
     int n = th == &COFFEE ? (int)(sizeof COFFEE_WALL / sizeof *COFFEE_WALL) : th == &PARK ? (int)(sizeof PARK_WALL / sizeof *PARK_WALL) : (int)(sizeof OFFICE_WALL / sizeof *OFFICE_WALL);
+    const WallSpec *filed;
+    int nf = room_file(th, &filed);
+    if (nf >= 0) { src = filed; n = nf; }
     char t[24];
     sign_words(title, t, sizeof t);
     for (int i = 0; i < n && i < max; i++) {
         out[i] = src[i];
-        if (out[i].w == 0) out[i].w = text_width(t) + 6; /* the sign: as wide as its words */
+        if (out[i].w == 0 && (!strcmp(out[i].kind, "sign") || !strcmp(out[i].kind, "signpost"))) out[i].w = text_width(t) + 6; /* the sign: as wide as its words */
         const Sprite *sp = prop(out[i].kind);
         if (sp) { out[i].w = sp->w; out[i].h = sp->h; } /* (an edited prop: its own size) */
+        if (out[i].w == 0 || out[i].h == 0) for (size_t q = 0; q < sizeof OFFICE_WALL / sizeof *OFFICE_WALL + sizeof COFFEE_WALL / sizeof *COFFEE_WALL; q++) { /* (no sprite: the code's own size) */
+            const WallSpec *d = q < sizeof OFFICE_WALL / sizeof *OFFICE_WALL ? &OFFICE_WALL[q] : &COFFEE_WALL[q - sizeof OFFICE_WALL / sizeof *OFFICE_WALL];
+            if (!strcmp(d->kind, out[i].kind)) { if (!out[i].w) out[i].w = d->w; if (!out[i].h) out[i].h = d->h; break; }
+        }
     }
     return n < max ? n : max;
 }

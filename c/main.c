@@ -280,6 +280,7 @@ int main(int argc, char **argv) {
     snprintf(path, sizeof path, "%s/props.txt", dir);
     SpriteFile props = sprites_load(path);
     theme_set_props(&props);
+    { char rd[600]; snprintf(rd, sizeof rd, "%s", dir); char *sl = strrchr(rd, '/'); if (sl) strcpy(sl, "/rooms"); else snprintf(rd, sizeof rd, "rooms"); theme_set_rooms_dir(getenv("CLAWD_ROOMS") ? getenv("CLAWD_ROOMS") : rd); }
     int rc = 0;
     if (argc > 1 && !strcmp(argv[1], "--golden")) rc = golden(argc > 2 && !strcmp(argv[2], "--code") ? NULL : &frames);
     else if (argc > 2 && !strcmp(argv[1], "--fixture")) rc = run_fixtures(argc - 2, argv + 2, &frames, &items);
