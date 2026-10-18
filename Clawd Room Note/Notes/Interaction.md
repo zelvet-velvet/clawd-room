@@ -43,6 +43,7 @@ tags:
 | right click | erase (see-through) |
 | Alt + click | pick the colour under the pointer |
 | the panel | **COLOUR**: the colour to paint, with red / green / blue sliders (on a file colour they recolour every pixel using it, in the whole file); **SHADES**: darker to lighter; **IN THIS FILE**: erase and the file's colours (a dot: used in this sprite); **MORE COLOURS**: 16 colours and greys (a new one joins the file's palette when you paint with it) |
+| typing a colour | click the **hex code** (or press `#`) and type `RRGGBB` (or `RGB`), or click a **red / green / blue number** and type 0–255; Enter applies, Backspace deletes, Esc cancels |
 | pointer over the grid | the pixel is outlined; its place and colour show under the grid |
 | `u` / `r` | undo / redo |
 | `<` `>` (or `[` `]`) | the sprite before / after; Tab: the next file (props, items, Clawd) |

@@ -42,6 +42,7 @@ typedef struct {
     int pk, pi; Rgb prgb;                    /* the colour to paint: pk 0 erase, 1 the file's colour pi, 2 a new colour prgb */
     int hx, hy;                              /* the sprite pixel under the pointer (-1: none) */
     int slider;                              /* a colour slider being dragged (0..2), or -1 */
+    int typing; char tbuf[8];                /* typing a colour: 0 none, 1 the hex code, 2..4 red / green / blue (0..255) */
     int zoom, dirty_file;
     char msg[96];
     char *orig[NFILES]; int changed[NFILES]; /* each file as it was when first opened, to put back on discard */
@@ -208,7 +209,7 @@ static void swap_undo(Ed *e, int at) {
 
 /* ---- the screen: canvas pixels; one terminal cell is 1 pixel wide and 2 high ---------------------------------------- */
 /* what is where, filled while drawing, so a click finds what it is on */
-enum { R_GRID, R_ERASE, R_FILE, R_NEW, R_SLIDER };
+enum { R_GRID, R_ERASE, R_FILE, R_NEW, R_SLIDER, R_HEX, R_NUM };
 typedef struct { int kind, i, x0, y0, x1, y1; Rgb c; } Region;
 static Region g_reg[160];
 static int g_nreg;
@@ -220,7 +221,7 @@ typedef struct { int gx, gy, z, px; } Layout; /* the grid's origin and zoom; the
 /* the help: what each key and button does, as key caps (bright) and what they do (dim), in three groups */
 typedef struct { const char *key, *what; } Help;
 static const Help H_MOUSE[] = {{"LEFT", "PAINT"}, {"RIGHT", "ERASE"}, {"ALT+LEFT", "PICK A COLOUR"}};
-static const Help H_EDIT[] = {{"U", "UNDO"}, {"R", "REDO"}, {"< >", "OTHER SPRITE"}, {"TAB", "OTHER FILE"}, {"+ -", "ZOOM"}};
+static const Help H_EDIT[] = {{"U", "UNDO"}, {"R", "REDO"}, {"< >", "OTHER SPRITE"}, {"TAB", "OTHER FILE"}, {"+ -", "ZOOM"}, {"#", "TYPE A COLOUR"}};
 static const Help H_SIZE[] = {{"W", "WIDER"}, {"N", "NARROWER"}, {"T", "TALLER"}, {"S", "SHORTER"}, {"Q", "QUIT (S SAVE / D DISCARD)"}};
 static int help_row(Canvas *cv, int y, const char *title, const Help *h, int n, int W) { /* returns the rows it took */
     int x = 4, rows = 1;
@@ -240,11 +241,11 @@ static int help_row(Canvas *cv, int y, const char *title, const Help *h, int n, 
     return rows;
 }
 static int help(Canvas *cv, int W, int H) { /* the rows the help takes (drawn at the bottom when cv is given) */
-    int r = help_row(NULL, 0, "", H_MOUSE, 3, W) + help_row(NULL, 0, "", H_EDIT, 5, W) + help_row(NULL, 0, "", H_SIZE, 5, W);
+    int r = help_row(NULL, 0, "", H_MOUSE, 3, W) + help_row(NULL, 0, "", H_EDIT, 6, W) + help_row(NULL, 0, "", H_SIZE, 5, W);
     if (cv) {
         int y = H - r * 8 - 1;
         y += 8 * help_row(cv, y, "MOUSE", H_MOUSE, 3, W);
-        y += 8 * help_row(cv, y, "EDIT", H_EDIT, 5, W);
+        y += 8 * help_row(cv, y, "EDIT", H_EDIT, 6, W);
         help_row(cv, y, "SIZE", H_SIZE, 5, W);
     }
     return r;
@@ -304,25 +305,38 @@ static void draw(const Ed *e, Canvas *cv) {
     y += 7;
     if (tr) checker(cv, x, y, 16, 16); else canvas_rect(cv, x, y, 16, 16, cur);
     frame(cv, x, y, 16, 16, RGB(200, 200, 215));
-    if (tr) canvas_text(cv, x + 20, y + 5, "ERASE", C_WHITE);
-    else {
-        int body = e->pk == 1 && e->f.pal_body[e->pi];
-        snprintf(t, sizeof t, "%s", e->pk == 2 ? "NEW" : body ? "BODY" : "");
-        if (e->pk == 1 && !body) snprintf(t, sizeof t, "%c", e->f.pal_ch[e->pi]);
-        canvas_text(cv, x + 20, y, t, C_WHITE);
-        if (!body) for (int k = 0; k < 3; k++) { /* sliders: red, green, blue */
-            static const char *RGBN[3] = {"R", "G", "B"};
-            int v = k == 0 ? cur.r : k == 1 ? cur.g : cur.b, sy = y + 6 + k * 4, sx = x + 26;
-            canvas_text(cv, x + 20, sy - 1 + 0, "", C_GREY);
-            canvas_rect(cv, sx, sy, 64, 3, RGB(40, 40, 50));
-            canvas_rect(cv, sx, sy, v * 64 / 256, 3, k == 0 ? RGB(220, 70, 70) : k == 1 ? RGB(70, 200, 90) : RGB(80, 130, 240));
-            canvas_rect(cv, sx + v * 64 / 256, sy - 1, 1, 5, C_WHITE);
-            char num[8]; snprintf(num, sizeof num, "%s%d", RGBN[k], v);
-            region(R_SLIDER, k, sx, sy - 1, 64, 5, RGB(0, 0, 0));
-            (void)num;
+    int body = e->pk == 1 && e->f.pal_body[e->pi];
+    /* first line: which colour it is, and its hex code (click it, or #, to type one) */
+    snprintf(t, sizeof t, "%s", tr ? "ERASE" : e->pk == 2 ? "NEW" : body ? "BODY" : "");
+    if (e->pk == 1 && !body) snprintf(t, sizeof t, "%c", e->f.pal_ch[e->pi]);
+    canvas_text(cv, x + 20, y + 1, t, C_WHITE);
+    char hex[12];
+    if (e->typing == 1) snprintf(hex, sizeof hex, "#%s_", e->tbuf); else if (tr) snprintf(hex, sizeof hex, "#------"); else snprintf(hex, sizeof hex, "#%02X%02X%02X", cur.r, cur.g, cur.b);
+    int hx = x + 44, hw = text_width("#DDDDDD_") + 4;
+    canvas_rect(cv, hx, y, hw, 7, e->typing == 1 ? RGB(60, 60, 80) : RGB(34, 34, 44));
+    if (e->typing == 1) frame(cv, hx, y, hw, 7, C_YELLOW);
+    canvas_text(cv, hx + 2, y + 1, hex, e->typing == 1 ? C_YELLOW : C_WHITE);
+    region(R_HEX, 0, hx, y, hw, 7, RGB(0, 0, 0));
+    /* then red, green, blue: a bar to drag and the number (click it to type 0..255) */
+    if (!body) for (int k = 0; k < 3; k++) {
+        static const char *RGBN[3] = {"R", "G", "B"};
+        int v = tr ? 0 : k == 0 ? cur.r : k == 1 ? cur.g : cur.b, ry = y + 8 + k * 7, sx = x + 26;
+        canvas_text(cv, x + 20, ry + 1, RGBN[k], C_GREY);
+        canvas_rect(cv, sx, ry + 2, 64, 3, RGB(40, 40, 50));
+        if (!tr) {
+            canvas_rect(cv, sx, ry + 2, v * 64 / 256, 3, k == 0 ? RGB(220, 70, 70) : k == 1 ? RGB(70, 200, 90) : RGB(80, 130, 240));
+            canvas_rect(cv, sx + v * 64 / 256, ry + 1, 1, 5, C_WHITE);
         }
+        region(R_SLIDER, k, sx, ry + 1, 64, 5, RGB(0, 0, 0));
+        char num[8];
+        if (e->typing == 2 + k) snprintf(num, sizeof num, "%s_", e->tbuf); else snprintf(num, sizeof num, "%d", v);
+        int nx = sx + 68, nw = text_width("255_") + 4;
+        canvas_rect(cv, nx, ry, nw, 7, e->typing == 2 + k ? RGB(60, 60, 80) : RGB(34, 34, 44));
+        if (e->typing == 2 + k) frame(cv, nx, ry, nw, 7, C_YELLOW);
+        canvas_text(cv, nx + 2, ry + 1, num, e->typing == 2 + k ? C_YELLOW : C_WHITE);
+        region(R_NUM, k, nx, ry, nw, 7, RGB(0, 0, 0));
     }
-    y += 20;
+    y += 32;
     canvas_text(cv, x, y, "SHADES", RGB(110, 110, 130));
     y += 7;
     for (int k = -3; k <= 3; k++) { /* darker to lighter */
@@ -371,6 +385,13 @@ static void draw(const Ed *e, Canvas *cv) {
         canvas_text(cv, bx + (w - text_width(a)) / 2, by + 4, a, C_YELLOW);
         canvas_text(cv, bx + (w - text_width(b)) / 2, by + 14, b, C_WHITE);
     }
+}
+
+static void set_file_colour(Ed *e, int i, Rgb c);
+/* the colour to paint becomes c: a file colour is changed in the file (all its pixels); erase or the body: a new colour */
+static void apply_colour(Ed *e, Rgb c) {
+    if (e->pk == 1 && !e->f.pal_body[e->pi]) { push_undo(e); set_file_colour(e, e->pi, c); save(e); }
+    else { e->pk = 2; e->prgb = c; for (int q = 0; q < e->f.npal; q++) if (!e->f.pal_body[q] && rgb_eq(e->f.pal_c[q], c)) { e->pk = 1; e->pi = q; } }
 }
 
 /* a file colour changed by a slider: its palette line too (every pixel using it changes, in every sprite of the file) */
@@ -451,6 +472,7 @@ int editor_run(const char *dir, const char *name) {
             if (in[i] == 0x1b) {
                 if (i + 1 >= nin) break; /* (more to come) */
                 if (e.asking && in[i + 1] != '[') { e.asking = 0; i++; continue; } /* (Esc: back to editing) */
+                if (e.typing && in[i + 1] != '[') { e.typing = 0; i++; continue; } /* (Esc: stop typing) */
                 if (in[i + 1] == '[' && i + 2 < nin && in[i + 2] == '<') { /* SGR mouse: ESC [ < b ; x ; y (M | m) */
                     int b, x, y, used = 0;
                     char fin;
@@ -492,6 +514,8 @@ int editor_run(const char *dir, const char *name) {
                         e.g[e.hy][e.hx] = ch;
                         continue;
                     }
+                    if (r && !motion && (r->kind == R_HEX || r->kind == R_NUM)) { e.typing = r->kind == R_HEX ? 1 : 2 + r->i; e.tbuf[0] = 0; continue; } /* type a colour */
+                    if (!motion && e.typing) e.typing = 0; /* (a click elsewhere: never mind) */
                     if (r && !motion) {
                         if (r->kind == R_ERASE) e.pk = 0;
                         else if (r->kind == R_FILE) { e.pk = 1; e.pi = r->i; }
@@ -519,6 +543,22 @@ int editor_run(const char *dir, const char *name) {
                 }
                 continue;
             }
+            if (e.typing) { /* typing a colour: hex digits or 0..255; Backspace, Enter */
+                size_t n = strlen(e.tbuf);
+                int hexd = (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F');
+                if ((ch == 127 || ch == 8) && n) e.tbuf[n - 1] = 0;
+                else if (ch == '\r' || ch == '\n') {
+                    int tr0;
+                    Rgb c = pick_colour(&e, &tr0);
+                    if (tr0) c = RGB(0, 0, 0);
+                    if (e.typing == 1) { unsigned v; if (n == 6 && sscanf(e.tbuf, "%6x", &v) == 1) apply_colour(&e, RGB((v >> 16) & 255, (v >> 8) & 255, v & 255)); else if (n == 3 && sscanf(e.tbuf, "%3x", &v) == 1) apply_colour(&e, RGB(((v >> 8) & 15) * 17, ((v >> 4) & 15) * 17, (v & 15) * 17)); }
+                    else if (n) { int v = atoi(e.tbuf); v = v > 255 ? 255 : v; if (e.typing == 2) c.r = (uint8_t)v; else if (e.typing == 3) c.g = (uint8_t)v; else c.b = (uint8_t)v; apply_colour(&e, c); }
+                    e.typing = 0;
+                } else if (e.typing == 1 && hexd && n < 6) { e.tbuf[n] = (char)(ch >= 'a' ? ch - 32 : ch); e.tbuf[n + 1] = 0; }
+                else if (e.typing > 1 && ch >= '0' && ch <= '9' && n < 3) { e.tbuf[n] = ch; e.tbuf[n + 1] = 0; }
+                continue;
+            }
+            if (ch == '#') { e.typing = 1; e.tbuf[0] = 0; continue; }
             if (ch == 'q') { int any = 0; for (int f = 0; f < NFILES; f++) any |= e.changed[f]; if (any) e.asking = 1; else quit = 1; }
             else if (ch == 'u' && e.nundo) { e.nundo--; swap_undo(&e, e.nundo); e.nredo++; save(&e); }
             else if (ch == 'r' && e.nredo) { swap_undo(&e, e.nundo); e.nundo++; e.nredo--; save(&e); }
