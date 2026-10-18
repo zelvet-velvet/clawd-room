@@ -116,6 +116,7 @@ void geo_init(Geo *g, const Room *room, int w, int h);
 void theme_gate(const Theme *th, Canvas *cv, const Geo *g, int side, double p, double open);
 void theme_stair_rail(const Theme *th, Canvas *c, const Geo *g, double p); /* the stairs' railing (drawn in among the Clawds) */
 void stairs_geometry(const View *v, double *x0, double *x1, double *yl); /* the stairs on the back wall: foot x, top x, landing y */
+int stairs_feet_y(const View *v, double x); /* the row a Clawd's feet are on at column x on the stairs (-1 off them) */
 void well_place(const View *v, double *fy, double *wx, double *x0, double *x1); /* the stair well: front edge y, middle x, left and right x (rim included) */
 int geo_home(const Geo *g, const Room *room, const Session *s, int *cx, int *by); /* 1 if it has a desk */
 const char *geo_role(const Geo *g, const Room *room, const Session *s);

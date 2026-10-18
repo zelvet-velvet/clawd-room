@@ -115,6 +115,18 @@ void draw_bubble_code(Canvas *cv, int cx, int y, const char *kind, double ph) { 
 
 typedef struct { int x0, y0, x1, y1; } IRect;
 
+/* where a Clawd is drawn: on the stairs its feet are on the steps' front edges, parallel to the hand rail (its route runs
+ * straight from the foot of the stairs to the top) */
+static double shown_py(const Geo *g, int stairs, const Session *s) {
+    if (!stairs) return s->py;
+    double cx = s->px + 0.5, feet = s->py + 8;
+    double fx0, fx1, fyl;
+    stairs_geometry(&g->view, &fx0, &fx1, &fyl);
+    if (feet > g->view.bb + 3 || feet < fyl - 3) return s->py; /* not on the stairs */
+    int fy = stairs_feet_y(&g->view, cx);
+    return fy < 0 ? s->py : fy - 8;
+}
+
 static void draw_extras(Canvas *cv, const Session *s, const char *state, double t, double now, int seated, const IRect *rects, int nrects, const Spots *spots) {
     int cx = (int)s->px, y = (int)s->py;
     if (now < s->cup_until) { /* carrying a coffee, with a little steam */
@@ -369,7 +381,7 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
         const char *role = "";
         if (i < nshown_people) for (int q = 0; q < geo.shown; q++) if (room->s[q] == s) role = roles[q];
         Pose p = pose_for(s, pstate[i], t, now);
-        draw_clawd(cv, (int)s->px, (int)s->py, &p, g_frames, C_CLAWD, room->theme, role);
+        draw_clawd(cv, (int)s->px, (int)shown_py(&geo, rail_p >= 0, s), &p, g_frames, C_CLAWD, room->theme, role);
     }
     for (int i = 0; i < room->np; i++) {
         const Particle *q = &room->parts[i];
@@ -382,7 +394,9 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
     for (int i = 0; i < np; i++) {
         int is_seated = 0;
         for (int q = 0; q < geo.shown; q++) if (room->s[q] == people[i] && seated[q]) is_seated = 1;
-        draw_extras(cv, people[i], pstate[i], t, now, is_seated, rects, nrects, &geo.spots);
+        double sy = shown_py(&geo, rail_p >= 0, people[i]);
+        if (sy != people[i]->py) { Session tmp = *people[i]; tmp.py = sy; draw_extras(cv, &tmp, pstate[i], t, now, is_seated, rects, nrects, &geo.spots); }
+        else draw_extras(cv, people[i], pstate[i], t, now, is_seated, rects, nrects, &geo.spots);
     }
     if (geo.has_more_pos) {
         char m[24];

@@ -342,6 +342,19 @@ static void fence_gate(Canvas *c, const View *v, int right, double fx, double fy
 void stairs_geometry(const View *v, double *x0, double *x1, double *yl) {
     *x0 = v->bl + (v->br - v->bl) * STAIRS_FOOT; *x1 = v->bl + (v->br - v->bl) * STAIRS_TOP; *yl = v->bb - (v->bb - v->bt) * PLATFORM_UP;
 }
+/* the stairs' steps: how many, and the top row of the tread at column x (-1 off the stairs) */
+static int stairs_n(const View *v) { int d = (int)v->bb - 1 - (int)(v->bb - (v->bb - v->bt) * PLATFORM_UP); return (d + 2) / 4 < 3 ? 3 : (d + 2) / 4; }
+/* the row a Clawd's feet are on at column x on the stairs: the line through the steps' front edges (the nosing), level on
+ * the last step and the platform; -1 off the stairs. The hand rail runs parallel to it. */
+int stairs_feet_y(const View *v, double x) {
+    double fx0, fx1, fyl;
+    stairs_geometry(v, &fx0, &fx1, &fyl);
+    int x0 = (int)fx0, x1 = (int)fx1, y0 = (int)v->bb - 1, yl = (int)fyl, n = stairs_n(v);
+    int lx = x0 + (x1 - x0) * (n - 1) / n, t0 = y0 - (y0 - yl) / n - 1, tl = yl - 1;
+    if (x < x0) return -1;
+    if (x >= lx) return tl;
+    return (int)(t0 + (tl - t0) * (x - x0) / (double)(lx - x0) + 0.5);
+}
 /* the two stair styles: the coffee shop's wooden stairs with balusters, the office's steel stairs with slim steel balusters */
 typedef struct { Rgb side, tread, riser, rail; int baluster_gap; } StairStyle;
 static const StairStyle WOOD_STAIRS = {{118, 82, 60}, {214, 186, 150}, {140, 102, 76}, {84, 56, 40}, 7};  /* (darker than the wall and the floor) */   /* wooden balusters */
@@ -369,7 +382,7 @@ static void back_stairs(Canvas *c, const View *v, int coffee, double p) {
     double fx0, fx1, fyl;
     stairs_geometry(v, &fx0, &fx1, &fyl);
     int x0 = (int)fx0, x1 = (int)fx1, xr = (int)ceil(v->br), y0 = (int)v->bb - 1, yl = (int)fyl; /* (to the wall's last column) */
-    int n = (y0 - yl + 2) / 4 < 3 ? 3 : (y0 - yl + 2) / 4;
+    int n = stairs_n(v);
     int shown = (int)ceil(n * p);
     if (shown <= 0) return;
     Rgb side = st->side, tread = st->tread, riser = st->riser;
@@ -455,22 +468,24 @@ void theme_stair_rail(const Theme *th, Canvas *c, const Geo *g, double p) {
     const StairStyle *st = th == &COFFEE ? &WOOD_STAIRS : &STEEL_STAIRS;
     double fx0, fx1, fyl;
     stairs_geometry(v, &fx0, &fx1, &fyl);
-    int x0 = (int)fx0, x1 = (int)fx1, xr = (int)ceil(v->br), y0 = (int)v->bb - 1, yl = (int)fyl;
-    int n = (y0 - yl + 2) / 4 < 3 ? 3 : (y0 - yl + 2) / 4;
+    int x0 = (int)fx0, x1 = (int)fx1, xr = (int)ceil(v->br), y0 = (int)v->bb - 1, yl = (int)fyl, n = stairs_n(v);
     Rgb rail = st->rail, hi = lt(rail, 0.15);
-    int last = x0, lx = x0 + (x1 - x0) * (n - 1) / n; /* the last step starts at lx: from there on it is level */
-    int rx0 = x0 + (x1 - x0) / (2 * n), ry0 = y0 - (y0 - yl) / n - 1;
-    for (int i = 0; i < n - 1; i++) {
-        int sx = x0 + (x1 - x0) * i / n, ex = x0 + (x1 - x0) * (i + 1) / n, ty = y0 - (y0 - yl) * (i + 1) / n;
-        last = (sx + ex) / 2;
-        canvas_rect(c, last, ty - 6, 1, 5, rail);
+    /* 2 rows thick, 3-4 rows above the line the Clawds' feet are on (low enough to pass under their eyes) */
+    int last = x0, lx = x0 + (x1 - x0) * (n - 1) / n, T = yl - 1;
+    for (int x = x0; x < xr; x++) {
+        int f = stairs_feet_y(v, x);
+        canvas_px(c, x, f - 3, rail);
+        canvas_px(c, x, f - 4, x >= lx ? hi : rail);
     }
-    for (int x = last + st->baluster_gap; x < xr; x += st->baluster_gap) canvas_rect(c, x, yl - 6, 1, 5, rail);
-    canvas_line(c, rx0, ry0 - 6, lx, yl - 7, rail);
-    canvas_line(c, rx0, ry0 - 7, lx, yl - 8, hi);
-    canvas_rect(c, lx, yl - 7, xr - lx, 1, rail);
-    canvas_rect(c, lx, yl - 8, xr - lx, 1, hi);
-    canvas_rect(c, rx0, ry0 - 7, 1, 7, rail); /* the newel post at the foot */
+    for (int i = 0; i < n - 1; i++) { /* a baluster on each step, from its tread up to the rail */
+        int sx = x0 + (x1 - x0) * i / n, ex = x0 + (x1 - x0) * (i + 1) / n, t = y0 - (y0 - yl) * (i + 1) / n - 1;
+        last = (sx + ex) / 2;
+        int f = stairs_feet_y(v, last);
+        canvas_rect(c, last, f - 3, 1, t - (f - 3), rail);
+    }
+    for (int x = last + st->baluster_gap; x < xr; x += st->baluster_gap) canvas_rect(c, x, T - 3, 1, 3, rail);
+    canvas_rect(c, x0, stairs_feet_y(v, x0) - 4, 1, y0 - 1 - (stairs_feet_y(v, x0) - 4) - (y0 - 1 - (y0 - (y0 - yl) / n - 1)), rail); /* the newel post at the foot */
+    (void)x1;
 }
 
 void theme_gate(const Theme *th, Canvas *cv, const Geo *g, int side, double p, double open) {

@@ -46,6 +46,13 @@ gitGraph
 ---
 ## 2026-10-18
 
+### 🦶 Feet on the steps, a lower rail
+> [!info] Branch `feat/style-a`
+- On the stairs a Clawd is drawn with its feet on the **line through the steps' front edges** (its legs no longer hang into the steps below).
+- The hand rail runs **parallel to that line**, 2 rows thick and 3–4 rows up: one solid line (no broken pixels), and it passes **under the Clawds' eyes**.
+
+![[2026-10-18 office Clawds behind the railing.png|320]]
+
 ### 🚶 Walking the stairs behind the railing
 > [!info] Branch `feat/style-a`
 - Clawds **walk** up and down the stairs, along the half floor and through the well (the walking pose); only the treehouse ladder still uses the climbing pose.
