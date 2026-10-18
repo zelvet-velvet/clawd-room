@@ -502,10 +502,10 @@ void theme_gate(const Theme *th, Canvas *cv, const Geo *g, int side, double p, d
 }
 
 /* ---- the room's sign: an office plaque, the coffee shop's sign, a park signpost --------------------------------------- */
-void theme_sign(const Theme *th, Canvas *c, const char *title, int has_up, int fence_sides) {
+void theme_sign(const Theme *th, Canvas *c, const char *title, int has_up, int fence_sides, int part) {
     View v;
     view_init(&v, c->w, c->h);
-    if (th == &PARK) for (int i = 0; i < 4; i++) { /* bushes along the sides without a fence, nearer = bigger */
+    if (part == SIGN_BUSHES && th == &PARK) for (int i = 0; i < 4; i++) { /* bushes along the sides without a fence, nearer = bigger */
         double y = v.bb + 2 + (c->h - v.bb) * i / 4.0, xl, xr;
         view_floor_span(&v, y, &xl, &xr);
         if (!(fence_sides & 1) && i < 3) blob(c, (int)xl, (int)y, 2 + i, RGB(60, 120, 62)); /* (not the front one: the stair well is there) */
@@ -515,7 +515,9 @@ void theme_sign(const Theme *th, Canvas *c, const char *title, int has_up, int f
     snprintf(t, sizeof t, "%.12s", title);
     for (char *p = t; *p; p++) if (*p >= 'a' && *p <= 'z') *p -= 32;
     int tw = text_width(t), w = tw + 6;
+    if (part == SIGN_BUSHES) return;
     if (th == &PARK) {
+        if (part != SIGN_BOARD) return;
         int gx = (int)(c->w * 0.12), gy = (int)v.bb + 4;
         canvas_rect(c, gx, gy - 12, 1, 12, RGB(120, 86, 56));
         canvas_rect(c, gx - w / 2, gy - 20, w, 9, RGB(150, 112, 72));
@@ -523,13 +525,13 @@ void theme_sign(const Theme *th, Canvas *c, const char *title, int has_up, int f
         canvas_text(c, gx - w / 2 + 3, gy - 18, t, RGB(250, 236, 200));
         return;
     }
-    if (th == &COFFEE && !has_up && v.bb - v.bt > 16) menu_board(c, (int)(v.bl + (v.br - v.bl) * 0.76), (int)v.bt + 4); /* (with stairs it hangs on them) */
+    if (part == SIGN_DECOR && th == &COFFEE && !has_up && v.bb - v.bt > 16) menu_board(c, (int)(v.bl + (v.br - v.bl) * 0.76), (int)v.bt + 4); /* (with stairs it hangs on them) */
     Rgb board = th == &COFFEE ? RGB(120, 70, 48) : RGB(70, 84, 110), ink = th == &COFFEE ? RGB(250, 226, 170) : RGB(235, 240, 250);
     /* centred on the back wall; with the stairs there, in the free space at the top left (above the stairs' foot) */
     int cx = has_up ? (int)(v.bl + (v.br - v.bl) * 0.16) + 4 : th == &COFFEE ? (int)(v.bl + (v.br - v.bl) * 0.32) : c->w / 2, y = (int)v.bt + (has_up ? 1 : 2);
     if (cx - w / 2 < (int)v.bl - 6) cx = (int)v.bl - 6 + w / 2;
-    if (has_up) { canvas_px(c, cx - w / 2 + 2, y - 1, RGB(70, 56, 46)); canvas_px(c, cx + w / 2 - 3, y - 1, RGB(70, 56, 46)); canvas_px(c, cx - w / 2 + 2, y - 2, RGB(70, 56, 46)); canvas_px(c, cx + w / 2 - 3, y - 2, RGB(70, 56, 46)); } /* cords: it hangs in front of the stairs */
-    if (th == &OFFICE && v.bb - v.bt > 16) { /* a window on the back wall: left of the sign, or with the stairs over the platform */
+    if (part == SIGN_BOARD && has_up) { canvas_px(c, cx - w / 2 + 2, y - 1, RGB(70, 56, 46)); canvas_px(c, cx + w / 2 - 3, y - 1, RGB(70, 56, 46)); canvas_px(c, cx - w / 2 + 2, y - 2, RGB(70, 56, 46)); canvas_px(c, cx + w / 2 - 3, y - 2, RGB(70, 56, 46)); } /* cords: it hangs in front of the stairs */
+    if (part == SIGN_DECOR && th == &OFFICE && v.bb - v.bt > 16) { /* a window on the back wall: left of the sign, or with the stairs over the platform */
         double sx0, sx1, syl;
         stairs_geometry(&v, &sx0, &sx1, &syl);
         int wx = has_up ? (int)(v.bl + (v.br - v.bl) * 0.6) - 7 : (int)(v.bl + (v.br - v.bl) * 0.12), wy = (int)v.bt + (has_up ? 3 : 4);
@@ -540,6 +542,7 @@ void theme_sign(const Theme *th, Canvas *c, const char *title, int has_up, int f
             canvas_rect(c, wx + 6, wy, 1, 9, RGB(240, 244, 250));
         }
     }
+    if (part != SIGN_BOARD) return;
     canvas_rect(c, cx - w / 2, y, w, 9, board);
     canvas_rect(c, cx - w / 2, y + 8, w, 1, dk(board, 0.35));
     canvas_text(c, cx - w / 2 + 3, y + 2, t, ink);

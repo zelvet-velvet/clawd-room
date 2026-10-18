@@ -5,6 +5,7 @@
 #include <string.h>
 #include "clawd.h"
 #include "room.h"
+#include "scene.h"
 
 static const SpriteFile *g_frames, *g_items;
 void draw_set_sprites(const SpriteFile *frames, const SpriteFile *items) { g_frames = frames; g_items = items; }
@@ -279,6 +280,87 @@ void geo_init(Geo *g, const Room *room, int w, int h) {
 }
 
 
+/* ---- the scene's items (draw_room adds them; each keeps its drawing code) ------------------------------------------ */
+typedef struct {
+    Room *room;
+    const Geo *geo;
+    double now, t, rail_p;
+    int active, has_up, fence_sides, np, nshown_people;
+    int seated[256];
+    const Session *people[512];
+    const char *pstate[512];
+    char roles[256][12];
+} DrawCtx;
+static Scene g_scene;
+static int g_measure;
+void draw_set_measure(int on) { g_measure = on; }
+const Scene *draw_last_scene(void) { return &g_scene; }
+static const char *GATE_KIND[SIDES] = {"gate-left", "gate-right", "gate-up", "gate-down"};
+
+static void draw_background(Canvas *cv, const Room *room, int banner, int count);
+static void it_background(Canvas *cv, const SceneItem *it, void *ctx) { DrawCtx *X = ctx; (void)it; draw_background(cv, X->room, X->geo->banner, X->active); }
+static void it_gate(Canvas *cv, const SceneItem *it, void *ctx) {
+    DrawCtx *X = ctx;
+    theme_gate(X->room->theme, cv, X->geo, it->i, it->p, it->i < 2 ? X->room->door_open[it->i] : 0);
+}
+static void it_sign(Canvas *cv, const SceneItem *it, void *ctx) {
+    DrawCtx *X = ctx;
+    theme_sign(X->room->theme, cv, X->room->title[0] ? X->room->title : X->room->theme->name, X->has_up, X->fence_sides, it->i);
+}
+static void it_no_sessions(Canvas *cv, const SceneItem *it, void *ctx) {
+    DrawCtx *X = ctx;
+    (void)it;
+    int mid = (int)(X->geo->view.bb + cv->h) / 2;
+    wtext(cv, cv->w / 2 - text_width("NO SESSIONS") / 2, mid - 7, "NO SESSIONS", RGB(150, 150, 180));
+    wtext(cv, cv->w / 2 - text_width("START CLAUDE") / 2, mid, "START CLAUDE", RGB(110, 110, 140));
+}
+static void it_desk(Canvas *cv, const SceneItem *it, void *ctx) {
+    DrawCtx *X = ctx;
+    const Session *s = X->room->s[it->i];
+    draw_desk(cv, X->geo->home[it->i][0], X->geo->home[it->i][1], session_shown(s, X->now), s->tool, X->t, X->room->theme, X->roles[it->i], crc32_str(s->sid));
+}
+static double shown_py(const Geo *g, int stairs, const Session *s);
+static void it_clawd(Canvas *cv, const SceneItem *it, void *ctx) {
+    DrawCtx *X = ctx;
+    const Session *s = X->people[it->i];
+    const char *role = "";
+    if (it->i < X->nshown_people) for (int q = 0; q < X->geo->shown; q++) if (X->room->s[q] == s) role = X->roles[q];
+    Pose p = pose_for(s, X->pstate[it->i], X->t, X->now);
+    draw_clawd(cv, (int)s->px, (int)shown_py(X->geo, X->rail_p >= 0, s), &p, g_frames, C_CLAWD, X->room->theme, role);
+}
+static void it_marks(Canvas *cv, const SceneItem *it, void *ctx) { /* the dot, bubbles, signs, swing ropes, a held cup */
+    DrawCtx *X = ctx;
+    const Session *s = X->people[it->i];
+    int is_seated = 0;
+    for (int q = 0; q < X->geo->shown; q++) if (X->room->s[q] == s && X->seated[q]) is_seated = 1;
+    IRect rects[1];
+    double sy = shown_py(X->geo, X->rail_p >= 0, s);
+    if (sy != s->py) { Session tmp = *s; tmp.py = sy; draw_extras(cv, &tmp, X->pstate[it->i], X->t, X->now, is_seated, rects, 0, &X->geo->spots); }
+    else draw_extras(cv, s, X->pstate[it->i], X->t, X->now, is_seated, rects, 0, &X->geo->spots);
+}
+static void it_rail(Canvas *cv, const SceneItem *it, void *ctx) { DrawCtx *X = ctx; (void)it; theme_stair_rail(X->room->theme, cv, X->geo, X->rail_p); }
+static void it_particles(Canvas *cv, const SceneItem *it, void *ctx) {
+    static const int HEART[3][3] = {{1, 0, 1}, {1, 1, 1}, {0, 1, 0}};
+    DrawCtx *X = ctx;
+    (void)it;
+    for (int i = 0; i < X->room->np; i++) {
+        const Particle *q = &X->room->parts[i];
+        if (q->life > 0.15) {
+            if (q->heart) {
+                for (int ry = 0; ry < 3; ry++) for (int rx = 0; rx < 3; rx++) if (HEART[ry][rx]) canvas_px(cv, (int)(q->x - 1 + rx), (int)(q->y + ry), q->c);
+            } else canvas_px(cv, (int)q->x, (int)q->y, q->c);
+        }
+    }
+}
+static void it_more(Canvas *cv, const SceneItem *it, void *ctx) {
+    DrawCtx *X = ctx;
+    (void)it;
+    char m[24];
+    snprintf(m, sizeof m, "+%d MORE", X->geo->more);
+    wtext(cv, X->geo->more_pos[0] - text_width(m) / 2, X->geo->more_pos[1], m, C_WHITE);
+}
+static void draw_overlay(Canvas *cv, const Scene *sc, const Geo *g, const Room *room) { (void)cv; (void)sc; (void)g; (void)room; }
+
 static void draw_background(Canvas *cv, const Room *room, int banner, int count) {
     (void)count;
     theme_background(room->theme, cv, banner);
@@ -286,7 +368,6 @@ static void draw_background(Canvas *cv, const Room *room, int banner, int count)
 }
 
 void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t note_n) {
-    static const int HEART[3][3] = {{1, 0, 1}, {1, 1, 1}, {0, 1, 0}};
     Geo geo;
     room_order(room);
     geo_init(&geo, room, cv->w, cv->h);
@@ -295,7 +376,6 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
     note[0] = 0;
     int active = 0;
     for (int i = 0; i < room->n; i++) if (!room->s[i]->has_left) active++;
-    draw_background(cv, room, geo.banner, active);
     { /* gates that appear while the room is running animate in; the ones there from the first frame do not */
         int present[SIDES] = {0};
         for (int i = 0; i < room->nnb; i++) present[room->nb[i].side] = 1;
@@ -319,99 +399,62 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
             room->door_open[sd] = near ? fmin(1.0, room->door_open[sd] + step) : fmax(0.0, room->door_open[sd] - step);
         }
     }
+    /* ---- the scene: every item on its layer, then drawn back to front (scene.h) -------------------------------------- */
+    Scene *sc = &g_scene;
+    scene_clear(sc);
+    sc->measure = room->debug_overlay || g_measure;
+    DrawCtx X;
+    memset(&X, 0, sizeof X);
+    X.room = room; X.geo = &geo; X.now = now; X.t = t; X.active = active;
+    scene_add(sc, (SceneItem){.kind = "background", .layer = LAYER_SKY, .owner = -1, .draw = it_background});
     for (int i = 0; i < room->nnb; i++) {
         int side = room->nb[i].side;
         double p = fmin(1.0, fmax(0.0, (t - room->gate_t0[side]) / GATE_ANIM));
-        theme_gate(room->theme, cv, &geo, side, p, side < 2 ? room->door_open[side] : 0);
+        scene_add(sc, (SceneItem){.kind = GATE_KIND[side], .layer = LAYER_STRUCT, .owner = -1, .ax = geo.gate_out[side][0], .ay = geo.gate_out[side][1], .draw = it_gate, .i = side, .p = p});
     }
-    { /* the room's name as a sign in the room (after the gates: it hangs in front of the stairs) */
-        int has_up = 0, sides = 0; /* (sides: where the park has a fence instead of bushes) */
-        for (int i = 0; i < room->nnb; i++) { if (room->nb[i].side == SIDE_UP) has_up = 1; if (room->nb[i].side == SIDE_LEFT) sides |= 1; if (room->nb[i].side == SIDE_RIGHT) sides |= 2; }
-        theme_sign(room->theme, cv, room->title[0] ? room->title : room->theme->name, has_up, sides);
-    }
+    /* the room's name as a sign in the room (after the gates: it hangs in front of the stairs), the park's bushes, the
+     * things on the back wall */
+    for (int i = 0; i < room->nnb; i++) { if (room->nb[i].side == SIDE_UP) X.has_up = 1; if (room->nb[i].side == SIDE_LEFT) X.fence_sides |= 1; if (room->nb[i].side == SIDE_RIGHT) X.fence_sides |= 2; }
+    scene_add(sc, (SceneItem){.kind = "bushes", .layer = LAYER_STRUCT, .owner = -1, .draw = it_sign, .i = SIGN_BUSHES});
+    scene_add(sc, (SceneItem){.kind = "wall-decor", .layer = LAYER_STRUCT, .owner = -1, .draw = it_sign, .i = SIGN_DECOR});
+    scene_add(sc, (SceneItem){.kind = "sign", .layer = LAYER_STRUCT, .owner = -1, .draw = it_sign, .i = SIGN_BOARD});
     int anyone = 0; /* any live session at all: linked rooms share them out, so this room may have none of its own */
     for (int i = 0; i < room->npool; i++) if (!room->pool[i].has_left) anyone = 1;
-    if (room->n == 0 && !anyone) { /* no Claude Code running anywhere: say so (visitors from other windows are still drawn below) */
-        int mid = (int)(geo.view.bb + cv->h) / 2;
-        wtext(cv, cv->w / 2 - text_width("NO SESSIONS") / 2, mid - 7, "NO SESSIONS", RGB(150, 150, 180));
-        wtext(cv, cv->w / 2 - text_width("START CLAUDE") / 2, mid, "START CLAUDE", RGB(110, 110, 140));
-    }
+    if (room->n == 0 && !anyone) /* no Claude Code running anywhere: say so (visitors from other windows are still drawn) */
+        scene_add(sc, (SceneItem){.kind = "no-sessions", .layer = LAYER_FLOOR, .owner = -1, .draw = it_no_sessions});
     /* who is seated at their desk, and who is in the room right now */
-    int seated[256] = {0};
-    const Session *people[512];
-    const char *pstate[512];
-    int np = 0;
-    char roles[256][12];
-    for (int i = 0; i < geo.shown; i++) snprintf(roles[i], sizeof roles[i], "%s", theme_role(room->theme, i));
+    for (int i = 0; i < geo.shown; i++) snprintf(X.roles[i], sizeof X.roles[i], "%s", theme_role(room->theme, i));
     for (int i = 0; i < geo.shown; i++) {
         const Session *s = room->s[i];
         if (s->has_away) continue;
-        seated[i] = !s->moving && !s->has_left && fabs(s->px - (geo.home[i][0] - 5)) < 1 && fabs(s->py - (geo.home[i][1] + SEAT_DY)) < 1;
-        people[np] = s; pstate[np++] = session_shown(s, now);
+        X.seated[i] = !s->moving && !s->has_left && fabs(s->px - (geo.home[i][0] - 5)) < 1 && fabs(s->py - (geo.home[i][1] + SEAT_DY)) < 1;
+        X.people[X.np] = s; X.pstate[X.np++] = session_shown(s, now);
     }
-    int nshown_people = np;
-    for (int i = 0; i < room->ng; i++) { people[np] = room->guests[i]; pstate[np++] = session_shown(room->guests[i], now); }
-    IRect rects[1];
-    int nrects = 0;
-    /* the workspaces and the Clawds, back to front by where they stand on the floor (a desk's front edge, a Clawd's feet) */
-    /* (the stairs' railing goes in as one more item, at the back wall's foot: Clawds on the stairs and the platform are
-     * behind it, everyone on the floor in front) */
-    double rail_p = -1;
-    for (int i = 0; i < room->nnb; i++) if (room->nb[i].side == SIDE_UP) rail_p = fmin(1.0, fmax(0.0, (t - room->gate_t0[SIDE_UP]) / GATE_ANIM));
-    int nd = geo.shown, total = nd + np + (rail_p >= 0), order[1024];
-    double key[1024];
-    int extras_done[512] = {0};
-    for (int i = 0; i < nd; i++) { key[i] = geo.home[i][1] + 0.5; order[i] = i; }
-    for (int i = 0; i < np; i++) { key[nd + i] = people[i]->py + 8; order[nd + i] = nd + i; }
-    if (rail_p >= 0) { key[nd + np] = geo.view.bb - 0.25; order[nd + np] = nd + np; }
-    for (int i = 1; i < total; i++) { /* stable insertion sort */
-        int o = order[i], j = i;
-        while (j > 0 && key[order[j - 1]] > key[o]) { order[j] = order[j - 1]; j--; }
-        order[j] = o;
-    }
-    for (int k = 0; k < total; k++) {
-        int o = order[k];
-        if (o < nd) {
-            const Session *s = room->s[o];
-            draw_desk(cv, geo.home[o][0], geo.home[o][1], session_shown(s, now), s->tool, t, room->theme, roles[o], crc32_str(s->sid));
-            continue;
-        }
-        if (o == nd + np) { theme_stair_rail(room->theme, cv, &geo, rail_p); continue; }
-        int i = o - nd;
-        const Session *s = people[i];
-        const char *role = "";
-        if (i < nshown_people) for (int q = 0; q < geo.shown; q++) if (room->s[q] == s) role = roles[q];
-        Pose p = pose_for(s, pstate[i], t, now);
-        draw_clawd(cv, (int)s->px, (int)shown_py(&geo, rail_p >= 0, s), &p, g_frames, C_CLAWD, room->theme, role);
-        if (rail_p >= 0 && key[o] < geo.view.bb - 0.25) { /* on the stairs or the platform: its dot (and the rest) go behind the railing too */
-            int is_seated = 0;
-            for (int q = 0; q < geo.shown; q++) if (room->s[q] == s && seated[q]) is_seated = 1;
-            Session tmp = *s; tmp.py = shown_py(&geo, 1, s);
-            draw_extras(cv, &tmp, pstate[i], t, now, is_seated, rects, nrects, &geo.spots);
-            extras_done[i] = 1;
+    X.nshown_people = X.np;
+    for (int i = 0; i < room->ng; i++) { X.people[X.np] = room->guests[i]; X.pstate[X.np++] = session_shown(room->guests[i], now); }
+    /* the workspaces and the Clawds, back to front by where they stand on the floor (a desk's front edge, a Clawd's feet);
+     * the stairs' railing is one more item at the back wall's foot: Clawds on the stairs and the platform are behind it */
+    X.rail_p = -1;
+    for (int i = 0; i < room->nnb; i++) if (room->nb[i].side == SIDE_UP) X.rail_p = fmin(1.0, fmax(0.0, (t - room->gate_t0[SIDE_UP]) / GATE_ANIM));
+    double rail_key = geo.view.bb - 0.25;
+    int marks_done[512] = {0};
+    for (int i = 0; i < geo.shown; i++)
+        scene_add(sc, (SceneItem){.kind = "desk", .layer = LAYER_DEPTH, .depth = geo.home[i][1] + 0.5, .owner = -1, .ax = geo.home[i][0], .ay = geo.home[i][1], .draw = it_desk, .i = i});
+    for (int i = 0; i < X.np; i++) {
+        const Session *s = X.people[i];
+        int me = scene_add(sc, (SceneItem){.kind = "clawd", .layer = LAYER_DEPTH, .depth = s->py + 8, .owner = -1, .ax = s->px, .ay = s->py + 8, .draw = it_clawd, .i = i});
+        if (X.rail_p >= 0 && s->py + 8 < rail_key) { /* on the stairs or the platform: its marks go behind the railing too */
+            scene_add(sc, (SceneItem){.kind = "marks", .layer = LAYER_DEPTH, .owner = me, .draw = it_marks, .i = i});
+            marks_done[i] = 1;
         }
     }
-    for (int i = 0; i < room->np; i++) {
-        const Particle *q = &room->parts[i];
-        if (q->life > 0.15) {
-            if (q->heart) {
-                for (int ry = 0; ry < 3; ry++) for (int rx = 0; rx < 3; rx++) if (HEART[ry][rx]) canvas_px(cv, (int)(q->x - 1 + rx), (int)(q->y + ry), q->c);
-            } else canvas_px(cv, (int)q->x, (int)q->y, q->c);
-        }
-    }
-    for (int i = 0; i < np; i++) {
-        if (extras_done[i]) continue;
-        int is_seated = 0;
-        for (int q = 0; q < geo.shown; q++) if (room->s[q] == people[i] && seated[q]) is_seated = 1;
-        double sy = shown_py(&geo, rail_p >= 0, people[i]);
-        if (sy != people[i]->py) { Session tmp = *people[i]; tmp.py = sy; draw_extras(cv, &tmp, pstate[i], t, now, is_seated, rects, nrects, &geo.spots); }
-        else draw_extras(cv, people[i], pstate[i], t, now, is_seated, rects, nrects, &geo.spots);
-    }
-    if (geo.has_more_pos) {
-        char m[24];
-        snprintf(m, sizeof m, "+%d MORE", geo.more);
-        wtext(cv, geo.more_pos[0] - text_width(m) / 2, geo.more_pos[1], m, C_WHITE);
-    }
+    if (X.rail_p >= 0) scene_add(sc, (SceneItem){.kind = "rail", .layer = LAYER_DEPTH, .depth = rail_key, .owner = -1, .draw = it_rail});
+    scene_add(sc, (SceneItem){.kind = "particles", .layer = LAYER_PARTICLE, .owner = -1, .draw = it_particles});
+    for (int i = 0; i < X.np; i++) if (!marks_done[i])
+        scene_add(sc, (SceneItem){.kind = "marks", .layer = LAYER_PARTICLE, .owner = -1, .draw = it_marks, .i = i});
+    if (geo.has_more_pos) scene_add(sc, (SceneItem){.kind = "more", .layer = LAYER_HUD, .owner = -1, .ax = geo.more_pos[0], .ay = geo.more_pos[1], .draw = it_more});
+    scene_draw(sc, cv, &X);
+    if (room->debug_overlay) draw_overlay(cv, sc, &geo, room);
     if (geo.more && !geo.has_more_pos) snprintf(note, note_n, "+%d MORE", geo.more);
 }
 
