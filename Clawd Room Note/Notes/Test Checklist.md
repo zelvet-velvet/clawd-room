@@ -40,7 +40,7 @@ tags:
 - [ ] On the stairs and the half floor the Clawd walks (not the climbing pose) and is behind the railing; coming back it walks along the half floor, then down the stairs
 - [ ] Going up: the Clawd climbs the stairs to the half floor, walks along it and goes through the opening (or up the treehouse ladder); coming down the other way round; going down: it walks into the well / steps
 - [ ] Gates appearing animate in, in both windows at the same moment; gates there at start are simply there
-- [ ] `g` with several linked rooms opens SEND A CLAWD; an arrow sends a Clawd that way; with one linked room `g` sends straight away
+- [ ] Hold `g`: a line at the bottom of the room shows which arrow goes where; `g` + arrow sends a Clawd that way; letting go hides the line; with one linked room `g` sends straight away
 - [ ] Gates stay put in `--try` (no coming and going)
 - [ ] `b` calls our Clawds home; with none away it sends visitors home
 - [ ] One session, two linked rooms: the room without a Clawd shows an empty room (no NO SESSIONS); with no sessions at all both say NO SESSIONS

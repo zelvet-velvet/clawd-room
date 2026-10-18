@@ -49,7 +49,9 @@ gitGraph
 ### 🚪 Gates stay put; `g` asks where to
 > [!info] Branch `feat/style-a`
 - **Gates no longer come and go.** Each room's window helper walks every iTerm2 window; with several rooms open a list could take over 3 s, so the room thought its window was gone, dropped its gates and waited again. The last list is kept for 10 s now, and a neighbour's heartbeat without its grid is not taken as a move. In a 50 s `--try` run all gates appeared after about 10 s and stayed.
-- **`g` lets you pick where to send a Clawd**: with several linked rooms a SEND A CLAWD list (e.g. `COFFEE  DOOR  >`, `PARK  STAIRS DOWN  V`); the arrow pointing that way sends it, or Tab and Enter. With one linked room it sends straight away, as before.
+- **`g` lets you pick where to send a Clawd**: with several linked rooms, hold `g` and press an arrow. While `g` is held (its key repeats keep it on; terminals do not report key releases) a line along the bottom of the room, in the room's pixel font, says which arrow goes where (`G + ARROW:  > COFFEE DOOR  V PARK STAIRS DOWN`). With one linked room `g` sends straight away, as before. (A list window came first; Zaviel preferred no window.)
+
+![[2026-10-18 hold g hint.png|360]]
 
 ### 📐 Engine step 2: the placer, 107 overlaps → 0
 > [!info] Branch `feat/style-a`

@@ -226,9 +226,8 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
     screen_on();
     double t0 = mono(), frozen_now = 0, frozen_t = 0;
     int paused = 0, help_on = 0, dirty = 1, cols = 0, rows = 0, size_menu = 0, size_pick = 0;
-    int go_menu = 0, go_pick = 0, go_n = 0, go_side[SIDES]; /* the g list: where to send a Clawd */
-    char go_label[SIDES][40];
-    const char *go_labels[SIDES];
+    double go_until = 0; /* g held (its key repeats keep this going): an arrow then picks where to send a Clawd */
+    char go_hint[96] = ""; /* ... and the line under the room saying which way is which */
     Cells prev = {0, 0, NULL};
     int have_prev = 0;
     while (!g_quit) {
@@ -254,18 +253,16 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                     dirty = 1;
                     continue;
                 }
-                if (go_menu) { /* the SEND A CLAWD list takes the keys while it is open: an arrow picks that way, Tab moves, Enter sends */
+                if (wall() < go_until && k != 'g') { /* g + an arrow: send a Clawd that way (any other key: never mind) */
                     int side = k == 'a' ? SIDE_LEFT : k == 'd' ? SIDE_RIGHT : k == 'w' ? SIDE_UP : k == 's' ? SIDE_DOWN : -1;
-                    if (k == '\t') go_pick = (go_pick + 1) % go_n;
-                    else if (k == '\r') side = go_side[go_pick];
+                    go_until = 0;
                     if (side >= 0) {
                         char buf[64];
                         room_order(&room);
                         snprintf(flash, sizeof flash, "%s", room.has_geo ? room_send_to(&room, &room.geo, now, side, buf, sizeof buf) : "NO WINDOW NEXT TO THIS ONE");
-                        flash_until = wall() + 4; go_menu = 0;
-                    } else if (k == 27 || k == 'g') go_menu = 0;
-                    dirty = 1;
-                    continue;
+                    } else snprintf(flash, sizeof flash, " ");
+                    flash_until = wall() + (side >= 0 ? 4 : 0); dirty = 1;
+                    if (side >= 0 || k == 27) continue;
                 }
                 if (k == 27) { g_quit = 1; break; }
                 if (k == 'p') { paused = !paused; frozen_now = now; frozen_t = t; dirty = 1; }
@@ -306,22 +303,23 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                         room.cam_y += k == 'w' ? -sy : k == 's' ? sy : 0;
                     }
                     dirty = 1;
-                } else if (k == 'g') { /* send a Clawd next door right now: with several linked rooms, a list of where to */
+                } else if (k == 'g') { /* send a Clawd next door right now; with several linked rooms hold g and press an arrow */
                     static const char *ARROW[SIDES] = {"<", ">", "^", "V"};
-                    int park = room.theme == theme_get("park");
                     static const char *GATE_NAME[2][SIDES] = {{"DOOR", "DOOR", "STAIRS UP", "STAIRS DOWN"}, {"GATE", "GATE", "TREEHOUSE", "STEPS DOWN"}};
-                    go_n = 0;
-                    for (int sd = 0; sd < SIDES; sd++) for (int q = 0; q < room.nnb; q++) if (room.nb[q].side == sd) {
-                        const char *nm = room.nb[q].id;
-                        for (int p = 0; p < room.npeers; p++) if (!strcmp(room.peers[p].side, SIDE_NAME[sd])) nm = room.peers[p].name;
-                        char up[24];
-                        snprintf(up, sizeof up, "%.12s", nm);
-                        for (char *c = up; *c; c++) if (*c >= 'a' && *c <= 'z') *c -= 32;
-                        snprintf(go_label[go_n], sizeof go_label[0], "%s  %s  %s", up, GATE_NAME[park][sd], ARROW[sd]); /* (the arrow key that picks it, at the end) */
-                        go_labels[go_n] = go_label[go_n]; go_side[go_n++] = sd;
-                    }
-                    if (go_n >= 2) { go_menu = 1; go_pick = 0; }
-                    else {
+                    int park = room.theme == theme_get("park");
+                    if (room.nnb >= 2) { /* the hint, one line at the bottom; the key repeats while g is held keep it up */
+                        if (wall() >= go_until) {
+                            char *flash_ = go_hint; /* (written into the room, in its pixel font: the status line is tiny at the fixed font) */
+                            int o = snprintf(go_hint, sizeof go_hint, "G + ARROW:");
+                            for (int sd = 0; sd < SIDES; sd++) for (int q = 0; q < room.nnb; q++) if (room.nb[q].side == sd) {
+                                const char *nm = room.nb[q].id;
+                                for (int p = 0; p < room.npeers; p++) if (!strcmp(room.peers[p].side, SIDE_NAME[sd])) nm = room.peers[p].name;
+                                o += snprintf(go_hint + o, sizeof go_hint - (size_t)(o < (int)sizeof go_hint ? o : (int)sizeof go_hint - 1), "  %s %.10s %s", ARROW[sd], nm, GATE_NAME[park][sd]);
+                            }
+                            for (char *c = flash_; *c; c++) if (*c >= 'a' && *c <= 'z') *c -= 32;
+                        }
+                        go_until = wall() + 1.5;
+                    } else {
                         char buf[64];
                         room_order(&room);
                         snprintf(flash, sizeof flash, "%s", room.has_geo ? room_send_one(&room, &room.geo, now, buf, sizeof buf) : "NO WINDOW NEXT TO THIS ONE");
@@ -585,7 +583,11 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                     snprintf(note + l, sizeof note - l, "%s%s", l ? "   " : "", lab);
                 }
                 if (size_menu) draw_size_menu(&cv, SIZE_LABEL, N_SIZES, size_pick);
-                if (go_menu) draw_list_menu(&cv, "SEND A CLAWD", go_labels, go_n, go_pick);
+                if (wall() < go_until && go_hint[0]) { /* g held: one line along the bottom of the room, which arrow goes where */
+                    int y = cv.h - 7, tw = text_width(go_hint);
+                    canvas_rect(&cv, 0, y, cv.w, 7, RGB(20, 20, 28));
+                    canvas_text(&cv, tw < cv.w - 4 ? (cv.w - tw) / 2 : 2, y + 1, go_hint, C_YELLOW);
+                }
                 overlay_text(over, sizeof over, paused, help_on, note, wall() < flash_until ? flash : "");
                 Cells cells = cells_from_canvas(&cv, over);
                 show(&cells, have_prev ? &prev : NULL, 1);
