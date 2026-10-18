@@ -334,27 +334,27 @@ static void wall_door(Canvas *c, const View *v, int right, double fx, double fy,
  * -1 both); p: the building rises */
 static void wall_door(Canvas *c, const View *v, int right, double fx, double fy, double p, double open);
 static void fence_gate(Canvas *c, const View *v, int right, double fx, double fy, double p, int part, double open) {
-    double xw = right ? v->xw : -v->xw, z0 = 0.6, z1 = v->zb, e = view_e(v, 44) * p;
+    double xw = right ? v->xw : -v->xw, z0 = 0.6, z1 = v->zb, e = view_e(v, 58) * p, X, Z;
     if (e <= 0) return;
-    Rgb brick = right ? RGB(160, 88, 68) : RGB(170, 94, 72), mortar = dk(brick, 0.2), trim = RGB(222, 204, 176), glass = RGB(150, 190, 220);
+    view_world(v, fx, fy, &X, &Z);
+    Rgb brick = right ? RGB(160, 88, 68) : RGB(170, 94, 72), mortar = dk(brick, 0.14), trim = RGB(222, 204, 176), glass = RGB(150, 190, 220);
     if (part <= 0) {
         wq(c, v, xw, z0, 0, xw, z1, 0, xw, z1, e, xw, z0, e, brick);
-        for (int k = 1; k < 11; k++) { double ee = e * k / 11; wq(c, v, xw, z0, ee, xw, z1, ee, xw, z1, ee + e * 0.012, xw, z0, ee + e * 0.012, mortar); } /* brick courses */
+        for (int k = 1; k < 7; k++) { double ee = e * k / 7; wq(c, v, xw, z0, ee, xw, z1, ee, xw, z1, ee + e * 0.015, xw, z0, ee + e * 0.015, mortar); } /* brick courses */
         wq(c, v, xw, z0, e * 0.5, xw, z1, e * 0.5, xw, z1, e * 0.53, xw, z0, e * 0.53, trim); /* the line between the floors */
-        { /* the roof: a slate slope rising away from the park to the ridge (its gable ends face away from us) */
-            double sd = right ? 1 : -1, rx = xw + sd * 0.16, re = e * 1.75, eave = e * 1.05;
-            Rgb slate = RGB(96, 104, 120), tile = RGB(78, 84, 98);
-            wq(c, v, xw, z0, eave, xw, z1, eave, rx, z1, re, rx, z0, re, slate);
-            for (int k = 1; k < 6; k++) { /* rows of tiles */
-                double f = k / 6.0, x = xw + sd * 0.16 * f, ee = eave + (re - eave) * f;
-                wq(c, v, x, z0, ee, x, z1, ee, x, z1, ee + e * 0.03, x, z0, ee + e * 0.03, tile);
-            }
-            wq(c, v, rx, z0, re, rx, z1, re, rx, z1, re + e * 0.04, rx, z0, re + e * 0.04, RGB(70, 74, 86)); /* the ridge */
+        { /* a plain roof: one slope rising away from the park, a darker line along its eave */
+            double sd = right ? 1 : -1, rx = xw + sd * 0.16, re = e * 1.6;
+            wq(c, v, xw, z0, e, xw, z1, e, rx, z1, re, rx, z0, re, RGB(96, 104, 120));
+            wq(c, v, xw, z0, e, xw, z1, e, xw, z1, e * 1.05, xw, z0, e * 1.05, RGB(70, 76, 90));
         }
-        wq(c, v, xw, z0, e, xw, z1, e, xw, z1, e * 1.07, xw, z0, e * 1.07, trim);              /* the cornice */
-        for (double z = 0.75; z < z1 - 0.08; z += 0.22) { /* windows upstairs */
-            wq(c, v, xw, z, e * 0.62, xw, z + 0.09, e * 0.62, xw, z + 0.09, e * 0.88, xw, z, e * 0.88, glass);
-            wq(c, v, xw, z, e * 0.62, xw, z + 0.09, e * 0.62, xw, z + 0.09, e * 0.65, xw, z, e * 0.65, trim);
+        wq(c, v, xw, z0, e, xw, z1, e, xw, z1, e * 1.04, xw, z0, e * 1.04, trim); /* the cornice */
+        for (double z = 0.98; z < z1 - 0.06; z += 0.13) { /* windows upstairs: a frame, a cross bar, a sill (none right over the door) */
+            if (fabs(z + 0.04 - Z) < 0.07) continue;
+            double za = z, zc = z + 0.08, eb = e * 0.64, et = e * 0.86;
+            wq(c, v, xw, za, eb, xw, zc, eb, xw, zc, et, xw, za, et, trim);
+            wq(c, v, xw, za + 0.012, eb + e * 0.03, xw, zc - 0.012, eb + e * 0.03, xw, zc - 0.012, et - e * 0.03, xw, za + 0.012, et - e * 0.03, glass);
+            wq(c, v, xw, (za + zc) / 2 - 0.004, eb, xw, (za + zc) / 2 + 0.004, eb, xw, (za + zc) / 2 + 0.004, et, xw, (za + zc) / 2 - 0.004, et, trim);
+            wq(c, v, xw, za - 0.006, eb - e * 0.02, xw, zc + 0.006, eb - e * 0.02, xw, zc + 0.006, eb + e * 0.01, xw, za - 0.006, eb + e * 0.01, RGB(200, 184, 160)); /* the sill */
         }
     }
     if (part == 0) return;
