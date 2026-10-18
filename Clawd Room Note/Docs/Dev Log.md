@@ -46,6 +46,11 @@ gitGraph
 ---
 ## 2026-10-18
 
+### 🔲 iTerm2: a fixed pixel size
+> [!info] Branch `feat/style-a`
+- On iTerm2 the room runs in **its own window with a "Clawd Room" profile** (Menlo 6, line spacing 1.1): every cell is 4x8 pt, so a **room pixel is always a square 4x4 pt** and the pixel art lines up the same each time. `--here` keeps the current window.
+- iTerm2 3.5 ignores the escape code that would switch the open window's profile, hence the new window (details in [[Platforms and Windows]]).
+
 ### 🪨 The park's way down is a small stone well
 > [!info] Branch `feat/style-a`
 - The park's stone steps at the front were far too big and ran into the slide. The way down is now the **same small well as indoors** with a **stone rim and steps**, at the back of the lawn **between the swing and the slide** (`PARK_WELL_X` 0.4), clear of the tree.

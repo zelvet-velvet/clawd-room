@@ -54,8 +54,11 @@ On macOS the same works in **iTerm2** (the room must run inside iTerm2, not insi
 with the room. **Split panes** count as windows of their own: two clawd-room panes side by side (or stacked) in one window
 get a gate between them, like two attached windows. iTerm2 does not say where a pane or the text area is, so they are
 worked out from the window size, the title and tab bar and iTerm2's margins (simple splits only: a row of side-by-side
-panes or a column of stacked ones). `f` resizes the window there too. The room leaves the iTerm2 font alone unless you
-pass `--font PT` (that sends Cmd -/+ to the room's own window when it has the focus, and needs Accessibility for iTerm2).
+panes or a column of stacked ones). `f` resizes the window there too. Started from a normal iTerm2 window,
+`./clawd-room.sh` opens the room in **its own window with a "Clawd Room" profile** (Menlo 6, line spacing 1.1: 4x8 pt
+cells, so a room pixel is always a square 4x4 pt). The profile is the file
+`~/Library/Application Support/iTerm2/DynamicProfiles/clawd-room.json` (delete it to remove the profile). `--here` runs
+the room in the current window instead (iTerm2 ignores the escape code that would switch the open window's profile).
 When a room opens in iTerm2 its window becomes a quarter of the screen (`--size screen`, the default there), like macOS's
 four-window tiling: half the usable width and height, snapped into the quarter its centre is in (at least 44x20 cells). `--size COLSxROWS` or `--size off`
 as on WSL.

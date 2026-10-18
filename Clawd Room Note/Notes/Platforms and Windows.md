@@ -65,7 +65,18 @@ sequenceDiagram
 - Used when `TERM_PROGRAM=iTerm.app`, not inside tmux. The helper is `osascript` (JavaScript, `c/mac_scripts.h`): it reports iTerm2 windows **and split panes** in points, and quits when the room is gone.
 - iTerm2 does not say where a pane or the text area is, so they are worked out (title bar, tab bar, margins).
 - **New windows open as a quarter of the screen** (like macOS's four-window tiling), snapped into the quarter their centre is in, so two rooms land next to each other.
-- The font is left alone unless `--font` is given (Cmd −/+ to the room's own focused window; needs Accessibility).
+- **A fixed pixel size:** `./clawd-room.sh` started from a normal iTerm2 window opens the room in **its own window with the "Clawd Room" profile**: Menlo 6 at line spacing 1.1, so every cell is **4x8 pt** and a room pixel a square **4x4 pt** (8x8 screen pixels on Retina). The pixel art lines up the same on every run. `--here` keeps the current window.
+- The profile is a separate file, `~/Library/Application Support/iTerm2/DynamicProfiles/clawd-room.json`, written by `clawd-room.sh` (delete it to remove the profile); the user's own profiles are not touched.
+
+> [!info] Why a new window (tested 2026-10-18, iTerm2 3.5.14)
+> iTerm2 **ignores** the escape code that switches an open window's profile (`OSC 1337;SetProfile=…`; other `1337` codes work), and AppleScript cannot change a session's font or profile. Opening a window **with** a profile works.
+>
+> | Profile font | Line spacing | Cell (pt) |
+> | --- | --- | --- |
+> | Menlo 6 | 1.1 | **4 x 8** ✅ |
+> | Menlo 8 | 1.0 | 5 x 10 |
+> | Menlo 6 | 1.0 | 4 x 7 |
+> | FiraCode 6 | 1.0 | 4 x 8 |
 
 > [!tip] Bigger or smaller room pixels with Cmd +/−
 > iTerm2 resizes the window on Cmd +/− because of its setting `AdjustWindowForFontSizeChange` (on by default). To change the font inside the same window instead: quit iTerm2, then in Terminal.app

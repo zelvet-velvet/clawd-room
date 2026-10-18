@@ -46,6 +46,7 @@ tags:
 - [x] WSL: profile from the dropdown, 110x32 at 8 pt, drag / scale / font keys (2026-10-16)
 - [x] WSL: `wt.exe -w new --size 60,18 -p "Clawd Room"` opens at the final size (2026-10-16)
 - [ ] WSL: quitting puts the terminal font back
+- [ ] iTerm2: `./clawd-room.sh` from a normal window opens the room in its own "Clawd Room" window (4x4 pt square pixels); `--here` keeps the current window
 - [ ] iTerm2: a new room opens as a quarter of the screen, in the quarter it was in
 - [ ] iTerm2: smaller than 44x20 then bigger: the room comes back, nothing scrolled; no old frames in scrollback after quitting
 - [ ] iTerm2: stripes only while dragging, a clean picture after
