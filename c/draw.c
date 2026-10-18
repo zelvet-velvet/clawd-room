@@ -539,7 +539,8 @@ static void draw_overlay(Canvas *cv, const Scene *sc, const Geo *g, const Room *
         const SceneItem *it = &sc->it[i];
         if (!it->has_box || it->layer == LAYER_SKY || it->owner >= 0 || !strcmp(it->kind, "particles") || !strcmp(it->kind, "clawd") || !strcmp(it->kind, "name") || !strcmp(it->kind, "more") || !strcmp(it->kind, "no-sessions")) continue; /* (words need no label) */
         char t[24];
-        snprintf(t, sizeof t, "%s", it->kind);
+        int park = room->theme == theme_get("park");
+        snprintf(t, sizeof t, "%s", park && (!strcmp(it->kind, "backdrop") || !strcmp(it->kind, "opening") || !strcmp(it->kind, "platform")) ? "building" : it->kind); /* (the park: one building, not its parts) */
         for (char *p = t; *p; p++) if (*p >= 'a' && *p <= 'z') *p -= 32;
         int tw = text_width(t), x = it->bx0 + 1, y = it->by0 + 1;
         if (x + tw > cv->w) x = cv->w - tw - 1;
