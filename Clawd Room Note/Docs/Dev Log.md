@@ -46,6 +46,9 @@ gitGraph
 ---
 ## 2026-10-18
 
+### 🔀 Merged into main
+> [!success] `main` = `feat/style-a` (with `feat/camera-gates` in it), fast-forwarded on 2026-10-18.
+
 ### 🎞️ Engine step 4: the animator, animated props
 > [!info] Branch `feat/style-a`
 - `c/anim.c` eases named values over time; the **gates appearing** (ease out) and the **doors swinging** (ease in-out, turning back from wherever they are) use it instead of their own timers.
@@ -304,7 +307,6 @@ Zaviel's sketch for the stairs and the doors that needed fixing:
 ## ⏳ Pending
 
 > [!todo] Waiting
-> - Merge `feat/camera-gates` and `feat/style-a` into `main` (after Zaviel's checks).
 > - ~~The engine~~: all four steps are built ([[Engine Design]]).
 > - `README.md` still describes the old flat look in places (banner, gates at the window edge).
 > - WSL: the profile from the dropdown opens at Windows Terminal's default size, then jumps once; planned a shortcut with `wt.exe -w new --size 60,18 -p "Clawd Room"`.
