@@ -46,6 +46,13 @@ gitGraph
 ---
 ## 2026-10-18
 
+### 🧱 The park's gates are buildings
+> [!info] Branch `feat/style-a`
+- A hedge with an opening did not say where it leads: a side with a gate is now the side wall of a **brick building** (courses, cornice, windows upstairs) with a **door** on the ground floor, opening like the indoor doors.
+
+![[2026-10-18 park buildings with doors.png|420]]
+![[2026-10-18 park buildings, all gates.png|600]]
+
 ### 🏙️ The park is a city plaza
 > [!info] Branch `feat/style-a`
 - Picked from three mockups (C): a **far city skyline** instead of hills, a **stone promenade** along the back of the lawn with **street lamps and benches** (wall items in `rooms/park.txt`, so the placer keeps desks off them), and on a side with a gate a low **hedge wall with a stone archway** showing the street beyond (instead of the wooden fence). The tree, treehouse, playground and stone well stay.

@@ -329,27 +329,26 @@ static void wall_door(Canvas *c, const View *v, int right, double fx, double fy,
         if (in_leaf && back - 1 == leaf_cols - 1 && open < 0.4 && p >= 1) canvas_px(c, x, (top + bot) / 2, KNOB);
     }
 }
-/* the park, a side with a gate: a low hedge wall along that side (part 0) with a stone archway where the gate is (part 1;
- * -1 both); through the arch, the light of the street beyond */
-static void fence_gate(Canvas *c, const View *v, int right, double fx, double fy, double p, int part) {
-    double xw = right ? v->xw : -v->xw, X, Z, zf = 0.6, zb = v->zb, e = view_e(v, 20) * p;
-    view_world(v, fx, fy, &X, &Z);
+/* the park, a side with a gate: the side wall of a brick building along that side (part 0: brick courses, a cornice,
+ * windows upstairs) with its door, the way through (part 1: the same door as indoors, it opens while a Clawd passes;
+ * -1 both); p: the building rises */
+static void wall_door(Canvas *c, const View *v, int right, double fx, double fy, double p, double open);
+static void fence_gate(Canvas *c, const View *v, int right, double fx, double fy, double p, int part, double open) {
+    double xw = right ? v->xw : -v->xw, z0 = 0.6, z1 = v->zb, e = view_e(v, 44) * p;
     if (e <= 0) return;
-    Rgb hedge = RGB(70, 128, 70), top = RGB(96, 154, 92), stone = RGB(206, 200, 188), stone_dk = RGB(160, 154, 142);
-    double g0 = Z * 0.965, g1 = Z * 1.035, ge = e * 1.35; /* (a little taller than the hedge, in the same world units) */
+    Rgb brick = right ? RGB(160, 88, 68) : RGB(170, 94, 72), mortar = dk(brick, 0.2), trim = RGB(222, 204, 176), glass = RGB(150, 190, 220);
     if (part <= 0) {
-        wq(c, v, xw, zf, 0, xw, zb, 0, xw, zb, e, xw, zf, e, hedge);
-        wq(c, v, xw, zf, e * 0.82, xw, zb, e * 0.82, xw, zb, e, xw, zf, e, top);
-        for (double z = zf + 0.07; z < zb; z += 0.13) wq(c, v, xw, z, e * 0.25, xw, z + 0.02, e * 0.25, xw, z + 0.02, e * 0.7, xw, z, e * 0.7, RGB(62, 116, 62)); /* (leafy shading) */
+        wq(c, v, xw, z0, 0, xw, z1, 0, xw, z1, e, xw, z0, e, brick);
+        for (int k = 1; k < 11; k++) { double ee = e * k / 11; wq(c, v, xw, z0, ee, xw, z1, ee, xw, z1, ee + e * 0.012, xw, z0, ee + e * 0.012, mortar); } /* brick courses */
+        wq(c, v, xw, z0, e * 0.5, xw, z1, e * 0.5, xw, z1, e * 0.53, xw, z0, e * 0.53, trim); /* the line between the floors */
+        wq(c, v, xw, z0, e, xw, z1, e, xw, z1, e * 1.07, xw, z0, e * 1.07, trim);              /* the cornice */
+        for (double z = 0.75; z < z1 - 0.08; z += 0.22) { /* windows upstairs */
+            wq(c, v, xw, z, e * 0.62, xw, z + 0.09, e * 0.62, xw, z + 0.09, e * 0.88, xw, z, e * 0.88, glass);
+            wq(c, v, xw, z, e * 0.62, xw, z + 0.09, e * 0.62, xw, z + 0.09, e * 0.65, xw, z, e * 0.65, trim);
+        }
     }
     if (part == 0) return;
-    wq(c, v, xw, g0, 0, xw, g1, 0, xw, g1, ge * 0.82, xw, g0, ge * 0.82, RGB(150, 164, 186));                    /* through it: the street beyond */
-    wq(c, v, xw, g0, ge * 0.35, xw, g1, ge * 0.35, xw, g1, ge * 0.82, xw, g0, ge * 0.82, RGB(176, 186, 204));     /* (a building across the street) */
-    wq(c, v, xw, g0, 0, xw, g1, 0, xw, g1, ge * 0.12, xw, g0, ge * 0.12, RGB(120, 122, 130));                    /* the pavement */
-    wq(c, v, xw, g0 - 0.035 * Z, 0, xw, g0, 0, xw, g0, ge, xw, g0 - 0.035 * Z, ge, stone);                        /* the pillars */
-    wq(c, v, xw, g1, 0, xw, g1 + 0.035 * Z, 0, xw, g1 + 0.035 * Z, ge, xw, g1, ge, stone);
-    wq(c, v, xw, g0 - 0.045 * Z, ge * 0.82, xw, g1 + 0.045 * Z, ge * 0.82, xw, g1 + 0.045 * Z, ge * 1.06, xw, g0 - 0.045 * Z, ge * 1.06, stone); /* the lintel */
-    wq(c, v, xw, g0 - 0.045 * Z, ge * 0.82, xw, g1 + 0.045 * Z, ge * 0.82, xw, g1 + 0.045 * Z, ge * 0.86, xw, g0 - 0.045 * Z, ge * 0.86, stone_dk);
+    wall_door(c, v, right, fx, fy, p, open);
 }
 /* indoors, up (as Zaviel drew it): stairs against the back wall climb from about a fifth along it to a platform half way up
  * the wall (a half floor); the platform runs along the back wall to the right-hand wall, its front face down to the floor
@@ -509,7 +508,7 @@ void theme_stair_rail(const Theme *th, Canvas *c, const Geo *g, double p) {
 void theme_gate(const Theme *th, Canvas *cv, const Geo *g, int side, double p, double open, int part) {
     const View *v = &g->view;
     if (side == SIDE_LEFT || side == SIDE_RIGHT) {
-        if (th == &PARK) fence_gate(cv, v, side == SIDE_RIGHT, g->gate_out[side][0], g->gate_out[side][1], p, part);
+        if (th == &PARK) fence_gate(cv, v, side == SIDE_RIGHT, g->gate_out[side][0], g->gate_out[side][1], p, part, open);
         else wall_door(cv, v, side == SIDE_RIGHT, g->gate_out[side][0], g->gate_out[side][1], p, open);
     } else if (side == SIDE_UP) {
         if (th == &PARK) treehouse(cv, cv->w, v, p);
@@ -752,11 +751,11 @@ int theme_keep_clear(const Theme *th, const Geo *g, int side, Box *out, int *mas
         return n;
     }
     Canvas c = canvas_new(v->w, v->h, KEY);
-    theme_gate(th, &c, g, side, 1.0, 0.0, (th == &PARK && side < 2) ? 1 : -1); /* (the park: only the gate in the fence) */
+    theme_gate(th, &c, g, side, 1.0, 0.0, (th == &PARK && side < 2) ? 1 : -1); /* (the park: only the building's door) */
     Box b = changed(&c);
     canvas_free(&c);
     if (b.x1 > b.x0) KEEP(box_grow(b, 1), 3);
-    if (th == &PARK && side < 2) { /* the hedge along that side: the signpost and the lamps keep off it (things on the floor may stand in front) */
+    if (th == &PARK && side < 2) { /* the building along that side: the signpost and the lamps keep off it (things on the floor may stand in front) */
         Canvas hc = canvas_new(v->w, v->h, KEY);
         theme_gate(th, &hc, g, side, 1.0, 0.0, 0);
         Box hb = changed(&hc);
