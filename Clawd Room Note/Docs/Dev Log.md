@@ -50,6 +50,7 @@ gitGraph
 > [!info] Branch `feat/style-a`
 - On the stairs a Clawd is drawn with its feet on the **line through the steps' front edges** (its legs no longer hang into the steps below).
 - The hand rail runs **parallel to that line**, 2 rows thick and 3–4 rows up: one solid line (no broken pixels), and it passes **under the Clawds' eyes**.
+- Their **dot** (and the needs-you sign and name) is drawn **behind the railing** too.
 
 ![[2026-10-18 office Clawds behind the railing.png|320]]
 

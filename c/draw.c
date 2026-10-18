@@ -360,6 +360,7 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
     for (int i = 0; i < room->nnb; i++) if (room->nb[i].side == SIDE_UP) rail_p = fmin(1.0, fmax(0.0, (t - room->gate_t0[SIDE_UP]) / GATE_ANIM));
     int nd = geo.shown, total = nd + np + (rail_p >= 0), order[1024];
     double key[1024];
+    int extras_done[512] = {0};
     for (int i = 0; i < nd; i++) { key[i] = geo.home[i][1] + 0.5; order[i] = i; }
     for (int i = 0; i < np; i++) { key[nd + i] = people[i]->py + 8; order[nd + i] = nd + i; }
     if (rail_p >= 0) { key[nd + np] = geo.view.bb - 0.25; order[nd + np] = nd + np; }
@@ -382,6 +383,13 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
         if (i < nshown_people) for (int q = 0; q < geo.shown; q++) if (room->s[q] == s) role = roles[q];
         Pose p = pose_for(s, pstate[i], t, now);
         draw_clawd(cv, (int)s->px, (int)shown_py(&geo, rail_p >= 0, s), &p, g_frames, C_CLAWD, room->theme, role);
+        if (rail_p >= 0 && key[o] < geo.view.bb - 0.25) { /* on the stairs or the platform: its dot (and the rest) go behind the railing too */
+            int is_seated = 0;
+            for (int q = 0; q < geo.shown; q++) if (room->s[q] == s && seated[q]) is_seated = 1;
+            Session tmp = *s; tmp.py = shown_py(&geo, 1, s);
+            draw_extras(cv, &tmp, pstate[i], t, now, is_seated, rects, nrects, &geo.spots);
+            extras_done[i] = 1;
+        }
     }
     for (int i = 0; i < room->np; i++) {
         const Particle *q = &room->parts[i];
@@ -392,6 +400,7 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
         }
     }
     for (int i = 0; i < np; i++) {
+        if (extras_done[i]) continue;
         int is_seated = 0;
         for (int q = 0; q < geo.shown; q++) if (room->s[q] == people[i] && seated[q]) is_seated = 1;
         double sy = shown_py(&geo, rail_p >= 0, people[i]);
