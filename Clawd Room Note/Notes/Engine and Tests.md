@@ -44,7 +44,9 @@ flowchart LR
 | --- | --- |
 | `app.c` | arguments, the main loop, keys, the start menu |
 | `room.c` | who goes where, visits, crossing |
-| `draw.c` | layout (`geo_init`), drawing a frame, the camera view |
+| `draw.c` | layout (`geo_init`), building the frame's scene, the debug overlay, the camera view |
+| `scene.c` | the scene: items on layers, drawn back to front, measured for the overlap check and the overlay |
+| `gallery.c` | `--check` (overlaps) and `--gallery DIR` (contact sheets) |
 | `theme.c` | the three rooms: backgrounds, workspaces, gates, signs |
 | `persp.c` | vanishing point, floor mapping, quads, boxes |
 | `camera.c` | what the zoomed camera follows |
@@ -71,6 +73,8 @@ flowchart LR
 
 - `make -C c test` compares with `c/tests/expected`: sprite frames, terminal strings, random numbers, fixture frames (`tools/fixtures/*.fx`), scripted scenes over time (`tools/scenarios/*.sc`), gate planning, `--dump` text frames.
 - `make -C c winsmoke` uses real Windows Terminal windows.
+- `clawd-room --check` (in `make test`, snapshot `overlap.txt`): items painting over each other across every room × gates × crowd × size.
+- `make -C c gallery`: the same scenes as contact sheets in `gallery/` (not committed) — look at them before handing a visual change over.
 
 > [!info] Where the snapshots come from
 > First made by the old Python version (the C port matched it line by line); since style A (2026-10-18) they come from the C program.

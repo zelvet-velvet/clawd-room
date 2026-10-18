@@ -268,6 +268,10 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                     for (char *p = up; *p; p++) if (*p >= 'a' && *p <= 'z') *p -= 32;
                     snprintf(flash, sizeof flash, "FOLLOW %s%s", up, room.cam_zoom > 1 || cam.autozoom ? "" : "  (] ZOOMS IN)");
                     flash_until = wall() + 3; dirty = 1;
+                } else if (k == 'o') { /* the debug overlay: item boxes, anchors, gate points, routes */
+                    room.debug_overlay = !room.debug_overlay;
+                    snprintf(flash, sizeof flash, "DEBUG OVERLAY %s", room.debug_overlay ? "ON" : "OFF");
+                    flash_until = wall() + 3; dirty = 1;
                 } else if (k == 'z') {
                     cam.autozoom = !cam.autozoom; cam.zoom_at = 0;
                     if (!cam.autozoom) room.cam_zoom = 1;

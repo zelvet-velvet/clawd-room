@@ -128,8 +128,20 @@ static double shown_py(const Geo *g, int stairs, const Session *s) {
     return fy < 0 ? s->py : fy - 8;
 }
 
-static void draw_extras(Canvas *cv, const Session *s, const char *state, double t, double now, int seated, const IRect *rects, int nrects, const Spots *spots) {
+/* what goes with a Clawd: part 0 its marks (a held cup, swing ropes, thinking dots, signs, Z Z Z, bubbles, the dot over
+ * its head), drawn right after it; part 1 its name when it needs you, written over everything */
+static void draw_extras(Canvas *cv, const Session *s, const char *state, double t, double now, int seated, const IRect *rects, int nrects, const Spots *spots, int part) {
     int cx = (int)s->px, y = (int)s->py;
+    if (part == 1) {
+        if (!s->has_left && !strcmp(state, "wait")) {
+            char name[24];
+            fit(name, sizeof name, s->name[0] ? s->name : s->sid, 19);
+            int tw = text_width(name), x0 = cx - tw / 2, y0 = y - 18;
+            wtext(cv, x0 + 1, y0 + 1, name, RGB(20, 20, 28));
+            wtext(cv, x0, y0, name, C_WHITE);
+        }
+        return;
+    }
     if (now < s->cup_until) { /* carrying a coffee, with a little steam */
         if (!item(cv, "cup-held", cx + 7, y + 4)) {
             canvas_rect(cv, cx + 7, y + 4, 3, 2, C_WHITE);
@@ -171,12 +183,7 @@ static void draw_extras(Canvas *cv, const Session *s, const char *state, double 
     /* over the head: a dot for the state (green busy, yellow needs you, grey idle, blue a visitor); the name only when it needs you */
     if (!s->has_left) {
         Rgb dot = s->guest ? C_BLUE : !strcmp(state, "wait") ? C_YELLOW : (!strcmp(state, "work") || !strcmp(state, "think") || !strcmp(state, "cheer")) ? C_GREEN : C_GREY;
-        if (!strcmp(state, "wait")) {
-            char name[24];
-            fit(name, sizeof name, s->name[0] ? s->name : s->sid, 19);
-            int tw = text_width(name), x0 = cx - tw / 2, y0 = y - 18;
-            wtext(cv, x0 + 1, y0 + 1, name, RGB(20, 20, 28));
-            wtext(cv, x0, y0, name, C_WHITE);
+        if (!strcmp(state, "wait")) { /* (its name instead: part 1) */
         } else {
             canvas_rect(cv, cx - 1, y - 4, 3, 3, RGB(20, 20, 28));
             canvas_rect(cv, cx - 1, y - 5, 3, 3, dot);
@@ -335,8 +342,8 @@ static void it_marks(Canvas *cv, const SceneItem *it, void *ctx) { /* the dot, b
     for (int q = 0; q < X->geo->shown; q++) if (X->room->s[q] == s && X->seated[q]) is_seated = 1;
     IRect rects[1];
     double sy = shown_py(X->geo, X->rail_p >= 0, s);
-    if (sy != s->py) { Session tmp = *s; tmp.py = sy; draw_extras(cv, &tmp, X->pstate[it->i], X->t, X->now, is_seated, rects, 0, &X->geo->spots); }
-    else draw_extras(cv, s, X->pstate[it->i], X->t, X->now, is_seated, rects, 0, &X->geo->spots);
+    if (sy != s->py) { Session tmp = *s; tmp.py = sy; draw_extras(cv, &tmp, X->pstate[it->i], X->t, X->now, is_seated, rects, 0, &X->geo->spots, it->p > 0); }
+    else draw_extras(cv, s, X->pstate[it->i], X->t, X->now, is_seated, rects, 0, &X->geo->spots, it->p > 0);
 }
 static void it_rail(Canvas *cv, const SceneItem *it, void *ctx) { DrawCtx *X = ctx; (void)it; theme_stair_rail(X->room->theme, cv, X->geo, X->rail_p); }
 static void it_particles(Canvas *cv, const SceneItem *it, void *ctx) {
@@ -359,7 +366,37 @@ static void it_more(Canvas *cv, const SceneItem *it, void *ctx) {
     snprintf(m, sizeof m, "+%d MORE", X->geo->more);
     wtext(cv, X->geo->more_pos[0] - text_width(m) / 2, X->geo->more_pos[1], m, C_WHITE);
 }
-static void draw_overlay(Canvas *cv, const Scene *sc, const Geo *g, const Room *room) { (void)cv; (void)sc; (void)g; (void)room; }
+/* the debug overlay (key o): each item's box in its layer's colour and its anchor, the gate points (in green, mid yellow,
+ * out red) and where each Clawd is going (its goal and route, cyan) */
+static void frame_rect(Canvas *cv, int x0, int y0, int x1, int y1, Rgb c) {
+    for (int x = x0; x < x1; x++) { canvas_px(cv, x, y0, c); canvas_px(cv, x, y1 - 1, c); }
+    for (int y = y0; y < y1; y++) { canvas_px(cv, x0, y, c); canvas_px(cv, x1 - 1, y, c); }
+}
+static void cross(Canvas *cv, int x, int y, Rgb c) { canvas_px(cv, x, y, c); canvas_px(cv, x - 1, y, c); canvas_px(cv, x + 1, y, c); canvas_px(cv, x, y - 1, c); canvas_px(cv, x, y + 1, c); }
+static void draw_overlay(Canvas *cv, const Scene *sc, const Geo *g, const Room *room) {
+    static const Rgb LC[N_LAYERS] = {{0, 0, 0}, {120, 160, 255}, {255, 150, 60}, {200, 120, 255}, {255, 80, 160}, {255, 255, 120}, {255, 255, 255}};
+    for (int i = 0; i < sc->n; i++) {
+        const SceneItem *it = &sc->it[i];
+        if (!it->has_box || it->layer == LAYER_SKY || it->owner >= 0) continue;
+        if (!strcmp(it->kind, "particles")) continue;
+        frame_rect(cv, it->bx0, it->by0, it->bx1, it->by1, LC[it->layer]);
+        if (it->ax || it->ay) cross(cv, (int)it->ax, (int)it->ay, LC[it->layer]);
+    }
+    for (int i = 0; i < room->nnb; i++) {
+        int sd = room->nb[i].side;
+        cross(cv, (int)g->gate_in[sd][0], (int)g->gate_in[sd][1], RGB(80, 255, 80));
+        if (g->gate_has_mid[sd]) cross(cv, (int)g->gate_mid[sd][0], (int)g->gate_mid[sd][1], RGB(255, 230, 60));
+        cross(cv, (int)g->gate_out[sd][0], (int)g->gate_out[sd][1], RGB(255, 60, 60));
+    }
+    for (int i = 0; i < room->n + room->ng; i++) {
+        const Session *s = i < room->n ? room->s[i] : room->guests[i - room->n];
+        if (!s->has_pos || s->has_away || !s->has_goal) continue;
+        double x = s->px, y = s->py + 8;
+        canvas_line(cv, (int)x, (int)y, (int)s->gx, (int)s->gy + 8, RGB(80, 230, 255));
+        x = s->gx; y = s->gy + 8;
+        for (int k = 0; k < s->nroute; k++) { canvas_line(cv, (int)x, (int)y, (int)s->rx[k], (int)s->ry[k] + 8, RGB(80, 230, 255)); x = s->rx[k]; y = s->ry[k] + 8; }
+    }
+}
 
 static void draw_background(Canvas *cv, const Room *room, int banner, int count) {
     (void)count;
@@ -437,21 +474,17 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
     X.rail_p = -1;
     for (int i = 0; i < room->nnb; i++) if (room->nb[i].side == SIDE_UP) X.rail_p = fmin(1.0, fmax(0.0, (t - room->gate_t0[SIDE_UP]) / GATE_ANIM));
     double rail_key = geo.view.bb - 0.25;
-    int marks_done[512] = {0};
     for (int i = 0; i < geo.shown; i++)
         scene_add(sc, (SceneItem){.kind = "desk", .layer = LAYER_DEPTH, .depth = geo.home[i][1] + 0.5, .owner = -1, .ax = geo.home[i][0], .ay = geo.home[i][1], .draw = it_desk, .i = i});
     for (int i = 0; i < X.np; i++) {
         const Session *s = X.people[i];
         int me = scene_add(sc, (SceneItem){.kind = "clawd", .layer = LAYER_DEPTH, .depth = s->py + 8, .owner = -1, .ax = s->px, .ay = s->py + 8, .draw = it_clawd, .i = i});
-        if (X.rail_p >= 0 && s->py + 8 < rail_key) { /* on the stairs or the platform: its marks go behind the railing too */
-            scene_add(sc, (SceneItem){.kind = "marks", .layer = LAYER_DEPTH, .owner = me, .draw = it_marks, .i = i});
-            marks_done[i] = 1;
-        }
+        scene_add(sc, (SceneItem){.kind = "marks", .layer = LAYER_DEPTH, .owner = me, .draw = it_marks, .i = i}); /* (right after it: behind whatever stands in front) */
     }
     if (X.rail_p >= 0) scene_add(sc, (SceneItem){.kind = "rail", .layer = LAYER_DEPTH, .depth = rail_key, .owner = -1, .draw = it_rail});
     scene_add(sc, (SceneItem){.kind = "particles", .layer = LAYER_PARTICLE, .owner = -1, .draw = it_particles});
-    for (int i = 0; i < X.np; i++) if (!marks_done[i])
-        scene_add(sc, (SceneItem){.kind = "marks", .layer = LAYER_PARTICLE, .owner = -1, .draw = it_marks, .i = i});
+    for (int i = 0; i < X.np; i++) if (!X.people[i]->has_left && !strcmp(X.pstate[i], "wait")) /* the name of one that needs you, over everything */
+        scene_add(sc, (SceneItem){.kind = "name", .layer = LAYER_HUD, .owner = -1, .draw = it_marks, .i = i, .p = 1});
     if (geo.has_more_pos) scene_add(sc, (SceneItem){.kind = "more", .layer = LAYER_HUD, .owner = -1, .ax = geo.more_pos[0], .ay = geo.more_pos[1], .draw = it_more});
     scene_draw(sc, cv, &X);
     if (room->debug_overlay) draw_overlay(cv, sc, &geo, room);

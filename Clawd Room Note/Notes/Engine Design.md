@@ -5,13 +5,22 @@ tags:
   - engine
   - plan
 ---
-# 🧱 Engine Design (agreed 2026-10-18, not built yet)
+# 🧱 Engine Design (agreed 2026-10-18; step 1 built)
 
 > [!abstract] In short
 > Everything on screen becomes an **item** in one list, drawn in **seven layers**, placed by a **placer** that keeps items apart. Rooms are described as **data**, small props are **sprite files** you edit in a **pixel editor inside the room**, and one **animator** moves doors, gates and props. An **overlap check**, a **debug overlay** and a **gallery** come with it. Today's drawing is in [[Engine and Tests]]; the look in [[Rooms and Art]].
 
 > [!info] Why
 > Each drawing function knew nothing about the others, so items kept colliding (sign over window, well on a workspace, lamp on the opening, rail over faces, dot over the rail) and each fix was a special case.
+
+> [!success] Step 1 (2026-10-18)
+> - `c/scene.c`: items (kind, layer, depth, owner, anchor, draw callback), sorted by layer → depth → owner → order added; it can **measure** each item's box and who paints over whom. `draw_room` builds the scene; the drawing code is unchanged (the refactor matched every snapshot without `--update`).
+> - A Clawd's **marks** (dot, bubbles, signs, swing ropes) follow it; its **name** when it needs you is a label on top.
+> - **Overlap check** `clawd-room --check` (snapshot `overlap.txt`): **107** today, mostly desks over desks / gates / the sign, the railing over the sign, the park's bushes. Step 2 brings it to 0. Lamps and the plant are still in the cached background, so the check cannot see them yet (e.g. the coffee menu on a lamp in small windows).
+> - **Gallery** `make -C c gallery` → `gallery/gallery-{office,coffee,park}.png` (gates × size rows, empty / some / crowded columns).
+> - **Debug overlay**: key `o`.
+>
+> ![[2026-10-18 debug overlay.png|320]] ![[2026-10-18 gallery coffee (part).png|420]]
 
 ---
 ## 🧩 Items
@@ -88,8 +97,8 @@ room coffee
 ```mermaid
 %%{init: {"flowchart": {"defaultRenderer": "elk"}}}%%
 flowchart LR
-    S0["0 --try<br/>✅ done"] --> S1["1 items, layers,<br/>marks follow owner"] --> S2["2 placer +<br/>rooms as data"] --> S3["3 props as sprites<br/>+ pixel editor"] --> S4["4 animator"]
-    S1 -.-> T["overlap check, overlay,<br/>gallery (from step 1)"]
+    S0["0 --try<br/>✅ done"] --> S1["1 items, layers,<br/>marks follow owner<br/>✅ done"] --> S2["2 placer +<br/>rooms as data"] --> S3["3 props as sprites<br/>+ pixel editor"] --> S4["4 animator"]
+    S1 -.-> T["overlap check, overlay,<br/>gallery ✅"]
 ```
 
 > [!note] The room keeps working through every step; the snapshot tests guard each one.

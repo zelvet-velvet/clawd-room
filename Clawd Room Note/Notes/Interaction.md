@@ -26,6 +26,7 @@ tags:
 | `g` | send an idle Clawd to the next window |
 | `b` | **call back**: our Clawds next door walk home; with none away, visitors here are sent home |
 | `f` | auto font and scale again (WSL and iTerm2), camera back to 1x |
+| `o` | **debug overlay**: item boxes by layer, anchors, gate points (in green, mid yellow, out red), where Clawds are walking |
 
 > [!tip] Zoom tips
 > - `]` then wait: the camera finds the Clawd that needs you by itself.

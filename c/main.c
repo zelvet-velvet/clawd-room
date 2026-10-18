@@ -20,6 +20,7 @@
 #include "tail.h"
 #include "ui.h"
 
+int gallery_run(const char *dir); /* gallery.c: --check, --gallery DIR */
 static int golden(const SpriteFile *frames) {
     for (int a = 0; a < N_ACTIONS; a++) {
         Session s;
@@ -268,7 +269,7 @@ static int golden_win(void) {
 
 int main(int argc, char **argv) {
     if (argc > 2 && !strcmp(argv[1], "--link-demo")) return link_demo(argv[2], argc > 3 ? atof(argv[3]) : 0);
-    if (!(argc > 1 && (!strncmp(argv[1], "--golden", 8) || !strcmp(argv[1], "--fixture") || !strcmp(argv[1], "--script")))) return app_main(argc, argv);
+    if (!(argc > 1 && (!strncmp(argv[1], "--golden", 8) || !strcmp(argv[1], "--fixture") || !strcmp(argv[1], "--script") || !strcmp(argv[1], "--check") || !strcmp(argv[1], "--gallery")))) return app_main(argc, argv);
     const char *dir = getenv("CLAWD_SPRITES") ? getenv("CLAWD_SPRITES") : "../sprites";
     char path[512];
     snprintf(path, sizeof path, "%s/clawd.txt", dir);
@@ -279,6 +280,8 @@ int main(int argc, char **argv) {
     if (argc > 1 && !strcmp(argv[1], "--golden")) rc = golden(argc > 2 && !strcmp(argv[2], "--code") ? NULL : &frames);
     else if (argc > 2 && !strcmp(argv[1], "--fixture")) rc = run_fixtures(argc - 2, argv + 2, &frames, &items);
     else if (argc > 2 && !strcmp(argv[1], "--script")) { draw_set_sprites(&frames, &items); for (int i = 2; i < argc && !rc; i++) { printf("script %s\n", argv[i]); rc = script_run(argv[i]); } }
+    else if (argc > 1 && !strcmp(argv[1], "--check")) { draw_set_sprites(&frames, &items); rc = gallery_run(NULL); }
+    else if (argc > 2 && !strcmp(argv[1], "--gallery")) { draw_set_sprites(&frames, &items); rc = gallery_run(argv[2]); }
     else if (argc > 2 && !strcmp(argv[1], "--golden-ui")) rc = golden_ui(argv[2]);
     else if (argc > 1 && !strcmp(argv[1], "--golden-win")) rc = golden_win();
     else if (argc > 1 && !strcmp(argv[1], "--golden-rng")) rc = golden_rng();

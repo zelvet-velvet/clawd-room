@@ -46,6 +46,15 @@ gitGraph
 ---
 ## 2026-10-18
 
+### 🧱 Engine step 1: the scene, the overlap check, the gallery, the overlay
+> [!info] Branch `feat/style-a`
+- The room is now drawn as a **scene of items on layers** (`c/scene.c`). The switch changed no pixel (every snapshot matched before updating).
+- A Clawd's **dot, bubbles and swing ropes follow it** in depth; the needs-you **name** stays on top.
+- **`--check`** finds items painting over each other in every room × gates × crowd × size: **107** today (desks over desks, gates and the sign; the railing over the sign; park bushes). Kept as a snapshot so new ones fail the tests; step 2 (the placer) brings it to 0.
+- **`make -C c gallery`** writes contact sheets of all those scenes; key **`o`** shows the debug overlay.
+
+![[2026-10-18 debug overlay.png|320]]
+
 ### 🧪 `--try`: four linked rooms in one command; the engine plan
 > [!info] Branch `feat/style-a`
 - `./clawd-room.sh --try` opens **four linked Clawd Room windows** in the four quarters (office, coffee shop / park, office) with **made-up Clawds** (`tools/demo_events.py`), so left/right and up/down gates all show at once. Quitting one closes all four (`--try close` from anywhere, `--try real` for real sessions only). They use their own link folder.
@@ -258,7 +267,7 @@ Zaviel's sketch for the stairs and the doors that needed fixing:
 
 > [!todo] Waiting
 > - Merge `feat/camera-gates` and `feat/style-a` into `main` (after Zaviel's checks).
-> - The engine, in steps: items and layers → placer and rooms as data → props as sprites and the pixel editor → animator ([[Engine Design]]).
+> - The engine, in steps: ~~items and layers~~ (done) → placer and rooms as data (bring the 107 overlaps to 0) → props as sprites and the pixel editor → animator ([[Engine Design]]).
 > - `README.md` still describes the old flat look in places (banner, gates at the window edge).
 > - WSL: the profile from the dropdown opens at Windows Terminal's default size, then jumps once; planned a shortcut with `wt.exe -w new --size 60,18 -p "Clawd Room"`.
 > - The room can block writing if the terminal stops reading (seen with iTerm2 in full screen).

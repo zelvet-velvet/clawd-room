@@ -12,3 +12,6 @@ Clawd Room Note/Tags/
 Clawd Room Note/.trash/
 c/*.o
 c/clawd-room
+
+# make -C c gallery
+/gallery/
