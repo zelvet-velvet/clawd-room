@@ -75,6 +75,9 @@ flowchart LR
 > [!info] Where the snapshots come from
 > First made by the old Python version (the C port matched it line by line); since style A (2026-10-18) they come from the C program.
 
+> [!info] Next: the engine
+> The agreed plan to replace this with items, layers and a placer is in [[Engine Design]].
+
 > [!tip] Test hooks
 > `CLAWD_EVENTS` (events file) · `CLAWD_LINK_DIR` (link folder) · `CLAWD_SIZE_LOG` (sizes, gate positions, who the camera follows) · `--dump COLSxROWS` with `--zoom`, `--room-size`.
 

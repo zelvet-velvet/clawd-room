@@ -42,6 +42,38 @@ if [ "$(uname -s)" = Darwin ] && [ "$TERM_PROGRAM" = iTerm.app ] && [ -z "$TMUX"
   if [ "$(cat "$prof" 2>/dev/null)" != "$want" ]; then
     mkdir -p "$dyn" && printf '%s\n' "$want" > "$prof" && sleep 1.5 # (iTerm2 picks the file up by itself)
   fi
+  # --try: four Clawd Room windows, one in each quarter of the screen (office, coffee shop / park, office), so left/right
+  # and up/down gates all show at once; made-up sessions in them (--try real: only your real sessions); quitting one
+  # closes all (--try close closes them from anywhere). They use their own link folder, apart from rooms you run.
+  if [ "${1:-}" = --try ]; then
+    try="$HOME/.clawd-room/try"
+    mkdir -p "$try"
+    if [ "${2:-}" = close ]; then touch "$try/stop"; exit 0; fi
+    touch "$try/stop"; sleep 0.8; rm -f "$try/stop" "$try/events.jsonl"; rm -rf "$try/link" # (end a --try still running)
+    if [ "${2:-}" = real ]; then ev="$HOME/.clawd-room/events.jsonl"
+    else
+      ev="$try/events.jsonl"
+      nohup python3 "$here/tools/demo_events.py" "$ev" "$try/stop" 7 >/dev/null 2>&1 &
+      sleep 0.5
+    fi
+    CR_HERE="$here" CR_BIN="$bin" CR_TRY="$try" CR_EV="$ev" osascript -l JavaScript -e '
+      ObjC.import("AppKit");
+      const env = $.NSProcessInfo.processInfo.environment, get = k => env.objectForKey(k).js;
+      const here = get("CR_HERE"), bin = get("CR_BIN"), tr = get("CR_TRY"), ev = get("CR_EV");
+      const scr = $.NSScreen.mainScreen, f = scr.frame, v = scr.visibleFrame;
+      const vx = v.origin.x, vy = f.size.height - v.origin.y - v.size.height, w = Math.round(v.size.width / 2), h = Math.round(v.size.height / 2);
+      const rooms = [["office", "office", 0, 0], ["coffee", "coffee", 1, 0], ["park", "park", 0, 1], ["office2", "office", 1, 1]];
+      const it = Application("iTerm2");
+      for (const [name, theme, qx, qy] of rooms) {
+        const q = String.fromCharCode(39), sq = x => q + x + q;
+        const run = "cd " + sq(here) + " && exec env CLAWD_HERE=1 CLAWD_LINK_DIR=" + sq(tr + "/link") + " sh " + sq(here + "/tools/try_room.sh") + " " + sq(bin) + " " + sq(tr + "/stop") + " --room " + name + " --theme " + theme + " --events " + sq(ev);
+        const win = it.createWindowWithProfile("Clawd Room", {command: "/bin/sh -lc " + JSON.stringify(run)});
+        win.bounds = {x: vx + qx * w, y: vy + qy * h, width: w, height: h};
+      }
+      ""' >/dev/null 2>&1 || { echo "clawd-room: could not open the --try windows" >&2; touch "$try/stop"; exit 1; }
+    echo "clawd-room: --try opened 4 rooms (quit one to close all, or ./clawd-room.sh --try close)" >&2
+    exit 0
+  fi
   if [ "$here_only" = 0 ] && [ "${CLAWD_HERE:-0}" = 0 ] && [ "$ITERM_PROFILE" != "Clawd Room" ] && [ -x "$bin" ] && command -v osascript >/dev/null 2>&1; then
     cmd="'$bin'"
     for a in "$@"; do cmd="$cmd '$(printf %s "$a" | sed "s/'/'\\\\''/g")'"; done

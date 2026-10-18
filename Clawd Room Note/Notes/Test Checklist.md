@@ -10,6 +10,9 @@ tags:
 > Things only a person can check by looking. **Ticked = Zaviel confirmed it** (nobody else ticks). Automatic tests are in [[Engine and Tests]]. Checks for things that were replaced are removed.
 
 ---
+> [!tip] Setting up a test (iTerm2)
+> `./clawd-room.sh --try` opens **four linked rooms**, one in each quarter of the screen (office, coffee shop / park, office), with **made-up Clawds** in them, so every gate shows at once. Quit any one to close all four, or `./clawd-room.sh --try close`. `--try real` shows only your real sessions.
+
 ## Rooms and art ([[Rooms and Art]])
 - [ ] Each room (office, coffee shop, park) looks like the mockups at your window size
 - [ ] Seated Clawds show behind their desk / table / bench; the barista behind the bar

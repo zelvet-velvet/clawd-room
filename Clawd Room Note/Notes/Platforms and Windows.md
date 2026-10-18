@@ -68,6 +68,7 @@ sequenceDiagram
 - **Starting:** **Profiles → Clawd Room** (or Cmd+O) starts the room directly, in a window that is **already a quarter of the screen** (the launcher writes the quarter's grid, e.g. 181x53 on a 13" MacBook Air, into the profile), so nothing resizes; its window closes when the room quits. Typing `./clawd-room.sh` in a normal window **hands over**: the room's window opens in the quarter that window was in and the typed-in window closes (unless it has other tabs or panes; `--keep` leaves it).
 - **A fixed pixel size:** the room runs in **its own window with the "Clawd Room" profile**: Menlo 6 at line spacing 1.1, so every cell is **4x8 pt** and a room pixel a square **4x4 pt** (8x8 screen pixels on Retina). The pixel art lines up the same on every run. `--here` keeps the current window.
 - The profile is a separate file, `~/Library/Application Support/iTerm2/DynamicProfiles/clawd-room.json`, written by `clawd-room.sh` (delete it to remove the profile); the user's own profiles are not touched.
+- **`--try`:** four linked Clawd Room windows in the four quarters (office, coffee shop / park, office) with made-up sessions (`tools/demo_events.py`), their own link folder (`~/.clawd-room/try/link`); quitting one closes all (`tools/try_room.sh` watches a shared stop file); `--try close`, `--try real`.
 - The profile **ignores Cmd = + − 0** (iTerm2's font size keys), so the pixel size cannot drift. iTerm2 reloads the file by itself, so open room windows pick up a change at once.
 
 > [!info] Why a new window (tested 2026-10-18, iTerm2 3.5.14)

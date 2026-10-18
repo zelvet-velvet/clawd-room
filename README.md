@@ -36,6 +36,8 @@ applaud when a friend finishes, and do little solo acts (stretch, dance, jump, w
 
     ./clawd-room.sh --room park               # window 1
     ./clawd-room.sh --room coffee             # window 2
+    ./clawd-room.sh --try                     # iTerm2: four linked rooms in the four quarters, with made-up Clawds
+                                              # (quit one to close all; --try close; --try real for real sessions only)
 
 Rooms on the same machine find each other and exchange small messages through files in
 `~/.clawd-room/link/` (private folder, no network, no daemon). The banner shows `LINK COFFEE`,

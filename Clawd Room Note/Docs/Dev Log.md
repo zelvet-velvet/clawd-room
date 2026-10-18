@@ -46,6 +46,11 @@ gitGraph
 ---
 ## 2026-10-18
 
+### 🧪 `--try`: four linked rooms in one command; the engine plan
+> [!info] Branch `feat/style-a`
+- `./clawd-room.sh --try` opens **four linked Clawd Room windows** in the four quarters (office, coffee shop / park, office) with **made-up Clawds** (`tools/demo_events.py`), so left/right and up/down gates all show at once. Quitting one closes all four (`--try close` from anywhere, `--try real` for real sessions only). They use their own link folder.
+- Talked through why fixes kept causing new collisions and **agreed an engine design**: items, seven layers, a placer for wall and floor, rooms as data, props as sprite files with a pixel editor inside the room, an animator, and an overlap check / debug overlay / gallery. See [[Engine Design]].
+
 ### 🦶 Feet on the steps, a lower rail
 > [!info] Branch `feat/style-a`
 - On the stairs a Clawd is drawn with its feet on the **line through the steps' front edges** (its legs no longer hang into the steps below).
@@ -253,6 +258,7 @@ Zaviel's sketch for the stairs and the doors that needed fixing:
 
 > [!todo] Waiting
 > - Merge `feat/camera-gates` and `feat/style-a` into `main` (after Zaviel's checks).
+> - The engine, in steps: items and layers → placer and rooms as data → props as sprites and the pixel editor → animator ([[Engine Design]]).
 > - `README.md` still describes the old flat look in places (banner, gates at the window edge).
 > - WSL: the profile from the dropdown opens at Windows Terminal's default size, then jumps once; planned a shortcut with `wt.exe -w new --size 60,18 -p "Clawd Room"`.
 > - The room can block writing if the terminal stops reading (seen with iTerm2 in full screen).
