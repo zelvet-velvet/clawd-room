@@ -336,11 +336,29 @@ static void wall_door(Canvas *c, const View *v, int right, double fx, double fy,
 static void wall_line(Canvas *c, const View *v, double X, double z0, double z1, double e, Rgb col) { /* a clean 1-pixel line along a side wall at height e */
     canvas_line(c, (int)view_sx(v, X, z0), (int)view_sy(v, z0, e), (int)view_sx(v, X, z1), (int)view_sy(v, z1, e), col);
 }
-static void fence_gate(Canvas *c, const View *v, int right, double fx, double fy, double p, int part, double open) {
+static void fence_gate(Canvas *c, const View *v, int right, double fx, double fy, double p, int part, double open, int corner) {
     double xw = right ? v->xw : -v->xw, z0 = 0.6, z1 = v->zb, e = view_e(v, 58) * p;
     if (e <= 0) return;
     Rgb brick = right ? RGB(160, 88, 68) : RGB(170, 94, 72), mortar = dk(brick, 0.12), trim = RGB(222, 204, 176), glass = RGB(150, 190, 220);
-    if (part <= 0) {
+    if (corner && part <= 0) { /* the side of the sandstone building at the back right (the same building): floors up out of the picture, no roof */
+        brick = RGB(204, 176, 128); mortar = RGB(186, 158, 112); trim = RGB(244, 236, 216); glass = RGB(132, 170, 204);
+        double fh = e * 0.5, top = e * 12;
+        wq(c, v, xw, z0, 0, xw, z1, 0, xw, z1, top, xw, z0, top, brick);
+        for (double ee = fh / 3.5; ee < top; ee += fh / 3.5) wall_line(c, v, xw, z0, z1, ee, mortar);   /* courses */
+        for (double ee = fh; ee < top; ee += fh) wall_line(c, v, xw, z0, z1, ee, trim);                /* floor lines */
+        int n = 3;
+        double za0 = 1.0, za1 = z1 - 0.06, step = (za1 - za0) / n, ww = step * 0.42;
+        for (double fl = fh; fl < top; fl += fh) /* windows on every floor above the ground floor */
+            for (int k = 0; k < n; k++) {
+                double za = za0 + step * k + (step - ww) / 2, zc = za + ww, eb = fl + fh * 0.26, et = fl + fh * 0.76, zm = (za + zc) / 2;
+                wq(c, v, xw, za, eb, xw, zc, eb, xw, zc, et, xw, za, et, trim);
+                wq(c, v, xw, za + ww * 0.15, eb + fh * 0.06, xw, zc - ww * 0.15, eb + fh * 0.06, xw, zc - ww * 0.15, et - fh * 0.06, xw, za + ww * 0.15, et - fh * 0.06, glass);
+                canvas_line(c, (int)view_sx(v, xw, zm), (int)view_sy(v, zm, eb), (int)view_sx(v, xw, zm), (int)view_sy(v, zm, et), trim);
+                wall_line(c, v, xw, za - ww * 0.1, zc + ww * 0.1, eb - fh * 0.02, RGB(220, 206, 180));
+            }
+        if (part == 0) return;
+    }
+    if (part <= 0 && !corner) {
         wq(c, v, xw, z0, 0, xw, z1, 0, xw, z1, e, xw, z0, e, brick);
         for (int k = 1; k < 7; k++) if (k != 3) wall_line(c, v, xw, z0, z1, e * k / 7, mortar); /* brick courses */
         wall_line(c, v, xw, z0, z1, e * 0.5, trim);                                          /* the line between the floors */
@@ -410,7 +428,7 @@ static void facade(Canvas *c, int xa, int xb, int ground, int base, const Facade
         canvas_rect(c, xa, y, xb - xa, 1, f->mortar);
         for (int x = xa + ((y / 3) % 2 ? 2 : 5); x < xb; x += 6) canvas_px(c, x, y + 1, f->mortar);
     }
-    for (int px = xa; px < xb; px += f->bay) { canvas_rect(c, px, 0, 2, base, f->pier); canvas_rect(c, px + 2, 0, 1, base, lt(f->brick, 0.08)); }
+    for (int px = xa + f->bay; px < xb; px += f->bay) canvas_rect(c, px, 0, 2, base, f->pier); /* piers between bays (subtle: one building) */
     for (int wy = base - 18; wy > -12; wy -= 14)
         for (int bx = xa + (f->bay - 8) / 2 + 1; bx + 8 < xb; bx += f->bay) {
             if (box_hit((Box){bx - 1, wy - 2, bx + 9, wy + 12}, skip)) continue;
@@ -428,7 +446,7 @@ static void facade(Canvas *c, int xa, int xb, int ground, int base, const Facade
     canvas_rect(c, xa, base, xb - xa, 1, dk(f->stone, 0.25));
     canvas_rect(c, xa, 0, 1, ground, dk(f->brick, 0.25));                /* its corner */
 }
-static const Facade RED_BRICK = {{172, 104, 80}, {156, 92, 70}, {150, 88, 66}, {230, 216, 192}, {140, 180, 214}, {200, 190, 172}, {170, 160, 144}, 18};
+static const Facade RED_BRICK = {{172, 104, 80}, {156, 92, 70}, {164, 98, 76}, {230, 216, 192}, {140, 180, 214}, {200, 190, 172}, {170, 160, 144}, 18};
 static const Facade SANDSTONE = {{204, 176, 128}, {186, 158, 112}, {180, 150, 104}, {244, 236, 216}, {132, 170, 204}, {176, 170, 160}, {150, 144, 134}, 15};
 
 static void stoop_building(Canvas *c, int x0, int ground, int floor_y, int door_cx, int landing_x1, int corner, int part) {
@@ -576,7 +594,7 @@ void theme_stair_rail(const Theme *th, Canvas *c, const Geo *g, double p) {
 void theme_gate(const Theme *th, Canvas *cv, const Geo *g, int side, double p, double open, int part) {
     const View *v = &g->view;
     if (side == SIDE_LEFT || side == SIDE_RIGHT) {
-        if (th == &PARK) fence_gate(cv, v, side == SIDE_RIGHT, g->gate_out[side][0], g->gate_out[side][1], p, part, open);
+        if (th == &PARK) fence_gate(cv, v, side == SIDE_RIGHT, g->gate_out[side][0], g->gate_out[side][1], p, part, open, side == SIDE_RIGHT && g->has_up); /* (with the way up: the right-hand building is the sandstone one's side) */
         else wall_door(cv, v, side == SIDE_RIGHT, g->gate_out[side][0], g->gate_out[side][1], p, open);
     } else if (side == SIDE_UP) {
         back_stairs(cv, v, th, p, part); /* (the park: stone stairs to a terrace and a stair tower) */

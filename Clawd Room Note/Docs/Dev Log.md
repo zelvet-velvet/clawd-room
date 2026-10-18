@@ -46,6 +46,14 @@ gitGraph
 ---
 ## 2026-10-18
 
+## 2026-10-19
+
+### 🏙️ One building each
+> [!info] Branch `feat/style-a`
+- From Zaviel's outlines: with the way up, the **right-hand building is the side of the sandstone building** at the back right (the same colours and windows, floors up out of the picture, no roof deck), so the two read as **one corner building**; the brick building's piers are subtle so it reads as **one building** too.
+
+![[2026-10-19 park, one corner building on the right.png|420]]
+
 ### 🏢 The park's building, redesigned
 > [!info] Branch `feat/style-a`
 - From a mockup and Zaviel's notes: a **tall building** (floors of windows up out of the picture, piers between bays, staggered brick, a stone ground floor with low windows), **behind the side buildings**; a **short stoop** (stone steps, an iron railing, a landing as wide as the entrance); a **double door** with a lit transom, a canopy, a plaque and two lamps. The building is its own item (`backdrop`), so desks and the side buildings may stand in front of it. Beyond the park's back corner (above the right-hand building) **another building** rises, in the **same style in sandstone** (it was a grey modern block first), so the brick one does not just carry on.
