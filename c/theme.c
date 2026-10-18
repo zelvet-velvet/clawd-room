@@ -344,7 +344,11 @@ static void fence_gate(Canvas *c, const View *v, int right, double fx, double fy
         wq(c, v, xw, z0, 0, xw, z1, 0, xw, z1, e, xw, z0, e, brick);
         for (int k = 1; k < 7; k++) if (k != 3) wall_line(c, v, xw, z0, z1, e * k / 7, mortar); /* brick courses */
         wall_line(c, v, xw, z0, z1, e * 0.5, trim);                                          /* the line between the floors */
-        /* a flat roof: a parapet along the top, its coping in a light stone, a shadow under it */
+        /* a flat roof: a deck you see from above (the roof is a platform), and a parapet along its edge */
+        double sd = right ? 1 : -1;
+        wq(c, v, xw, z0, e * 1.08, xw, z1, e * 1.08, xw + sd * 0.4, z1, e * 1.08, xw + sd * 0.4, z0, e * 1.08, RGB(176, 170, 160));
+        for (double z = 0.9; z < z1; z += 0.18) wall_line(c, v, xw + sd * 0.05, z, z, e * 1.08, RGB(150, 146, 136)); /* (deck slabs) */
+        for (int k = 1; k < 4; k++) { double xx = xw + sd * 0.1 * k; canvas_line(c, (int)view_sx(v, xx, z0), (int)view_sy(v, z0, e * 1.08), (int)view_sx(v, xx, z1), (int)view_sy(v, z1, e * 1.08), RGB(160, 154, 144)); }
         wq(c, v, xw, z0, e, xw, z1, e, xw, z1, e * 1.08, xw, z0, e * 1.08, trim);
         wall_line(c, v, xw, z0, z1, e * 1.08, RGB(240, 230, 210));
         wall_line(c, v, xw, z0, z1, e * 0.995, dk(brick, 0.3));
@@ -391,18 +395,27 @@ static const StairStyle STEEL_STAIRS = {{110, 116, 128}, {206, 210, 218}, {140, 
 static const StairStyle STONE_STAIRS = {{170, 164, 152}, {210, 204, 192}, {186, 180, 168}, {150, 146, 134}, 4}; /* the park: stone, a balustrade */
 static const StairStyle *stair_style(const Theme *th) { return th == &COFFEE ? &WOOD_STAIRS : th == &PARK ? &STONE_STAIRS : &STEEL_STAIRS; }
 
-/* the park's way up: a small brick stair tower at the terrace's right end, a dark door with "UP" over it */
-static void stair_tower(Canvas *c, int xr, int floor_y) {
-    int tx = xr - TOWER_IN - TOWER_W, ty = floor_y - TOWER_H;
-    canvas_rect(c, tx, ty, TOWER_W, TOWER_H, RGB(186, 120, 92));
-    for (int y = ty + 3; y < floor_y; y += 3) canvas_rect(c, tx, y, TOWER_W, 1, RGB(160, 100, 76));
-    canvas_rect(c, tx - 1, ty - 2, TOWER_W + 2, 2, RGB(222, 204, 176));
-    int dw = 6, dh = 12, dx = tx + (TOWER_W - dw) / 2;
-    canvas_rect(c, dx - 1, floor_y - dh - 1, dw + 2, dh + 1, RGB(222, 204, 176));
-    canvas_rect(c, dx, floor_y - dh, dw, dh, RGB(28, 22, 18));
-    canvas_rect(c, dx, floor_y - dh, dw, 1, RGB(250, 214, 140)); /* light from upstairs */
-    canvas_text(c, tx + (TOWER_W - text_width("UP")) / 2, ty + 2, "UP", RGB(250, 236, 200));
-} /* slim steel balusters, further apart */
+/* the park's way up: a brick building at the back right, behind the terrace (its front steps, like a stoop): windows
+ * upstairs, a cornice, and its front door at the top of the steps */
+static void stoop_building(Canvas *c, const View *v, int x0, int xr, int floor_y) {
+    int top = (int)v->bt - 8 < 2 ? 2 : (int)v->bt - 8, w = xr - x0;
+    Rgb brick = RGB(178, 112, 86), trim = RGB(226, 210, 184), glass = RGB(150, 190, 220);
+    canvas_rect(c, x0, top, w, floor_y - top, brick);
+    for (int y = top + 4; y < floor_y; y += 4) canvas_rect(c, x0, y, w, 1, RGB(156, 98, 76));
+    canvas_rect(c, x0 - 1, top - 2, w + 2, 3, trim); /* the cornice */
+    int dw = BUILDING_DOOR_W, dh = BUILDING_DOOR_H, dx = x0 + (w - dw) / 2;
+    for (int wy = top + 5; wy + 7 < floor_y - 2; wy += 10) /* windows on every floor (not where the door is) */
+        for (int wx = x0 + 3; wx + 5 <= xr - 2; wx += 9) {
+            if (wx + 6 > dx - 3 && wx - 1 < dx + dw + 3 && wy + 8 > floor_y - dh - 4) continue;
+            canvas_rect(c, wx - 1, wy - 1, 7, 9, trim);
+            canvas_rect(c, wx, wy, 5, 7, glass);
+            canvas_rect(c, wx + 2, wy, 1, 7, trim);
+        }
+    canvas_rect(c, dx - 2, floor_y - dh - 3, dw + 4, 2, trim);          /* the lintel over the door */
+    canvas_rect(c, dx - 1, floor_y - dh - 1, dw + 2, dh + 1, trim);     /* its frame */
+    canvas_rect(c, dx, floor_y - dh, dw, dh, RGB(28, 22, 18));          /* the doorway, dark inside */
+    canvas_rect(c, dx, floor_y - dh, dw, 1, RGB(250, 214, 140));        /* light from inside */
+}
 
 /* the way up from the platform: an opening in the back wall with the stairs carrying on upwards inside, into the dark,
  * a warm light at the top; its bottom on the platform floor (Zaviel kept this one over the lit archway) */
@@ -441,13 +454,13 @@ static void back_stairs(Canvas *c, const View *v, const Theme *th, double p, int
     }
     if (p < 1 || part == 0) return;
     int dw = ARCH_W, dh = (int)fmin(ARCH_H, yl - v->bt - 2), dxl = xr - dw - ARCH_IN; /* at the right end of the platform */
-    if (part == 2) { if (v->outdoor) stair_tower(c, xr, yl - 1); else if (dh > 6) upstairs_opening(c, dxl, yl - 1, dw, dh, st); return; }
+    if (part == 2) { if (v->outdoor) stoop_building(c, v, x1 - 2, xr, yl - 1); else if (dh > 6) upstairs_opening(c, dxl, yl - 1, dw, dh, st); return; }
     /* the platform: its top (a strip, lit), its front face down to the floor, its end against the right-hand wall */
     canvas_rect(c, x1, yl - 1, xr - x1, 2, tread);
     canvas_rect(c, x1, yl + 1, xr - x1, y0 - yl, side);
     canvas_rect(c, x1, yl + 1, xr - x1, 1, riser);
     canvas_rect(c, x0, y0, xr - x0, 1, dk(side, 0.45)); /* a dark skirting along the floor, under the steps and the platform */
-    if (part < 0) { if (v->outdoor) stair_tower(c, xr, yl - 1); else if (dh > 6) upstairs_opening(c, dxl, yl - 1, dw, dh, st); }
+    if (part < 0) { if (v->outdoor) stoop_building(c, v, x1 - 2, xr, yl - 1); else if (dh > 6) upstairs_opening(c, dxl, yl - 1, dw, dh, st); }
     if (coffee && xr - x1 > 20 && y0 - yl >= 11) menu_board(c, (x1 + xr) / 2 - 8, yl + 1 + (y0 - yl - 11) / 2); /* the menu on the platform's face */
 }
 
@@ -760,7 +773,7 @@ int theme_keep_clear(const Theme *th, const Geo *g, int side, Box *out, int *mas
         int dw = ARCH_W, dh = (int)fmin(ARCH_H, yl - v->bt - 2), dxl = xr - dw - ARCH_IN;
         KEEP(((Box){x0 - 3, yl - 9, x1 + 2, bb + 1}), 3);              /* the steps and their railing */
         KEEP(((Box){x1, yl - 9, xr + 1, bb + 1}), 2);                  /* the platform (only for the wall items) */
-        if (v->outdoor) { int tx = xr - TOWER_IN - TOWER_W; KEEP(((Box){tx - 3, yl - TOWER_H - 4, tx + TOWER_W + 3, yl + 1}), 3); } /* the stair tower */
+        if (v->outdoor) KEEP(((Box){x1 - 5, 0, xr + 2, yl + 1}), 3); /* the building behind the terrace */
         else KEEP(((Box){dxl - 2, yl - 2 - dh, dxl + dw + 2, yl + 1}), 3);  /* the opening */
         KEEP(((Box){x0 - 14, bb - 1, x0 + 4, bb + 10}), 5);            /* the foot of the stairs */
         return n;

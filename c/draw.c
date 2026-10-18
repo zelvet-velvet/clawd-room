@@ -410,7 +410,7 @@ void geo_init(Geo *g, const Room *room, int w, int h) {
         stairs_geometry(v, &x0, &x1, &yl);
         g->gate_in[SIDE_UP][0] = x0 - 4; g->gate_in[SIDE_UP][1] = v->bb + 2;
         g->gate_has_mid[SIDE_UP] = 1; g->gate_mid[SIDE_UP][0] = x1 + 2; g->gate_mid[SIDE_UP][1] = yl - 1; /* up the stairs, then along the platform */
-        g->gate_out[SIDE_UP][0] = park ? ceil(v->br) - TOWER_IN - TOWER_W / 2.0 : v->br - ARCH_IN - ARCH_W / 2.0; g->gate_out[SIDE_UP][1] = yl - 1; /* along it to the opening (the park: the tower's door) */
+        g->gate_out[SIDE_UP][0] = park ? (x1 - 2 + ceil(v->br)) / 2.0 : v->br - ARCH_IN - ARCH_W / 2.0; g->gate_out[SIDE_UP][1] = yl - 1; /* along it to the opening (the park: the building's front door) */
     }
     { /* the stair well at the front left (the park's is stone): its steps go down from its right end to its left, carrying
        * on the stairs that go up to the right below; in at the right, onto the top step, down to the left end */

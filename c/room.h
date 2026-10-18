@@ -99,9 +99,8 @@ typedef struct {
 #define PARK_STAIRS_FOOT 0.58 /* the park's stone stairs: their foot and top along the back (parts of its width), */
 #define PARK_STAIRS_TOP 0.68
 #define PARK_TERRACE_UP 0.45  /* ... the terrace this far up from the back of the lawn towards the top of the picture, */
-#define TOWER_W 14            /* ... and at its right end a stair tower this wide and tall: the way up */
-#define TOWER_H 24
-#define TOWER_IN 2
+#define BUILDING_DOOR_W 8     /* ... and behind it a building whose front door, this big, is the way up */
+#define BUILDING_DOOR_H 13
 #define STAIRS_FOOT 0.2     /* the stairs on the back wall start this far along it ... */
 #define STAIRS_TOP 0.42     /* ... and reach the platform here */
 #define ARCH_W 12           /* the opening up: width, height (room pixels), and how far in from the platform's right end */
