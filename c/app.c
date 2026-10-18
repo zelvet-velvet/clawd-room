@@ -262,7 +262,6 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
     int paused = 0, help_on = 0, dirty = 1, cols = 0, rows = 0, size_menu = 0, size_pick = 0;
     double go_until = 0; /* g held (its key repeats keep this going): an arrow then picks where to send a Clawd */
     char go_key = 'g', move_sid[72] = ""; /* ... or m held: where the picked Clawd moves to */
-    char go_hint[96] = ""; /* ... and the line under the room saying which way is which */
     Cells prev = {0, 0, NULL};
     int have_prev = 0;
     while (!g_quit) {
@@ -342,9 +341,6 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                     }
                     dirty = 1;
                 } else if (k == 'g' || k == 'm') { /* g: send a Clawd next door (hold g and press an arrow); m: move the picked Clawd there */
-                    static const char *ARROW[SIDES] = {"<", ">", "^", "V"};
-                    static const char *GATE_NAME[2][SIDES] = {{"DOOR", "DOOR", "STAIRS UP", "STAIRS DOWN"}, {"GATE", "GATE", "TREEHOUSE", "STEPS DOWN"}};
-                    int park = room.theme == theme_get("park");
                     if (k == 'm') { /* the Clawd: the one followed (Tab / < >), or the only one */
                         room_order(&room);
                         move_sid[0] = 0;
@@ -360,22 +356,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                     }
                     if (wall() >= go_until || go_key != k) go_until = 0;
                     go_key = k;
-                    if (room.nnb >= 2 || k == 'm') { /* the hint, one line at the bottom; the key repeats while it is held keep it up */
-                        if (wall() >= go_until) {
-                            char *flash_ = go_hint; /* (written into the room, in its pixel font: the status line is tiny at the fixed font) */
-                            int o;
-                            if (k == 'm') {
-                                const char *nm = "CLAWD";
-                                for (int q = 0; q < room.n; q++) if (!strcmp(room.s[q]->sid, move_sid) && room.s[q]->name[0]) nm = room.s[q]->name;
-                                o = snprintf(go_hint, sizeof go_hint, "MOVE %.10s:", nm);
-                            } else o = snprintf(go_hint, sizeof go_hint, "G + ARROW:");
-                            for (int sd = 0; sd < SIDES; sd++) for (int q = 0; q < room.nnb; q++) if (room.nb[q].side == sd) {
-                                const char *nm = room.nb[q].id;
-                                for (int p = 0; p < room.npeers; p++) if (!strcmp(room.peers[p].side, SIDE_NAME[sd])) nm = room.peers[p].name;
-                                o += snprintf(go_hint + o, sizeof go_hint - (size_t)(o < (int)sizeof go_hint ? o : (int)sizeof go_hint - 1), "  %s %.10s %s", ARROW[sd], nm, GATE_NAME[park][sd]);
-                            }
-                            for (char *c = flash_; *c; c++) if (*c >= 'a' && *c <= 'z') *c -= 32;
-                        }
+                    if (room.nnb >= 2 || k == 'm') { /* the hint along the bottom (draw_bar below); the key repeats while it is held keep it up */
                         go_until = wall() + 1.5;
                     } else {
                         char buf[64];
@@ -649,13 +630,42 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                     snprintf(note + l, sizeof note - l, "%s%s", l ? "   " : "", lab);
                 }
                 if (size_menu) draw_size_menu(&cv, SIZE_LABEL, N_SIZES, size_pick);
-                if (wall() < go_until && go_hint[0]) { /* g held: one line along the bottom of the room, which arrow goes where */
-                    int y = cv.h - 7, tw = text_width(go_hint);
-                    canvas_rect(&cv, 0, y, cv.w, 7, RGB(20, 20, 28));
-                    canvas_text(&cv, tw < cv.w - 4 ? (cv.w - tw) / 2 : 2, y + 1, go_hint, C_YELLOW);
-                }
                 overlay_text(over, sizeof over, paused, help_on, note, wall() < flash_until ? flash : "");
-                Cells cells = cells_from_canvas(&cv, over);
+                BarPiece bar[8];
+                int nbar = 0;
+                bar[nbar++] = (BarPiece){over, C_WHITE, 0}; /* the status: paused, help, what the camera does, the last message */
+                char g_s[16], m_s[48], arrows[192];
+                if (wall() < go_until) { /* g or m held: one hint for both, the held key bright, then which arrow goes where */
+                    static const char *ARROW[SIDES] = {"<", ">", "^", "V"};
+                    static const char *GATE_NAME[2][SIDES] = {{"DOOR", "DOOR", "STAIRS UP", "STAIRS DOWN"}, {"GATE", "GATE", "TREEHOUSE", "STEPS DOWN"}};
+                    int park = room.theme == theme_get("park"), o = 0;
+                    const char *nm = NULL, *pick = cam.mode == CAM_LOCKED && cam.sid[0] ? cam.sid : room.n == 1 ? room.s[0]->sid : go_key == 'm' ? move_sid : "";
+                    for (int q = 0; q < room.n; q++) if (!strcmp(room.s[q]->sid, pick)) nm = room.s[q]->name[0] ? room.s[q]->name : "CLAWD";
+                    snprintf(g_s, sizeof g_s, "G SEND");
+                    if (nm) snprintf(m_s, sizeof m_s, "M MOVE %.10s", nm); else snprintf(m_s, sizeof m_s, "M MOVE (TAB PICKS)");
+                    arrows[0] = 0;
+                    for (int sd = 0; sd < SIDES; sd++) for (int q = 0; q < room.nnb; q++) if (room.nb[q].side == sd) {
+                        const char *pn = room.nb[q].id;
+                        for (int p = 0; p < room.npeers; p++) if (!strcmp(room.peers[p].side, SIDE_NAME[sd])) pn = room.peers[p].name;
+                        o += snprintf(arrows + o, sizeof arrows - (size_t)(o < (int)sizeof arrows ? o : (int)sizeof arrows - 1), "%s%s %.10s %s", o ? "   " : "", ARROW[sd], pn, GATE_NAME[park][sd]);
+                    }
+                    for (char *c = m_s; *c; c++) if (*c >= 'a' && *c <= 'z') *c -= 32;
+                    for (char *c = arrows; *c; c++) if (*c >= 'a' && *c <= 'z') *c -= 32;
+                    Rgb dim = RGB(140, 128, 84);
+                    bar[nbar++] = (BarPiece){g_s, go_key == 'g' ? C_YELLOW : dim, 1};
+                    bar[nbar++] = (BarPiece){"/", dim, 0};
+                    bar[nbar++] = (BarPiece){m_s, go_key == 'm' ? C_YELLOW : dim, 0};
+                    bar[nbar++] = (BarPiece){"+ ARROW:", C_YELLOW, 0};
+                    bar[nbar++] = (BarPiece){arrows, C_YELLOW, 0};
+                }
+                draw_bar(&cv, bar, nbar);
+                if (getenv("CLAWD_STATUS_LOG")) { /* test hook: the bar is pixels now, so its text goes to a file whenever it changes */
+                    static char logged[1024];
+                    char cur[1024] = "";
+                    for (int i = 0; i < nbar; i++) { size_t l = strlen(cur); snprintf(cur + l, sizeof cur - l, "%s%s", i ? " | " : "", bar[i].text); }
+                    if (strcmp(cur, logged)) { snprintf(logged, sizeof logged, "%s", cur); FILE *lf = fopen(getenv("CLAWD_STATUS_LOG"), "a"); if (lf) { fprintf(lf, "%s\n", cur); fclose(lf); } }
+                }
+                Cells cells = cells_from_canvas(&cv, "");
                 show(&cells, have_prev ? &prev : NULL, 1);
                 if (have_prev) cells_free(&prev);
                 prev = cells; have_prev = 1;

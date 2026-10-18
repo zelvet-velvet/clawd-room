@@ -48,6 +48,14 @@ gitGraph
 
 ## 2026-10-19
 
+### 💬 One bar along the bottom
+> [!info] Branch `feat/style-a`
+- The white status line was the terminal's last row, tiny at the fixed font: it is now drawn **in the room's pixel font** on a dark bar (as big as the yellow hint), centred, wrapped between phrases, growing upwards for the help.
+- The `g` and `m` hints are **one yellow line** under it: `G SEND / M MOVE NAME + ARROW:` with the key held bright and the other dim, then which arrow goes where.
+- The pixel font got `[ ] ( ) , =`. Tests read the bar's text from `CLAWD_STATUS_LOG` (it is pixels now).
+
+![[2026-10-19 bottom bar, status and g m hint.png|420]]
+
 ### 📦 Moving a Clawd: packing and unpacking (step 2 of 3)
 > [!info] Branch `feat/style-a`
 - `m` + arrow: the Clawd goes to its desk, the **workspace shrinks into a cardboard box** (1.4 s), **poof**, it carries the box out by the gate; in the new room it walks to its new desk, sets the box down, **poof**, the workspace **grows out of it** (1.2 s). A move nobody takes comes back and unpacks at the old desk.

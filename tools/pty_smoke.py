@@ -20,11 +20,20 @@ ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 CMD = [os.path.join(ROOT, "c", "clawd-room")]
 
 
+def status_text(path):
+    try:
+        with open(path, "rb") as f:
+            return f.read()
+    finally:
+        os.unlink(path)
+
+
 def run(args, keys, env_extra=None, cols=110, rows=32, settle=0.6):
     """keys: list of (delay seconds, bytes). Returns (all output, exit status)."""
+    status_log = tempfile.NamedTemporaryFile(suffix=".status", delete=False).name  # the bar along the bottom is pixels: its text comes here
     pid, fd = pty.fork()
     if pid == 0:
-        env = dict(os.environ, TERM="xterm-256color", **(env_extra or {}))
+        env = dict(os.environ, TERM="xterm-256color", CLAWD_STATUS_LOG=status_log, **(env_extra or {}))
         os.execvpe(CMD[0], CMD + args, env)
     fcntl.ioctl(fd, termios.TIOCSWINSZ, struct.pack("HHHH", rows, cols, 0, 0))
     out = b""
@@ -66,8 +75,8 @@ def run(args, keys, env_extra=None, cols=110, rows=32, settle=0.6):
     if status is None:
         os.kill(pid, 9)
         os.waitpid(pid, 0)
-        return out, "timeout"
-    return out, os.WEXITSTATUS(status) if os.WIFEXITED(status) else "signal"
+        return status_text(status_log) + out, "timeout"
+    return status_text(status_log) + out, os.WEXITSTATUS(status) if os.WIFEXITED(status) else "signal"
 
 
 fails = []

@@ -21,6 +21,49 @@ void overlay_text(char *out, size_t n, int paused, int help_on, const char *note
     }
 }
 
+void draw_bar(Canvas *cv, const BarPiece *pieces, int n) {
+    enum { MAXW = 160, MAXL = 24, LINE = 7 };
+    struct { char w[48]; int gap, group, brk, x, line, ww; Rgb c; } wd[MAXW]; /* gap: spaces before it; group: starts a phrase (2+ spaces before) */
+    int nw = 0;
+    for (int i = 0; i < n; i++) {
+        const char *p = pieces[i].text;
+        if (!p) continue;
+        int first = 1, gap = 0;
+        while (*p && nw < MAXW) {
+            while (*p == ' ') { gap++; p++; }
+            if (!*p) break;
+            int l = 0;
+            while (p[l] && p[l] != ' ' && l < 47) l++;
+            snprintf(wd[nw].w, sizeof wd[nw].w, "%.*s", l, p);
+            wd[nw].ww = l * 4 - 1; wd[nw].c = pieces[i].color;
+            wd[nw].brk = first && pieces[i].line;
+            wd[nw].group = first || gap >= 2;
+            wd[nw].gap = first ? 2 : gap > 3 ? 3 : gap;
+            nw++; first = 0; gap = 0; p += l;
+        }
+    }
+    if (!nw) return;
+    int line = 0, x = 0, width[MAXL] = {0}, room = cv->w - 4;
+    for (int i = 0; i < nw; i++) {
+        if (wd[i].brk && x) { line++; x = 0; }
+        int g = x ? wd[i].gap * 4 : 0, gw = wd[i].ww; /* a phrase stays on one line if it fits on a line at all */
+        for (int k = i + 1; wd[i].group && k < nw && !wd[k].group; k++) gw += 4 + wd[k].ww;
+        if (x && ((wd[i].group && gw <= room && x + g + gw > room) || x + g + wd[i].ww > room)) { line++; x = 0; g = 0; }
+        if (line >= MAXL) { nw = i; line = MAXL - 1; break; }
+        wd[i].x = x + g; wd[i].line = line;
+        x += g + wd[i].ww; width[line] = x;
+    }
+    int lines = line + 1, max_lines = (cv->h * 2 / 3) / LINE > 1 ? (cv->h * 2 / 3) / LINE : 1;
+    if (lines > max_lines) lines = max_lines; /* (too many: the last ones are left out) */
+    int y0 = cv->h - lines * LINE - 1;
+    canvas_rect(cv, 0, y0, cv->w, cv->h - y0, RGB(20, 20, 28));
+    for (int i = 0; i < nw; i++) {
+        if (wd[i].line >= lines) continue;
+        int lx = width[wd[i].line] < room ? (cv->w - width[wd[i].line]) / 2 : 2;
+        canvas_text(cv, lx + wd[i].x, y0 + 2 + wd[i].line * LINE, wd[i].w, wd[i].c);
+    }
+}
+
 void too_small(char *out, size_t n, int cols, int rows) {
     char msg[64];
     snprintf(msg, sizeof msg, "need %dx%d, have %dx%d", MIN_COLS, MIN_ROWS, cols, rows);

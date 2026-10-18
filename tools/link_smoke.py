@@ -22,9 +22,10 @@ PROGS = {"c": [os.path.join(ROOT, "c", "clawd-room")]}
 
 class Proc:
     def __init__(self, kind, args, env):
+        self.status_log = tempfile.NamedTemporaryFile(suffix=".status", delete=False).name  # the bar is pixels: its text comes here
         self.pid, self.fd = pty.fork()
         if self.pid == 0:
-            os.execvpe(PROGS[kind][0], PROGS[kind] + args, dict(os.environ, TERM="xterm-256color", **env))
+            os.execvpe(PROGS[kind][0], PROGS[kind] + args, dict(os.environ, TERM="xterm-256color", CLAWD_STATUS_LOG=self.status_log, **env))
         fcntl.ioctl(self.fd, termios.TIOCSWINSZ, struct.pack("HHHH", 40, 140, 0, 0))
         self.out = b""
 
@@ -40,6 +41,14 @@ class Proc:
     def key(self, k):
         os.write(self.fd, k)
 
+    def read_status(self):
+        try:
+            with open(self.status_log, "rb") as f:
+                self.out += f.read()
+            os.unlink(self.status_log)
+        except OSError:
+            pass
+
     def stop(self):
         try:
             os.write(self.fd, b"q")
@@ -50,9 +59,11 @@ class Proc:
             time.sleep(0.05)
             done, st = os.waitpid(self.pid, os.WNOHANG)
             if done:
+                self.read_status()
                 return os.WEXITSTATUS(st) if os.WIFEXITED(st) else -1
         os.kill(self.pid, 9)
         os.waitpid(self.pid, 0)
+        self.read_status()
         return -9
 
 

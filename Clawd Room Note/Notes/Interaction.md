@@ -23,7 +23,7 @@ tags:
 | ← → or A D, Tab | while following: pick the previous / next Clawd (the camera stays on it) |
 | `c` | switch **auto follow ↔ free camera** |
 | arrows / W A S D | free camera only: move the view a quarter at a time |
-| `g` | send an idle Clawd next door; with several linked rooms **hold `g` and press an arrow** (the way to send it); while `g` is held a line along the bottom of the room says which arrow goes where |
+| `g` | send an idle Clawd next door; with several linked rooms **hold `g` and press an arrow** (the way to send it); while `g` (or `m`) is held the bar along the bottom has one yellow hint for both: `G SEND / M MOVE NAME + ARROW:` (the held key bright) and which arrow goes where |
 | `m` | **move** the picked Clawd (`Tab` / `<` `>`; or the only one) to another room: `m` + an arrow; it carries its work there and lives there while the rooms run |
 | `b` | **call back**: our Clawds next door walk home; with none away, visitors here are sent home |
 | `f` | auto font and scale again (WSL and iTerm2), camera back to 1x |
@@ -103,6 +103,9 @@ flowchart TD
     Busy -->|yes| B["🟢 the most recent one"]
     Busy -->|no| Turn["⏱️ next Clawd every 10 s"]
 ```
+
+> [!info] The bar along the bottom
+> The status (help, PAUSED, messages, what the camera does) and the `g` / `m` hint are drawn **in the room's pixel font** on a dark bar, wrapped between phrases (the terminal's own last row was tiny at the fixed font). Tests read its text from `CLAWD_STATUS_LOG`.
 
 > [!info] What the status line says while zoomed
 > `AUTO FOLLOW (WAITING)` · `AUTO: NAME` · `FOLLOW NAME` · `WITH NAME TO THE GATE` · `FREE CAMERA`

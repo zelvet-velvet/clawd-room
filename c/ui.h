@@ -16,6 +16,10 @@
 extern const char *MENU_LABEL[MENU_N], *MENU_SCENE[MENU_N];
 
 void overlay_text(char *out, size_t n, int paused, int help_on, const char *note, const char *flash);
+/* the bar along the bottom of the room, in its pixel font (the terminal's own text is tiny at the fixed font): pieces of
+ * text, each in its colour, wrapped at spaces; a piece with `line` set starts a new line; centred, on a dark band */
+typedef struct { const char *text; Rgb color; int line; } BarPiece;
+void draw_bar(Canvas *cv, const BarPiece *pieces, int n);
 void too_small(char *out, size_t n, int cols, int rows);
 int auto_scale(int pw, int ph, int n); /* the biggest TUI scale (1..SCALE_CAP) that seats n Clawds and leaves floor to walk on */
 /* room sizes (r list): 0 AUTO (auto_scale), then S M L XL = the biggest the room may be, in room pixels */
