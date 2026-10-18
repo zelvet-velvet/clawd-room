@@ -67,5 +67,6 @@ tags:
 - [ ] iTerm2: stripes only while dragging, a clean picture after
 - [ ] iTerm2: quitting gives the window title back and leaves no `osascript`
 - [ ] Sprite files: change a grid in `sprites/clawd.txt` or `props.txt` while a room runs: it shows within a second; delete the frame, the original is back
-- [ ] `./clawd-room.sh --edit window`: paint, erase, pick, add a colour, undo; the rooms show it as you draw
+- [ ] `./clawd-room.sh --edit window`: paint, erase, pick, add a colour, undo; the rooms show it as you draw; your typed-in window stays
+- [ ] `q` after changes asks keep / discard; N puts the file back (the rooms change back too); `--edit list` prints the names
 - [ ] Change a line in `rooms/office.txt` (e.g. the window's prefer): the window moves in a running room

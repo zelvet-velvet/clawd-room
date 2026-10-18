@@ -157,6 +157,7 @@ static int floordiv(int a, int b) { int q = a / b; return (a % b != 0 && ((a < 0
 static int in_ids(char ids[][40], int n, const char *id) { for (int i = 0; i < n; i++) if (!strcmp(ids[i], id)) return 1; return 0; }
 
 int editor_run(const char *dir, const char *name); /* editor.c */
+int editor_list(const char *dir);                   /* ... the names it can open */
 
 /* ---- the sprite files, reloaded when they change ------------------------------------------------------------------ */
 static struct { char dir[512]; SpriteFile *f[3]; time_t mt[3]; double next; } g_sw;
@@ -807,6 +808,7 @@ int app_main(int argc, char **argv) {
     props = sprites_load(path);
     theme_set_props(&props);
     sprites_watch(dir, &frames, &items, &props);
+    if (a.edit && !strcmp(a.edit, "list")) { int er = editor_list(dir); sprites_free(&frames); sprites_free(&items); sprites_free(&props); return er; } /* what --edit can open */
     if (a.edit) { int er = editor_run(dir, strcmp(a.edit, "-") ? a.edit : NULL); sprites_free(&frames); sprites_free(&items); sprites_free(&props); return er; } /* the pixel editor */
     { char rd[600]; snprintf(rd, sizeof rd, "%s", dir); char *sl = strrchr(rd, '/'); if (sl) strcpy(sl, "/rooms"); else strcpy(rd, "../rooms"); theme_set_rooms_dir(rd); } /* (rooms/ next to sprites/) */
     int rc = 0;

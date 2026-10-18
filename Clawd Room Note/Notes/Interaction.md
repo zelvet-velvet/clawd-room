@@ -35,7 +35,7 @@ tags:
 ---
 ## 🎨 The pixel editor
 
-`./clawd-room.sh --edit NAME` (in iTerm2 it opens its own Clawd Room window). Saves after each stroke; running rooms show the change.
+`./clawd-room.sh --edit NAME` opens it in its own Clawd Room window (in iTerm2); the window you typed in stays, and you are back there when you quit. `./clawd-room.sh --edit list` prints the names it can open. It saves after each stroke, so running rooms show the change; on quitting you choose to keep or discard.
 
 | Input | Does |
 | --- | --- |
@@ -47,7 +47,7 @@ tags:
 | `<` `>` (or `[` `]`) | the sprite before / after; Tab: the next file (props, items, Clawd) |
 | `+` `-` | zoom |
 | `w` `n` / `t` `s` | wider / narrower, taller / shorter |
-| `q` | quit |
+| `q` | quit: with changes it asks **Y** keep, **N** discard (the files go back to how they were when you opened them), **Esc** back to editing |
 
 ## 📐 Room size and resizing
 

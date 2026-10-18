@@ -52,6 +52,7 @@ gitGraph
 - Running rooms **read the sprite and room files again when they change**.
 - **`./clawd-room.sh --edit NAME`**: a pixel editor in the terminal with the mouse (paint, erase, pick, add colours, undo, resize, other sprites and files); it saves after each stroke, so the rooms next to it change as you draw.
 - Fixed on the way: on macOS the room never found the `sprites/` folder (edits to the sprite files were ignored).
+- Then, from Zaviel: `--edit list` prints what can be opened; `q` asks **keep or discard** (discard puts the files back as they were when opened; the rooms change back too); the editor opens in its own window **without closing the one you typed in**, so `q` takes you back to your prompt.
 
 ![[2026-10-18 pixel editor with rooms.png|480]]
 

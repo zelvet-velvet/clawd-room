@@ -28,7 +28,12 @@ fi
 # quarter of the screen that window is in and closes the window it was typed in (when that has no other tabs or panes; --keep leaves it).
 # --here (or CLAWD_HERE=1) runs the room in the current window; so does a run that only prints.
 here_only=0 keep=0
-for a in "$@"; do case "$a" in --here) here_only=1 ;; --keep) keep=1 ;; --dump*|--build-art*|-h|--help|--version) here_only=1 ;; esac; done
+prev=""
+for a in "$@"; do
+  case "$a" in --here) here_only=1 ;; --keep) keep=1 ;; --dump*|--build-art*|-h|--help|--version) here_only=1 ;; --edit) keep=1 ;; esac # (the editor: your window stays)
+  [ "$prev" = --edit ] && [ "$a" = list ] && here_only=1 # (--edit list just prints)
+  prev=$a
+done
 for a in "$@"; do shift; case "$a" in --here|--keep) ;; *) set -- "$@" "$a" ;; esac; done
 if [ "$(uname -s)" = Darwin ] && [ "$TERM_PROGRAM" = iTerm.app ] && [ -z "$TMUX" ]; then
   dyn="$HOME/Library/Application Support/iTerm2/DynamicProfiles"

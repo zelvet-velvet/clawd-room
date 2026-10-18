@@ -42,7 +42,22 @@ typedef struct {
     int pick;                                /* the chosen swatch: 0 erase, 1.. the palette, then the extra colours */
     int zoom, dirty_file;
     char msg[96];
+    char *orig[NFILES]; int changed[NFILES]; /* each file as it was when first opened, to put back on discard */
+    int asking;                               /* q with changes: keep or discard? */
 } Ed;
+
+static char *slurp(const char *path) {
+    FILE *f = fopen(path, "rb");
+    if (!f) return NULL;
+    fseek(f, 0, SEEK_END);
+    long n = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    char *b = malloc((size_t)n + 1);
+    if (b && fread(b, 1, (size_t)n, f) != (size_t)n) { free(b); b = NULL; }
+    if (b) b[n] = 0;
+    fclose(f);
+    return b;
+}
 
 static void file_free(File *f) { for (int i = 0; i < f->nline; i++) free(f->line[i]); f->nline = 0; }
 
@@ -111,6 +126,7 @@ static void file_open(Ed *e, const char *dir, int which, const char *name) {
     e->file = (which + NFILES) % NFILES;
     snprintf(path, sizeof path, "%s/%s", dir, FILES[e->file]);
     if (file_load(&e->f, path)) snprintf(e->msg, sizeof e->msg, "CANNOT READ %s", FILES[e->file]);
+    if (!e->orig[e->file]) e->orig[e->file] = slurp(path); /* (kept for a discard) */
     int sp = 0;
     if (name) for (int i = 0; i < e->f.nsprite; i++) {
         const char *nm = e->f.line[e->f.sprite_line[i]] + 1;
@@ -149,6 +165,7 @@ static int save(Ed *e) {
     e->sp = sp; e->w = w; e->h = h; memcpy(e->g, keep, sizeof keep); e->nundo = nu; e->nredo = nr;
     (void)name;
     snprintf(e->msg, sizeof e->msg, "SAVED %s", FILES[e->file]);
+    e->changed[e->file] = 1;
     return 0;
 }
 
@@ -191,7 +208,7 @@ static void swap_undo(Ed *e, int at) {
 typedef struct { int gx, gy, z, px, py, sw, nsw; } Layout; /* grid origin and zoom; the swatches' origin, size, count */
 
 /* the help, wrapped to the width: how many lines it takes (and, with cv, drawn above the bottom) */
-static const char *const HELP[] = {"LEFT PAINT", "RIGHT ERASE", "ALT+CLICK PICK", "U UNDO", "R REDO", "< > SPRITE", "TAB FILE", "+ - ZOOM", "W WIDER", "N NARROWER", "T TALLER", "S SHORTER", "Q QUIT"};
+static const char *const HELP[] = {"LEFT PAINT", "RIGHT ERASE", "ALT+CLICK PICK", "U UNDO", "R REDO", "< > SPRITE", "TAB FILE", "+ - ZOOM", "W WIDER", "N NARROWER", "T TALLER", "S SHORTER", "Q QUIT: KEEP OR DISCARD"};
 static int help(Canvas *cv, int W, int H) {
     int lines = 1, x = 4;
     for (size_t i = 0; i < sizeof HELP / sizeof *HELP; i++) {
@@ -272,6 +289,14 @@ static void draw(const Ed *e, Canvas *cv) {
         for (int y = 0; y < e->h; y++) for (int x = 0; x < e->w; x++) { int tr; Rgb c = colour_of(&e->f, e->g[y][x], &tr); if (!tr) canvas_rect(cv, ox + x * k, oy + y * k, k, k, c); }
     }
     if (e->msg[0]) canvas_text(cv, cv->w - text_width(e->msg) - 4, 3, e->msg, C_GREY);
+    if (e->asking) { /* q with changes */
+        const char *a = "KEEP THE CHANGES?", *b = "Y KEEP    N DISCARD    ESC BACK";
+        int w = (text_width(b) > text_width(a) ? text_width(b) : text_width(a)) + 12, h = 24, x = (cv->w - w) / 2, y = (cv->h - h) / 2;
+        canvas_rect(cv, x - 1, y - 1, w + 2, h + 2, C_GREY);
+        canvas_rect(cv, x, y, w, h, RGB(20, 20, 28));
+        canvas_text(cv, x + (w - text_width(a)) / 2, y + 4, a, C_YELLOW);
+        canvas_text(cv, x + (w - text_width(b)) / 2, y + 14, b, C_WHITE);
+    }
 }
 
 /* ---- the terminal ---------------------------------------------------------------------------------------------------- */
@@ -336,11 +361,13 @@ int editor_run(const char *dir, const char *name) {
         while (i < nin) {
             if (in[i] == 0x1b) {
                 if (i + 1 >= nin) break; /* (more to come) */
+                if (e.asking && in[i + 1] != '[') { e.asking = 0; i++; continue; } /* (Esc: back to editing) */
                 if (in[i + 1] == '[' && i + 2 < nin && in[i + 2] == '<') { /* SGR mouse: ESC [ < b ; x ; y (M | m) */
                     int b, x, y, used = 0;
                     char fin;
                     if (sscanf(in + i, "\x1b[<%d;%d;%d%c%n", &b, &x, &y, &fin, &used) < 4 || !used) { if (strchr(in + i, 'M') || strchr(in + i, 'm')) { i++; continue; } break; }
                     i += used;
+                    if (e.asking) continue;
                     int px = x - 1, py = (y - 1) * 2, btn = b & 3, alt = b & 8, release = fin == 'm';
                     int sx = (px - L.gx) / L.z, sy = (py - L.gy) / L.z, on_grid = px >= L.gx && py >= L.gy && sx < e.w && sy < e.h;
                     if (release) { if (painting) { painting = 0; save(&e); } continue; }
@@ -368,7 +395,20 @@ int editor_run(const char *dir, const char *name) {
                 i += 1; continue;
             }
             char ch = in[i++];
-            if (ch == 'q') quit = 1;
+            if (e.asking) { /* keep or discard */
+                if (ch == 'y' || ch == 'Y') quit = 1;
+                else if (ch == 'n' || ch == 'N') { /* put every changed file back as it was */
+                    for (int f = 0; f < NFILES; f++) if (e.changed[f] && e.orig[f]) {
+                        char path[700];
+                        snprintf(path, sizeof path, "%s/%s", dir, FILES[f]);
+                        FILE *o = fopen(path, "wb");
+                        if (o) { fputs(e.orig[f], o); fclose(o); }
+                    }
+                    quit = 1;
+                }
+                continue;
+            }
+            if (ch == 'q') { int any = 0; for (int f = 0; f < NFILES; f++) any |= e.changed[f]; if (any) e.asking = 1; else quit = 1; }
             else if (ch == 'u' && e.nundo) { e.nundo--; swap_undo(&e, e.nundo); e.nredo++; save(&e); }
             else if (ch == 'r' && e.nredo) { swap_undo(&e, e.nundo); e.nundo++; e.nredo--; save(&e); }
             else if (ch == ']' || ch == '[' || ch == '>' || ch == '<') { sprite_open(&e, e.sp + (ch == ']' || ch == '>' ? 1 : -1)); e.zoom = 0; e.msg[0] = 0; }
@@ -383,5 +423,33 @@ int editor_run(const char *dir, const char *name) {
     tty_off();
     cells_free(&prev);
     file_free(&e.f);
+    for (int f = 0; f < NFILES; f++) free(e.orig[f]);
+    return 0;
+}
+
+/* --edit list: what can be opened, by file */
+int editor_list(const char *dir) {
+    for (int f = 0; f < NFILES; f++) {
+        static File tf;
+        memset(&tf, 0, sizeof tf);
+        char path[700];
+        snprintf(path, sizeof path, "%s/%s", dir, FILES[f]);
+        if (file_load(&tf, path)) continue;
+        printf("%s (%d):\n ", FILES[f], tf.nsprite);
+        int col = 1;
+        for (int i = 0; i < tf.nsprite; i++) {
+            const char *nm = tf.line[tf.sprite_line[i]] + 1;
+            while (*nm == ' ') nm++;
+            const char *bar = strchr(nm, '|');
+            int nl = bar ? (int)(bar - nm) : (int)strlen(nm);
+            while (nl && nm[nl - 1] == ' ') nl--;
+            if (col + nl + 1 > 100) { printf("\n "); col = 1; }
+            printf(" %.*s", nl, nm);
+            col += nl + 1;
+        }
+        printf("\n\n");
+        file_free(&tf);
+    }
+    printf("open one with: ./clawd-room.sh --edit NAME\n");
     return 0;
 }
