@@ -175,17 +175,6 @@ static void draw_extras(Canvas *cv, const Session *s, const char *state, double 
 
 /* rows of workspaces on the floor, from the back: each row's front edge (y) and how many fit across it */
 typedef struct { int n; int by[16], count[16]; double x0[16], x1[16]; } Rows;
-/* the stair well at the back right (every room; the park's is stone): its front edge's y and middle x, and how far it
- * reaches across on screen */
-static void well_place(const View *v, double *fy, double *wx, double *x0, double *x1) {
-    double xl, xr, X, Z;
-    *fy = v->bb + WELL_BACK;
-    view_floor_span(v, *fy, &xl, &xr);
-    *wx = xr - WELL_SIDE;
-    view_world(v, *wx, *fy, &X, &Z);
-    *x0 = view_sx(v, X - WELL_HALF_W - 0.02, Z); *x1 = view_sx(v, X + WELL_HALF_W + 0.02, Z);
-}
-
 static void floor_rows(const View *v, int w, int h, Rows *r) {
     double wfy, wwx, wx0, wx1;
     well_place(v, &wfy, &wwx, &wx0, &wx1);
@@ -263,12 +252,14 @@ void geo_init(Geo *g, const Room *room, int w, int h) {
         g->gate_has_mid[SIDE_UP] = 1; g->gate_mid[SIDE_UP][0] = x1 + 2; g->gate_mid[SIDE_UP][1] = yl - 1; /* up the stairs, then along the platform */
         g->gate_out[SIDE_UP][0] = v->br - ARCH_IN - ARCH_W / 2.0; g->gate_out[SIDE_UP][1] = yl - 1;       /* along it to the opening at its right end */
     }
-    { /* the stair well at the back right (the park's is stone): in beside its back edge, over to the top step, down to its front */
+    { /* the stair well at the back right (the park's is stone): its steps go down from its right end to its left, carrying
+       * on the stairs that go up to the right below; in at the right, onto the top step, down to the left end */
         double fy, wx, wx0, wx1;
         well_place(v, &fy, &wx, &wx0, &wx1);
-        g->gate_in[SIDE_DOWN][0] = wx - 12; g->gate_in[SIDE_DOWN][1] = fy - WELL_DEEP + 1;
-        g->gate_has_mid[SIDE_DOWN] = 1; g->gate_mid[SIDE_DOWN][0] = wx; g->gate_mid[SIDE_DOWN][1] = fy - WELL_DEEP + 1;
-        g->gate_out[SIDE_DOWN][0] = wx; g->gate_out[SIDE_DOWN][1] = fy;
+        double my = fy - WELL_DEEP / 2.0;
+        g->gate_in[SIDE_DOWN][0] = wx1 + 6; g->gate_in[SIDE_DOWN][1] = my;
+        g->gate_has_mid[SIDE_DOWN] = 1; g->gate_mid[SIDE_DOWN][0] = wx1 - 3; g->gate_mid[SIDE_DOWN][1] = my;
+        g->gate_out[SIDE_DOWN][0] = wx0 + 3; g->gate_out[SIDE_DOWN][1] = my;
     }
     for (int side = 0; side < 2; side++) g->door_y[side] = fy - 8;
     g->rope_x = (int)g->gate_in[SIDE_UP][0]; g->stairs_x = (int)g->gate_in[SIDE_DOWN][0];

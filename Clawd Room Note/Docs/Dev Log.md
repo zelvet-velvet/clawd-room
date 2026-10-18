@@ -46,6 +46,13 @@ gitGraph
 ---
 ## 2026-10-18
 
+### ↔️ The well's steps run right to left, steps stand out
+> [!info] Branch `feat/style-a`
+- The stair well's steps now go **down from its right end to the left**, carrying on the stairs that go up to the right in the room below. A Clawd going down steps in at the right end and walks down to the left.
+- No more lines from each step down to the floor. The coffee shop's stairs and platform are **darker wood** than the wall and the floor, with a **dark skirting** along the floor, so they no longer blend in.
+
+![[2026-10-18 coffee well steps run right to left.png|300]] ![[2026-10-18 well close-up right to left.png|240]] ![[2026-10-18 coffee steps and skirting close-up.png|260]]
+
 ### 🔧 The steps inside the opening stay inside
 > [!info] Branch `feat/style-a`
 - The steps going up inside the opening are drawn as blocks from each tread down to the opening's floor; before, the first step's riser poked out below the opening onto the platform's edge.

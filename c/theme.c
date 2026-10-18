@@ -344,7 +344,7 @@ void stairs_geometry(const View *v, double *x0, double *x1, double *yl) {
 }
 /* the two stair styles: the coffee shop's wooden stairs with balusters, the office's steel stairs with slim steel balusters */
 typedef struct { Rgb side, tread, riser, rail; int baluster_gap; } StairStyle;
-static const StairStyle WOOD_STAIRS = {{150, 112, 86}, {214, 186, 150}, {166, 130, 98}, {96, 66, 46}, 3};   /* wooden balusters, close */
+static const StairStyle WOOD_STAIRS = {{118, 82, 60}, {214, 186, 150}, {140, 102, 76}, {84, 56, 40}, 3};  /* (darker than the wall and the floor) */   /* wooden balusters, close */
 static const StairStyle STEEL_STAIRS = {{110, 116, 128}, {206, 210, 218}, {140, 146, 158}, {70, 76, 88}, 5}; /* slim steel balusters, wider apart */
 
 /* the way up from the platform: an opening in the back wall with the stairs carrying on upwards inside, into the dark,
@@ -380,13 +380,13 @@ static void back_stairs(Canvas *c, const View *v, int coffee, double p) {
         canvas_rect(c, sx, ty + 1, ex - sx, y0 - ty, side);
         canvas_rect(c, sx, ty - 1, ex - sx, 2, tread);
         canvas_rect(c, sx, ty + 1, ex - sx, 1, riser);
-        if (i > 0) canvas_rect(c, sx, ty + 1, 1, y0 - ty, dk(side, 0.12)); /* the edge where this step rises from the last */
     }
     if (p < 1) return;
     /* the platform: its top (a strip, lit), its front face down to the floor, its end against the right-hand wall */
     canvas_rect(c, x1, yl - 1, xr - x1, 2, tread);
     canvas_rect(c, x1, yl + 1, xr - x1, y0 - yl, side);
     canvas_rect(c, x1, yl + 1, xr - x1, 1, riser);
+    canvas_rect(c, x0, y0, xr - x0, 1, dk(side, 0.45)); /* a dark skirting along the floor, under the steps and the platform */
     int dw = ARCH_W, dh = (int)fmin(ARCH_H, yl - v->bt - 2), dxl = xr - dw - ARCH_IN; /* at the right end of the platform */
     if (dh > 6) upstairs_opening(c, dxl, yl - 1, dw, dh, st);
     /* the railing: a baluster standing on each step, then along the platform's edge (the opening is behind it); the hand
@@ -405,25 +405,44 @@ static void back_stairs(Canvas *c, const View *v, int coffee, double p) {
     if (coffee && xr - x1 > 20 && y0 - yl >= 11) menu_board(c, (x1 + xr) / 2 - 8, yl + 1 + (y0 - yl - 11) / 2); /* the menu on the platform's face */
 }
 
-/* indoors, down: a small stair well at the back right of the floor (in front of the platform's end): a trapezoid opening, its side walls going down, the
- * steps going down from its back edge towards the front (lit at the back, darker towards the front), a wooden rim
- * all round (no railing: it looked like a bench); p: the opening grows */
-static void stair_well(Canvas *c, const View *v, double cx, double front_y, double hgt, double p, int stone) {
+/* the stair well at the back right (every room; the park's is stone): its front edge's y and middle x, and how far it
+ * reaches across on screen (rim included) */
+void well_place(const View *v, double *fy, double *wx, double *x0, double *x1) {
+    double xl, xr, X, Z;
+    *fy = v->bb + WELL_BACK;
+    view_floor_span(v, *fy, &xl, &xr);
+    *wx = xr - WELL_SIDE;
+    view_world(v, *wx, *fy, &X, &Z);
+    *x0 = view_sx(v, X - WELL_HALF_W - 0.02, Z); *x1 = view_sx(v, X + WELL_HALF_W + 0.02, Z);
+}
+/* down: a small stair well in the floor: a rim all round (wood, or stone in the park), dark inside, its steps going down
+ * from the right end (at floor level, lit) to the left (deeper, darker), so they carry on the stairs that go up to the
+ * right in the room below; p: the opening grows */
+static void stair_well(Canvas *c, const View *v, double p, int stone) {
     if (p <= 0) return;
-    double X, Z0, Z1, Xb;
-    view_world(v, cx, front_y, &X, &Z0);
-    view_world(v, cx, front_y - hgt * p, &Xb, &Z1);
-    double hw = WELL_HALF_W * p, x0 = X - hw, x1 = X + hw, dep = 0.03;
-    wq(c, v, x0 - 0.02, Z0 - 0.015, 0, x1 + 0.02, Z0 - 0.015, 0, x1 + 0.02, Z1 + 0.01, 0, x0 - 0.02, Z1 + 0.01, 0, stone ? RGB(112, 112, 120) : RGB(96, 70, 50)); /* a wooden (park: stone) rim all round */
-    wq(c, v, x0 - 0.01, Z0 - 0.007, 0, x1 + 0.01, Z0 - 0.007, 0, x1 + 0.01, Z1 + 0.004, 0, x0 - 0.01, Z1 + 0.004, 0, stone ? RGB(176, 176, 182) : RGB(150, 112, 80));
+    double fy, wx, sx0, sx1, X, Z0, Z1, Xb;
+    well_place(v, &fy, &wx, &sx0, &sx1);
+    view_world(v, wx, fy + 1, &X, &Z0);
+    view_world(v, wx, fy + 1 - WELL_DEEP, &Xb, &Z1);
+    double hw = WELL_HALF_W * p, x0 = X - hw, x1 = X + hw, dep = view_e(v, 6) * Z0;
+    Rgb rim = stone ? RGB(112, 112, 120) : RGB(96, 70, 50), rim_lt = stone ? RGB(176, 176, 182) : RGB(150, 112, 80);
+    Rgb tread = stone ? RGB(190, 190, 196) : RGB(206, 182, 150), riser = stone ? RGB(132, 132, 140) : RGB(150, 126, 102);
+    wq(c, v, x0 - 0.02, Z0 - 0.015, 0, x1 + 0.02, Z0 - 0.015, 0, x1 + 0.02, Z1 + 0.01, 0, x0 - 0.02, Z1 + 0.01, 0, rim);
+    wq(c, v, x0 - 0.01, Z0 - 0.007, 0, x1 + 0.01, Z0 - 0.007, 0, x1 + 0.01, Z1 + 0.004, 0, x0 - 0.01, Z1 + 0.004, 0, rim_lt);
     wq(c, v, x0, Z0, 0, x1, Z0, 0, x1, Z1, 0, x0, Z1, 0, RGB(24, 20, 18));
-    wq(c, v, x0, Z0, 0, x0, Z1, 0, x0, Z1, -dep, x0, Z0, -dep, RGB(52, 44, 40));
-    wq(c, v, x1, Z0, 0, x1, Z1, 0, x1, Z1, -dep, x1, Z0, -dep, RGB(52, 44, 40));
-    int n = 4;
-    for (int i = 0; i < n; i++) { /* step i: from the back edge (high, lit) down towards the front */
-        double za = Z1 - (Z1 - Z0) * i / n, zb = Z1 - (Z1 - Z0) * (i + 1) / n, e = -dep * (i + 1) / n;
-        wq(c, v, x0, za, e + dep / n, x1, za, e + dep / n, x1, za, e, x0, za, e, dk(stone ? RGB(132, 132, 140) : RGB(150, 126, 102), 0.14 * i)); /* riser */
-        wq(c, v, x0, za, e, x1, za, e, x1, zb, e, x0, zb, e, dk(stone ? RGB(190, 190, 196) : RGB(206, 182, 150), 0.14 * i)); /* tread */
+    /* inside, seen from above the front: the back wall going down, the steps (each a tread and the riser on its left) */
+    int n = 4, top = (int)view_sy(v, Z1, 0), bot = (int)view_sy(v, Z0, 0);
+    for (int i = 0; i < n; i++) {
+        double xa = x1 - (x1 - x0) * (i + 1) / n, xb = x1 - (x1 - x0) * i / n, e = -dep * (i + 1) / (n + 1);
+        double k = 0.16 * i;
+        int ca = (int)view_sx(v, xa, Z0), cb = (int)view_sx(v, xb, Z0);
+        for (int x = ca; x < cb; x++) {           /* (columns, kept inside the opening) */
+            int ty = (int)view_sy(v, Z1, e);      /* the tread starts where the back wall meets it */
+            if (ty < top) ty = top;
+            canvas_rect(c, x, top, 1, ty - top, dk(riser, 0.35 + k));  /* the back wall above this step */
+            if (ty < bot) canvas_rect(c, x, ty, 1, bot - ty, dk(tread, k));
+            if (x == ca && i < n - 1) canvas_rect(c, x, ty, 1, bot - ty, dk(riser, 0.2 + k)); /* the riser down to the next step */
+        }
     }
 }
 /* the park, up: a little house on a platform in the tree and a ladder up to it; p: the ladder grows */
@@ -449,7 +468,7 @@ void theme_gate(const Theme *th, Canvas *cv, const Geo *g, int side, double p, d
         if (th == &PARK) treehouse(cv, cv->w, v, p);
         else back_stairs(cv, v, th == &COFFEE, p);
     } else {
-        stair_well(cv, v, g->gate_out[SIDE_DOWN][0], g->gate_out[SIDE_DOWN][1] + 1, g->gate_out[SIDE_DOWN][1] - g->gate_mid[SIDE_DOWN][1] + 1, p, th == &PARK);
+        stair_well(cv, v, p, th == &PARK);
     }
 }
 

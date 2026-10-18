@@ -27,6 +27,8 @@ tags:
 - [ ] Side by side: a door on each room's facing wall; `g`: the Clawd walks to the door, it opens, the Clawd goes through and comes out of the other room's door
 - [ ] Stacked: the upper room shows the small stair well at the back right (office / coffee) or a small stone well at the back right (park); the lower room shows the stairs on the back wall (office / coffee) or the treehouse (park)
 - [ ] Office stairs are steel with slim steel balusters (no glass), coffee shop stairs wooden; the way up is a tall opening at the right end of the platform with steps going up and a light
+- [ ] The stair well's steps go down from its right end to the left (matching the stairs below); a Clawd going down walks in at the right
+- [ ] Coffee shop: the steps and the platform stand out from the wall and the floor (darker wood, a dark skirting)
 - [ ] With many sessions no workspace sits on the stair well
 - [ ] Stairs read as real steps (lit treads, a baluster on each step, the rail parallel to them); the platform reaches the corner; office window and coffee lamps clear of the sign and the opening
 - [ ] Side doors look tall enough for a Clawd; the stair well sits on open floor with a wooden rim and reads as a hole with steps going down

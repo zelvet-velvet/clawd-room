@@ -115,6 +115,7 @@ void geo_init(Geo *g, const Room *room, int w, int h);
 /* a gate in this theme (door / fence gate, stairs / treehouse, stair well / stone steps); p 0..1 how far it has appeared */
 void theme_gate(const Theme *th, Canvas *cv, const Geo *g, int side, double p, double open);
 void stairs_geometry(const View *v, double *x0, double *x1, double *yl); /* the stairs on the back wall: foot x, top x, landing y */
+void well_place(const View *v, double *fy, double *wx, double *x0, double *x1); /* the stair well: front edge y, middle x, left and right x (rim included) */
 int geo_home(const Geo *g, const Room *room, const Session *s, int *cx, int *by); /* 1 if it has a desk */
 const char *geo_role(const Geo *g, const Room *room, const Session *s);
 
