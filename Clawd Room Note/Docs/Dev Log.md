@@ -46,6 +46,12 @@ gitGraph
 ---
 ## 2026-10-18
 
+### 🏛️ The park's way up: a terrace and a stair tower
+> [!info] Branch `feat/style-a`
+- The treehouse did not fit a city plaza. Picked from three mockups (A): **stone stairs** up to a **terrace** along the back right with a **stone balustrade**, and at its end a small **brick stair tower** with a dark door and UP over it. It is the indoor stairs code with a stone style (Clawds walk up behind the railing); the tree moved to the back right corner; the third lamp only shows without the terrace.
+
+![[2026-10-18 park way up mockups.png|300]] ![[2026-10-18 park terrace and stair tower.png|600]]
+
 ### 🔍 `o` works, and names what it shows
 > [!bug] Fixed
 > The key reader only passed on a fixed list of keys and `o` was not in it, so the debug overlay never came on from the keyboard. Now it does, and each box is labelled with what it is (SIGN, LAMP, DESK, GATE-LEFT, RAIL …).

@@ -184,7 +184,7 @@ static void paint_park(const Theme *th, Canvas *c, const View *v) {
     double pxl, pxr;
     view_floor_span(v, v->bb + 6, &pxl, &pxr);
     canvas_rect(c, (int)pxl, (int)v->bb + 6, (int)(pxr - pxl), 1, RGB(150, 146, 134)); /* its kerb */
-    int tx = (int)(w * TREE_X), ty = (int)v->bb + 2; /* the big tree at the back (its treehouse comes with the gate up) */
+    int tx = (int)(w * TREE_X), ty = (int)v->bb + 2; /* the big tree at the back right corner */
     canvas_rect(c, tx - 2, ty - 26, 5, 26, RGB(120, 86, 56));
     blob(c, tx, ty - 30, 6, RGB(70, 140, 70));
     blob(c, tx - 8, ty - 25, 4, RGB(66, 132, 66));
@@ -367,8 +367,9 @@ static void fence_gate(Canvas *c, const View *v, int right, double fx, double fy
  * (the coffee shop's menu hangs on it) and its end meeting the right-hand wall; on the platform, at its right end, a door in
  * the back wall, dark inside: the way up. A banister runs up the stairs and along the platform's edge.
  * p: the steps appear one by one from the bottom, then the platform and the door */
-void stairs_geometry(const View *v, double *x0, double *x1, double *yl) {
-    *x0 = v->bl + (v->br - v->bl) * STAIRS_FOOT; *x1 = v->bl + (v->br - v->bl) * STAIRS_TOP; *yl = v->bb - (v->bb - v->bt) * PLATFORM_UP;
+void stairs_geometry(const View *v, double *x0, double *x1, double *yl) { /* (outdoors: the park's stone stairs up to its terrace) */
+    double foot = v->outdoor ? PARK_STAIRS_FOOT : STAIRS_FOOT, top = v->outdoor ? PARK_STAIRS_TOP : STAIRS_TOP, up = v->outdoor ? PARK_TERRACE_UP : PLATFORM_UP;
+    *x0 = v->bl + (v->br - v->bl) * foot; *x1 = v->bl + (v->br - v->bl) * top; *yl = v->bb - (v->bb - v->bt) * up;
 }
 /* the stairs' steps: how many, and the top row of the tread at column x (-1 off the stairs) */
 static int stairs_n(const View *v) { int d = (int)v->bb - 1 - (int)(v->bb - (v->bb - v->bt) * PLATFORM_UP); return (d + 2) / 4 < 3 ? 3 : (d + 2) / 4; }
@@ -386,7 +387,22 @@ int stairs_feet_y(const View *v, double x) {
 /* the two stair styles: the coffee shop's wooden stairs with balusters, the office's steel stairs with slim steel balusters */
 typedef struct { Rgb side, tread, riser, rail; int baluster_gap; } StairStyle;
 static const StairStyle WOOD_STAIRS = {{118, 82, 60}, {214, 186, 150}, {140, 102, 76}, {84, 56, 40}, 7};  /* (darker than the wall and the floor) */   /* wooden balusters */
-static const StairStyle STEEL_STAIRS = {{110, 116, 128}, {206, 210, 218}, {140, 146, 158}, {70, 76, 88}, 9}; /* slim steel balusters, further apart */
+static const StairStyle STEEL_STAIRS = {{110, 116, 128}, {206, 210, 218}, {140, 146, 158}, {70, 76, 88}, 9};
+static const StairStyle STONE_STAIRS = {{170, 164, 152}, {210, 204, 192}, {186, 180, 168}, {150, 146, 134}, 4}; /* the park: stone, a balustrade */
+static const StairStyle *stair_style(const Theme *th) { return th == &COFFEE ? &WOOD_STAIRS : th == &PARK ? &STONE_STAIRS : &STEEL_STAIRS; }
+
+/* the park's way up: a small brick stair tower at the terrace's right end, a dark door with "UP" over it */
+static void stair_tower(Canvas *c, int xr, int floor_y) {
+    int tx = xr - TOWER_IN - TOWER_W, ty = floor_y - TOWER_H;
+    canvas_rect(c, tx, ty, TOWER_W, TOWER_H, RGB(186, 120, 92));
+    for (int y = ty + 3; y < floor_y; y += 3) canvas_rect(c, tx, y, TOWER_W, 1, RGB(160, 100, 76));
+    canvas_rect(c, tx - 1, ty - 2, TOWER_W + 2, 2, RGB(222, 204, 176));
+    int dw = 6, dh = 12, dx = tx + (TOWER_W - dw) / 2;
+    canvas_rect(c, dx - 1, floor_y - dh - 1, dw + 2, dh + 1, RGB(222, 204, 176));
+    canvas_rect(c, dx, floor_y - dh, dw, dh, RGB(28, 22, 18));
+    canvas_rect(c, dx, floor_y - dh, dw, 1, RGB(250, 214, 140)); /* light from upstairs */
+    canvas_text(c, tx + (TOWER_W - text_width("UP")) / 2, ty + 2, "UP", RGB(250, 236, 200));
+} /* slim steel balusters, further apart */
 
 /* the way up from the platform: an opening in the back wall with the stairs carrying on upwards inside, into the dark,
  * a warm light at the top; its bottom on the platform floor (Zaviel kept this one over the lit archway) */
@@ -405,8 +421,9 @@ static void upstairs_opening(Canvas *c, int x, int floor_y, int w, int h, const 
     }
 }
 
-static void back_stairs(Canvas *c, const View *v, int coffee, double p, int part) { /* part: -1 all, 0 the steps, 1 the platform, 2 the opening */
-    const StairStyle *st = coffee ? &WOOD_STAIRS : &STEEL_STAIRS;
+static void back_stairs(Canvas *c, const View *v, const Theme *th, double p, int part) { /* part: -1 all, 0 the steps, 1 the platform, 2 the opening (the park: the tower) */
+    const StairStyle *st = stair_style(th);
+    int coffee = th == &COFFEE;
     double fx0, fx1, fyl;
     stairs_geometry(v, &fx0, &fx1, &fyl);
     int x0 = (int)fx0, x1 = (int)fx1, xr = (int)ceil(v->br), y0 = (int)v->bb - 1, yl = (int)fyl; /* (to the wall's last column) */
@@ -424,13 +441,13 @@ static void back_stairs(Canvas *c, const View *v, int coffee, double p, int part
     }
     if (p < 1 || part == 0) return;
     int dw = ARCH_W, dh = (int)fmin(ARCH_H, yl - v->bt - 2), dxl = xr - dw - ARCH_IN; /* at the right end of the platform */
-    if (part == 2) { if (dh > 6) upstairs_opening(c, dxl, yl - 1, dw, dh, st); return; }
+    if (part == 2) { if (v->outdoor) stair_tower(c, xr, yl - 1); else if (dh > 6) upstairs_opening(c, dxl, yl - 1, dw, dh, st); return; }
     /* the platform: its top (a strip, lit), its front face down to the floor, its end against the right-hand wall */
     canvas_rect(c, x1, yl - 1, xr - x1, 2, tread);
     canvas_rect(c, x1, yl + 1, xr - x1, y0 - yl, side);
     canvas_rect(c, x1, yl + 1, xr - x1, 1, riser);
     canvas_rect(c, x0, y0, xr - x0, 1, dk(side, 0.45)); /* a dark skirting along the floor, under the steps and the platform */
-    if (part < 0 && dh > 6) upstairs_opening(c, dxl, yl - 1, dw, dh, st);
+    if (part < 0) { if (v->outdoor) stair_tower(c, xr, yl - 1); else if (dh > 6) upstairs_opening(c, dxl, yl - 1, dw, dh, st); }
     if (coffee && xr - x1 > 20 && y0 - yl >= 11) menu_board(c, (x1 + xr) / 2 - 8, yl + 1 + (y0 - yl - 11) / 2); /* the menu on the platform's face */
 }
 
@@ -474,27 +491,13 @@ static void stair_well(Canvas *c, const View *v, double p, int stone) {
         }
     }
 }
-/* the park, up: a little house on a platform in the tree and a ladder up to it; p: the ladder grows */
-static void treehouse(Canvas *c, int w, const View *v, double p) {
-    int tx = (int)(w * TREE_X), base = (int)v->bb + 2, hy = base - TREEHOUSE_UP - 2, hx = tx + 1;
-    canvas_rect(c, hx - 2, hy, 14, 2, RGB(150, 110, 70));
-    canvas_rect(c, hx, hy - 7, 10, 7, RGB(176, 128, 82));
-    quad(c, hx - 1, hy - 7, hx + 11, hy - 7, hx + 8, hy - 11, hx + 2, hy - 11, RGB(170, 70, 60));
-    canvas_rect(c, hx + 6, hy - 5, 3, 5, RGB(70, 50, 36));
-    int len = (int)((base + 4 - (hy + 2)) * p);
-    for (int y = hy + 2; y < hy + 2 + len; y++) {
-        canvas_px(c, hx + 1, y, ROPE); canvas_px(c, hx + 6, y, ROPE);
-        if (y % 3 == 0) canvas_rect(c, hx + 2, y, 4, 1, RUNG);
-    }
-}
-
 /* the stairs' railing, drawn after the Clawds on the stairs and the platform (they walk behind it) and before the ones on
  * the floor: a newel post at the foot, a baluster on each step, the hand rail parallel to the steps up to the last one
  * (level with the platform), then level along the platform with balusters at the same spacing on */
 void theme_stair_rail(const Theme *th, Canvas *c, const Geo *g, double p) {
-    if (th == &PARK || p < 1) return;
+    if (p < 1) return;
     const View *v = &g->view;
-    const StairStyle *st = th == &COFFEE ? &WOOD_STAIRS : &STEEL_STAIRS;
+    const StairStyle *st = stair_style(th);
     double fx0, fx1, fyl;
     stairs_geometry(v, &fx0, &fx1, &fyl);
     int x0 = (int)fx0, x1 = (int)fx1, xr = (int)ceil(v->br), y0 = (int)v->bb - 1, yl = (int)fyl, n = stairs_n(v);
@@ -523,8 +526,7 @@ void theme_gate(const Theme *th, Canvas *cv, const Geo *g, int side, double p, d
         if (th == &PARK) fence_gate(cv, v, side == SIDE_RIGHT, g->gate_out[side][0], g->gate_out[side][1], p, part, open);
         else wall_door(cv, v, side == SIDE_RIGHT, g->gate_out[side][0], g->gate_out[side][1], p, open);
     } else if (side == SIDE_UP) {
-        if (th == &PARK) treehouse(cv, cv->w, v, p);
-        else back_stairs(cv, v, th == &COFFEE, p, part);
+        back_stairs(cv, v, th, p, part); /* (the park: stone stairs to a terrace and a stair tower) */
     } else {
         stair_well(cv, v, p, th == &PARK);
     }
@@ -566,7 +568,7 @@ static const WallSpec PARK_WALL[] = {
     {"signpost", 0, 20, BAND_POST, 0.12, 0.12, 9, WHEN_ALWAYS},
     {"streetlamp", 3, 17, BAND_POST, 0.25, 0.25, 4, WHEN_ALWAYS},
     {"streetlamp", 3, 17, BAND_POST, 0.47, 0.47, 4, WHEN_ALWAYS},
-    {"streetlamp", 3, 17, BAND_POST, 0.66, 0.66, 4, WHEN_ALWAYS},
+    {"streetlamp", 3, 17, BAND_POST, 0.66, 0.66, 4, WHEN_NO_UP}, /* (with the terrace there is no room for it) */
     {"bench", 12, 5, BAND_POST, 0.36, 0.36, 3, WHEN_ALWAYS},
     {"bench", 12, 5, BAND_POST, 0.57, 0.57, 3, WHEN_ALWAYS},
 };
@@ -743,7 +745,7 @@ Box theme_footprint(const Theme *th, int w, int h, const char *role) {
     return (Box){b.x0 - cx, b.y0 - by, b.x1 - cx, b.y1 - by};
 }
 /* what must stay clear around a gate: the steps, their foot and the opening (not the platform's face: things in front of it
- * are fine); the door, the gate in the fence, the well, the treehouse, and the floor between a gate's in and out points.
+ * are fine); the door, the park building's door, the well, and the floor between a gate's in and out points.
  * mask: 1 for the floor (workspaces, bushes), 2 for the wall (wall items), 4 soft (only walked on: given up when the room
  * is too full) */
 int theme_keep_clear(const Theme *th, const Geo *g, int side, Box *out, int *mask, int max) {
@@ -751,14 +753,15 @@ int theme_keep_clear(const Theme *th, const Geo *g, int side, Box *out, int *mas
     int n = 0;
 #define KEEP(B, M) do { if (n < max) { out[n] = (B); mask[n] = (M); n++; } } while (0)
     double ix = g->gate_in[side][0], iy = g->gate_in[side][1], ox = g->gate_out[side][0], oy = g->gate_out[side][1];
-    if (side == SIDE_UP && th != &PARK) {
+    if (side == SIDE_UP) {
         double fx0, fx1, fyl;
         stairs_geometry(v, &fx0, &fx1, &fyl);
         int x0 = (int)fx0, x1 = (int)fx1, xr = (int)ceil(v->br), yl = (int)fyl, bb = (int)v->bb;
         int dw = ARCH_W, dh = (int)fmin(ARCH_H, yl - v->bt - 2), dxl = xr - dw - ARCH_IN;
         KEEP(((Box){x0 - 3, yl - 9, x1 + 2, bb + 1}), 3);              /* the steps and their railing */
         KEEP(((Box){x1, yl - 9, xr + 1, bb + 1}), 2);                  /* the platform (only for the wall items) */
-        KEEP(((Box){dxl - 2, yl - 2 - dh, dxl + dw + 2, yl + 1}), 3);  /* the opening */
+        if (v->outdoor) { int tx = xr - TOWER_IN - TOWER_W; KEEP(((Box){tx - 3, yl - TOWER_H - 4, tx + TOWER_W + 3, yl + 1}), 3); } /* the stair tower */
+        else KEEP(((Box){dxl - 2, yl - 2 - dh, dxl + dw + 2, yl + 1}), 3);  /* the opening */
         KEEP(((Box){x0 - 14, bb - 1, x0 + 4, bb + 10}), 5);            /* the foot of the stairs */
         return n;
     }

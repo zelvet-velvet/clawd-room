@@ -8,7 +8,7 @@
 enum { /* the layers, drawn in this order */
     LAYER_SKY,      /* sky, ceiling, walls, floor (the cached background) */
     LAYER_WALL,     /* things on the back wall */
-    LAYER_STRUCT,   /* stairs, platform, doors, fences, the well, the treehouse; the room's sign */
+    LAYER_STRUCT,   /* stairs, platform, doors, the park's buildings, the well; the room's sign */
     LAYER_FLOOR,    /* marks flat on the floor */
     LAYER_DEPTH,    /* desks, props, Clawds, the railing: by how far forward they stand */
     LAYER_PARTICLE, /* sparks and hearts */

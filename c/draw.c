@@ -374,6 +374,7 @@ void geo_init(Geo *g, const Room *room, int w, int h) {
     g->w = w; g->h = h;
     View *v = &g->view;
     view_init(v, w, h);
+    v->outdoor = park; /* (the park's stairs go up to a terrace) */
     g->spots = theme_spots(room->theme, w, h, NULL);
     g->floor_y = (int)v->bb;
     Rows r;
@@ -398,22 +399,18 @@ void geo_init(Geo *g, const Room *room, int w, int h) {
     }
     g->ymin = last_by ? last_by - 6 : (int)v->bb + 4; /* the walking strip: in front of the last row, to the front edge */
     g->ymax = imax(g->ymin, h - 9);
-    /* the gates (feet positions): side doors at the foot of the side walls; up: the stairs on the back wall (indoors) or the
-     * treehouse ladder (park); down: the stair well (indoors) or the stone steps (park), at the front */
+    /* the gates (feet positions): side doors at the foot of the side walls; up: the stairs on the back wall (the park: stone
+     * stairs to a terrace and its tower); down: the stair well at the front left */
     double fy = g->ymin + 8 + (g->ymax - g->ymin) * 0.3, xl, xr;
     view_floor_span(v, fy, &xl, &xr);
     g->gate_out[SIDE_LEFT][0] = xl + 2; g->gate_out[SIDE_LEFT][1] = fy; g->gate_in[SIDE_LEFT][0] = xl + 14; g->gate_in[SIDE_LEFT][1] = fy;
     g->gate_out[SIDE_RIGHT][0] = xr - 2; g->gate_out[SIDE_RIGHT][1] = fy; g->gate_in[SIDE_RIGHT][0] = xr - 14; g->gate_in[SIDE_RIGHT][1] = fy;
-    if (park) {
-        double lx = w * TREE_X + 4;
-        g->gate_in[SIDE_UP][0] = lx; g->gate_in[SIDE_UP][1] = v->bb + 6;
-        g->gate_out[SIDE_UP][0] = lx; g->gate_out[SIDE_UP][1] = v->bb - TREEHOUSE_UP;
-    } else {
+    {
         double x0, x1, yl;
         stairs_geometry(v, &x0, &x1, &yl);
         g->gate_in[SIDE_UP][0] = x0 - 4; g->gate_in[SIDE_UP][1] = v->bb + 2;
         g->gate_has_mid[SIDE_UP] = 1; g->gate_mid[SIDE_UP][0] = x1 + 2; g->gate_mid[SIDE_UP][1] = yl - 1; /* up the stairs, then along the platform */
-        g->gate_out[SIDE_UP][0] = v->br - ARCH_IN - ARCH_W / 2.0; g->gate_out[SIDE_UP][1] = yl - 1;       /* along it to the opening at its right end */
+        g->gate_out[SIDE_UP][0] = park ? ceil(v->br) - TOWER_IN - TOWER_W / 2.0 : v->br - ARCH_IN - ARCH_W / 2.0; g->gate_out[SIDE_UP][1] = yl - 1; /* along it to the opening (the park: the tower's door) */
     }
     { /* the stair well at the front left (the park's is stone): its steps go down from its right end to its left, carrying
        * on the stairs that go up to the right below; in at the right, onto the top step, down to the left end */
@@ -623,7 +620,7 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
         snprintf(gk, sizeof gk, "gate%d", side);
         double p = fmin(1.0, fmax(0.0, anim_value(&room->anim, gk, t, 1))); /* (eased by the animator; clamped: EASE_BACK may pass 1) */
         int park = room->theme == theme_get("park");
-        if (side == SIDE_UP && !park) { /* the stairs: the steps, the platform, the opening (things may stand in front of the platform) */
+        if (side == SIDE_UP) { /* the stairs: the steps, the platform (the park: the terrace), the opening (the park: the stair tower) */
             scene_add(sc, (SceneItem){.kind = "gate-up", .layer = LAYER_STRUCT, .owner = -1, .ax = geo.gate_in[side][0], .ay = geo.gate_in[side][1], .draw = it_gate, .i = side, .j = 0, .p = p});
             scene_add(sc, (SceneItem){.kind = "platform", .layer = LAYER_STRUCT, .owner = -1, .draw = it_gate, .i = side, .j = 1, .p = p});
             scene_add(sc, (SceneItem){.kind = "opening", .layer = LAYER_STRUCT, .owner = -1, .ax = geo.gate_out[side][0], .ay = geo.gate_out[side][1], .draw = it_gate, .i = side, .j = 2, .p = p});

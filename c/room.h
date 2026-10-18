@@ -38,13 +38,13 @@ typedef struct {
     int w, h, banner, slot_w, floor_y, ymin, ymax, rope_x, stairs_x, rope_end;
     View view;                 /* the perspective (persp.h) */
     double gate_in[SIDES][2];  /* for each gate: where a Clawd steps on and off it (feet, room pixels) ... */
-    double gate_out[SIDES][2]; /* ... and where it goes through (the door, the platform's door, the treehouse, down the well) */
+    double gate_out[SIDES][2]; /* ... and where it goes through (the door, the platform's door, the park's stair tower, down the well) */
     int gate_has_mid[SIDES]; double gate_mid[SIDES][2]; /* a point on the way between them (the top of the stairs) */
     int shown, more, has_more_pos, more_pos[2];
     int home[MAX_SESS][2];   /* by index in room->s (only the first `shown`) */
     double door_y[2];
     Spots spots;
-    int has_up, fence_sides;   /* stairs or a treehouse; the sides with a park fence (1 left, 2 right) */
+    int has_up, fence_sides;   /* stairs up; the park's sides with a building (1 left, 2 right) */
     WallPlan wall;             /* the wall items where the placer put them */
     Box keep[48]; int keep_mask[48], nkeep; /* what must stay clear: the gates, the playground, posts, bushes (mask 1 floor, 2 wall) */
     int bush[8][4], nbush;     /* the park's bushes that fit: x, y, size, right side */
@@ -95,8 +95,13 @@ typedef struct {
 #define ROW_PITCH 15       /* room pixels between the rows of workspaces */
 #define ROW_MARGIN 3       /* room pixels kept free at the floor's sides of each row */
 #define WALK_MIN 16        /* room pixels of floor kept in front of the last row to walk on */
-#define TREE_X 0.76        /* the park's treehouse tree, as a part of the width */
-#define TREEHOUSE_UP 18    /* how far above the back of the floor the treehouse door is */
+#define TREE_X 0.9         /* the park's big tree, as a part of the width (at the back right corner) */
+#define PARK_STAIRS_FOOT 0.58 /* the park's stone stairs: their foot and top along the back (parts of its width), */
+#define PARK_STAIRS_TOP 0.68
+#define PARK_TERRACE_UP 0.45  /* ... the terrace this far up from the back of the lawn towards the top of the picture, */
+#define TOWER_W 14            /* ... and at its right end a stair tower this wide and tall: the way up */
+#define TOWER_H 24
+#define TOWER_IN 2
 #define STAIRS_FOOT 0.2     /* the stairs on the back wall start this far along it ... */
 #define STAIRS_TOP 0.42     /* ... and reach the platform here */
 #define ARCH_W 12           /* the opening up: width, height (room pixels), and how far in from the platform's right end */
@@ -121,7 +126,7 @@ typedef struct {
 int room_auto_scale(int pw, int ph, const Room *room); /* AUTO room size: the biggest scale at which the placer seats everyone */
 void layout_slots(int w, int h, int n, int *banner, int *per_row, int *slot_w, int *rows_shown, int *ys);
 void geo_init(Geo *g, const Room *room, int w, int h);
-/* a gate in this theme (door / fence gate, stairs / treehouse, stair well / stone steps); p 0..1 how far it has appeared */
+/* a gate in this theme (a door, the park's building with a door; stairs; a stair well); p 0..1 how far it has appeared */
 void theme_gate(const Theme *th, Canvas *cv, const Geo *g, int side, double p, double open, int part); /* part -1: all of it */
 int theme_keep_clear(const Theme *th, const Geo *g, int side, Box *out, int *mask, int max); /* what must stay clear around a gate (mask 1 floor, 2 wall) */
 void theme_stair_rail(const Theme *th, Canvas *c, const Geo *g, double p); /* the stairs' railing (drawn in among the Clawds) */

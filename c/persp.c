@@ -9,6 +9,7 @@ void view_init(View *v, int w, int h) {
     v->f = h - v->vpy;
     v->zb = v->f / (v->bb - v->vpy);
     v->xw = (v->vpx - v->bl) * v->zb / v->f;
+    v->outdoor = 0;
 }
 
 double view_sx(const View *v, double X, double Z) { return v->vpx + X * v->f / Z; }

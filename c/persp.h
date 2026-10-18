@@ -16,6 +16,7 @@ typedef struct {
     double bl, br, bt, bb;  /* the back wall in room pixels */
     double vpx, vpy, f;     /* the vanishing point and the focal length (f = h - vpy, so the front edge is Z = 1) */
     double zb, xw;          /* the back wall's depth and the room's half-width in world units */
+    int outdoor;            /* the park: its stairs go up to a terrace (theme.c stairs_geometry) */
 } View;
 
 void view_init(View *v, int w, int h);

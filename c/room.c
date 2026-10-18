@@ -146,7 +146,7 @@ static void set_floor_goal(Session *s, const Geo *geo, double x, double y) {
     set_goal(s, fmax(xl + 7, fmin(xr - 7, x)), y);
 }
 
-/* coming in by a gate: appear where it goes through (the door, the top of the stairs, the treehouse, down the well) and
+/* coming in by a gate: appear where it goes through (the door, the top of the stairs, the stair tower, down the well) and
  * walk / climb to where it steps off it */
 static void enter(Session *s, int side, const Geo *geo) {
     s->nroute = 0; s->has_goal = 0;

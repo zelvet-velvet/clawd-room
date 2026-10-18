@@ -10,6 +10,6 @@
 signpost    0  20   post    0.12    0.12       9         always
 streetlamp  3  17   post    0.25    0.25       4         always
 streetlamp  3  17   post    0.47    0.47       4         always
-streetlamp  3  17   post    0.66    0.66       4         always
+streetlamp  3  17   post    0.66    0.66       4         no-up
 bench      12   5   post    0.36    0.36       3         always
 bench      12   5   post    0.57    0.57       3         always
