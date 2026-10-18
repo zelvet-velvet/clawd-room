@@ -368,19 +368,7 @@ static void back_stairs(Canvas *c, const View *v, int coffee, double p) {
     canvas_rect(c, x1, yl - 1, xr - x1, 2, tread);
     canvas_rect(c, x1, yl + 1, xr - x1, y0 - yl, side);
     canvas_rect(c, x1, yl + 1, xr - x1, 1, riser);
-    /* the platform carries on a little way along the right-hand wall (it sits in the corner): its top, its face and the
-     * railing follow the wall's slant forward */
-    int ex = (int)((c->w - v->br) * PLATFORM_ALONG);
-    double slope = (c->h - v->bb) / (c->w - v->br);
-    for (int i = 0; i <= ex; i++) {
-        int x = xr + i, top = (int)(yl - 1 + slope * i), fl = (int)(v->bb + slope * i);
-        canvas_rect(c, x, top, 1, 2, tread);
-        canvas_rect(c, x, top + 2, 1, fl - top - 2, dk(side, 0.12));
-        canvas_px(c, x, top - 6, rail); canvas_px(c, x, top - 7, lt(rail, 0.15));
-        if (st->glass_rail) canvas_rect(c, x, top - 5, 1, 5, rgb_mix(st->glass, side, 0.2));
-        else if (i % 3 == 1) canvas_rect(c, x, top - 5, 1, 5, rail);
-    }
-    int dw = ARCH_W, dh = (int)fmin(ARCH_H, yl - v->bt - 2), dxl = x1 + ARCH_IN; /* on the left of the platform, where the stairs arrive */
+    int dw = ARCH_W, dh = (int)fmin(ARCH_H, yl - v->bt - 2), dxl = xr - dw - ARCH_IN; /* at the right end of the platform */
     if (dh > 6) upstairs_opening(c, dxl, yl - 1, dw, dh, st);
     /* the railing up the stairs and along the platform's edge (the opening is behind it): wooden balusters, or a glass
      * panel under a thin steel rail */
@@ -395,7 +383,7 @@ static void back_stairs(Canvas *c, const View *v, int coffee, double p) {
     if (coffee && xr - x1 > 20 && y0 - yl >= 11) menu_board(c, (x1 + xr) / 2 - 8, yl + 1 + (y0 - yl - 11) / 2); /* the menu on the platform's face */
 }
 
-/* indoors, down: a small stair well at the back left of the floor: a trapezoid opening, its side walls going down, the
+/* indoors, down: a small stair well at the back right of the floor (in front of the platform's end): a trapezoid opening, its side walls going down, the
  * steps going down from its back edge towards the front (lit at the back, darker towards the front), a railing along its
  * sides (the way in is at the back; no rail across the front, so the steps show); p: the opening grows */
 static void stair_well(Canvas *c, const View *v, double cx, double front_y, double hgt, double p) {

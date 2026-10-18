@@ -46,12 +46,12 @@ gitGraph
 ---
 ## 2026-10-18
 
-### 🪜 Stair well at the back left, platform in the corner
+### 🪜 Way up at the platform's right end, stair well at the back right
 > [!info] Branch `feat/style-a`
-- The **stair well** (way down) is smaller and moved to the **back left** of the floor; its steps go down from the back edge towards the front, with a railing along its sides.
-- The **platform carries on along the right-hand wall**, so it sits in the corner; the way up is wider again and starts over the top of the stairs; side doors a little narrower.
+- Following Zaviel's sketch: the **way up** sits at the **right end of the platform**; the platform **ends at the back corner** (it no longer runs along the right-hand wall).
+- The **stair well** (way down) is small, at the **back right** of the floor in front of the platform's end; its steps go down from the back edge towards the front, a railing along its sides. Side doors a little narrower.
 
-![[2026-10-18 office stairs well and doors.png|300]] ![[2026-10-18 stair well close-up.png|250]]
+![[2026-10-18 office stairs well and doors.png|300]] ![[2026-10-18 coffee stairs well and doors.png|300]] ![[2026-10-18 stair well close-up.png|220]]
 
 ### 🚪 The way up, on the left of the platform
 > [!info] Branch `feat/style-a`
