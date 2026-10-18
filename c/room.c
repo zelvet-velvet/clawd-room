@@ -64,7 +64,11 @@ static int owns(const Room *r, const Session *s) {
 
 void room_order(Room *r) {
     r->n = 0;
-    for (int i = 0; i < r->npool; i++) if (owns(r, &r->pool[i])) r->s[r->n++] = &r->pool[i];
+    for (int i = 0; i < r->npool; i++) {
+        Session *s = &r->pool[i];
+        if (owns(r, s)) r->s[r->n++] = s;
+        else if (s->has_away && !s->move) { s->has_away = 0; s->pack = 0; s->has_pos = 0; } /* (moved away for good: if it comes back, at its desk) */
+    }
     qsort(r->s, (size_t)r->n, sizeof(Session *), by_created);
     r->ng = 0;
     for (int i = 0; i < r->ngp; i++) if (r->gpool[i].has_pos) r->guests[r->ng++] = &r->gpool[i];
@@ -204,6 +208,15 @@ static void push_out(Room *r, const char *peer, int walk, const char *sid, const
     m->side = side; m->home = home; m->has_y = has_y; m->y = y;
 }
 
+static void poof(Room *r, double x, double y) { /* a ring of little white clouds (packing and unpacking) */
+    for (int i = 0; i < 10 && r->np < MAX_PARTS; i++) {
+        Particle *q = &r->parts[r->np++];
+        double a = i * 2 * M_PI / 10, v = 0.1 + 0.04 * (i % 3);
+        q->x = x + cos(a) * 4 - 1; q->y = y - 3 + sin(a) * 2; q->vx = cos(a) * v; q->vy = sin(a) * v * 0.5 - 0.06;
+        q->life = 1.0; q->c = i % 2 ? C_WHITE : RGB(200, 200, 214); q->heart = 2;
+    }
+}
+
 static void sparks(Room *r, Rng *rng, double x, double y, int n) {
     for (int i = 0; i < n && r->np < MAX_PARTS; i++) {
         Particle *q = &r->parts[r->np++];
@@ -214,6 +227,7 @@ static void sparks(Room *r, Rng *rng, double x, double y, int n) {
 
 static void come_home(Room *r, Session *s, const Geo *geo, double now, int side) {
     (void)r;
+    if (s->move) s->pack = 3; /* a move nobody took: back with the box, unpacks at its desk again */
     s->has_away = 0; s->move = 0;
     enter(s, side, geo);
     s->next_plan = now + rng_uniform(&s->rng, 1.0, 3.0);
@@ -251,6 +265,7 @@ static void handle_messages(Room *r, const Geo *geo, double now) {
                 s->has_away = 0; s->leaving = 0; s->returning = 0; s->moving = 0;
                 if (s->name[0] == 0) snprintf(s->name, sizeof s->name, "%.32s", m->name);
                 enter(s, m->side, geo);
+                s->pack = 3; /* with its box */
                 s->next_plan = now + rng_uniform(&s->rng, 1.0, 3.0);
             } else if (m->home) { /* one of ours coming back */
                 Session *s = find_session(r, m->sid);
@@ -292,7 +307,7 @@ static void steer_away(Room *r, Session *s, const Geo *geo, double now) {
     if (s->move) { /* moved out: done when that room claims it, back home if it does not answer */
         if (s->has_left) { s->gone = 1; return; }
         const char *by = claimed_by(r, s->sid);
-        if (by && !strcmp(by, s->away_peer)) { s->move = 0; s->has_away = 0; s->has_pos = 0; drop_mine(r, s->sid); }
+        if (by && !strcmp(by, s->away_peer)) { s->move = 0; drop_mine(r, s->sid); } /* (still away and packed this frame: room_order lets it go next frame, no blink) */
         else if (now - s->away_since > MOVE_WAIT) { s->move = 0; come_home(r, s, geo, now, s->away_side); }
         return;
     }
@@ -382,11 +397,17 @@ const char *room_move_to(Room *r, const Geo *geo, double now, const char *sid, i
     if (side < 0 || !has_nb(r, side)) return "NO WINDOW THAT WAY";
     Session *s = find_session(r, sid);
     if (!s || !s->has_pos || s->has_left || !owns(r, s)) return "TAB: PICK A CLAWD, THEN M";
-    if (s->has_away || s->has_travel) return "THAT CLAWD IS ON ITS WAY";
-    drop_social(s);
-    s->has_travel = 1; s->move = 1; s->travel_edge = side; snprintf(s->travel_peer, sizeof s->travel_peer, "%s", nb_id(r, side));
-    exit_route(s, side, geo);
-    (void)now;
+    if (s->has_away || (s->has_travel && !s->move)) return "THAT CLAWD IS ON ITS WAY";
+    int pack = s->pack;
+    if (s->move && s->has_travel && pack >= 1 && pack <= 2) { /* still packing: only where it goes changes */
+        s->travel_edge = side; snprintf(s->travel_peer, sizeof s->travel_peer, "%s", nb_id(r, side));
+    } else {
+        drop_social(s);
+        s->has_travel = 1; s->move = 1; s->travel_edge = side; snprintf(s->travel_peer, sizeof s->travel_peer, "%s", nb_id(r, side));
+        if (pack == 3 || pack == 4) { s->pack = 3; s->leaving = 0; exit_route(s, side, geo); } /* it has its box (or is unpacking): straight to that gate with it */
+        else { s->pack = 1; s->has_goal = 0; s->nroute = 0; } /* first to its desk to pack: steer */
+    }
+    (void)geo; (void)now;
     char nm[16], ed[8];
     snprintf(nm, sizeof nm, "%.10s", s->name[0] ? s->name : "CLAWD");
     for (char *p = nm; *p; p++) if (*p >= 'a' && *p <= 'z') *p -= 32;
@@ -601,7 +622,21 @@ static void steer(Room *r, Session *s, double seat_x, double seat_y, const Geo *
     if (s->has_left) { /* leave through the nearest side */
         drop_social(s);
         set_goal(s, s->px < geo->w / 2.0 ? -12.0 : geo->w + 12.0, (double)geo->ymax);
-    } else if (s->move && s->has_travel) { /* moving out (busy or not): on along the way to the gate */
+    } else if (s->move && s->has_travel) { /* moving out (busy or not): to its desk, pack it into a box, out by the gate with it */
+        if (s->pack == 1) {
+            if (fabs(s->px - seat_x) + fabs(s->py - seat_y) > 0.5) { set_goal(s, seat_x, seat_y); s->nroute = 0; }
+            else { s->has_goal = 0; s->pack = 2; s->pack_t0 = now; }
+        } else if (s->pack == 2 && now - s->pack_t0 >= PACK_T) {
+            poof(r, seat_x + 5, seat_y + 7);
+            s->pack = 3;
+            exit_route(s, s->travel_edge, geo);
+        }
+    } else if (s->pack == 3 || s->pack == 4) { /* moved in with its box (busy or not): to its new desk, unpack it there */
+        s->chat_with[0] = 0; s->peek_on = s->peek_has_end = 0; s->emote[0] = 0; s->has_then = 0;
+        if (s->pack == 4) { s->has_goal = 0; if (now - s->pack_t0 >= UNPACK_T) { s->pack = 0; s->next_plan = now + rng_uniform(&s->rng, 1.0, 3.0); } }
+        else if (s->has_goal || s->nroute) { /* (still coming in by the gate) */
+        } else if (fabs(s->px - seat_x) + fabs(s->py - seat_y) > 0.5) set_goal(s, seat_x, seat_y);
+        else { s->pack = 4; s->pack_t0 = now; poof(r, seat_x + 5, seat_y + 7); }
     } else if (!strcmp(state, "work") || !strcmp(state, "think") || !strcmp(state, "sleep")) { /* busy or asleep: be at the desk */
         drop_social(s);
         int far = fabs(s->px - seat_x) + fabs(s->py - seat_y) > 0.5;
@@ -664,7 +699,7 @@ static void fly(Room *r, double dt) { /* move the particles: a little gravity, f
         Particle q = r->parts[i];
         q.x += q.vx * k; q.y += q.vy * k;
         q.vy += (q.heart ? 0 : 0.04) * k;
-        q.life -= (q.heart ? 0.02 : 0.025) * k;
+        q.life -= (q.heart == 2 ? 0.04 : q.heart ? 0.02 : 0.025) * k;
         if (q.life > 0) r->parts[w++] = q;
     }
     r->np = w;
@@ -712,7 +747,7 @@ void room_step(Room *r, const Geo *geo, double now) {
         everyone(r, &ev);
         for (int i = 0; i < ev.n; i++) {
             Session *s = ev.all[i];
-            if (s->move && s->has_travel) s->move = 0; /* (a move not yet through the gate is called off) */
+            if (s->move && s->has_travel) s->move = s->pack = 0; /* (a move not yet through the gate is called off) */
             s->has_pos = 0; s->has_goal = 0; s->chat_with[0] = 0; s->peek_on = s->peek_has_end = 0; s->emote[0] = 0; s->has_travel = 0;
             s->run = 1.0;
         }

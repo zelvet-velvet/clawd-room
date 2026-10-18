@@ -48,6 +48,15 @@ gitGraph
 
 ## 2026-10-19
 
+### 📦 Moving a Clawd: packing and unpacking (step 2 of 3)
+> [!info] Branch `feat/style-a`
+- `m` + arrow: the Clawd goes to its desk, the **workspace shrinks into a cardboard box** (1.4 s), **poof**, it carries the box out by the gate; in the new room it walks to its new desk, sets the box down, **poof**, the workspace **grows out of it** (1.2 s). A move nobody takes comes back and unpacks at the old desk.
+- `m` + arrow again on a Clawd that **already carries its box** (on its way out, or just moved in) sends it **straight to the new gate** with it, no packing again.
+- Fixed: the room it left **blinked one frame** of the Clawd and its desk after it crossed (it let go of it in the middle of a frame).
+- The box can be drawn in the pixel editor as `box` in `sprites/items.txt`.
+
+![[2026-10-19 move, packing in the office.png|420]] ![[2026-10-19 move, unpacking in the park.png|420]]
+
 ### 📦 Moving a Clawd to another room (step 1 of 3)
 > [!info] Branch `feat/style-a`
 - Pick a Clawd (`Tab` or `<` `>`), then **`m` + an arrow**: it walks to that gate (even while it works) and goes through, and from then on it **lives in that room**. A line at the bottom says `MOVE NAME:` and which arrow goes where.

@@ -91,6 +91,16 @@ static int item(Canvas *cv, const char *name, int x, int y) {
     return sp != NULL;
 }
 
+/* a moving Clawd's box (m key): cardboard, a darker side, tape over the top; (x, y) the middle of its bottom */
+static void draw_box(Canvas *cv, int x, int y) {
+    if (item(cv, "box", x - 4, y - 7)) return; /* (an edited box from sprites/items.txt) */
+    Rgb card = RGB(204, 160, 104), side = RGB(164, 122, 76), edge = RGB(110, 80, 50), tape = RGB(236, 220, 172);
+    canvas_rect(cv, x - 4, y - 7, 9, 7, edge);
+    canvas_rect(cv, x - 3, y - 6, 7, 5, card);
+    canvas_rect(cv, x + 2, y - 6, 2, 5, side);
+    canvas_rect(cv, x - 3, y - 6, 7, 1, RGB(222, 184, 128)); /* the top's front edge, in the light */
+    canvas_rect(cv, x, y - 6, 1, 3, tape);
+}
 void draw_bubble_code(Canvas *cv, int cx, int y, const char *kind, double ph);
 static void draw_bubble(Canvas *cv, int cx, int y, const char *kind, double ph) {
     char name[32];
@@ -152,6 +162,7 @@ static void draw_extras(Canvas *cv, const Session *s, const char *state, double 
         }
         return;
     }
+    if (s->pack == 3 && !s->has_away) draw_box(cv, cx + (s->face < 0 ? -1 : 1), y + 10); /* carrying its box (m key) in front */
     if (now < s->cup_until) { /* carrying a coffee, with a little steam */
         if (!item(cv, "cup-held", cx + 7, y + 4)) {
             canvas_rect(cv, cx + 7, y + 4, 3, 2, C_WHITE);
@@ -465,10 +476,48 @@ static void it_no_sessions(Canvas *cv, const SceneItem *it, void *ctx) {
     wtext(cv, cv->w / 2 - text_width("NO SESSIONS") / 2, mid - 7, "NO SESSIONS", RGB(150, 150, 180));
     wtext(cv, cv->w / 2 - text_width("START CLAUDE") / 2, mid, "START CLAUDE", RGB(110, 110, 140));
 }
+static double smooth(double u) { u = u < 0 ? 0 : u > 1 ? 1 : u; return u * u * (3 - 2 * u); }
+
+/* a workspace drawn k times its size, shrunk towards / grown out of (ax, ay): drawn as usual, the pixels it changed picked up
+ * and put back scaled (the furniture follows the perspective of where it stands, so it is not drawn anywhere else) */
+#define PK_W 96
+#define PK_H 72
+static void draw_desk_scaled(Canvas *cv, int cx, int by, double k, int ax, int ay, const char *state, const char *tool, double t, const Theme *th, const char *role, unsigned variant) {
+    static Rgb before[PK_W * PK_H], after[PK_W * PK_H];
+    int x0 = cx - PK_W / 2, y0 = by - PK_H + 14, w = PK_W, h = PK_H;
+    if (x0 < 0) { w += x0; x0 = 0; }
+    if (y0 < 0) { h += y0; y0 = 0; }
+    if (x0 + w > cv->w) w = cv->w - x0;
+    if (y0 + h > cv->h) h = cv->h - y0;
+    if (w <= 0 || h <= 0 || k <= 0.02) return;
+    for (int y = 0; y < h; y++) memcpy(before + y * PK_W, cv->p + (y0 + y) * cv->w + x0, sizeof(Rgb) * (size_t)w);
+    draw_desk(cv, cx, by, state, tool, t, th, role, variant);
+    for (int y = 0; y < h; y++) {
+        memcpy(after + y * PK_W, cv->p + (y0 + y) * cv->w + x0, sizeof(Rgb) * (size_t)w);
+        memcpy(cv->p + (y0 + y) * cv->w + x0, before + y * PK_W, sizeof(Rgb) * (size_t)w);
+    }
+    for (int y = 0; y < h; y++)
+        for (int x = 0; x < w; x++) { /* each pixel takes the one it came from */
+            int sx = (int)floor(ax + (x0 + x + 0.5 - ax) / k) - x0, sy = (int)floor(ay + (y0 + y + 0.5 - ay) / k) - y0;
+            if (sx < 0 || sy < 0 || sx >= w || sy >= h) continue;
+            Rgb b = before[sy * PK_W + sx], a = after[sy * PK_W + sx];
+            if (!rgb_eq(a, b)) cv->p[(y0 + y) * cv->w + x0 + x] = a;
+        }
+}
+
 static void it_desk(Canvas *cv, const SceneItem *it, void *ctx) {
     DrawCtx *X = ctx;
     const Session *s = X->room->s[it->i];
-    draw_desk(cv, X->geo->home[it->i][0], X->geo->home[it->i][1], session_shown(s, X->now), s->tool, X->t, X->room->theme, X->roles[it->i], crc32_str(s->sid));
+    int cx = X->geo->home[it->i][0], by = X->geo->home[it->i][1], bx = cx, bfy = by - 5; /* (the box stands where the desk's middle was) */
+    double k = 1;
+    int box = 0;
+    if (s->has_away && (s->move || s->pack)) k = 0; /* gone with it */
+    else if (s->pack == 2) { double u = (X->now - s->pack_t0) / PACK_T; k = 1 - smooth(u / 0.85); box = u > 0.45; }
+    else if (s->pack == 3) k = 0;
+    else if (s->pack == 4) { double u = (X->now - s->pack_t0) / UNPACK_T; k = smooth((u - 0.15) / 0.85); box = u < 0.3; }
+    if (k >= 1) draw_desk(cv, cx, by, session_shown(s, X->now), s->tool, X->t, X->room->theme, X->roles[it->i], crc32_str(s->sid));
+    else draw_desk_scaled(cv, cx, by, k, bx, bfy - 3, session_shown(s, X->now), s->tool, X->t, X->room->theme, X->roles[it->i], crc32_str(s->sid));
+    if (box) draw_box(cv, bx, bfy);
 }
 static double shown_py(const Geo *g, int stairs, int well, const Session *s);
 static void it_clawd(Canvas *cv, const SceneItem *it, void *ctx) {
@@ -508,7 +557,11 @@ static void it_particles(Canvas *cv, const SceneItem *it, void *ctx) {
         if (q->life > 0.15) {
             if (q->heart) {
                 for (int ry = 0; ry < 3; ry++) for (int rx = 0; rx < 3; rx++) if (HEART[ry][rx]) canvas_px(cv, (int)(q->x - 1 + rx), (int)(q->y + ry), q->c);
-            } else canvas_px(cv, (int)q->x, (int)q->y, q->c);
+            } else if (q->heart == 2) { /* a poof's cloud, getting smaller */
+                int w = q->life > 0.6 ? 3 : q->life > 0.35 ? 2 : 1;
+                canvas_rect(cv, (int)q->x - w / 2, (int)q->y, w, w > 1 ? 2 : 1, q->c);
+            }
+            else canvas_px(cv, (int)q->x, (int)q->y, q->c);
         }
     }
 }

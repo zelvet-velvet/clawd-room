@@ -124,6 +124,8 @@ typedef struct {
 #define CAM_MAX_ZOOM 4     /* [ ] camera zoom steps over the room */
 #define PER_ROW 5
 #define BANNER_H 8
+#define PACK_T 1.4         /* moving (m key): seconds the workspace takes to shrink into a box, */
+#define UNPACK_T 1.2       /* ... and to come out of it at the new desk */
 #define SEAT_DY -12 /* a Clawd sits behind its desk / table: its body top this far above the furniture's front edge */
 
 
