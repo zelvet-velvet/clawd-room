@@ -40,6 +40,7 @@ tags:
 - [ ] On the stairs and the half floor the Clawd walks (not the climbing pose) and is behind the railing; coming back it walks along the half floor, then down the stairs
 - [ ] Going up: the Clawd climbs the stairs to the half floor, walks along it and goes through the opening (the park: up the stoop to the building's double door); coming down the other way round; going down: it walks into the well / steps
 - [ ] Gates appearing animate in, in both windows at the same moment; gates there at start are simply there
+- [ ] Pick a Clawd (Tab), `m` + arrow: it walks out (also while working) and comes in at the other room, stays there (not back after a visit); close that room: it shows up in its usual room again
 - [ ] Hold `g`: a line at the bottom of the room shows which arrow goes where; `g` + arrow sends a Clawd that way; letting go hides the line; with one linked room `g` sends straight away
 - [ ] Gates stay put in `--try` (no coming and going)
 - [ ] `b` calls our Clawds home; with none away it sends visitors home

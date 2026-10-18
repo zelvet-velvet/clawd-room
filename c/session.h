@@ -39,6 +39,7 @@ typedef struct {
     int guest;
     char origin[24], origin_sid[72]; int enter_side; /* a visitor: where it comes from and how it came in */
     int has_away; char away_peer[24]; int away_side; double away_since; int away_recalled;
+    int move;              /* the trip is a move (m key): it carries its work to that room and lives there from now on */
 } Session;
 
 void session_init(Session *s, const char *sid, double t);

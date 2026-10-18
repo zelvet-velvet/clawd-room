@@ -139,7 +139,7 @@ static int read_keys(char *keys, size_t n, Reports *rep) {
         }
         if (c && strchr("WASD", c)) c += 32;
         if (c == '\n') c = '\r';
-        if (c && strchr("qpfgbr?[]wasd\r\tczo", c)) keys[k++] = c; /* (o: the debug overlay) */
+        if (c && strchr("qpfgmbr?[]wasd\r\tczo", c)) keys[k++] = c; /* (o: the debug overlay, m: move a Clawd) */
     }
     keys[k] = 0;
     return (int)k;
@@ -261,6 +261,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
     double t0 = mono(), frozen_now = 0, frozen_t = 0;
     int paused = 0, help_on = 0, dirty = 1, cols = 0, rows = 0, size_menu = 0, size_pick = 0;
     double go_until = 0; /* g held (its key repeats keep this going): an arrow then picks where to send a Clawd */
+    char go_key = 'g', move_sid[72] = ""; /* ... or m held: where the picked Clawd moves to */
     char go_hint[96] = ""; /* ... and the line under the room saying which way is which */
     Cells prev = {0, 0, NULL};
     int have_prev = 0;
@@ -288,13 +289,15 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                     dirty = 1;
                     continue;
                 }
-                if (wall() < go_until && k != 'g') { /* g + an arrow: send a Clawd that way (any other key: never mind) */
+                if (wall() < go_until && k != go_key) { /* g / m + an arrow: send / move a Clawd that way (any other key: never mind) */
                     int side = k == 'a' ? SIDE_LEFT : k == 'd' ? SIDE_RIGHT : k == 'w' ? SIDE_UP : k == 's' ? SIDE_DOWN : -1;
                     go_until = 0;
                     if (side >= 0) {
                         char buf[64];
                         room_order(&room);
-                        snprintf(flash, sizeof flash, "%s", room.has_geo ? room_send_to(&room, &room.geo, now, side, buf, sizeof buf) : "NO WINDOW NEXT TO THIS ONE");
+                        if (!room.has_geo) snprintf(flash, sizeof flash, "NO WINDOW NEXT TO THIS ONE");
+                        else if (go_key == 'm') snprintf(flash, sizeof flash, "%s", room_move_to(&room, &room.geo, now, move_sid, side, buf, sizeof buf));
+                        else snprintf(flash, sizeof flash, "%s", room_send_to(&room, &room.geo, now, side, buf, sizeof buf));
                     } else snprintf(flash, sizeof flash, " ");
                     flash_until = wall() + (side >= 0 ? 4 : 0); dirty = 1;
                     if (side >= 0 || k == 27) continue;
@@ -338,14 +341,34 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                         room.cam_y += k == 'w' ? -sy : k == 's' ? sy : 0;
                     }
                     dirty = 1;
-                } else if (k == 'g') { /* send a Clawd next door right now; with several linked rooms hold g and press an arrow */
+                } else if (k == 'g' || k == 'm') { /* g: send a Clawd next door (hold g and press an arrow); m: move the picked Clawd there */
                     static const char *ARROW[SIDES] = {"<", ">", "^", "V"};
                     static const char *GATE_NAME[2][SIDES] = {{"DOOR", "DOOR", "STAIRS UP", "STAIRS DOWN"}, {"GATE", "GATE", "TREEHOUSE", "STEPS DOWN"}};
                     int park = room.theme == theme_get("park");
-                    if (room.nnb >= 2) { /* the hint, one line at the bottom; the key repeats while g is held keep it up */
+                    if (k == 'm') { /* the Clawd: the one followed (Tab / < >), or the only one */
+                        room_order(&room);
+                        move_sid[0] = 0;
+                        if (cam.mode == CAM_LOCKED && cam.sid[0]) snprintf(move_sid, sizeof move_sid, "%s", cam.sid);
+                        else if (room.n == 1) snprintf(move_sid, sizeof move_sid, "%s", room.s[0]->sid);
+                        int ok = 0;
+                        for (int q = 0; q < room.n; q++) if (!strcmp(room.s[q]->sid, move_sid)) ok = 1;
+                        if (!room.nnb || !ok) {
+                            snprintf(flash, sizeof flash, "%s", !room.nnb ? "NO WINDOW NEXT TO THIS ONE" : "TAB: PICK A CLAWD, THEN M");
+                            flash_until = wall() + 4; dirty = 1; go_until = 0;
+                            continue;
+                        }
+                    }
+                    if (wall() >= go_until || go_key != k) go_until = 0;
+                    go_key = k;
+                    if (room.nnb >= 2 || k == 'm') { /* the hint, one line at the bottom; the key repeats while it is held keep it up */
                         if (wall() >= go_until) {
                             char *flash_ = go_hint; /* (written into the room, in its pixel font: the status line is tiny at the fixed font) */
-                            int o = snprintf(go_hint, sizeof go_hint, "G + ARROW:");
+                            int o;
+                            if (k == 'm') {
+                                const char *nm = "CLAWD";
+                                for (int q = 0; q < room.n; q++) if (!strcmp(room.s[q]->sid, move_sid) && room.s[q]->name[0]) nm = room.s[q]->name;
+                                o = snprintf(go_hint, sizeof go_hint, "MOVE %.10s:", nm);
+                            } else o = snprintf(go_hint, sizeof go_hint, "G + ARROW:");
                             for (int sd = 0; sd < SIDES; sd++) for (int q = 0; q < room.nnb; q++) if (room.nb[q].side == sd) {
                                 const char *nm = room.nb[q].id;
                                 for (int p = 0; p < room.npeers; p++) if (!strcmp(room.peers[p].side, SIDE_NAME[sd])) nm = room.peers[p].name;
@@ -464,6 +487,14 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
             memcpy(held, new_held, sizeof held); nheld = n_new_held; /* attached now (also counts while its gate is closed) */
             int seen_mask = 0; /* (for the gate log: the windows found next to this one) */
             for (int q = 0; q < room.nnb; q++) seen_mask |= 1 << room.nb[q].side;
+            link.nhomes = room.nmine; /* who moved in here (m key), said in our heartbeat; and who moved into the other rooms */
+            memcpy(link.homes, room.mine, sizeof room.mine[0] * (size_t)room.nmine);
+            room.nclaim = 0;
+            for (int i = 0; i < link.npeers; i++)
+                for (int q = 0; q < link.peers[i].nhomes && room.nclaim < MAX_CLAIMS * 4; q++) {
+                    snprintf(room.claim_sid[room.nclaim], 72, "%s", link.peers[i].homes[q]);
+                    snprintf(room.claim_room[room.nclaim++], 40, "%s", link.peers[i].id);
+                }
             if (!a->no_split) { /* the linked rooms share the sessions: each shows its own part */
                 int m = 0;
                 snprintf(room.owner_ids[m++], 40, "%s", link.id);

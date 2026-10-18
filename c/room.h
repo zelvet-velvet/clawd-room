@@ -18,6 +18,7 @@ int side_index(const char *name);        /* -1 if not a side */
 #define MAX_GUESTS 4
 #define MAX_PARTS 256
 #define MAX_OUT 32
+#define MAX_CLAIMS 32
 
 typedef struct { double x, y, vx, vy, life; Rgb c; int heart; } Particle;
 typedef struct { char name[24], side[8]; } Peer; /* side: "left" "right" "up" "down" or "" */
@@ -30,6 +31,7 @@ typedef struct {
     char sid[72], name[40]; /* name only in walk messages */
     int side;               /* the edge it enters by (walk) */
     int home;               /* walk: one of ours coming back */
+    int move;               /* walk: it moves in (lives there from now on) */
     int has_y; double y;
 } Msg;
 
@@ -85,6 +87,8 @@ typedef struct {
     int debug_overlay;       /* the debug overlay (key o): item boxes, anchors, gate points, routes */
     int split;               /* linked rooms share the sessions: this room shows the ones whose crc32 picks it */
     int n_owner_ids; char owner_ids[17][40], owner_me[40];
+    char mine[MAX_CLAIMS][72]; int nmine; /* the sessions that moved into this room (m key): it shows them while it runs */
+    char claim_sid[MAX_CLAIMS * 4][72], claim_room[MAX_CLAIMS * 4][40]; int nclaim; /* ... and the other rooms' (from their heartbeats) */
     int has_geo;             /* geo below is from the last frame (the g key needs it) */
     Geo geo;
 } Room;
@@ -147,6 +151,7 @@ void room_receive(Room *r, const Msg *m);
 void room_peer_gone(Room *r, const char *peer);
 const char *room_send_one(Room *r, const Geo *geo, double now, char *buf, size_t n); /* send an idle Clawd through the first gate */
 const char *room_send_to(Room *r, const Geo *geo, double now, int side, char *buf, size_t n); /* the g key: ... through the gate on that side */
+const char *room_move_to(Room *r, const Geo *geo, double now, const char *sid, int side, char *buf, size_t n); /* the m key: that Clawd moves to the room on that side */
 const char *room_recall(Room *r, double now, char *buf, size_t n); /* the b key: call our Clawds home, or send visitors home */
 
 const SpriteFile *draw_frames(void);

@@ -11,6 +11,7 @@
 #define LEAVE_MAX 12.0
 #define ARRIVE_WALK 3.0
 #define AWAY_MAX 150.0
+#define MOVE_WAIT 10.0 /* seconds a Clawd that moved out waits for the other room to claim it, then comes back */
 #define WALK_SPEED 26.0
 #define LEAVE_SPEED 50.0
 #define MAX_GUESTS_SHOWN 4
@@ -40,8 +41,24 @@ static int by_created(const void *a, const void *b) {
     return strcmp(x->sid, y->sid);
 }
 
-static int owns(const Room *r, const Session *s) { /* which sessions this room shows (when several rooms share them) */
+static int is_mine(const Room *r, const char *sid) { for (int i = 0; i < r->nmine; i++) if (!strcmp(r->mine[i], sid)) return 1; return 0; }
+static void add_mine(Room *r, const char *sid) { if (!is_mine(r, sid) && r->nmine < MAX_CLAIMS) snprintf(r->mine[r->nmine++], 72, "%s", sid); }
+static void drop_mine(Room *r, const char *sid) {
+    for (int i = 0; i < r->nmine; i++) if (!strcmp(r->mine[i], sid)) { memmove(r->mine[i], r->mine[i + 1], 72 * (size_t)(r->nmine - i - 1)); r->nmine--; return; }
+}
+static const char *claimed_by(const Room *r, const char *sid) { /* the other room it moved into, if that room runs */
+    for (int i = 0; i < r->nclaim; i++)
+        if (!strcmp(r->claim_sid[i], sid)) for (int k = 0; k < r->n_owner_ids; k++) if (!strcmp(r->owner_ids[k], r->claim_room[i])) return r->claim_room[i];
+    return NULL;
+}
+
+/* which sessions this room shows (when several rooms share them): one moved here (m key) or on its way out; one moved
+ * to another room that runs is not ours; the rest by their crc32 */
+static int owns(const Room *r, const Session *s) {
     if (!r->split || r->n_owner_ids < 1) return 1;
+    if (s->move && (s->has_travel || s->has_away)) return 1;
+    if (is_mine(r, s->sid)) return 1;
+    if (claimed_by(r, s->sid)) return 0;
     return !strcmp(r->owner_ids[crc32_str(s->sid) % (unsigned)r->n_owner_ids], r->owner_me);
 }
 
@@ -130,7 +147,7 @@ static void drop_social(Session *s) {
     s->chat_with[0] = 0;
     s->peek_on = s->peek_has_end = 0;
     s->emote[0] = 0;
-    s->has_travel = 0;
+    s->has_travel = 0; s->move = 0;
     s->has_then = 0;
     s->nroute = 0;
     s->vclimb = 0;
@@ -197,7 +214,7 @@ static void sparks(Room *r, Rng *rng, double x, double y, int n) {
 
 static void come_home(Room *r, Session *s, const Geo *geo, double now, int side) {
     (void)r;
-    s->has_away = 0;
+    s->has_away = 0; s->move = 0;
     enter(s, side, geo);
     s->next_plan = now + rng_uniform(&s->rng, 1.0, 3.0);
 }
@@ -226,7 +243,16 @@ static void handle_messages(Room *r, const Geo *geo, double now) {
         double y = m->has_y ? m->y : 500;
         (void)y; /* the vertical fraction is not used for placing (doors line up by themselves) */
         if (m->walk && m->side >= 0 && m->sid[0]) {
-            if (m->home) { /* one of ours coming back */
+            if (m->move) { /* moving in: it lives here now (the other room stops showing it when it sees our claim) */
+                Session *s = find_session(r, m->sid);
+                if (!s) continue; /* (not a session this room knows yet) */
+                add_mine(r, m->sid);
+                drop_social(s);
+                s->has_away = 0; s->leaving = 0; s->returning = 0; s->moving = 0;
+                if (s->name[0] == 0) snprintf(s->name, sizeof s->name, "%.32s", m->name);
+                enter(s, m->side, geo);
+                s->next_plan = now + rng_uniform(&s->rng, 1.0, 3.0);
+            } else if (m->home) { /* one of ours coming back */
                 Session *s = find_session(r, m->sid);
                 if (s && s->has_away && !strcmp(s->away_peer, m->peer)) come_home(r, s, geo, now, m->side);
             } else { /* a visitor */
@@ -263,6 +289,13 @@ static void handle_messages(Room *r, const Geo *geo, double now) {
 }
 
 static void steer_away(Room *r, Session *s, const Geo *geo, double now) {
+    if (s->move) { /* moved out: done when that room claims it, back home if it does not answer */
+        if (s->has_left) { s->gone = 1; return; }
+        const char *by = claimed_by(r, s->sid);
+        if (by && !strcmp(by, s->away_peer)) { s->move = 0; s->has_away = 0; s->has_pos = 0; drop_mine(r, s->sid); }
+        else if (now - s->away_since > MOVE_WAIT) { s->move = 0; come_home(r, s, geo, now, s->away_side); }
+        return;
+    }
     const char *state = session_shown(s, now);
     if ((!strcmp(state, "work") || !strcmp(state, "think") || s->has_left) && !s->away_recalled) {
         s->away_recalled = 1;
@@ -280,11 +313,13 @@ static void cross(Room *r, Session *s, const Geo *geo, double now) {
             remove_guest(r, s);
         }
     } else if (s->has_travel && !s->has_left) {
-        int edge = s->travel_edge;
+        int edge = s->travel_edge, mv = s->move;
         char peer[24];
         snprintf(peer, sizeof peer, "%s", s->travel_peer);
         push_out(r, peer, 1, s->sid, s->name, OPPOSITE(edge), 0, 1, frac_of(s, geo)); /* it enters by the opposite edge there */
+        if (mv && r->nout) r->outbox[r->nout - 1].move = 1;
         drop_social(s);
+        s->move = mv; /* (a move waits for that room to say it lives there now: steer_away) */
         s->has_travel = 0; s->has_goal = 0; s->moving = 0; s->nroute = 0; s->leaving = 0;
         s->has_away = 1; snprintf(s->away_peer, sizeof s->away_peer, "%s", peer); s->away_side = edge; s->away_since = now; s->away_recalled = 0;
     }
@@ -340,6 +375,25 @@ const char *room_send_to(Room *r, const Geo *geo, double now, int side, char *bu
         }
     }
     return "NO IDLE CLAWD TO SEND";
+}
+
+/* the m key: the Clawd `sid` packs up and moves to the room on `side`: it lives there from now on (while the rooms run) */
+const char *room_move_to(Room *r, const Geo *geo, double now, const char *sid, int side, char *buf, size_t n) {
+    if (side < 0 || !has_nb(r, side)) return "NO WINDOW THAT WAY";
+    Session *s = find_session(r, sid);
+    if (!s || !s->has_pos || s->has_left || !owns(r, s)) return "TAB: PICK A CLAWD, THEN M";
+    if (s->has_away || s->has_travel) return "THAT CLAWD IS ON ITS WAY";
+    drop_social(s);
+    s->has_travel = 1; s->move = 1; s->travel_edge = side; snprintf(s->travel_peer, sizeof s->travel_peer, "%s", nb_id(r, side));
+    exit_route(s, side, geo);
+    (void)now;
+    char nm[16], ed[8];
+    snprintf(nm, sizeof nm, "%.10s", s->name[0] ? s->name : "CLAWD");
+    for (char *p = nm; *p; p++) if (*p >= 'a' && *p <= 'z') *p -= 32;
+    snprintf(ed, sizeof ed, "%s", SIDE_NAME[side]);
+    for (char *p = ed; *p; p++) *p -= 32;
+    snprintf(buf, n, "MOVING %s %s", nm, ed);
+    return buf;
 }
 
 /* ---- deciding what to do ---------------------------------------------------------------------- */
@@ -547,6 +601,7 @@ static void steer(Room *r, Session *s, double seat_x, double seat_y, const Geo *
     if (s->has_left) { /* leave through the nearest side */
         drop_social(s);
         set_goal(s, s->px < geo->w / 2.0 ? -12.0 : geo->w + 12.0, (double)geo->ymax);
+    } else if (s->move && s->has_travel) { /* moving out (busy or not): on along the way to the gate */
     } else if (!strcmp(state, "work") || !strcmp(state, "think") || !strcmp(state, "sleep")) { /* busy or asleep: be at the desk */
         drop_social(s);
         int far = fabs(s->px - seat_x) + fabs(s->py - seat_y) > 0.5;
@@ -657,6 +712,7 @@ void room_step(Room *r, const Geo *geo, double now) {
         everyone(r, &ev);
         for (int i = 0; i < ev.n; i++) {
             Session *s = ev.all[i];
+            if (s->move && s->has_travel) s->move = 0; /* (a move not yet through the gate is called off) */
             s->has_pos = 0; s->has_goal = 0; s->chat_with[0] = 0; s->peek_on = s->peek_has_end = 0; s->emote[0] = 0; s->has_travel = 0;
             s->run = 1.0;
         }

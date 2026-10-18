@@ -14,6 +14,7 @@ typedef struct {
     int cols, rows;
     int has_band; int band[2];
     int has_grid; double grid[7];
+    char homes[MAX_CLAIMS][72]; int nhomes; /* the sessions that moved into that room */
 } LinkPeer;
 
 typedef struct {
@@ -23,6 +24,7 @@ typedef struct {
     double last_beat, last_scan;
     int has_band; int band[2];
     int has_grid; double grid[7];
+    char homes[MAX_CLAIMS][72]; int nhomes; /* ours, said in the heartbeat */
 } Link;
 
 typedef struct { int kind; LinkPeer peer; char type[12]; Msg msg; } LinkEvent; /* kind: 0 joined, 1 left, 2 msg (type, msg) */

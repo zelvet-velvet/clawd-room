@@ -1,7 +1,7 @@
 ---
 title: clawd-room - Dev Log
 date: 2026-10-16
-updated: 2026-10-18
+updated: 2026-10-19
 tags:
   - dev-log
   - clawd-room
@@ -47,6 +47,12 @@ gitGraph
 ## 2026-10-18
 
 ## 2026-10-19
+
+### 📦 Moving a Clawd to another room (step 1 of 3)
+> [!info] Branch `feat/style-a`
+- Pick a Clawd (`Tab` or `<` `>`), then **`m` + an arrow**: it walks to that gate (even while it works) and goes through, and from then on it **lives in that room**. A line at the bottom says `MOVE NAME:` and which arrow goes where.
+- How the rooms agree: the room it moved into says so in its **heartbeat** (`"homes": [sids]`); every room shows a session there if that room runs, otherwise by its crc32 as before. The room it left keeps it until it sees that claim (back home after 10 s if none comes). Remembered **only while the rooms run**: when that room closes, the Clawd goes back to its usual room.
+- Next: packing into a box with a poof, carrying it, unpacking at the new desk (step 2); dragging a Clawd onto a gate with the mouse (step 3). `tools/move_smoke.py` checks the move with two rooms in ptys.
 
 ### 🏙️ One building each
 > [!info] Branch `feat/style-a`

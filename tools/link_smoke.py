@@ -88,20 +88,21 @@ def pair(kind_a, kind_b):
         return walks, hellos, recalls, sa, sb, leftovers, a.out, b.out
 
 
-bad = 0
-for ka, kb in (("c", "c"),):
-    walks, hellos, recalls, sa, sb, left, oa, ob = pair(ka, kb)
-    ok = (sa == 0 and sb == 0 and not left
-          and len(hellos.get("alpha", [])) >= 1 and len(hellos.get("beta", [])) >= 1
-          and len(walks.get("beta", [])) >= 1 and len(walks.get("alpha", [])) >= 1
-          and all(m["data"]["side"] == "left" and m["data"]["sid"].startswith("sess") for m in walks.get("beta", []))
-          and all(m["data"]["side"] == "right" and m["data"]["sid"].startswith("sess") for m in walks.get("alpha", []))
-          and b"SENDING" in oa and b"SENDING" in ob and b"BETA JOINED" in oa and b"ALPHA JOINED" in ob
-          and b"CALLING " in oa and len(recalls.get("beta", [])) >= 1)
-    bad += not ok
-    print("%-4s alpha=%s beta=%s: hello %s/%s, walk messages %s/%s, recall to beta %s, exit %s/%s, files left %d" % (
-        "OK" if ok else "FAIL", ka, kb, len(hellos.get("alpha", [])), len(hellos.get("beta", [])), len(walks.get("alpha", [])), len(walks.get("beta", [])), len(recalls.get("beta", [])), sa, sb, len(left)))
-    if not ok:
-        print("   alpha out has SENDING:", b"SENDING" in oa, "JOINED:", b"BETA JOINED" in oa, "| beta:", b"SENDING" in ob, b"ALPHA JOINED" in ob)
-        print("   alpha b flash:", re.findall(rb"(CALLING[ A-Z0-9]*|SENDING \d VISITOR[ A-Z]*|NOBODY AWAY[ ,A-Z]*)", oa)[:3])
-sys.exit(1 if bad else 0)
+if __name__ == "__main__":
+    bad = 0
+    for ka, kb in (("c", "c"),):
+        walks, hellos, recalls, sa, sb, left, oa, ob = pair(ka, kb)
+        ok = (sa == 0 and sb == 0 and not left
+              and len(hellos.get("alpha", [])) >= 1 and len(hellos.get("beta", [])) >= 1
+              and len(walks.get("beta", [])) >= 1 and len(walks.get("alpha", [])) >= 1
+              and all(m["data"]["side"] == "left" and m["data"]["sid"].startswith("sess") for m in walks.get("beta", []))
+              and all(m["data"]["side"] == "right" and m["data"]["sid"].startswith("sess") for m in walks.get("alpha", []))
+              and b"SENDING" in oa and b"SENDING" in ob and b"BETA JOINED" in oa and b"ALPHA JOINED" in ob
+              and b"CALLING " in oa and len(recalls.get("beta", [])) >= 1)
+        bad += not ok
+        print("%-4s alpha=%s beta=%s: hello %s/%s, walk messages %s/%s, recall to beta %s, exit %s/%s, files left %d" % (
+            "OK" if ok else "FAIL", ka, kb, len(hellos.get("alpha", [])), len(hellos.get("beta", [])), len(walks.get("alpha", [])), len(walks.get("beta", [])), len(recalls.get("beta", [])), sa, sb, len(left)))
+        if not ok:
+            print("   alpha out has SENDING:", b"SENDING" in oa, "JOINED:", b"BETA JOINED" in oa, "| beta:", b"SENDING" in ob, b"ALPHA JOINED" in ob)
+            print("   alpha b flash:", re.findall(rb"(CALLING[ A-Z0-9]*|SENDING \d VISITOR[ A-Z]*|NOBODY AWAY[ ,A-Z]*)", oa)[:3])
+    sys.exit(1 if bad else 0)

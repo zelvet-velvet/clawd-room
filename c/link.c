@@ -87,7 +87,9 @@ static void beat(Link *l, double now, int cols, int rows, int force) { /* rewrit
     if (l->has_band) fprintf(f, ", \"band\": [%d, %d]", l->band[0], l->band[1]); else fprintf(f, ", \"band\": null");
     if (l->has_grid) { fprintf(f, ", \"grid\": ["); for (int i = 0; i < 7; i++) fprintf(f, "%s%.17g", i ? ", " : "", l->grid[i]); fprintf(f, "]"); }
     else fprintf(f, ", \"grid\": null");
-    fprintf(f, "}");
+    fprintf(f, ", \"homes\": [");
+    for (int i = 0; i < l->nhomes; i++) { if (i) fprintf(f, ", "); json_str(f, l->homes[i]); }
+    fprintf(f, "]}");
     fclose(f);
     rename(tmp, dst);
 }
@@ -139,6 +141,7 @@ int link_send_msg(Link *l, const char *to, const Msg *m) {
     if (m->walk) {
         if (!m->home) { fprintf(f, ", \"name\": "); json_str(f, m->name); } /* (a Clawd coming home carries no name) */
         if (m->home) fprintf(f, ", \"home\": 1");
+        if (m->move) fprintf(f, ", \"move\": 1");
         fprintf(f, ", \"side\": \"%s\"", SIDE_NAME[m->side]);
         fprintf(f, ", \"y\": %d", (int)m->y);
     }
@@ -171,11 +174,11 @@ static void scan(Link *l, double now, LinkPeer *joined, int *nj, LinkPeer *left,
             char rid[64];
             snprintf(rid, sizeof rid, "%.*s", (int)(n - 5), de->d_name);
             if (!strcmp(rid, l->id) || !id_ok(rid)) continue;
-            char p[700], data[4097];
+            char p[700], data[8193];
             snprintf(p, sizeof p, "%s/%s", l->dir, de->d_name);
             FILE *f = fopen(p, "rb");
             if (!f) continue;
-            size_t got = fread(data, 1, 4096, f);
+            size_t got = fread(data, 1, 8192, f);
             fclose(f);
             J *rec = json_parse(data, got);
             const J *jt = json_get(rec, "t"), *jpid = json_get(rec, "pid"), *jid = json_get(rec, "id");
@@ -202,6 +205,9 @@ static void scan(Link *l, double now, LinkPeer *joined, int *nj, LinkPeer *left,
                     for (int i = 0; i < 7; i++) if (v->kids[i]->type != J_NUM) ok = 0;
                     if (ok) { q->has_grid = 1; for (int i = 0; i < 7; i++) q->grid[i] = v->kids[i]->num; }
                 }
+                v = json_get(rec, "homes");
+                if (v && v->type == J_ARR)
+                    for (int i = 0; i < v->n && q->nhomes < MAX_CLAIMS; i++) if (v->kids[i]->type == J_STR) snprintf(q->homes[q->nhomes++], 72, "%.64s", v->kids[i]->str);
             } else if (!alive && !pid_alive(pid)) remove_files(l, rid, "peer", "inbox"); /* tidy up after a room that crashed */
             json_free(rec);
         }
@@ -250,6 +256,7 @@ static int parse_msg(Link *l, const char *line, size_t n, LinkEvent *ev) {
             else if (!strcmp(key, "side")) g->side = side_index(v->str);
         } else if (v->type == J_NUM || v->type == J_BOOL) {
             if (!strcmp(key, "home")) g->home = v->num != 0;
+            else if (!strcmp(key, "move")) g->move = v->num != 0;
             else if (!strcmp(key, "y")) { g->has_y = 1; g->y = v->num; }
         }
     }

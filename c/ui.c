@@ -12,7 +12,7 @@ void overlay_text(char *out, size_t n, int paused, int help_on, const char *note
     const char *parts[4];
     int k = 0;
     if (paused) parts[k++] = "PAUSED";
-    if (help_on) parts[k++] = "q/esc quit   p pause   r room size   [ ] zoom   z auto zoom   < > / tab pick a Clawd   c follow / free camera   f auto font+scale   g send a Clawd (hold g + arrow: which way)   b call back   o debug overlay   ? help";
+    if (help_on) parts[k++] = "q/esc quit   p pause   r room size   [ ] zoom   z auto zoom   < > / tab pick a Clawd   c follow / free camera   f auto font+scale   g send a Clawd (hold g + arrow: which way)   m + arrow move the picked Clawd there   b call back   o debug overlay   ? help";
     if (note && note[0]) parts[k++] = note;
     if (flash && flash[0]) parts[k++] = flash;
     for (int i = 0; i < k; i++) {
