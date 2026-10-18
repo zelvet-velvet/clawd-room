@@ -66,4 +66,6 @@ tags:
 - [ ] iTerm2: smaller than 44x20 then bigger: the room comes back, nothing scrolled; no old frames in scrollback after quitting
 - [ ] iTerm2: stripes only while dragging, a clean picture after
 - [ ] iTerm2: quitting gives the window title back and leaves no `osascript`
-- [ ] Sprite files: change a grid in `sprites/clawd.txt`, the change shows; delete the frame, the original is back
+- [ ] Sprite files: change a grid in `sprites/clawd.txt` or `props.txt` while a room runs: it shows within a second; delete the frame, the original is back
+- [ ] `./clawd-room.sh --edit window`: paint, erase, pick, add a colour, undo; the rooms show it as you draw
+- [ ] Change a line in `rooms/office.txt` (e.g. the window's prefer): the window moves in a running room

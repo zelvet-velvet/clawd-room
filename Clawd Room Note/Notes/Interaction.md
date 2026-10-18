@@ -33,6 +33,22 @@ tags:
 > - In an empty zoomed room, `c` keeps the camera waiting for the first Clawd to come in.
 
 ---
+## 🎨 The pixel editor
+
+`./clawd-room.sh --edit NAME` (in iTerm2 it opens its own Clawd Room window). Saves after each stroke; running rooms show the change.
+
+| Input | Does |
+| --- | --- |
+| left click / drag | paint with the chosen colour |
+| right click | erase (see-through) |
+| Alt + click | pick the colour under the pointer |
+| click a swatch | choose it (ADD: a new colour, added to the file when used) |
+| `u` / `r` | undo / redo |
+| `<` `>` (or `[` `]`) | the sprite before / after; Tab: the next file (props, items, Clawd) |
+| `+` `-` | zoom |
+| `w` `n` / `t` `s` | wider / narrower, taller / shorter |
+| `q` | quit |
+
 ## 📐 Room size and resizing
 
 - The room **always fills the window** and takes its shape; dragging the window re-lays it out at once.

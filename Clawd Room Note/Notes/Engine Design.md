@@ -5,7 +5,7 @@ tags:
   - engine
   - plan
 ---
-# 🧱 Engine Design (agreed 2026-10-18; steps 1 and 2 built)
+# 🧱 Engine Design (agreed 2026-10-18; steps 1–3 built)
 
 > [!abstract] In short
 > Everything on screen becomes an **item** in one list, drawn in **seven layers**, placed by a **placer** that keeps items apart. Rooms are described as **data**, small props are **sprite files** you edit in a **pixel editor inside the room**, and one **animator** moves doors, gates and props. An **overlap check**, a **debug overlay** and a **gallery** come with it. Today's drawing is in [[Engine and Tests]]; the look in [[Rooms and Art]].
@@ -21,6 +21,15 @@ tags:
 > - **Debug overlay**: key `o`.
 >
 > ![[2026-10-18 debug overlay.png|320]] ![[2026-10-18 gallery coffee (part).png|420]]
+
+> [!success] Step 3 (2026-10-18): props as sprites, rooms as text, the pixel editor
+> - **`sprites/props.txt`**: the window, plant, menu, lamps and shelf as sprites (made from the code's drawing, so nothing changed); a prop's size is its grid's size, and the placer uses it.
+> - **`rooms/office.txt`, `coffee.txt`, `park.txt`**: each room's wall items (kind, size, band, preferred place with / without stairs, priority, when).
+> - **Saved changes show at once**: running rooms read the sprite and room files again when they change.
+> - **The pixel editor** `./clawd-room.sh --edit NAME` (NAME: a prop like `window`, or any sprite in `items.txt` / `clawd.txt`): the sprite zoomed, the palette and 16 colours to add, the sprite at its real size; left paints, right erases, Alt + click picks, `u` / `r` undo / redo, `<` `>` the sprite before / after, Tab the next file, `+` `-` zoom, `w` `n` wider / narrower, `t` `s` taller / shorter, `q` quits. It saves after each stroke.
+> - Found on the way: the room never found `sprites/` on macOS (it looked for `/proc`), so edits to the sprite files were ignored there; fixed.
+>
+> ![[2026-10-18 pixel editor with rooms.png|480]]
 
 > [!success] Step 2 (2026-10-18): the placer — overlaps 107 → 0
 > - `c/place.c` places the **wall items** from each room\'s data (`OFFICE_WALL`, `COFFEE_WALL`, `PARK_WALL` in `theme.c`: kind, size, band, preferred place with / without stairs, priority, when). Highest priority first, nearest free place; a must-show item (the sign) hangs higher, in front of the ceiling, before it would overlap; others are left out.
@@ -105,7 +114,7 @@ room coffee
 ```mermaid
 %%{init: {"flowchart": {"defaultRenderer": "elk"}}}%%
 flowchart LR
-    S0["0 --try<br/>✅ done"] --> S1["1 items, layers,<br/>marks follow owner<br/>✅ done"] --> S2["2 placer +<br/>rooms as data<br/>✅ done"] --> S3["3 props as sprites<br/>+ pixel editor"] --> S4["4 animator"]
+    S0["0 --try<br/>✅ done"] --> S1["1 items, layers,<br/>marks follow owner<br/>✅ done"] --> S2["2 placer +<br/>rooms as data<br/>✅ done"] --> S3["3 props as sprites<br/>+ pixel editor<br/>✅ done"] --> S4["4 animator"]
     S1 -.-> T["overlap check, overlay,<br/>gallery ✅"]
 ```
 

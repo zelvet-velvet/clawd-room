@@ -110,5 +110,9 @@ Gates sit **on the room's walls, ceiling and floor**, not at the window edge, so
 - **Pixel text is upper case only** (the 3x5 font has no lower case); keep words short.
 - Room pixels are square on screen: a terminal cell is 1 room pixel wide and 2 high.
 
+> [!tip] Editing the art yourself
+> - **Props** (window, plant, menu, lamps, shelf) are in `sprites/props.txt`; the Clawd in `sprites/clawd.txt`, bubbles and signs in `sprites/items.txt`. `./clawd-room.sh --edit window` opens the pixel editor; rooms that are running show each stroke.
+> - **Where things go on the back wall** is in `rooms/<room>.txt` (one line per item: size, band, preferred place, priority, when).
+
 > [!tip] How visual changes are made
 > Rendered **mockups first** (drawn with the room's own canvas code), Zaviel picks, then the code is changed.

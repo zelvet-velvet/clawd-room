@@ -36,7 +36,7 @@ static const char *RATIO_CHOICES[] = {"auto", "3:1", "2:1", "16:9", "4:3", "1:1"
 typedef struct {
     char events[512];
     int has_at; double at;
-    const char *room, *theme;
+    const char *room, *theme, *edit; /* (edit: --edit NAME, the pixel editor) */
     char ratio[8];
     int scale, zoom, room_size, no_auto, no_detect, no_split;
     const char *dump;
@@ -155,6 +155,8 @@ static int key_ready(double wait) {
 
 static int floordiv(int a, int b) { int q = a / b; return (a % b != 0 && ((a < 0) != (b < 0))) ? q - 1 : q; }
 static int in_ids(char ids[][40], int n, const char *id) { for (int i = 0; i < n; i++) if (!strcmp(ids[i], id)) return 1; return 0; }
+
+int editor_run(const char *dir, const char *name); /* editor.c */
 
 /* ---- the sprite files, reloaded when they change ------------------------------------------------------------------ */
 static struct { char dir[512]; SpriteFile *f[3]; time_t mt[3]; double next; } g_sw;
@@ -749,7 +751,7 @@ int app_main(int argc, char **argv) {
         {"up", 1, 0, 'U'}, {"down", 1, 0, 'D'}, {"no-split", 0, 0, 'S'}, {"ratio", 1, 0, 'x'}, {"size", 1, 0, 'z'}, {"font", 1, 0, 'f'},
         {"profile-font", 1, 0, 'p'}, {"scale", 1, 0, 'c'}, {"no-auto", 0, 0, 'A'}, {"no-detect", 0, 0, 'N'}, {"near", 1, 0, 'n'},
         {"dump", 1, 0, 'd'}, {"build-art", 0, 0, 'B'}, {"export-sprites", 0, 0, 'X'}, {"force", 0, 0, 'F'}, {"add", 0, 0, 'P'},
-        {"list-windows", 0, 0, 'W'}, {"zoom", 1, 0, 'Z'}, {"room-size", 1, 0, 'Y'}, {"help", 0, 0, 'h'}, {0, 0, 0, 0}};
+        {"list-windows", 0, 0, 'W'}, {"zoom", 1, 0, 'Z'}, {"room-size", 1, 0, 'Y'}, {"help", 0, 0, 'h'}, {"edit", 1, 0, 'E'}, {0, 0, 0, 0}};
     int o, font_given = 0, size_given = 0;
     while ((o = getopt_long(argc, argv, "h", opts, NULL)) != -1) {
         switch (o) {
@@ -765,6 +767,7 @@ int app_main(int argc, char **argv) {
         case 'p': a.profile_font = atoi(optarg); break;
         case 'c': a.scale = atoi(optarg); break;
         case 'Z': a.zoom = atoi(optarg); break;
+        case 'E': a.edit = optarg; break;
         case 'Y': a.room_size = -1; for (int i = 0; i < N_SIZES; i++) if (!strcmp(optarg, SIZE_KEY[i])) a.room_size = i; break;
         case 'A': a.no_auto = 1; break;
         case 'N': a.no_detect = 1; break;
@@ -804,6 +807,7 @@ int app_main(int argc, char **argv) {
     props = sprites_load(path);
     theme_set_props(&props);
     sprites_watch(dir, &frames, &items, &props);
+    if (a.edit) { int er = editor_run(dir, strcmp(a.edit, "-") ? a.edit : NULL); sprites_free(&frames); sprites_free(&items); sprites_free(&props); return er; } /* the pixel editor */
     { char rd[600]; snprintf(rd, sizeof rd, "%s", dir); char *sl = strrchr(rd, '/'); if (sl) strcpy(sl, "/rooms"); else strcpy(rd, "../rooms"); theme_set_rooms_dir(rd); } /* (rooms/ next to sprites/) */
     int rc = 0;
     if (a.build_art || a.export_sprites) { /* the sprite files and the pictures made from them */

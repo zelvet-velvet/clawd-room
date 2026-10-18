@@ -46,6 +46,15 @@ gitGraph
 ---
 ## 2026-10-18
 
+### 🎨 Engine step 3: props as sprites, rooms as text files, the pixel editor
+> [!info] Branch `feat/style-a`
+- **`sprites/props.txt`** holds the window, plant, menu, lamps and shelf (made from the drawing code: every picture stayed the same). **`rooms/*.txt`** say where each room's wall items go.
+- Running rooms **read the sprite and room files again when they change**.
+- **`./clawd-room.sh --edit NAME`**: a pixel editor in the terminal with the mouse (paint, erase, pick, add colours, undo, resize, other sprites and files); it saves after each stroke, so the rooms next to it change as you draw.
+- Fixed on the way: on macOS the room never found the `sprites/` folder (edits to the sprite files were ignored).
+
+![[2026-10-18 pixel editor with rooms.png|480]]
+
 ### 🚪 Gates stay put; `g` asks where to
 > [!info] Branch `feat/style-a`
 - **Gates no longer come and go.** Each room's window helper walks every iTerm2 window; with several rooms open a list could take over 3 s, so the room thought its window was gone, dropped its gates and waited again. The last list is kept for 10 s now, and a neighbour's heartbeat without its grid is not taken as a move. In a 50 s `--try` run all gates appeared after about 10 s and stayed.
@@ -286,7 +295,7 @@ Zaviel's sketch for the stairs and the doors that needed fixing:
 
 > [!todo] Waiting
 > - Merge `feat/camera-gates` and `feat/style-a` into `main` (after Zaviel's checks).
-> - The engine, in steps: ~~items and layers~~ → ~~placer~~ (0 overlaps) → props as sprites, rooms as text files and the pixel editor → animator ([[Engine Design]]).
+> - The engine, in steps: ~~items and layers~~ → ~~placer~~ (0 overlaps) → ~~props as sprites, rooms as text, pixel editor~~ → animator ([[Engine Design]]).
 > - `README.md` still describes the old flat look in places (banner, gates at the window edge).
 > - WSL: the profile from the dropdown opens at Windows Terminal's default size, then jumps once; planned a shortcut with `wt.exe -w new --size 60,18 -p "Clawd Room"`.
 > - The room can block writing if the terminal stops reading (seen with iTerm2 in full screen).

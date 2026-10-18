@@ -36,6 +36,7 @@ applaud when a friend finishes, and do little solo acts (stretch, dance, jump, w
 
     ./clawd-room.sh --room park               # window 1
     ./clawd-room.sh --room coffee             # window 2
+    ./clawd-room.sh --edit window             # the pixel editor: draw a prop (sprites/props.txt) with the mouse; rooms show it at once
     ./clawd-room.sh --try                     # iTerm2: four linked rooms in the four quarters, with made-up Clawds
                                               # (quit one to close all; --try close; --try real for real sessions only)
 
