@@ -23,7 +23,7 @@ What changed and when, in short. How things work now is in the topic notes:
 Pictures are in `Screenshots/`. Details of every change: `git log`.
 
 > [!info] Where the work is (branches)
-> `main` has everything up to macOS support. The newer work waits on two branches for Zaviel's checks.
+> `main` = `feat/style-a` (kept equal since Zaviel said "merge to main" on 2026-10-18; every commit goes to both). `feat/camera-gates` is older and merged into it.
 
 ```mermaid
 gitGraph
@@ -35,12 +35,12 @@ gitGraph
     commit id: "camera, room size"
     checkout main
     merge macos-iterm id: "merged 10-17"
-    branch camera-gates
-    commit id: "camera at gates"
-    commit id: "doors, ladders"
     branch style-a
     commit id: "perspective rooms"
-    commit id: "stairs to a half floor"
+    commit id: "engine, editor, --try"
+    commit id: "park plaza, moves"
+    checkout main
+    merge style-a id: "main = style-a (10-18, 10-19)"
 ```
 
 ---
@@ -392,6 +392,15 @@ Zaviel's sketch for the stairs and the doors that needed fixing:
 
 ---
 ## ⏳ Pending
+
+> [!todo] Next session (2026-10-20, on Windows WSL2)
+> Everything since 2026-10-17 was built and tested on macOS only. On WSL2:
+> 1. `git pull` (branch `feat/style-a` = `main`), `make -C c`, then `make -C c test`, `smoke`, `linksmoke`, `movesmoke`, `splitsmoke` and `clawd-room --check`: they should pass as on macOS (the snapshots came from macOS clang; if only float rounding differs, say so before updating anything).
+> 2. Check that the hook symlink `~/clawd-room` still points at the WSL copy of the repo.
+> 3. By eye in Windows Terminal (see [[Test Checklist]], the WSL2 part): style A rooms and the park, the bottom bar's size at the WSL font, linked rooms side by side and stacked, `g` / `m` with the hint, packing and unpacking, no desks hopping, the pixel editor with the mouse (`--edit`).
+> 4. WSL has no `--try` yet (it is iTerm2 only): open the linked windows by hand, or build a WSL `--try` with `wt.exe`.
+>
+> Then: **moving, step 3**: drag a Clawd onto a door, the stairs or the well with the mouse. Open questions for Zaviel: `--try real` with `--no-split` (every room shows all real sessions)?; balance the split if the uneven shares bother.
 
 > [!todo] Waiting
 > - ~~The engine~~: all four steps are built ([[Engine Design]]).

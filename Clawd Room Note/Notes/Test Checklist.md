@@ -13,6 +13,13 @@ tags:
 > [!tip] Setting up a test (iTerm2)
 > `./clawd-room.sh --try` opens **four linked rooms**, one in each quarter of the screen (office, coffee shop / park, office), with **made-up Clawds** in them, so every gate shows at once. Quit any one to close all four, or `./clawd-room.sh --try close`. `--try real` shows only your real sessions.
 
+## WSL2 + Windows Terminal (next session) ([[Platforms and Windows]])
+- [ ] `make -C c test`, the smoke tests and `--check` pass on WSL
+- [ ] Style A rooms, the park plaza and buildings look as on macOS at the WSL font
+- [ ] The bottom bar is readable; the `g` / `m` hint shows only while the key is held
+- [ ] Two linked windows (side by side, stacked): gates, `g`, `m` with packing / unpacking, no desks hopping
+- [ ] `--edit NAME`: the pixel editor works with the mouse in Windows Terminal
+
 ## Rooms and art ([[Rooms and Art]])
 - [ ] Each room (office, coffee shop, park) looks like the mockups at your window size
 - [ ] Seated Clawds show behind their desk / table / bench; the barista behind the bar

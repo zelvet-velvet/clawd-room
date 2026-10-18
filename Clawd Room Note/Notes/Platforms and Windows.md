@@ -55,6 +55,9 @@ sequenceDiagram
 ---
 ## 🪟 WSL + Windows Terminal
 
+> [!warning] Behind macOS (2026-10-19)
+> Since 2026-10-17 everything was built on macOS: style A rooms, the engine and pixel editor, the park plaza, moving Clawds (`m`), the bottom bar, the stable split. None of it has been run on WSL yet; that is the next session (the checklist is in the [[Dev Log]], ⏳ Pending). `--try` is iTerm2 only. The `g` / `m` hint learns the key repeat rate from the repeats it gets (macOS settings are read with `defaults`, which WSL does not have).
+
 - A small `powershell.exe` started by the room reports the windows (rectangles, DPI); it stops with the room.
 - On open the room sets the window to **110x32 cells** and the font to **8 pt** (`--size`, `--font`; `off` leaves them). `setup_profile.py` makes the "Clawd Room" profile; `--apply-global` edits `settings.json` with a backup.
 - Font keys are sent only to a window that already has the focus. Focus mode is not used (it dropped the window in tests).

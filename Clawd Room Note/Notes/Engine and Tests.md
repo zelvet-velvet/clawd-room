@@ -43,7 +43,7 @@ flowchart LR
 | File | What it does |
 | --- | --- |
 | `app.c` | arguments, the main loop, keys, the start menu |
-| `room.c` | who goes where, visits, crossing |
+| `room.c` | who goes where, visits, crossing, moves (`m`: packing, claims), which room shows which session |
 | `draw.c` | layout (`geo_init`), building the frame's scene, the debug overlay, the camera view |
 | `scene.c` | the scene: items on layers, drawn back to front, measured for the overlap check and the overlay |
 | `gallery.c` | `--check` (overlaps) and `--gallery DIR` (contact sheets) |
@@ -56,7 +56,7 @@ flowchart LR
 | `clawd.c`, `sprites.c` | the Clawd's poses and the editable sprite files |
 | `link.c`, `json.c` | linked windows talking through files |
 | `win.c`, `ps_scripts.h`, `mac_scripts.h` | the window helpers |
-| `ui.c` | status line, menus, auto scale, room sizes |
+| `ui.c` | the bottom bar (status and the `g` / `m` hint, in the pixel font), menus, auto scale, room sizes |
 | `tail.c` | reading the events file |
 | `art.c` | sprite files, PNG and GIF output (`--build-art`) |
 
@@ -71,10 +71,12 @@ flowchart LR
     T -->|differs by accident| Fix["🐛 fix it"]
     T -->|matches| S["make -C c smoke<br/>pty: keys, menus, quit"]
     S --> L["make -C c linksmoke<br/>two rooms: g, b, messages"]
-    L --> Eye["👀 Test Checklist<br/>(Zaviel)"]
+    L --> M["movesmoke + splitsmoke<br/>m moves; shares stay put"]
+    M --> Eye["👀 Test Checklist<br/>(Zaviel)"]
 ```
 
 - `make -C c test` compares with `c/tests/expected`: sprite frames, terminal strings, random numbers, fixture frames (`tools/fixtures/*.fx`), scripted scenes over time (`tools/scenarios/*.sc`), gate planning, `--dump` text frames.
+- `make -C c movesmoke`: two rooms in ptys, `m` + arrow moves a Clawd, the other room claims it in its heartbeat. `make -C c splitsmoke`: three rooms, a fourth opens, one freezes 7 s, the fourth closes: no other Clawd changes room.
 - `make -C c winsmoke` uses real Windows Terminal windows.
 - `clawd-room --check` (in `make test`, snapshot `overlap.txt`): items painting over each other across every room × gates × crowd × size.
 - `make -C c gallery`: the same scenes as contact sheets in `gallery/` (not committed) — look at them before handing a visual change over.
@@ -86,7 +88,10 @@ flowchart LR
 > The agreed plan to replace this with items, layers and a placer is in [[Engine Design]].
 
 > [!tip] Test hooks
-> `CLAWD_EVENTS` (events file) · `CLAWD_LINK_DIR` (link folder) · `CLAWD_SIZE_LOG` (sizes, gate positions and why a gate is shown or not, who the camera follows; `--try` writes one per room in `~/.clawd-room/try/`) · `--dump COLSxROWS` with `--zoom`, `--room-size`.
+> `CLAWD_EVENTS` (events file) · `CLAWD_LINK_DIR` (link folder) · `CLAWD_SIZE_LOG` (sizes, gate positions and why a gate is shown or not, who the camera follows; `--try` writes one per room in `~/.clawd-room/try/`) · `CLAWD_STATUS_LOG` (the bottom bar's text, which is pixels) · `CLAWD_SHOWN_LOG` (which sessions a linked room shows) · `--dump COLSxROWS` with `--zoom`, `--room-size`.
+
+> [!warning] One-frame glitches
+> A blink in linked rooms was missed by a state-only check (2026-10-19): the desks were laid out before the frame's moves. For such bugs run the real rooms in ptys with a temporary per-frame log of what is drawn.
 
 ---
 ## 🎲 Random numbers

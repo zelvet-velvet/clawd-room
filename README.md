@@ -23,7 +23,7 @@ idle 90 s (asleep), session end (walks out). A session with no events for 30 min
     ./clawd-room.sh                           # draws in the terminal (works in a 60x20 pane or fullscreen); builds c/ on the first start
     ./clawd-room.sh --dump 100x30 --events /tmp/e.jsonl --at 1800000010   # one plain-text frame, for tests
 
-Keys: `q` or Esc quit, `p` pause, `?` help line, `r` room size list, `[` `]` camera zoom, `z` auto zoom, left / right (A / D) or Tab pick the Clawd the camera follows, `c` follow / free camera (then the arrows or W A S D move it), `g` send a Clawd next door, `b` call your Clawds back (or send visitors home), `f` fit. Needs at least 44x20 cells. The hook must be
+Keys: `q` or Esc quit, `p` pause, `?` help line, `r` room size list, `[` `]` camera zoom, `z` auto zoom, left / right (A / D) or Tab pick the Clawd the camera follows, `c` follow / free camera (then the arrows or W A S D move it), `g` send a Clawd next door (hold `g` + an arrow: which way), `m` + an arrow move the picked Clawd to that room (it packs its desk into a box and lives there while the rooms run), `b` call your Clawds back (or send visitors home), `f` fit. Needs at least 44x20 cells. Messages, the help line and the `g` / `m` hint show in a bar along the bottom of the room. The hook must be
 installed once (`python3 install_hooks.py` shows what it would change) or the room stays empty.
 Needs a truecolor terminal (Windows Terminal is fine). It only reads the events file.
 
@@ -109,8 +109,9 @@ Windows above or below: a window stacked over another gets a knotted rope hangin
 (Clawds climb it to the room above) and the one below gets stairs in the floor. A door on the
 side shows the floor and wall of the room next door. Press `g` to send an idle Clawd next door now.
 
-Sessions are shared between linked rooms (each session lives in one room, picked by a hash of its
-id), so two windows do not show the same Clawds. `--no-split` shows every session in every room.
+Sessions are shared between linked rooms (each session lives in one room: the one a hash of its id
+and the room's id scores highest, so opening or closing a room only moves that room's share; or the
+room it was moved to with `m`), so two windows do not show the same Clawds. `--no-split` shows every session in every room.
 The rooms read the same `~/.clawd-room/events.jsonl`: real Claude Code sessions (hook installed)
 and `simulate.py` fake ones both show up.
 

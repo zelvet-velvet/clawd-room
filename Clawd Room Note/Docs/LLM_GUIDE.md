@@ -14,7 +14,7 @@ Read this first if you are an AI assistant (Claude Code or similar) working on t
 ---
 ## 🧭 What this is
 
-**clawd-room** is a pixel room where every running **Claude Code** session is a little Clawd (the Claude Code mascot). `hook.py` appends one JSON line per Claude Code event to `~/.clawd-room/events.jsonl`; the C program in `c/` follows that file and animates one character per session in the terminal (half-block truecolor). Several windows can be linked (`--room NAME`): Clawds walk through doors, ladders and hatches into the window next to them. The room is **C11 with no libraries**; Python 3 (standard library only) is used for the hook, the installer, the simulator and the profile tools. Used on **WSL2 + Windows Terminal**; the window helpers call `powershell.exe`.
+**clawd-room** is a pixel room where every running **Claude Code** session is a little Clawd (the Claude Code mascot). `hook.py` appends one JSON line per Claude Code event to `~/.clawd-room/events.jsonl`; the C program in `c/` follows that file and animates one character per session in the terminal (half-block truecolor). Several windows can be linked (`--room NAME`): Clawds walk through doors, ladders and hatches into the window next to them. The room is **C11 with no libraries**; Python 3 (standard library only) is used for the hook, the installer, the simulator and the profile tools. Used on **WSL2 + Windows Terminal** (window helpers call `powershell.exe`) and **macOS + iTerm2** (osascript; a "Clawd Room" dynamic profile with a fixed 4x8 pt cell).
 
 **The events file is about the user's real work.** It holds only `t, sid, ev, cwd (folder basename), tool`. Never widen that; never print or commit its contents.
 
@@ -34,16 +34,23 @@ Read this first if you are an AI assistant (Claude Code or similar) working on t
 | Exact behaviour | the code (comments and constants at the top of each file) and `git log` |
 
 ---
+## 📍 Where things stand
+
+The current state and the **next steps** are at the bottom of the [[Dev Log]] (⏳ Pending: "Next session"). In short (2026-10-19): style A rooms, the engine (scene, placer, sprite and room files, pixel editor, animator), the macOS iTerm2 setup with `--try`, moving Clawds between rooms (`m`, steps 1 and 2 of 3) and a stable split of the sessions are done on macOS; the next session is on **WSL2**, to bring it up to date there.
+
+---
 ## 🗂️ Map
 
 ```
 hook.py             Claude Code hook: one JSON line per event -> ~/.clawd-room/events.jsonl (mode 600)
 install_hooks.py    prints / applies / removes the hook in ~/.claude/settings.json (prints by default)
 clawd-room.sh       the launcher the profile calls: builds c/ when needed, then runs c/clawd-room
-c/                  the room, in C: canvas, sprites, clawd (poses), persp (the perspective), theme (the rooms, workspaces, gates, signs), draw (layout, frame, camera view), room (state machine), camera, rng, tail (events), link (windows), win (window helpers: PowerShell on WSL, osascript on macOS iTerm2; scripts in ps_scripts.h / mac_scripts.h), ui, app (main loop), art (sprite files, PNG, GIF)
+c/                  the room, in C: canvas (+ font_data.h, the 3x5 pixel font), sprites, clawd (poses), persp (the perspective), theme (the rooms, workspaces, gates, signs), draw (layout, frame, camera view, debug overlay), scene (items on layers, overlap measuring), place (the placer), anim (eased values), editor (the pixel editor), gallery (--check / --gallery), room (state machine, visits, moves), camera, rng, tail (events), link (windows), win (window helpers: PowerShell on WSL, osascript on macOS iTerm2; scripts in ps_scripts.h / mac_scripts.h), ui (bottom bar, menus, sizes), app (main loop), fixture (test scenes), art (sprite files, PNG, GIF)
 c/tests/expected/   snapshots the tests compare with (from the C program since style A, 2026-10-18)
-sprites/            editable Clawd frames and items (text grids)
-tools/              test.sh (snapshots), fixtures/ + scenarios/ (test scenes), pty_smoke.py, link_smoke.py, win_smoke.py, place_windows.py (test helper for your own windows)
+sprites/            editable Clawd frames, items and props (text grids; reloaded while the room runs; edit with --edit NAME)
+rooms/              wall plans per room (what the placer puts on the walls; reloaded while the room runs)
+gallery/            not in git: contact sheets (make -C c gallery) and gallery/mock/ (scratch mockup programs, a test worktree wt/)
+tools/              test.sh (snapshots), fixtures/ + scenarios/ (test scenes), pty_smoke.py, link_smoke.py, move_smoke.py, split_smoke.py, win_smoke.py, place_windows.py (test helper for your own windows), demo_events.py + try_room.sh (--try)
 simulate.py         fake sessions: live, or --fixture TS --out FILE for a static case
 room.py + run.sh    the original pygame-ce window (needs .venv). Leave alone
 wt_settings.py      print-only: Windows Terminal settings that hide the tab bar / scroll bar
@@ -54,7 +61,7 @@ Clawd Room Note/    this Obsidian vault (open this folder in Obsidian; plugin co
 CLAUDE.md           points here
 ```
 
-Test hooks (environment): `CLAWD_EVENTS` (events file), `CLAWD_LINK_DIR` (link folder), `CLAWD_SIZE_LOG` (logs terminal size, gate positions and who the camera follows).
+Test hooks (environment): `CLAWD_EVENTS` (events file), `CLAWD_LINK_DIR` (link folder), `CLAWD_SIZE_LOG` (logs terminal size, gate positions and who the camera follows), `CLAWD_STATUS_LOG` (the bottom bar's text: it is pixels, so the pty tests read it here), `CLAWD_SHOWN_LOG` (which sessions a linked room shows).
 
 ---
 ## ⚠️ Rules that prevent breakage
@@ -80,9 +87,13 @@ Test hooks (environment): `CLAWD_EVENTS` (events file), `CLAWD_LINK_DIR` (link f
 1. `make -C c test` (about a second): snapshots of frames, terminal output, random numbers, scripted scenes over time, geometry and `--dump` frames.
 2. `clawd-room --dump 100x30 --events FILE --at TS` prints one plain-text frame; `python3 simulate.py --fixture 1800000000 --out /tmp/e.jsonl` writes a static case for it.
 3. `make -C c smoke` runs the program in a pty (keys, new events, menu, quitting, terminal restored); feed a real event through `hook.py` with `CLAWD_EVENTS` set.
-4. `make -C c linksmoke`: two linked rooms in ptys, `g` sends a Clawd, the messages arrive.
-5. `make -C c winsmoke`: real Windows Terminal windows (your own `alpha` / `beta`): sizing and gate positions. `clawd-room --list-windows` lists the `clawd-room` windows; `tools/place_windows.py` moves only the titles you give it. New Windows Terminal windows may open minimized, and the PowerShell helper needs a few seconds to start.
-6. `clawd-room --build-art` redraws the sprite sheet and GIFs; look at them.
+4. `make -C c linksmoke`: two linked rooms in ptys, `g` sends a Clawd, the messages arrive. `make -C c movesmoke`: `m` moves a Clawd, the other room claims it. `make -C c splitsmoke`: rooms opening, freezing and closing do not move other rooms' Clawds.
+5. `clawd-room --check` (part of `make test`): items painting over each other in every room x gates x crowd x size (keep it at 0); `make -C c gallery` draws the same scenes as contact sheets to look at.
+6. Glitches that last a frame (blinks) or involve linked rooms: reproduce with the real program in ptys and a temporary per-frame log of what `draw_room` draws, not with state alone. On iTerm2, `./clawd-room.sh --try` opens four linked rooms with made-up Clawds.
+7. `make -C c winsmoke`: real Windows Terminal windows (your own `alpha` / `beta`): sizing and gate positions. `clawd-room --list-windows` lists the `clawd-room` windows; `tools/place_windows.py` moves only the titles you give it. New Windows Terminal windows may open minimized, and the PowerShell helper needs a few seconds to start.
+8. `clawd-room --build-art` redraws the sprite sheet and GIFs; look at them.
+
+Run the tests that rewrite snapshots in a separate worktree (`git worktree add gallery/mock/wt`) when the working tree has Zaviel's own uncommitted edits (e.g. a sprite being drawn in `sprites/props.txt`): never commit or alter those.
 
 ---
 ## 🔁 Workflow
@@ -113,6 +124,7 @@ The repo is private on GitHub (`zelvet-velvet/clawd-room`). History starts clean
 
 **Merging to `main`**
 - When a feature seems done, **ask the user** whether to open a PR or merge. Never merge without a yes.
+- Current practice (Zaviel said "merge to main", 2026-10-18): `feat/style-a` is the working branch and `main` is kept equal to it; each commit is pushed to both (`git branch -f main HEAD` while `main` is an ancestor, then `git push origin feat/style-a main`).
 - Merge with `--no-ff` so each feature shows as one branch: `git merge --no-ff <branch> -m "type(scope): summary"`, then push `main`. Do not chain a merge and a branch delete in one command.
 - After a merge, delete the merged branch (local and remote).
 - Unrelated things go on a new branch.

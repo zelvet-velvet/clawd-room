@@ -27,6 +27,16 @@ smoke: clawd-room
 	python3 ../tools/pty_smoke.py
 .PHONY: smoke
 
+# two linked rooms in ptys: m + arrow moves a Clawd, the other room claims it (about 15 s)
+movesmoke: clawd-room
+	python3 ../tools/move_smoke.py
+.PHONY: movesmoke
+
+# linked rooms keep their share of the sessions: a room opens, one freezes, one closes (about 25 s)
+splitsmoke: clawd-room
+	python3 ../tools/split_smoke.py
+.PHONY: splitsmoke
+
 # real Windows Terminal windows (your own alpha / beta): sizing and where the gates go (about 1 minute)
 winsmoke: clawd-room
 	python3 ../tools/win_smoke.py 10
