@@ -49,6 +49,9 @@ gitGraph
 ### 🧱 The park's gates are buildings
 > [!info] Branch `feat/style-a`
 - A hedge with an opening did not say where it leads: a side with a gate is now the side wall of a **brick building** (courses, cornice, windows upstairs) with a **door** on the ground floor, opening like the indoor doors.
+- Then: the buildings got a **pitched slate roof** (tile rows up to the ridge).
+
+![[2026-10-18 park buildings with roofs.png|420]]
 
 ![[2026-10-18 park buildings with doors.png|420]]
 ![[2026-10-18 park buildings, all gates.png|600]]
