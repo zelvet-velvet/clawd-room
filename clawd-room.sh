@@ -21,32 +21,49 @@ if [ "$stale" = 1 ]; then
     esac
   fi
 fi
-# iTerm2: the room runs in its own window with the "Clawd Room" profile (Menlo 6 at 1.1 line spacing: 4x8 pt cells, so a
-# room pixel is always a square 4x4 pt). iTerm2 ignores the escape code that switches an open window's profile, so a new
-# window is opened instead. The profile ignores Cmd = + - 0 (iTerm2's font size keys), so the pixel size stays. --here (or CLAWD_HERE=1) keeps the current window; so does a run that only prints.
-here_only=0
-for a in "$@"; do case "$a" in --here) here_only=1 ;; --dump*|--build-art*|-h|--help|--version) here_only=1 ;; esac; done
-for a in "$@"; do shift; [ "$a" = --here ] || set -- "$@" "$a"; done
-if [ "$(uname -s)" = Darwin ] && [ "$TERM_PROGRAM" = iTerm.app ] && [ -z "$TMUX" ] && [ "$here_only" = 0 ] \
-   && [ "${CLAWD_HERE:-0}" = 0 ] && [ "$ITERM_PROFILE" != "Clawd Room" ] && [ -x "$bin" ] && command -v osascript >/dev/null 2>&1; then
+# iTerm2: the room runs in a window with the "Clawd Room" profile (Menlo 6 at 1.1 line spacing: 4x8 pt cells, so a room
+# pixel is always a square 4x4 pt; Cmd = + - 0, iTerm2's font size keys, are ignored). The profile is a dynamic profile file
+# written here; opening it (Profiles menu) starts the room, and the window closes when the room quits. iTerm2 ignores the
+# escape code that would switch an open window's profile, so run from another window this opens the room's window in the
+# same place and closes the window it was typed in (when that has no other tabs or panes; --keep leaves it).
+# --here (or CLAWD_HERE=1) runs the room in the current window; so does a run that only prints.
+here_only=0 keep=0
+for a in "$@"; do case "$a" in --here) here_only=1 ;; --keep) keep=1 ;; --dump*|--build-art*|-h|--help|--version) here_only=1 ;; esac; done
+for a in "$@"; do shift; case "$a" in --here|--keep) ;; *) set -- "$@" "$a" ;; esac; done
+if [ "$(uname -s)" = Darwin ] && [ "$TERM_PROGRAM" = iTerm.app ] && [ -z "$TMUX" ]; then
   dyn="$HOME/Library/Application Support/iTerm2/DynamicProfiles"
   prof="$dyn/clawd-room.json"
-  want='{"Profiles": [{"Name": "Clawd Room", "Guid": "clawd-room-profile-1", "Normal Font": "Menlo 6", "Horizontal Spacing": 1.0, "Vertical Spacing": 1.1, "Use Non-ASCII Font": false, "Keyboard Map": {"0x3d-0x100000": {"Action": 13, "Text": ""}, "0x2b-0x120000": {"Action": 13, "Text": ""}, "0x3d-0x120000": {"Action": 13, "Text": ""}, "0x2d-0x100000": {"Action": 13, "Text": ""}, "0x30-0x100000": {"Action": 13, "Text": ""}}}]}'
+  ign='{"Action": 13, "Text": ""}'
+  want='{"Profiles": [{"Name": "Clawd Room", "Guid": "clawd-room-profile-1", "Normal Font": "Menlo 6", "Horizontal Spacing": 1.0, "Vertical Spacing": 1.1, "Use Non-ASCII Font": false, "Custom Command": "Yes", "Command": "/bin/sh -lc '"'$here/clawd-room.sh'"'", "Close Sessions On End": true, "Keyboard Map": {"0x3d-0x100000": '"$ign"', "0x2b-0x120000": '"$ign"', "0x3d-0x120000": '"$ign"', "0x2d-0x100000": '"$ign"', "0x30-0x100000": '"$ign"'}}]}'
   if [ "$(cat "$prof" 2>/dev/null)" != "$want" ]; then
     mkdir -p "$dyn" && printf '%s\n' "$want" > "$prof" && sleep 1.5 # (iTerm2 picks the file up by itself)
   fi
-  cmd="'$bin'"
-  for a in "$@"; do cmd="$cmd '$(printf %s "$a" | sed "s/'/'\\\\''/g")'"; done
-  # (iTerm2 starts the command with its own environment: pass ours on, and the folder)
-  run="cd '$PWD' && exec env CLAWD_HERE=1 $cmd"
-  if CR_RUN="$run" osascript -l JavaScript -e '
-      const env = $.NSProcessInfo.processInfo.environment.objectForKey("CR_RUN").js;
-      Application("iTerm2").createWindowWithProfile("Clawd Room", {command: "/bin/sh -lc " + JSON.stringify(env)});
-      ""' >/dev/null 2>&1; then
-    echo "clawd-room: opened in its own iTerm2 window (Clawd Room profile, fixed pixel size); --here runs it in this one" >&2
-    exit 0
+  if [ "$here_only" = 0 ] && [ "${CLAWD_HERE:-0}" = 0 ] && [ "$ITERM_PROFILE" != "Clawd Room" ] && [ -x "$bin" ] && command -v osascript >/dev/null 2>&1; then
+    cmd="'$bin'"
+    for a in "$@"; do cmd="$cmd '$(printf %s "$a" | sed "s/'/'\\\\''/g")'"; done
+    run="cd '$PWD' && exec env CLAWD_HERE=1 $cmd" # (iTerm2 starts the command with its own environment: pass on the folder)
+    # open the room's window over this one; say whether this window holds only this session
+    alone=$(CR_RUN="$run" CR_SID="${ITERM_SESSION_ID#*:}" osascript -l JavaScript -e '
+      const env = $.NSProcessInfo.processInfo.environment, get = k => env.objectForKey(k).js;
+      const it = Application("iTerm2"), sid = get("CR_SID");
+      let mine = null, alone = false;
+      it.windows().forEach(w => w.tabs().forEach(t => t.sessions().forEach(s => { if (s.id() === sid) { mine = w; alone = w.tabs().length === 1 && t.sessions().length === 1; } })));
+      const nw = it.createWindowWithProfile("Clawd Room", {command: "/bin/sh -lc " + JSON.stringify(get("CR_RUN"))});
+      if (mine) nw.bounds = mine.bounds();
+      alone ? "1" : "0"' 2>/dev/null) || alone=x
+    if [ "$alone" != x ]; then
+      if [ "$alone" = 1 ] && [ "$keep" = 0 ] && [ -n "$ITERM_SESSION_ID" ]; then
+        # close the window this was typed in, once this script has ended and its shell is idle again
+        CR_SID="${ITERM_SESSION_ID#*:}" nohup osascript -l JavaScript -e '
+          delay(0.6); const sid = $.NSProcessInfo.processInfo.environment.objectForKey("CR_SID").js;
+          Application("iTerm2").windows().forEach(w => w.tabs().forEach(t => t.sessions().forEach(s => { if (s.id() === sid) s.close(); })));' >/dev/null 2>&1 &
+      else
+        echo "clawd-room: opened in its own iTerm2 window (Clawd Room profile, fixed pixel size)" >&2
+      fi
+      exit 0
+    fi
+    echo "clawd-room: could not open an iTerm2 window, running here" >&2
   fi
-  echo "clawd-room: could not open an iTerm2 window, running here" >&2
 fi
 if [ -x "$bin" ]; then exec "$bin" "$@"; fi
 echo "clawd-room: c/clawd-room is not built" >&2

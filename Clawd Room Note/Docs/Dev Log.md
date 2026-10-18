@@ -46,6 +46,11 @@ gitGraph
 ---
 ## 2026-10-18
 
+### 🚀 iTerm2: the profile starts the room
+> [!info] Branch `feat/style-a`
+- **Profiles → Clawd Room** now starts the room directly (no shell first); the window closes when the room quits.
+- Typing `./clawd-room.sh` in a normal window **hands over**: the room's window opens in the same place and the typed-in window closes, so no extra shell window is left (`--keep` keeps it; not closed when it has other tabs or panes).
+
 ### 🛝 A real swing, the park's well at the back right
 > [!info] Branch `feat/style-a`
 - The **swing** is a small swing set seen from the front: splayed wooden posts, a bar, chains and a red seat. At a swing workspace the Clawd **sits on the seat** between the chains; on the playground swing it swings towards you and back.

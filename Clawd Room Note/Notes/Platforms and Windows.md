@@ -65,7 +65,8 @@ sequenceDiagram
 - Used when `TERM_PROGRAM=iTerm.app`, not inside tmux. The helper is `osascript` (JavaScript, `c/mac_scripts.h`): it reports iTerm2 windows **and split panes** in points, and quits when the room is gone.
 - iTerm2 does not say where a pane or the text area is, so they are worked out (title bar, tab bar, margins).
 - **New windows open as a quarter of the screen** (like macOS's four-window tiling), snapped into the quarter their centre is in, so two rooms land next to each other.
-- **A fixed pixel size:** `./clawd-room.sh` started from a normal iTerm2 window opens the room in **its own window with the "Clawd Room" profile**: Menlo 6 at line spacing 1.1, so every cell is **4x8 pt** and a room pixel a square **4x4 pt** (8x8 screen pixels on Retina). The pixel art lines up the same on every run. `--here` keeps the current window.
+- **Starting:** **Profiles → Clawd Room** (or Cmd+O) starts the room directly; its window closes when the room quits. Typing `./clawd-room.sh` in a normal window **hands over**: the room's window opens in the same place and the typed-in window closes (unless it has other tabs or panes; `--keep` leaves it).
+- **A fixed pixel size:** the room runs in **its own window with the "Clawd Room" profile**: Menlo 6 at line spacing 1.1, so every cell is **4x8 pt** and a room pixel a square **4x4 pt** (8x8 screen pixels on Retina). The pixel art lines up the same on every run. `--here` keeps the current window.
 - The profile is a separate file, `~/Library/Application Support/iTerm2/DynamicProfiles/clawd-room.json`, written by `clawd-room.sh` (delete it to remove the profile); the user's own profiles are not touched.
 - The profile **ignores Cmd = + − 0** (iTerm2's font size keys), so the pixel size cannot drift. iTerm2 reloads the file by itself, so open room windows pick up a change at once.
 

@@ -56,7 +56,9 @@ get a gate between them, like two attached windows. iTerm2 does not say where a 
 worked out from the window size, the title and tab bar and iTerm2's margins (simple splits only: a row of side-by-side
 panes or a column of stacked ones). `f` resizes the window there too. Started from a normal iTerm2 window,
 `./clawd-room.sh` opens the room in **its own window with a "Clawd Room" profile** (Menlo 6, line spacing 1.1: 4x8 pt
-cells, so a room pixel is always a square 4x4 pt). The profile is the file
+cells, so a room pixel is always a square 4x4 pt) in the same place and closes the window it was typed in (unless that has
+other tabs or panes; `--keep` leaves it). After the first run, **Profiles → Clawd Room** (or Cmd+O) starts the room
+directly; its window closes when the room quits. The profile is the file
 `~/Library/Application Support/iTerm2/DynamicProfiles/clawd-room.json` (delete it to remove the profile). `--here` runs
 the room in the current window instead (iTerm2 ignores the escape code that would switch the open window's profile).
 When a room opens in iTerm2 its window becomes a quarter of the screen (`--size screen`, the default there), like macOS's
