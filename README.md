@@ -109,9 +109,9 @@ Windows above or below: a window stacked over another gets a knotted rope hangin
 (Clawds climb it to the room above) and the one below gets stairs in the floor. A door on the
 side shows the floor and wall of the room next door. Press `g` to send an idle Clawd next door now.
 
-Sessions are shared between linked rooms (each session lives in one room: the one a hash of its id
-and the room's id scores highest, so opening or closing a room only moves that room's share; or the
-room it was moved to with `m`), so two windows do not show the same Clawds. `--no-split` shows every session in every room.
+Sessions are shared between linked rooms (each session lives in one room and stays there while that room runs:
+a new session goes to the room a hash of its id and the room's id scores highest; one moved with `m`
+lives in the room it moved to), so two windows do not show the same Clawds. `--no-split` shows every session in every room.
 The rooms read the same `~/.clawd-room/events.jsonl`: real Claude Code sessions (hook installed)
 and `simulate.py` fake ones both show up.
 

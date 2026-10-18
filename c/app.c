@@ -248,7 +248,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
     char flash[96] = "";
     double flash_until = 0;
     int last_closed[SIDES] = {0};
-    static struct { char id[40]; double last; char homes[MAX_CLAIMS][72]; int nhomes; } owners[MAX_LINK_PEERS]; /* the rooms sharing the sessions */
+    static struct { char id[40]; double last; char homes[MAX_CLAIMS][72]; int nhomes; char shows[MAX_SHOWS][72]; int nshows; } owners[MAX_LINK_PEERS]; /* the rooms sharing the sessions */
     int nowners = 0;
     static char held[MAX_LINK_PEERS][40];
     int nheld = 0;
@@ -501,6 +501,8 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                 owners[q].last = wall();
                 owners[q].nhomes = link.peers[i].nhomes;
                 memcpy(owners[q].homes, link.peers[i].homes, sizeof owners[q].homes[0] * (size_t)link.peers[i].nhomes);
+                owners[q].nshows = link.peers[i].nshows;
+                memcpy(owners[q].shows, link.peers[i].shows, sizeof owners[q].shows[0] * (size_t)link.peers[i].nshows);
             }
             for (int q = 0; q < nowners;) {
                 int live = 0;
@@ -510,6 +512,15 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
             }
             link.nhomes = room.nmine; /* who moved in here (m key), said in our heartbeat; and who moved into the other rooms */
             memcpy(link.homes, room.mine, sizeof room.mine[0] * (size_t)room.nmine);
+            room_order(&room); /* ... and who we show (the others leave them here) */
+            link.nshows = 0;
+            for (int i = 0; i < room.n && link.nshows < MAX_SHOWS; i++) snprintf(link.shows[link.nshows++], 72, "%s", room.s[i]->sid);
+            room.nheld = 0;
+            for (int i = 0; i < nowners; i++)
+                for (int q = 0; q < owners[i].nshows && room.nheld < MAX_HELD; q++) {
+                    snprintf(room.held_sid[room.nheld], 72, "%s", owners[i].shows[q]);
+                    snprintf(room.held_room[room.nheld++], 40, "%s", owners[i].id);
+                }
             room.nclaim = 0;
             for (int i = 0; i < nowners; i++)
                 for (int q = 0; q < owners[i].nhomes && room.nclaim < MAX_CLAIMS * 4; q++) {

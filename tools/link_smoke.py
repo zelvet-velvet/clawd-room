@@ -72,13 +72,16 @@ def pair(kind_a, kind_b):
         link = os.path.join(tmp, "link")
         events = os.path.join(tmp, "events.jsonl")
         now = time.time()
-        with open(events, "w") as f:
-            for i in range(8):
-                f.write(json.dumps({"t": now - 5, "sid": "sess%d" % i, "ev": "SessionStart", "cwd": "proj%d" % i, "tool": ""}) + "\n")
+        open(events, "w").close()  # the sessions start once both rooms are up: a room alone would keep them all (sessions stay where they are shown)
         env = {"CLAWD_LINK_DIR": link}
         a = Proc(kind_a, ["--room", "alpha", "--theme", "office", "--right", "beta", "--events", events], env)
         b = Proc(kind_b, ["--room", "beta", "--theme", "coffee", "--left", "alpha", "--events", events], env)
         for _ in range(40):  # let both start, see each other and show their gates
+            a.pump(0.1); b.pump(0.1)
+        with open(events, "a") as f:
+            for i in range(8):
+                f.write(json.dumps({"t": time.time(), "sid": "sess%d" % i, "ev": "SessionStart", "cwd": "proj%d" % i, "tool": ""}) + "\n")
+        for _ in range(20):  # ... and their Clawds walk in
             a.pump(0.1); b.pump(0.1)
         results = {}
         a.key(b"g"); a.pump(0.6)

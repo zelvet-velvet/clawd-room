@@ -51,8 +51,9 @@ gitGraph
 ### 🧭 Desks stay in their room
 > [!bug] Fixed
 > With several rooms open, workspaces vanished from one room and showed up in another. Two causes: the split was `crc32 % number of rooms`, so a room opening or closing moved nearly **every** session; and a room busy drawing that missed its heartbeat for 4 s counted as gone, so everything was split again (and back).
-- Now each session goes to the room that scores highest for it (**rendezvous hashing**): opening a room only takes its share, closing one only gives its own away. A quiet room whose presence file is still there keeps its share (and its moved-in claims) for 15 s.
-- `tools/split_smoke.py`: three rooms, a fourth opens, one freezes for 7 s, the fourth closes: no other Clawd changes room, every session shown once.
+- Now the split is **sticky**: each room says which sessions it shows, and a session a running room shows **stays there** (Zaviel: one session, four rooms opening one by one, and the desk moved each time). A session nobody shows (new, or its room closed) goes to the room that scores highest for it (rendezvous hashing). A quiet room whose presence file is still there keeps its share for 15 s.
+- `--try` starts its made-up sessions once all four rooms are up, so they spread over the rooms.
+- `tools/split_smoke.py`: one room, three more open one by one (nothing moves), new sessions (each in one room), a room freezes 7 s (nothing moves), the first closes (only its Clawds go elsewhere).
 
 ### ⌨️ The g / m hint only while the key is held
 - It goes soon after the key's repeats stop (a terminal never says a key was let go); the room learns the keyboard's repeat delay and rate from the repeats it gets.
@@ -400,7 +401,7 @@ Zaviel's sketch for the stairs and the doors that needed fixing:
 > 3. By eye in Windows Terminal (see [[Test Checklist]], the WSL2 part): style A rooms and the park, the bottom bar's size at the WSL font, linked rooms side by side and stacked, `g` / `m` with the hint, packing and unpacking, no desks hopping, the pixel editor with the mouse (`--edit`).
 > 4. WSL has no `--try` yet (it is iTerm2 only): open the linked windows by hand, or build a WSL `--try` with `wt.exe`.
 >
-> Then: **moving, step 3**: drag a Clawd onto a door, the stairs or the well with the mouse. Open questions for Zaviel: `--try real` with `--no-split` (every room shows all real sessions)?; balance the split if the uneven shares bother.
+> Then: **moving, step 3**: drag a Clawd onto a door, the stairs or the well with the mouse. (Settled: `--try real` stays split; uneven shares are fine, `m` moves a Clawd.)
 
 > [!todo] Waiting
 > - ~~The engine~~: all four steps are built ([[Engine Design]]).

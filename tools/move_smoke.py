@@ -28,13 +28,16 @@ with tempfile.TemporaryDirectory() as tmp:
     link = os.path.join(tmp, "link")
     events = os.path.join(tmp, "events.jsonl")
     now = time.time()
-    with open(events, "w") as f:
-        for i in range(8):
-            f.write(json.dumps({"t": now - 5, "sid": "sess%d" % i, "ev": "SessionStart", "cwd": "proj%d" % i, "tool": ""}) + "\n")
+    open(events, "w").close()  # the sessions start once both rooms are up: a room alone would keep them all (sessions stay where they are shown)
     env = {"CLAWD_LINK_DIR": link}
     a = Proc("c", ["--room", "alpha", "--theme", "office", "--right", "beta", "--events", events], env)
     b = Proc("c", ["--room", "beta", "--theme", "coffee", "--left", "alpha", "--events", events], env)
     for _ in range(40):  # both start, see each other, show their gates
+        a.pump(0.1); b.pump(0.1)
+    with open(events, "a") as f:
+        for i in range(8):
+            f.write(json.dumps({"t": time.time(), "sid": "sess%d" % i, "ev": "SessionStart", "cwd": "proj%d" % i, "tool": ""}) + "\n")
+    for _ in range(20):  # ... and their Clawds walk in
         a.pump(0.1); b.pump(0.1)
     for _ in range(6):  # pick a Clawd (Tab) and move it right; again if that one was busy going somewhere (a visit)
         a.key(b"\t"); a.pump(0.3); b.pump(0.1)

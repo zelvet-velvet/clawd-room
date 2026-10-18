@@ -19,6 +19,8 @@ int side_index(const char *name);        /* -1 if not a side */
 #define MAX_PARTS 256
 #define MAX_OUT 32
 #define MAX_CLAIMS 32
+#define MAX_SHOWS 64   /* sessions a linked room says it shows */
+#define MAX_HELD 256   /* ... all the other rooms' together */
 
 typedef struct { double x, y, vx, vy, life; Rgb c; int heart; } Particle;
 typedef struct { char name[24], side[8]; } Peer; /* side: "left" "right" "up" "down" or "" */
@@ -89,6 +91,7 @@ typedef struct {
     int n_owner_ids; char owner_ids[17][40], owner_me[40];
     char mine[MAX_CLAIMS][72]; int nmine; /* the sessions that moved into this room (m key): it shows them while it runs */
     char claim_sid[MAX_CLAIMS * 4][72], claim_room[MAX_CLAIMS * 4][40]; int nclaim; /* ... and the other rooms' (from their heartbeats) */
+    char held_sid[MAX_HELD][72], held_room[MAX_HELD][40]; int nheld; /* the sessions the other rooms show now (from their heartbeats) */
     int has_geo;             /* geo below is from the last frame (the g key needs it) */
     Geo geo;
 } Room;

@@ -49,7 +49,7 @@ tags:
 - [ ] Gates appearing animate in, in both windows at the same moment; gates there at start are simply there
 - [ ] Pick a Clawd (Tab), `m` + arrow: it walks out (also while working) and comes in at the other room, stays there (not back after a visit); close that room: it shows up in its usual room again
 - [ ] Moving: the desk shrinks into a box with a poof, the Clawd carries it out, no blink in the room it left; it unpacks at the new desk; `m` + arrow while it carries the box: straight to the new gate
-- [ ] `--try`: desks stay in their room while the rooms open, run and one closes (no hopping)
+- [ ] `--try` / `--try real`: desks stay in their room while the rooms open one by one, run and one closes (no hopping); the made-up Clawds spread over the four rooms
 - [ ] Hold `g` / `m`: the hint shows only while held, gone right after letting go
 - [ ] Hold `g`: a line at the bottom of the room shows which arrow goes where; `g` + arrow sends a Clawd that way; letting go hides the line; with one linked room `g` sends straight away
 - [ ] Gates stay put in `--try` (no coming and going)

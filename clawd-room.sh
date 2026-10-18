@@ -58,8 +58,11 @@ if [ "$(uname -s)" = Darwin ] && [ "$TERM_PROGRAM" = iTerm.app ] && [ -z "$TMUX"
     if [ "${2:-}" = real ]; then ev="$HOME/.clawd-room/events.jsonl"
     else
       ev="$try/events.jsonl"
-      nohup python3 "$here/tools/demo_events.py" "$ev" "$try/stop" 7 >/dev/null 2>&1 &
-      sleep 0.5
+      : > "$ev"
+      # the made-up sessions start once all four rooms are up (or after 20 s): a session a room shows stays there, so
+      # sessions started before the others open would all stay in the first room
+      nohup sh -c 'i=0; while [ "$(ls "$1"/*.peer 2>/dev/null | wc -l)" -lt 4 ] && [ $i -lt 80 ]; do sleep 0.25; i=$((i+1)); done
+                   exec python3 "$2" "$3" "$4" 7' sh "$try/link" "$here/tools/demo_events.py" "$ev" "$try/stop" >/dev/null 2>&1 &
     fi
     CR_HERE="$here" CR_BIN="$bin" CR_TRY="$try" CR_EV="$ev" osascript -l JavaScript -e '
       ObjC.import("AppKit");

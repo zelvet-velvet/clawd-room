@@ -89,6 +89,8 @@ static void beat(Link *l, double now, int cols, int rows, int force) { /* rewrit
     else fprintf(f, ", \"grid\": null");
     fprintf(f, ", \"homes\": [");
     for (int i = 0; i < l->nhomes; i++) { if (i) fprintf(f, ", "); json_str(f, l->homes[i]); }
+    fprintf(f, "], \"shows\": [");
+    for (int i = 0; i < l->nshows; i++) { if (i) fprintf(f, ", "); json_str(f, l->shows[i]); }
     fprintf(f, "]}");
     fclose(f);
     rename(tmp, dst);
@@ -181,11 +183,11 @@ static void scan(Link *l, double now, LinkPeer *joined, int *nj, LinkPeer *left,
             char rid[64];
             snprintf(rid, sizeof rid, "%.*s", (int)(n - 5), de->d_name);
             if (!strcmp(rid, l->id) || !id_ok(rid)) continue;
-            char p[700], data[8193];
+            char p[700], data[16385];
             snprintf(p, sizeof p, "%s/%s", l->dir, de->d_name);
             FILE *f = fopen(p, "rb");
             if (!f) continue;
-            size_t got = fread(data, 1, 8192, f);
+            size_t got = fread(data, 1, 16384, f);
             fclose(f);
             J *rec = json_parse(data, got);
             const J *jt = json_get(rec, "t"), *jpid = json_get(rec, "pid"), *jid = json_get(rec, "id");
@@ -215,6 +217,9 @@ static void scan(Link *l, double now, LinkPeer *joined, int *nj, LinkPeer *left,
                 v = json_get(rec, "homes");
                 if (v && v->type == J_ARR)
                     for (int i = 0; i < v->n && q->nhomes < MAX_CLAIMS; i++) if (v->kids[i]->type == J_STR) snprintf(q->homes[q->nhomes++], 72, "%.64s", v->kids[i]->str);
+                v = json_get(rec, "shows");
+                if (v && v->type == J_ARR)
+                    for (int i = 0; i < v->n && q->nshows < MAX_SHOWS; i++) if (v->kids[i]->type == J_STR) snprintf(q->shows[q->nshows++], 72, "%.64s", v->kids[i]->str);
             } else if (!alive && !pid_alive(pid)) remove_files(l, rid, "peer", "inbox"); /* tidy up after a room that crashed */
             json_free(rec);
         }

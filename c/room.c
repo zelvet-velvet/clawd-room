@@ -54,34 +54,53 @@ static const char *claimed_by(const Room *r, const char *sid) { /* the other roo
 
 /* which sessions this room shows (when several rooms share them): one moved here (m key) or on its way out; one moved
  * to another room that runs is not ours; the rest by their crc32 */
+static int best_of(const Room *r, const char *sid, const int *ks, int n);
 static int owns(const Room *r, const Session *s) {
     if (!r->split || r->n_owner_ids < 1) return 1;
     if (s->move && (s->has_travel || s->has_away)) return 1;
     if (is_mine(r, s->sid)) return 1;
     if (claimed_by(r, s->sid)) return 0;
-    return !strcmp(r->owner_ids[room_owner_of(r, s->sid)], r->owner_me);
+    /* a session a running room shows stays there (opening another room does not take it); if two rooms show it, the one
+     * that scores higher keeps it; one that no room shows (new, or its room closed) goes by its score among all rooms */
+    int holders[17], nh = 0;
+    for (int k = 0; k < r->n_owner_ids; k++) {
+        int holds = 0;
+        if (!strcmp(r->owner_ids[k], r->owner_me)) holds = s->shown_here;
+        else for (int i = 0; i < r->nheld && !holds; i++) holds = !strcmp(r->held_room[i], r->owner_ids[k]) && !strcmp(r->held_sid[i], s->sid);
+        if (holds) holders[nh++] = k;
+    }
+    int k = nh ? holders[best_of(r, s->sid, holders, nh)] : room_owner_of(r, s->sid);
+    return !strcmp(r->owner_ids[k], r->owner_me);
 }
 
 /* the room a session belongs to: the one that scores highest for it (rendezvous hashing), so a room opening only takes its
  * own share and a room closing only gives its own away; nobody else's Clawd changes room */
-int room_owner_of(const Room *r, const char *sid) {
+static unsigned score(const char *sid, const char *room) {
+    char key[120];
+    snprintf(key, sizeof key, "%s|%s", sid, room);
+    unsigned h = crc32_str(key);
+    h ^= h >> 16; h *= 0x85ebca6bu; h ^= h >> 13; h *= 0xc2b2ae35u; h ^= h >> 16; /* (mixed: crc32 alone is too even across similar keys) */
+    return h;
+}
+static int best_of(const Room *r, const char *sid, const int *ks, int n) { /* which of the rooms ks[0..n) scores highest */
     int best = 0;
     unsigned top = 0;
-    for (int k = 0; k < r->n_owner_ids; k++) {
-        char key[120];
-        snprintf(key, sizeof key, "%s|%s", sid, r->owner_ids[k]);
-        unsigned h = crc32_str(key);
-        h ^= h >> 16; h *= 0x85ebca6bu; h ^= h >> 13; h *= 0xc2b2ae35u; h ^= h >> 16; /* (mixed: crc32 alone is too even across similar keys) */
-        if (k == 0 || h > top) { top = h; best = k; }
-    }
+    for (int i = 0; i < n; i++) { unsigned h = score(sid, r->owner_ids[ks[i]]); if (i == 0 || h > top) { top = h; best = i; } }
     return best;
+}
+int room_owner_of(const Room *r, const char *sid) {
+    int all[17];
+    for (int k = 0; k < r->n_owner_ids; k++) all[k] = k;
+    return best_of(r, sid, all, r->n_owner_ids);
 }
 
 void room_order(Room *r) {
     r->n = 0;
     for (int i = 0; i < r->npool; i++) {
         Session *s = &r->pool[i];
-        if (owns(r, s)) r->s[r->n++] = s;
+        int mine = owns(r, s);
+        s->shown_here = mine && r->split; /* (only once it shares with other rooms: alone, it shows everything) */
+        if (mine) r->s[r->n++] = s;
         else if (s->has_away && !s->move) { s->has_away = 0; s->pack = 0; s->has_pos = 0; } /* (moved away for good: if it comes back, at its desk) */
     }
     qsort(r->s, (size_t)r->n, sizeof(Session *), by_created);
