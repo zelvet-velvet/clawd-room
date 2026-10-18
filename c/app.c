@@ -139,7 +139,7 @@ static int read_keys(char *keys, size_t n, Reports *rep) {
         }
         if (c && strchr("WASD", c)) c += 32;
         if (c == '\n') c = '\r';
-        if (c && strchr("qpfgbr?[]wasd\r\tcz", c)) keys[k++] = c;
+        if (c && strchr("qpfgbr?[]wasd\r\tczo", c)) keys[k++] = c; /* (o: the debug overlay) */
     }
     keys[k] = 0;
     return (int)k;

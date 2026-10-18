@@ -46,6 +46,12 @@ gitGraph
 ---
 ## 2026-10-18
 
+### 🔍 `o` works, and names what it shows
+> [!bug] Fixed
+> The key reader only passed on a fixed list of keys and `o` was not in it, so the debug overlay never came on from the keyboard. Now it does, and each box is labelled with what it is (SIGN, LAMP, DESK, GATE-LEFT, RAIL …).
+
+![[2026-10-18 debug overlay with labels.png|420]]
+
 ### 🧱 The park's gates are buildings
 > [!info] Branch `feat/style-a`
 - A hedge with an opening did not say where it leads: a side with a gate is now the side wall of a **brick building** (courses, cornice, windows upstairs) with a **door** on the ground floor, opening like the indoor doors.

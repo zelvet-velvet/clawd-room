@@ -538,6 +538,18 @@ static void draw_overlay(Canvas *cv, const Scene *sc, const Geo *g, const Room *
         frame_rect(cv, it->bx0, it->by0, it->bx1, it->by1, LC[it->layer]);
         if (it->ax || it->ay) cross(cv, (int)it->ax, (int)it->ay, LC[it->layer]);
     }
+    for (int i = 0; i < sc->n; i++) { /* what each box is, written at its top left (not the Clawds: they move) */
+        const SceneItem *it = &sc->it[i];
+        if (!it->has_box || it->layer == LAYER_SKY || it->owner >= 0 || !strcmp(it->kind, "particles") || !strcmp(it->kind, "clawd") || !strcmp(it->kind, "name") || !strcmp(it->kind, "more") || !strcmp(it->kind, "no-sessions")) continue; /* (words need no label) */
+        char t[24];
+        snprintf(t, sizeof t, "%s", it->kind);
+        for (char *p = t; *p; p++) if (*p >= 'a' && *p <= 'z') *p -= 32;
+        int tw = text_width(t), x = it->bx0 + 1, y = it->by0 + 1;
+        if (x + tw > cv->w) x = cv->w - tw - 1;
+        if (y + 5 > cv->h) y = cv->h - 6;
+        canvas_rect(cv, x - 1, y - 1, tw + 2, 7, RGB(20, 20, 28));
+        canvas_text(cv, x, y, t, LC[it->layer]);
+    }
     for (int i = 0; i < room->nnb; i++) {
         int sd = room->nb[i].side;
         cross(cv, (int)g->gate_in[sd][0], (int)g->gate_in[sd][1], RGB(80, 255, 80));
