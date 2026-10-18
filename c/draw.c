@@ -614,7 +614,8 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
     memset(&X, 0, sizeof X);
     X.room = room; X.geo = &geo; X.now = now; X.t = t; X.active = active;
     scene_add(sc, (SceneItem){.kind = "background", .layer = LAYER_SKY, .owner = -1, .draw = it_background});
-    for (int i = 0; i < room->nnb; i++) {
+    static const int GATE_ORDER[SIDES] = {SIDE_UP, SIDE_DOWN, SIDE_LEFT, SIDE_RIGHT}; /* (the way up at the back first: the side gates stand in front of it) */
+    for (int oi = 0; oi < SIDES; oi++) for (int i = 0; i < room->nnb; i++) if (room->nb[i].side == GATE_ORDER[oi]) {
         int side = room->nb[i].side;
         char gk[8];
         snprintf(gk, sizeof gk, "gate%d", side);

@@ -46,7 +46,8 @@ static int allowed(const char *a, const char *b) {
     static const char *const OK[][2] = {
         {"rail", "gate-up"}, {"rail", "platform"}, {"rail", "opening"}, {"platform", "gate-up"}, {"opening", "platform"}, /* one structure */
         {"gate-left", "building"}, {"gate-right", "building"}, /* its door */
-        {"desk", "platform"}, {"desk", "building"}, {"swing", "building"}, {"slide", "building"}, {"gate-up", "building"}, {"platform", "building"}, {"rail", "building"}, {"opening", "building"}, /* (the park's stairs, terrace and tower against the building) */ /* standing in front of the platform's face or a plain fence */
+        {"desk", "platform"}, {"desk", "building"}, {"swing", "building"}, {"slide", "building"}, {"gate-up", "building"}, {"platform", "building"}, {"rail", "building"}, {"opening", "building"}, /* (the park's stairs, terrace and tower against the building) */
+        {"opening", "gate-up"}, {"gate-right", "gate-up"}, {"gate-left", "gate-up"}, /* (the park: the door of the building behind the steps; the side doors stand in front of it) */ /* standing in front of the platform's face or a plain fence */
     };
     for (size_t i = 0; i < sizeof OK / sizeof OK[0]; i++)
         if ((!strcmp(a, OK[i][0]) && !strcmp(b, OK[i][1])) || (!strcmp(b, OK[i][0]) && !strcmp(a, OK[i][1]))) return 1;

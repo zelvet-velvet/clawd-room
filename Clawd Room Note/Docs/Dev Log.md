@@ -48,9 +48,9 @@ gitGraph
 
 ### 🏛️ The park's way up: a terrace and a stair tower
 > [!info] Branch `feat/style-a`
-- The treehouse did not fit a city plaza. Picked from three mockups (A): **stone stairs** up to a **terrace** along the back right with a **stone balustrade**. The stair tower first put at its end did not make sense, so the terrace is now the **front steps of a brick building** (a stoop): windows on every floor, its **front door at the top of the steps** is the way up. The side buildings' flat roofs became **decks seen from above**.
+- The treehouse did not fit a city plaza. Picked from three mockups (A): **stone stairs** up to a **terrace** along the back right with a **stone balustrade**. The stair tower first put at its end did not make sense, so the terrace is now the **front steps of a brick building** (a stoop): windows on every floor, its **front door at the top of the steps** is the way up. The side buildings' flat roofs became **decks seen from above**. Then the building **fills the back right** (from the stairs' foot to the edge, up out of the picture, down to the ground behind the steps), with the side buildings in front of it.
 
-![[2026-10-18 park stoop building and roof decks.png|420]] It is the indoor stairs code with a stone style (Clawds walk up behind the railing); the tree moved to the back right corner; the third lamp only shows without the terrace.
+![[2026-10-18 park building fills the back right.png|420]] It is the indoor stairs code with a stone style (Clawds walk up behind the railing); the tree moved to the back right corner; the third lamp only shows without the terrace.
 
 ![[2026-10-18 park way up mockups.png|300]] ![[2026-10-18 park terrace and stair tower.png|600]]
 
