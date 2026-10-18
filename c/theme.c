@@ -401,41 +401,43 @@ static const StairStyle *stair_style(const Theme *th) { return th == &COFFEE ? &
  * a plaque, two lamps), centred at door_cx with its sill on floor_y */
 int park_door_cx(int x1) { return x1 + PARK_DOOR_DX; }
 static int platform_right(const View *v, int x1) { return v->outdoor ? park_door_cx(x1) + PARK_DOOR_W / 2 + 6 : (int)ceil(v->br); }
+/* one city building's front between xa and xb: staggered brick, piers between bays, a window per bay per floor (up out
+ * of the picture), a stone ground floor with low windows below `base`; nothing in `skip` (the entrance) */
+typedef struct { Rgb brick, mortar, pier, trim, glass, stone, stone_dk; int bay; } Facade;
+static void facade(Canvas *c, int xa, int xb, int ground, int base, const Facade *f, Box skip, int low_from) {
+    canvas_rect(c, xa, 0, xb - xa, base, f->brick);
+    for (int y = base - 3; y > 0; y -= 3) { /* a course line, its joints offset each course */
+        canvas_rect(c, xa, y, xb - xa, 1, f->mortar);
+        for (int x = xa + ((y / 3) % 2 ? 2 : 5); x < xb; x += 6) canvas_px(c, x, y + 1, f->mortar);
+    }
+    for (int px = xa; px < xb; px += f->bay) { canvas_rect(c, px, 0, 2, base, f->pier); canvas_rect(c, px + 2, 0, 1, base, lt(f->brick, 0.08)); }
+    for (int wy = base - 18; wy > -12; wy -= 14)
+        for (int bx = xa + (f->bay - 8) / 2 + 1; bx + 8 < xb; bx += f->bay) {
+            if (box_hit((Box){bx - 1, wy - 2, bx + 9, wy + 12}, skip)) continue;
+            canvas_rect(c, bx - 1, wy - 2, 10, 2, f->trim);              /* the lintel */
+            canvas_rect(c, bx, wy, 8, 10, f->glass);
+            canvas_rect(c, bx, wy, 8, 4, dk(f->glass, 0.18));           /* the upper pane, in shade */
+            canvas_rect(c, bx + 3, wy, 2, 10, lt(f->trim, 0.3));         /* the frame's middle */
+            canvas_rect(c, bx - 1, wy + 10, 10, 1, f->trim);             /* the sill */
+            canvas_rect(c, bx - 1, wy + 11, 10, 1, dk(f->brick, 0.25));  /* its shadow */
+        }
+    canvas_rect(c, xa, base, xb - xa, ground - base, f->stone);          /* the stone ground floor */
+    for (int y = base + 3; y < ground; y += 3) canvas_rect(c, xa, y, xb - xa, 1, f->stone_dk);
+    for (int x = xa + 3; x + 6 < xb; x += 13) if (x > low_from) { canvas_rect(c, x, base + 4, 6, 5, RGB(60, 64, 74)); canvas_rect(c, x, base + 4, 6, 1, f->trim); } /* low windows */
+    canvas_rect(c, xa, base - 2, xb - xa, 2, f->trim);                   /* the band on top of it, its shadow */
+    canvas_rect(c, xa, base, xb - xa, 1, dk(f->stone, 0.25));
+    canvas_rect(c, xa, 0, 1, ground, dk(f->brick, 0.25));                /* its corner */
+}
+static const Facade RED_BRICK = {{172, 104, 80}, {156, 92, 70}, {150, 88, 66}, {230, 216, 192}, {140, 180, 214}, {200, 190, 172}, {170, 160, 144}, 18};
+static const Facade SANDSTONE = {{204, 176, 128}, {186, 158, 112}, {180, 150, 104}, {244, 236, 216}, {132, 170, 204}, {176, 170, 160}, {150, 144, 134}, 15};
+
 static void stoop_building(Canvas *c, int x0, int ground, int floor_y, int door_cx, int landing_x1, int corner, int part) {
-    Rgb brick = RGB(172, 104, 80), mortar = RGB(156, 92, 70), pier = RGB(150, 88, 66), trim = RGB(230, 216, 192), stone = RGB(200, 190, 172), stone_dk = RGB(170, 160, 144), glass = RGB(140, 180, 214);
-    int W = c->w, base = floor_y, dw = PARK_DOOR_W, dh = PARK_DOOR_H, dx = door_cx - dw / 2, dy = floor_y - dh;
+    Rgb brick = RED_BRICK.brick, trim = RED_BRICK.trim;
+    int W = c->w, dw = PARK_DOOR_W, dh = PARK_DOOR_H, dx = door_cx - dw / 2, dy = floor_y - dh;
     if (part == 0) {
-        canvas_rect(c, x0, 0, W - x0, base, brick);
-        for (int y = base - 3; y > 0; y -= 3) { /* staggered brick: a course line, its joints offset each course */
-            canvas_rect(c, x0, y, W - x0, 1, mortar);
-            for (int x = x0 + ((y / 3) % 2 ? 2 : 5); x < W; x += 6) canvas_px(c, x, y + 1, mortar);
-        }
-        int bay = 18;
-        for (int px = x0; px < W; px += bay) { canvas_rect(c, px, 0, 2, base, pier); canvas_rect(c, px + 2, 0, 1, base, lt(brick, 0.08)); } /* piers between bays */
-        for (int wy = base - 18; wy > -12; wy -= 14) /* a window per bay per floor, floors up out of the picture (none over the entrance) */
-            for (int bx = x0 + 6; bx + 8 < W; bx += bay) {
-                if (bx + 9 > dx - 6 && bx - 1 < dx + dw + 6 && wy + 12 > dy - 14) continue;
-                canvas_rect(c, bx - 1, wy - 2, 10, 2, trim);              /* the lintel */
-                canvas_rect(c, bx, wy, 8, 10, glass);
-                canvas_rect(c, bx, wy, 8, 4, dk(glass, 0.18));           /* the upper pane, in shade */
-                canvas_rect(c, bx + 3, wy, 2, 10, RGB(240, 232, 214));    /* the frame's middle */
-                canvas_rect(c, bx - 1, wy + 10, 10, 1, trim);             /* the sill */
-                canvas_rect(c, bx - 1, wy + 11, 10, 1, dk(brick, 0.25));  /* its shadow */
-            }
-        canvas_rect(c, x0, base, W - x0, ground - base, stone);          /* the stone ground floor */
-        for (int y = base + 3; y < ground; y += 3) canvas_rect(c, x0, y, W - x0, 1, stone_dk);
-        for (int x = x0 + 3; x + 6 < W; x += 13) if (x > landing_x1 + 2) { canvas_rect(c, x, base + 4, 6, 5, RGB(60, 64, 74)); canvas_rect(c, x, base + 4, 6, 1, trim); } /* low windows */
-        canvas_rect(c, x0, base - 2, W - x0, 2, trim);                   /* the band on top of it, its shadow */
-        canvas_rect(c, x0, base, W - x0, 1, dk(stone, 0.25));
-        canvas_rect(c, x0, 0, 1, ground, dk(brick, 0.2));                /* the building's corner */
-        if (corner < W) { /* beyond the park's back corner (above and behind the right-hand building): another building, grey and modern */
-            Rgb con = RGB(146, 156, 176), win = RGB(70, 84, 110), lit = RGB(236, 226, 180);
-            canvas_rect(c, corner, 0, W - corner, ground, con);
-            canvas_rect(c, corner, 0, 1, ground, dk(con, 0.35));            /* where the two meet */
-            for (int y = 3; y + 4 < ground; y += 7)
-                for (int x = corner + 3; x + 3 < W; x += 6) canvas_rect(c, x, y, 3, 4, ((x * 7 + y * 3) % 11) < 2 ? lit : win);
-            for (int y = 8; y < ground; y += 7) canvas_rect(c, corner + 1, y, W - corner - 1, 1, dk(con, 0.12)); /* floor lines */
-        }
+        int xb = corner < W ? corner : W;
+        facade(c, x0, xb, ground, floor_y, &RED_BRICK, (Box){dx - 6, dy - 16, dx + dw + 6, floor_y}, landing_x1 + 2);
+        if (corner < W) facade(c, corner, W, ground, floor_y, &SANDSTONE, (Box){0, 0, 0, 0}, corner); /* beyond the park's back corner: the next building, same style, sandstone */
         return;
     }
     canvas_rect(c, dx - 2, dy - 6, dw + 4, dh + 6, trim);                /* the door surround */
