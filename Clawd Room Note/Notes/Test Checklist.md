@@ -19,7 +19,7 @@ tags:
 - [ ] Coffee shop: tables, square cushioned chairs, laptop / tablet / phone, coffee / matcha look right
 - [ ] Park: bench, swing and picnic table workspaces; at a swing workspace the Clawd sits on the seat between the chains
 - [ ] Park playground: the small swing set (a Clawd on it swings towards you and back) and the slide at 45°
-- [ ] Park: with a fence on one side, no bushes on that side
+- [ ] Park: a city plaza (skyline, promenade, lamps, benches); a side with a gate has a hedge with a stone archway and no bushes
 - [ ] The room's sign reads well; with stairs it hangs in front of them
 - [ ] Dots over heads; the name shows only for a Clawd that needs you
 - [ ] A crowded small room (several gates and Clawds) still reads; nothing collides badly

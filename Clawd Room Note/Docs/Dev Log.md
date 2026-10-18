@@ -46,6 +46,13 @@ gitGraph
 ---
 ## 2026-10-18
 
+### 🏙️ The park is a city plaza
+> [!info] Branch `feat/style-a`
+- Picked from three mockups (C): a **far city skyline** instead of hills, a **stone promenade** along the back of the lawn with **street lamps and benches** (wall items in `rooms/park.txt`, so the placer keeps desks off them), and on a side with a gate a low **hedge wall with a stone archway** showing the street beyond (instead of the wooden fence). The tree, treehouse, playground and stone well stay.
+
+![[2026-10-18 city park mockups.png|300]] ![[2026-10-18 city plaza park.png|420]]
+![[2026-10-18 city plaza park, all gates.png|600]]
+
 ### 🕳️ Down the well, not across it
 > [!info] Branch `feat/style-a`
 - A Clawd going down the stair well now **walks down its steps**: drawn lower the further along the steps it is, and cut off at the hole's front edge, so it disappears into the hole (and rises out of it coming up).

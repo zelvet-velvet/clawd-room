@@ -157,14 +157,33 @@ static void paint_park(const Theme *th, Canvas *c, const View *v) {
     for (int y = 0; y < (int)v->bb; y++) canvas_rect(c, 0, y, w, 1, rgb_mix(th->wall, th->wall2, (double)y / v->bb)); /* sky */
     int cl[2][2] = {{w / 7, (int)v->bt}, {w / 2, (int)v->bt - 3}};
     for (int i = 0; i < 2; i++) { canvas_rect(c, cl[i][0], cl[i][1], 14, 3, RGB(250, 250, 255)); canvas_rect(c, cl[i][0] + 3, cl[i][1] - 2, 7, 2, RGB(250, 250, 255)); }
-    quad(c, 0, v->bb, w * 0.24, v->bb - 8, w * 0.47, v->bb, 0, v->bb, RGB(130, 176, 124)); /* hills */
-    quad(c, w * 0.3, v->bb, w * 0.62, v->bb - 11, w * 0.97, v->bb, w * 0.3, v->bb, RGB(116, 164, 112));
+    { /* a far city skyline (a city park, not the wild) */
+        unsigned r = 5u;
+        for (int x = 0; x < w;) {
+            r = r * 1103515245u + 12345u;
+            int bw = 8 + (int)(r >> 16) % 14, bh = 8 + (int)(r >> 8) % (int)fmax(6, (v->bb - v->bt) * 0.75);
+            int y0 = (int)v->bb - 2 - bh;
+            canvas_rect(c, x, y0, bw - 1, bh + 2, RGB(170, 178, 196));
+            canvas_rect(c, x, y0, bw - 1, 1, RGB(186, 192, 208));
+            for (int yy = y0 + 2; yy < (int)v->bb - 3; yy += 3) for (int xx = x + 2; xx < x + bw - 3; xx += 3)
+                if (((unsigned)(xx * 7 + yy * 13) * 2654435761u >> 28) % 5 < 2) canvas_px(c, xx, yy, RGB(236, 232, 206)); /* lit windows */
+            x += bw;
+        }
+    }
     for (int y = (int)v->bb; y < h; y++)
         for (int x = 0; x < w; x++) { /* mowed stripes running to the back */
             double X, Z;
             view_world(v, x + 0.5, y + 0.5, &X, &Z);
             canvas_px(c, x, y, ((int)floor((X + 8) / (v->xw / 4)) & 1) ? th->floor : th->floor2);
         }
+    for (int y = (int)v->bb; y < (int)v->bb + 6 && y < h; y++) { /* a stone promenade along the back of the lawn */
+        double xl, xr;
+        view_floor_span(v, y, &xl, &xr);
+        for (int x = (int)xl; x < (int)xr; x++) canvas_px(c, x, y, (y - (int)v->bb) % 3 == 2 || (x + (y - (int)v->bb) / 3 * 4) % 9 == 0 ? RGB(184, 178, 164) : RGB(208, 202, 188));
+    }
+    double pxl, pxr;
+    view_floor_span(v, v->bb + 6, &pxl, &pxr);
+    canvas_rect(c, (int)pxl, (int)v->bb + 6, (int)(pxr - pxl), 1, RGB(150, 146, 134)); /* its kerb */
     int tx = (int)(w * TREE_X), ty = (int)v->bb + 2; /* the big tree at the back (its treehouse comes with the gate up) */
     canvas_rect(c, tx - 2, ty - 26, 5, 26, RGB(120, 86, 56));
     blob(c, tx, ty - 30, 6, RGB(70, 140, 70));
@@ -310,18 +329,27 @@ static void wall_door(Canvas *c, const View *v, int right, double fx, double fy,
         if (in_leaf && back - 1 == leaf_cols - 1 && open < 0.4 && p >= 1) canvas_px(c, x, (top + bot) / 2, KNOB);
     }
 }
-static void fence_gate(Canvas *c, const View *v, int right, double fx, double fy, double p, int part) { /* the park: a fence along that side (part 0) with a gate (part 1; -1 both) */
-    double xw = right ? v->xw : -v->xw, X, Z, zf = 1.0, zb = v->zb, e = view_e(v, 8) * p;
+/* the park, a side with a gate: a low hedge wall along that side (part 0) with a stone archway where the gate is (part 1;
+ * -1 both); through the arch, the light of the street beyond */
+static void fence_gate(Canvas *c, const View *v, int right, double fx, double fy, double p, int part) {
+    double xw = right ? v->xw : -v->xw, X, Z, zf = 0.6, zb = v->zb, e = view_e(v, 20) * p;
     view_world(v, fx, fy, &X, &Z);
     if (e <= 0) return;
+    Rgb hedge = RGB(70, 128, 70), top = RGB(96, 154, 92), stone = RGB(206, 200, 188), stone_dk = RGB(160, 154, 142);
+    double g0 = Z * 0.965, g1 = Z * 1.035, ge = e * 1.35; /* (a little taller than the hedge, in the same world units) */
     if (part <= 0) {
-        for (double z = zf; z <= zb; z += 0.05) canvas_rect(c, (int)view_sx(v, xw, z), (int)view_sy(v, z, e), 1, (int)(view_sy(v, z, 0) - view_sy(v, z, e)) + 1, RGB(214, 186, 138));
-        wq(c, v, xw, zf, e * 0.8, xw, zb, e * 0.8, xw, zb, e * 0.9, xw, zf, e * 0.9, RGB(214, 186, 138));
+        wq(c, v, xw, zf, 0, xw, zb, 0, xw, zb, e, xw, zf, e, hedge);
+        wq(c, v, xw, zf, e * 0.82, xw, zb, e * 0.82, xw, zb, e, xw, zf, e, top);
+        for (double z = zf + 0.07; z < zb; z += 0.13) wq(c, v, xw, z, e * 0.25, xw, z + 0.02, e * 0.25, xw, z + 0.02, e * 0.7, xw, z, e * 0.7, RGB(62, 116, 62)); /* (leafy shading) */
     }
     if (part == 0) return;
-    double g0 = Z - 0.06 * Z, g1 = Z + 0.06 * Z, ge = view_e(v, 11) * p;
-    wq(c, v, xw, g0, 0, xw, g1, 0, xw, g1, ge, xw, g0, ge, RGB(150, 118, 80));
-    wq(c, v, xw, g0 + 0.01, view_e(v, 1), xw, g1 - 0.01, view_e(v, 1), xw, g1 - 0.01, ge * 0.85, xw, g0 + 0.01, ge * 0.85, RGB(226, 200, 150));
+    wq(c, v, xw, g0, 0, xw, g1, 0, xw, g1, ge * 0.82, xw, g0, ge * 0.82, RGB(150, 164, 186));                    /* through it: the street beyond */
+    wq(c, v, xw, g0, ge * 0.35, xw, g1, ge * 0.35, xw, g1, ge * 0.82, xw, g0, ge * 0.82, RGB(176, 186, 204));     /* (a building across the street) */
+    wq(c, v, xw, g0, 0, xw, g1, 0, xw, g1, ge * 0.12, xw, g0, ge * 0.12, RGB(120, 122, 130));                    /* the pavement */
+    wq(c, v, xw, g0 - 0.035 * Z, 0, xw, g0, 0, xw, g0, ge, xw, g0 - 0.035 * Z, ge, stone);                        /* the pillars */
+    wq(c, v, xw, g1, 0, xw, g1 + 0.035 * Z, 0, xw, g1 + 0.035 * Z, ge, xw, g1, ge, stone);
+    wq(c, v, xw, g0 - 0.045 * Z, ge * 0.82, xw, g1 + 0.045 * Z, ge * 0.82, xw, g1 + 0.045 * Z, ge * 1.06, xw, g0 - 0.045 * Z, ge * 1.06, stone); /* the lintel */
+    wq(c, v, xw, g0 - 0.045 * Z, ge * 0.82, xw, g1 + 0.045 * Z, ge * 0.82, xw, g1 + 0.045 * Z, ge * 0.86, xw, g0 - 0.045 * Z, ge * 0.86, stone_dk);
 }
 /* indoors, up (as Zaviel drew it): stairs against the back wall climb from about a fifth along it to a platform half way up
  * the wall (a half floor); the platform runs along the back wall to the right-hand wall, its front face down to the floor
@@ -525,6 +553,11 @@ static const WallSpec COFFEE_WALL[] = {
 };
 static const WallSpec PARK_WALL[] = {
     {"signpost", 0, 20, BAND_POST, 0.12, 0.12, 9, WHEN_ALWAYS},
+    {"streetlamp", 3, 17, BAND_POST, 0.25, 0.25, 4, WHEN_ALWAYS},
+    {"streetlamp", 3, 17, BAND_POST, 0.47, 0.47, 4, WHEN_ALWAYS},
+    {"streetlamp", 3, 17, BAND_POST, 0.66, 0.66, 4, WHEN_ALWAYS},
+    {"bench", 12, 5, BAND_POST, 0.36, 0.36, 3, WHEN_ALWAYS},
+    {"bench", 12, 5, BAND_POST, 0.57, 0.57, 3, WHEN_ALWAYS},
 };
 static void sign_words(const char *title, char *t, size_t n) {
     snprintf(t, n, "%.12s", title);
@@ -606,6 +639,16 @@ void theme_wall_item(const Theme *th, Canvas *c, const Placed *pl, const char *t
         canvas_rect(c, x0, gy - 12, w, 1, RGB(110, 80, 52));
         canvas_text(c, x0 + 3, gy - 18, t, RGB(250, 236, 200));
     } else if (prop(pl->kind)) sprite_blit(c, prop_frame(pl->kind), x0, y0, C_CLAWD); /* edited in sprites/props.txt (with frames: animated) */
+    else if (!strcmp(pl->kind, "streetlamp")) { /* on the promenade */
+        int h = pl->box.y1 - y0;
+        canvas_rect(c, x0 + 1, y0 + 2, 1, h - 2, RGB(60, 64, 72));
+        canvas_rect(c, x0, y0, 3, 2, RGB(250, 230, 160));
+        canvas_rect(c, x0, pl->box.y1 - 1, 3, 1, RGB(60, 64, 72));
+    } else if (!strcmp(pl->kind, "bench")) { /* a park bench, its back to us */
+        canvas_rect(c, x0, y0, w, 1, RGB(120, 86, 56));
+        canvas_rect(c, x0, y0 + 2, w, 1, RGB(140, 100, 66));
+        canvas_rect(c, x0 + 1, y0 + 3, 1, 2, RGB(70, 60, 54)); canvas_rect(c, x0 + w - 2, y0 + 3, 1, 2, RGB(70, 60, 54));
+    }
     else if (!strcmp(pl->kind, "window")) {
         canvas_rect(c, x0, y0, 14, 9, RGB(240, 244, 250));
         canvas_rect(c, x0 + 1, y0 + 1, 12, 7, RGB(150, 200, 236));
@@ -713,6 +756,13 @@ int theme_keep_clear(const Theme *th, const Geo *g, int side, Box *out, int *mas
     Box b = changed(&c);
     canvas_free(&c);
     if (b.x1 > b.x0) KEEP(box_grow(b, 1), 3);
+    if (th == &PARK && side < 2) { /* the hedge along that side: the signpost and the lamps keep off it (things on the floor may stand in front) */
+        Canvas hc = canvas_new(v->w, v->h, KEY);
+        theme_gate(th, &hc, g, side, 1.0, 0.0, 0);
+        Box hb = changed(&hc);
+        canvas_free(&hc);
+        if (hb.x1 > hb.x0) KEEP(box_grow(hb, 1), 2);
+    }
     KEEP(((Box){(int)fmin(ix, ox) - 8, (int)fmin(iy, oy) - 10, (int)fmax(ix, ox) + 8, (int)fmax(iy, oy) + 4}), 5); /* stepping on and off */
 #undef KEEP
     return n;

@@ -37,7 +37,7 @@ static const char *SESSIONS[] = {
 
 /* which kinds must not paint over each other: gates, wall items, bushes, the playground, desks, the railing */
 static char cat(const char *kind) {
-    static const char *const K[] = {"gate-left", "gate-right", "gate-up", "gate-down", "opening", "platform", "fence", "sign", "signpost", "window",
+    static const char *const K[] = {"gate-left", "gate-right", "gate-up", "gate-down", "opening", "platform", "hedge", "streetlamp", "bench", "sign", "signpost", "window",
                                     "plant", "menu", "lamp", "shelf", "bush", "swing", "slide", "desk", "rail"};
     for (size_t i = 0; i < sizeof K / sizeof K[0]; i++) if (!strcmp(kind, K[i])) return 1;
     return 0;
@@ -45,8 +45,8 @@ static char cat(const char *kind) {
 static int allowed(const char *a, const char *b) {
     static const char *const OK[][2] = {
         {"rail", "gate-up"}, {"rail", "platform"}, {"rail", "opening"}, {"platform", "gate-up"}, {"opening", "platform"}, /* one structure */
-        {"gate-left", "fence"}, {"gate-right", "fence"}, /* one fence */
-        {"desk", "platform"}, {"desk", "fence"}, {"swing", "fence"}, {"slide", "fence"}, /* standing in front of the platform's face or a plain fence */
+        {"gate-left", "hedge"}, {"gate-right", "hedge"}, /* one hedge */
+        {"desk", "platform"}, {"desk", "hedge"}, {"swing", "hedge"}, {"slide", "hedge"}, /* standing in front of the platform's face or a plain fence */
     };
     for (size_t i = 0; i < sizeof OK / sizeof OK[0]; i++)
         if ((!strcmp(a, OK[i][0]) && !strcmp(b, OK[i][1])) || (!strcmp(b, OK[i][0]) && !strcmp(a, OK[i][1]))) return 1;
