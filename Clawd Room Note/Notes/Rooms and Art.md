@@ -42,7 +42,7 @@ flowchart TB
 
 | Room | Look | Workspaces (one per session) |
 | --- | --- | --- |
-| 🏢 **Office** | light walls, a window, a plant, wooden floor boards | a desk with a monitor (the screen shows the tool's colour) |
+| 🏢 **Office** | light walls, a window (left of the sign; with stairs over the platform, never behind the sign), a plant, wooden floor boards | a desk with a monitor (the screen shows the tool's colour) |
 | ☕ **Coffee shop** | warm walls, a checker floor, hanging lamps, a shelf of cups | the first session is the **barista** behind a **low bar** with the espresso machine on it; the others sit at **round cafe tables** with a square cushioned chair (and an empty one), a **laptop, tablet or phone**, and a **coffee or matcha** |
 | 🌳 **Park** | sky, clouds, hills, mowed grass, bushes along the sides (not where a fence is), a big tree, a small **swing set seen from the front** (splayed wooden posts, a bar, chains, a red seat) and a **slide at 45°** (mirrored, down to the front left) | a **bench** (phone), a **swing** (the same small swing set, the Clawd on its seat with a tablet) or a **picnic table** (tablet) |
 
@@ -82,12 +82,12 @@ Gates sit **on the room's walls, ceiling and floor**, not at the window edge, so
 
 | Way | 🏢 Office / ☕ coffee shop | 🌳 Park |
 | --- | --- | --- |
-| **Side** | a **door** on the side wall facing the neighbour, a normal door's width and 22 room pixels tall, drawn column by column along the wall (dark outline, light frame and lintel, leaf with a knob; reads on any wall); **opens while a Clawd passes** | a **fence** along that side with a **gate** (the bushes leave that side) |
+| **Side** | a **door** on the side wall facing the neighbour, a normal door's width and 22 room pixels tall, drawn column by column along the wall down to the floor's pixel edge (dark outline, light frame and lintel, leaf with a knob; reads on any wall); **opens while a Clawd passes** | a **fence** along that side with a **gate** (the bushes leave that side) |
 | **Up** | **stairs to a half floor** (below): **steel with slim steel balusters** in the office, **wooden with balusters** in the coffee shop | a **treehouse** in the big tree, a ladder up to it |
 | **Down** | a small **stair well** on the floor at the back right (in front of the platform's end, on open floor): trapezoid opening with a **wooden rim all round**, side walls going down, steps going down from its back edge towards the front | the same small **well** with a **stone rim and steps**, at the back right like indoors |
 
 > [!example] The stairs, as Zaviel drew them
-> They start a fifth of the way along the back wall (`STAIRS_FOOT` 0.2) and climb to a **platform** 40% of the way up the wall (`PLATFORM_UP` 0.4, reached at `STAIRS_TOP` 0.42). The platform runs to the right-hand wall; its front face goes down to the floor (the coffee shop's **menu** hangs on it). A **banister** runs up the stairs and along the platform. The way up is an **opening where the stairs carry on upwards** (steps into the dark, a warm light at the top) at the right end of the platform (up to 16 room pixels tall), standing on the platform floor behind the railing (kept by Zaviel after mockups of other ideas).
+> They start a fifth of the way along the back wall (`STAIRS_FOOT` 0.2) and climb to a **platform** 40% of the way up the wall (`PLATFORM_UP` 0.4, reached at `STAIRS_TOP` 0.42). The platform runs to the right-hand wall; its front face goes down to the floor (the coffee shop's **menu** hangs on it). The stairs are **real steps** seen from the front: each step a block from the floor (a sawtooth side) with a **lit tread** on top. A **banister** runs up them (a newel post at the foot, a baluster on each step, the hand rail parallel to the steps' edges) and along the platform. The platform reaches the corner with the right-hand wall. The way up is an **opening where the stairs carry on upwards** (steps into the dark, a warm light at the top) at the right end of the platform (up to 16 room pixels tall), standing on the platform floor behind the railing (kept by Zaviel after mockups of other ideas).
 >
 > ![[2026-10-18 coffee stairs well and doors.png|300]] ![[2026-10-18 office stairs well and doors.png|300]]
 

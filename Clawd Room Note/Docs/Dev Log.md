@@ -46,6 +46,14 @@ gitGraph
 ---
 ## 2026-10-18
 
+### 🪜 Real steps, no gaps, the window out from behind the sign
+> [!info] Branch `feat/style-a`
+- The stairs are **real steps**: blocks rising from the floor with a **lit tread** on each, a **baluster on each step** and the hand rail **parallel to the steps' edges** (a newel post at the foot). Same in the coffee shop.
+- No **gap** at the back right corner (the platform stopped a pixel short of the wall) or **under the side doors** (each column now reaches the floor's pixel edge).
+- The office **window** is drawn with the sign and goes where it is free (over the platform when there are stairs). The coffee shop's lamps moved left, clear of the opening.
+
+![[2026-10-18 office real steps, window over the platform.png|300]] ![[2026-10-18 coffee real steps, lamps moved.png|300]] ![[2026-10-18 steps close-up.png|220]]
+
 ### 🚀 iTerm2: the profile starts the room
 > [!info] Branch `feat/style-a`
 - **Profiles → Clawd Room** now starts the room directly (no shell first); the window closes when the room quits.
