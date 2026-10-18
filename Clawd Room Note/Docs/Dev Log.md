@@ -46,6 +46,12 @@ gitGraph
 ---
 ## 2026-10-18
 
+### 🏢 The park's building, redesigned
+> [!info] Branch `feat/style-a`
+- From a mockup and Zaviel's notes: a **tall building** (floors of windows up out of the picture, piers between bays, staggered brick, a stone ground floor with low windows), **behind the side buildings**; a **short stoop** (stone steps, an iron railing, a landing as wide as the entrance); a **double door** with a lit transom, a canopy, a plaque and two lamps. The building is its own item (`backdrop`), so desks and the side buildings may stand in front of it.
+
+![[2026-10-18 park building mockup.png|300]] ![[2026-10-18 park tall building and stoop.png|420]]
+
 ### 🏛️ The park's way up: a terrace and a stair tower
 > [!info] Branch `feat/style-a`
 - The treehouse did not fit a city plaza. Picked from three mockups (A): **stone stairs** up to a **terrace** along the back right with a **stone balustrade**. The stair tower first put at its end did not make sense, so the terrace is now the **front steps of a brick building** (a stoop): windows on every floor, its **front door at the top of the steps** is the way up. The side buildings' flat roofs became **decks seen from above**. Then the building **fills the back right** (from the stairs' foot to the edge, up out of the picture, down to the ground behind the steps), with the side buildings in front of it.
