@@ -46,6 +46,14 @@ gitGraph
 ---
 ## 2026-10-18
 
+### 📏 Taller doors and way up, the well on open floor, no glass
+> [!info] Branch `feat/style-a`
+- The **way up** (the opening on the platform) and the **side doors** are taller (up to 16 and 22 room pixels).
+- The **stair well** moved forward onto open floor, away from the platform's face, with a **wooden rim all round** and no railing (the posts made it look like a bench).
+- The **office railing** has no glass any more: slim **steel balusters**, further apart than the coffee shop's wooden ones.
+
+![[2026-10-18 office steel balusters taller doors.png|300]] ![[2026-10-18 coffee taller doors well on the floor.png|300]]
+
 ### 🪜 Way up at the platform's right end, stair well at the back right
 > [!info] Branch `feat/style-a`
 - Following Zaviel's sketch: the **way up** sits at the **right end of the platform**; the platform **ends at the back corner** (it no longer runs along the right-hand wall).

@@ -92,14 +92,15 @@ typedef struct {
 #define STAIRS_FOOT 0.2     /* the stairs on the back wall start this far along it ... */
 #define STAIRS_TOP 0.42     /* ... and reach the platform here */
 #define ARCH_W 12           /* the opening up: width, height (room pixels), and how far in from the platform's right end */
-#define ARCH_H 11
+#define ARCH_H 16
 #define ARCH_IN 3
 #define DOOR_HALF_DEPTH 0.05 /* a side door spans this part of its depth to each side (a normal door's width) */
+#define DOOR_H_PX 22         /* a side door's height on screen (room pixels) */
 #define PLATFORM_UP 0.4     /* the platform (a half floor) is this part of the way up the back wall (room above it for the archway) */
 #define PLAY_Y 0.62        /* the park's swing and slide stand this far down the floor */
 #define PLAY_SWING_X 0.23  /* ... the swing this far across, the slide there */
 #define PLAY_SLIDE_X 0.6
-#define WELL_BACK 8         /* the stair well (indoors): its front edge this far in front of the back wall (room pixels), */
+#define WELL_BACK 17         /* the stair well (indoors): its front edge this far in front of the back wall (room pixels), */
 #define WELL_SIDE 14        /* ... its middle this far in from the right-hand wall, */
 #define WELL_DEEP 5         /* ... this deep on screen, */
 #define WELL_HALF_W 0.07    /* ... this wide (world units each side) */
