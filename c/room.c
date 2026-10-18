@@ -155,7 +155,7 @@ static void enter(Session *s, int side, const Geo *geo) {
         set_goal(s, geo->gate_mid[side][0], geo->gate_mid[side][1] - 8);
         s->nroute = 1; s->rx[0] = geo->gate_in[side][0]; s->ry[0] = geo->gate_in[side][1] - 8;
     } else set_goal(s, geo->gate_in[side][0], geo->gate_in[side][1] - 8);
-    s->vclimb = side == SIDE_UP || side == SIDE_DOWN;
+    s->vclimb = fabs(s->gx - s->px) < 1; /* climbing pose only straight down a ladder; along the platform and down stairs it walks */
 }
 
 /* going out by a gate: walk to where it steps on, then on to where it goes through; when that is reached it has crossed */
@@ -627,7 +627,7 @@ static void move(Session *s, const Geo *geo, double dt, double now) {
         if (s->nroute) { /* on to the next point (up the rope, down the stairs) */
             s->gx = s->rx[0]; s->gy = s->ry[0];
             for (int i = 1; i < s->nroute; i++) { s->rx[i - 1] = s->rx[i]; s->ry[i - 1] = s->ry[i]; }
-            s->nroute--; s->vclimb = 1;
+            s->nroute--; s->vclimb = fabs(s->gx - s->px) < 1; /* climbing pose only straight up or down (a ladder); stairs are walked */
             return;
         }
         s->has_goal = 0; s->vclimb = 0;

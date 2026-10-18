@@ -342,10 +342,15 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
     IRect rects[1];
     int nrects = 0;
     /* the workspaces and the Clawds, back to front by where they stand on the floor (a desk's front edge, a Clawd's feet) */
-    int nd = geo.shown, total = nd + np, order[1024];
+    /* (the stairs' railing goes in as one more item, at the back wall's foot: Clawds on the stairs and the platform are
+     * behind it, everyone on the floor in front) */
+    double rail_p = -1;
+    for (int i = 0; i < room->nnb; i++) if (room->nb[i].side == SIDE_UP) rail_p = fmin(1.0, fmax(0.0, (t - room->gate_t0[SIDE_UP]) / GATE_ANIM));
+    int nd = geo.shown, total = nd + np + (rail_p >= 0), order[1024];
     double key[1024];
     for (int i = 0; i < nd; i++) { key[i] = geo.home[i][1] + 0.5; order[i] = i; }
     for (int i = 0; i < np; i++) { key[nd + i] = people[i]->py + 8; order[nd + i] = nd + i; }
+    if (rail_p >= 0) { key[nd + np] = geo.view.bb - 0.25; order[nd + np] = nd + np; }
     for (int i = 1; i < total; i++) { /* stable insertion sort */
         int o = order[i], j = i;
         while (j > 0 && key[order[j - 1]] > key[o]) { order[j] = order[j - 1]; j--; }
@@ -358,6 +363,7 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
             draw_desk(cv, geo.home[o][0], geo.home[o][1], session_shown(s, now), s->tool, t, room->theme, roles[o], crc32_str(s->sid));
             continue;
         }
+        if (o == nd + np) { theme_stair_rail(room->theme, cv, &geo, rail_p); continue; }
         int i = o - nd;
         const Session *s = people[i];
         const char *role = "";

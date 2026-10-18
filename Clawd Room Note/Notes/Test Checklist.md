@@ -32,6 +32,7 @@ tags:
 - [ ] With many sessions no workspace sits on the stair well
 - [ ] Stairs read as real steps (lit treads, a baluster on each step, the rail parallel to them); the platform reaches the corner; office window and coffee lamps clear of the sign and the opening
 - [ ] Side doors look tall enough for a Clawd; the stair well sits on open floor with a wooden rim and reads as a hole with steps going down
+- [ ] On the stairs and the half floor the Clawd walks (not the climbing pose) and is behind the railing; coming back it walks along the half floor, then down the stairs
 - [ ] Going up: the Clawd climbs the stairs to the half floor, walks along it and goes through the opening (or up the treehouse ladder); coming down the other way round; going down: it walks into the well / steps
 - [ ] Gates appearing animate in, in both windows at the same moment; gates there at start are simply there
 - [ ] `b` calls our Clawds home; with none away it sends visitors home

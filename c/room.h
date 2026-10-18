@@ -114,6 +114,7 @@ void layout_slots(int w, int h, int n, int *banner, int *per_row, int *slot_w, i
 void geo_init(Geo *g, const Room *room, int w, int h);
 /* a gate in this theme (door / fence gate, stairs / treehouse, stair well / stone steps); p 0..1 how far it has appeared */
 void theme_gate(const Theme *th, Canvas *cv, const Geo *g, int side, double p, double open);
+void theme_stair_rail(const Theme *th, Canvas *c, const Geo *g, double p); /* the stairs' railing (drawn in among the Clawds) */
 void stairs_geometry(const View *v, double *x0, double *x1, double *yl); /* the stairs on the back wall: foot x, top x, landing y */
 void well_place(const View *v, double *fy, double *wx, double *x0, double *x1); /* the stair well: front edge y, middle x, left and right x (rim included) */
 int geo_home(const Geo *g, const Room *room, const Session *s, int *cx, int *by); /* 1 if it has a desk */

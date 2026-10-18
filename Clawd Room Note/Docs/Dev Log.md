@@ -46,6 +46,14 @@ gitGraph
 ---
 ## 2026-10-18
 
+### 🚶 Walking the stairs behind the railing
+> [!info] Branch `feat/style-a`
+- Clawds **walk** up and down the stairs, along the half floor and through the well (the walking pose); only the treehouse ladder still uses the climbing pose.
+- Clawds on the stairs and the half floor are **behind the railing**: it is drawn in among the Clawds, after those on the stairs and before those on the floor.
+- No more **gap** in the railing where the stairs meet the half floor: the hand rail turns level at the last step and the balusters carry on at an even spacing.
+
+![[2026-10-18 railing without the gap.png|320]] ![[2026-10-18 Clawds behind the railing.png|320]]
+
 ### ↙️ The well at the front left, fewer balusters
 > [!info] Branch `feat/style-a`
 - The stair well moved to the **front left** of the floor in every room; workspace rows near the front start right of it (in the park the front-left bush gives way).

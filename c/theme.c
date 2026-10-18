@@ -372,7 +372,7 @@ static void back_stairs(Canvas *c, const View *v, int coffee, double p) {
     int n = (y0 - yl + 2) / 4 < 3 ? 3 : (y0 - yl + 2) / 4;
     int shown = (int)ceil(n * p);
     if (shown <= 0) return;
-    Rgb side = st->side, tread = st->tread, riser = st->riser, rail = st->rail;
+    Rgb side = st->side, tread = st->tread, riser = st->riser;
     /* the steps, seen from the front: each a block from the floor up to its tread (so the side is a sawtooth), the tread a
      * lit strip on top (seen from above), a shadow line where the next step rises */
     for (int i = 0; i < shown; i++) {
@@ -389,19 +389,6 @@ static void back_stairs(Canvas *c, const View *v, int coffee, double p) {
     canvas_rect(c, x0, y0, xr - x0, 1, dk(side, 0.45)); /* a dark skirting along the floor, under the steps and the platform */
     int dw = ARCH_W, dh = (int)fmin(ARCH_H, yl - v->bt - 2), dxl = xr - dw - ARCH_IN; /* at the right end of the platform */
     if (dh > 6) upstairs_opening(c, dxl, yl - 1, dw, dh, st);
-    /* the railing: a baluster standing on each step, then along the platform's edge (the opening is behind it); the hand
-     * rail runs parallel to the steps' edges, then level along the platform */
-    int rx0 = x0 + (x1 - x0) / (2 * n), ry0 = y0 - (y0 - yl) / n - 1; /* the first step's middle, its tread's top */
-    for (int i = 0; i < n; i++) {
-        int sx = x0 + (x1 - x0) * i / n, ex = x0 + (x1 - x0) * (i + 1) / n, ty = y0 - (y0 - yl) * (i + 1) / n;
-        canvas_rect(c, (sx + ex) / 2, ty - 6, 1, 5, rail);
-    }
-    for (int x = x1; x < xr; x++) if ((x - x1) % st->baluster_gap == st->baluster_gap - 1) canvas_rect(c, x, yl - 6, 1, 5, rail);
-    canvas_line(c, rx0, ry0 - 6, x1, yl - 7, rail);
-    canvas_line(c, rx0, ry0 - 7, x1, yl - 8, lt(rail, 0.15));
-    canvas_rect(c, x1, yl - 7, xr - x1, 1, rail);
-    canvas_rect(c, x1, yl - 8, xr - x1, 1, lt(rail, 0.15));
-    canvas_rect(c, rx0, ry0 - 7, 1, 7, rail); /* the newel post at the foot */
     if (coffee && xr - x1 > 20 && y0 - yl >= 11) menu_board(c, (x1 + xr) / 2 - 8, yl + 1 + (y0 - yl - 11) / 2); /* the menu on the platform's face */
 }
 
@@ -457,6 +444,33 @@ static void treehouse(Canvas *c, int w, const View *v, double p) {
         canvas_px(c, hx + 1, y, ROPE); canvas_px(c, hx + 6, y, ROPE);
         if (y % 3 == 0) canvas_rect(c, hx + 2, y, 4, 1, RUNG);
     }
+}
+
+/* the stairs' railing, drawn after the Clawds on the stairs and the platform (they walk behind it) and before the ones on
+ * the floor: a newel post at the foot, a baluster on each step, the hand rail parallel to the steps up to the last one
+ * (level with the platform), then level along the platform with balusters at the same spacing on */
+void theme_stair_rail(const Theme *th, Canvas *c, const Geo *g, double p) {
+    if (th == &PARK || p < 1) return;
+    const View *v = &g->view;
+    const StairStyle *st = th == &COFFEE ? &WOOD_STAIRS : &STEEL_STAIRS;
+    double fx0, fx1, fyl;
+    stairs_geometry(v, &fx0, &fx1, &fyl);
+    int x0 = (int)fx0, x1 = (int)fx1, xr = (int)ceil(v->br), y0 = (int)v->bb - 1, yl = (int)fyl;
+    int n = (y0 - yl + 2) / 4 < 3 ? 3 : (y0 - yl + 2) / 4;
+    Rgb rail = st->rail, hi = lt(rail, 0.15);
+    int last = x0, lx = x0 + (x1 - x0) * (n - 1) / n; /* the last step starts at lx: from there on it is level */
+    int rx0 = x0 + (x1 - x0) / (2 * n), ry0 = y0 - (y0 - yl) / n - 1;
+    for (int i = 0; i < n - 1; i++) {
+        int sx = x0 + (x1 - x0) * i / n, ex = x0 + (x1 - x0) * (i + 1) / n, ty = y0 - (y0 - yl) * (i + 1) / n;
+        last = (sx + ex) / 2;
+        canvas_rect(c, last, ty - 6, 1, 5, rail);
+    }
+    for (int x = last + st->baluster_gap; x < xr; x += st->baluster_gap) canvas_rect(c, x, yl - 6, 1, 5, rail);
+    canvas_line(c, rx0, ry0 - 6, lx, yl - 7, rail);
+    canvas_line(c, rx0, ry0 - 7, lx, yl - 8, hi);
+    canvas_rect(c, lx, yl - 7, xr - lx, 1, rail);
+    canvas_rect(c, lx, yl - 8, xr - lx, 1, hi);
+    canvas_rect(c, rx0, ry0 - 7, 1, 7, rail); /* the newel post at the foot */
 }
 
 void theme_gate(const Theme *th, Canvas *cv, const Geo *g, int side, double p, double open) {
