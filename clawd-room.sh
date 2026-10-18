@@ -66,7 +66,7 @@ if [ "$(uname -s)" = Darwin ] && [ "$TERM_PROGRAM" = iTerm.app ] && [ -z "$TMUX"
       const it = Application("iTerm2");
       for (const [name, theme, qx, qy] of rooms) {
         const q = String.fromCharCode(39), sq = x => q + x + q;
-        const run = "cd " + sq(here) + " && exec env CLAWD_HERE=1 CLAWD_LINK_DIR=" + sq(tr + "/link") + " sh " + sq(here + "/tools/try_room.sh") + " " + sq(bin) + " " + sq(tr + "/stop") + " --room " + name + " --theme " + theme + " --scale 1 --events " + sq(ev); /* (a fixed scale: AUTO would change it as Clawds visit, and the gates wait for still windows) */
+        const run = "cd " + sq(here) + " && exec env CLAWD_HERE=1 CLAWD_LINK_DIR=" + sq(tr + "/link") + " CLAWD_SIZE_LOG=" + sq(tr + "/log-" + name) + " sh " + sq(here + "/tools/try_room.sh") + " " + sq(bin) + " " + sq(tr + "/stop") + " --room " + name + " --theme " + theme + " --scale 1 --events " + sq(ev); /* (a fixed scale: AUTO would change it as Clawds visit, and the gates wait for still windows) */
         const win = it.createWindowWithProfile("Clawd Room", {command: "/bin/sh -lc " + JSON.stringify(run)});
         win.bounds = {x: vx + qx * w, y: vy + qy * h, width: w, height: h};
       }

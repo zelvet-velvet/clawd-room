@@ -46,6 +46,11 @@ gitGraph
 ---
 ## 2026-10-18
 
+### 🚪 Gates stay put; `g` asks where to
+> [!info] Branch `feat/style-a`
+- **Gates no longer come and go.** Each room's window helper walks every iTerm2 window; with several rooms open a list could take over 3 s, so the room thought its window was gone, dropped its gates and waited again. The last list is kept for 10 s now, and a neighbour's heartbeat without its grid is not taken as a move. In a 50 s `--try` run all gates appeared after about 10 s and stayed.
+- **`g` lets you pick where to send a Clawd**: with several linked rooms a SEND A CLAWD list (e.g. `COFFEE  DOOR  >`, `PARK  STAIRS DOWN  V`); the arrow pointing that way sends it, or Tab and Enter. With one linked room it sends straight away, as before.
+
 ### 📐 Engine step 2: the placer, 107 overlaps → 0
 > [!info] Branch `feat/style-a`
 - Wall items (sign, window, plant, menu, lamps, cup shelf, park signpost) are placed from each room's data by priority, around what the gates need to keep clear; the sign hangs higher instead of overlapping in small windows.
@@ -280,7 +285,6 @@ Zaviel's sketch for the stairs and the doors that needed fixing:
 > [!todo] Waiting
 > - Merge `feat/camera-gates` and `feat/style-a` into `main` (after Zaviel's checks).
 > - The engine, in steps: ~~items and layers~~ → ~~placer~~ (0 overlaps) → props as sprites, rooms as text files and the pixel editor → animator ([[Engine Design]]).
-> - **Gates come and go between linked rooms** (seen with `--try`; also before the placer): find out why with `CLAWD_SIZE_LOG`. AUTO changing the scale as Clawds visit resets the "windows still" timer; `--try` now runs at `--scale 1`.
 > - `README.md` still describes the old flat look in places (banner, gates at the window edge).
 > - WSL: the profile from the dropdown opens at Windows Terminal's default size, then jumps once; planned a shortcut with `wt.exe -w new --size 60,18 -p "Clawd Room"`.
 > - The room can block writing if the terminal stops reading (seen with iTerm2 in full screen).

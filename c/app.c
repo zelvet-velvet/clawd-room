@@ -226,6 +226,9 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
     screen_on();
     double t0 = mono(), frozen_now = 0, frozen_t = 0;
     int paused = 0, help_on = 0, dirty = 1, cols = 0, rows = 0, size_menu = 0, size_pick = 0;
+    int go_menu = 0, go_pick = 0, go_n = 0, go_side[SIDES]; /* the g list: where to send a Clawd */
+    char go_label[SIDES][40];
+    const char *go_labels[SIDES];
     Cells prev = {0, 0, NULL};
     int have_prev = 0;
     while (!g_quit) {
@@ -248,6 +251,19 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                         wipe();
                         size_menu = 0;
                     } else if (k == 27 || k == 'r') size_menu = 0;
+                    dirty = 1;
+                    continue;
+                }
+                if (go_menu) { /* the SEND A CLAWD list takes the keys while it is open: an arrow picks that way, Tab moves, Enter sends */
+                    int side = k == 'a' ? SIDE_LEFT : k == 'd' ? SIDE_RIGHT : k == 'w' ? SIDE_UP : k == 's' ? SIDE_DOWN : -1;
+                    if (k == '\t') go_pick = (go_pick + 1) % go_n;
+                    else if (k == '\r') side = go_side[go_pick];
+                    if (side >= 0) {
+                        char buf[64];
+                        room_order(&room);
+                        snprintf(flash, sizeof flash, "%s", room.has_geo ? room_send_to(&room, &room.geo, now, side, buf, sizeof buf) : "NO WINDOW NEXT TO THIS ONE");
+                        flash_until = wall() + 4; go_menu = 0;
+                    } else if (k == 27 || k == 'g') go_menu = 0;
                     dirty = 1;
                     continue;
                 }
@@ -290,11 +306,28 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                         room.cam_y += k == 'w' ? -sy : k == 's' ? sy : 0;
                     }
                     dirty = 1;
-                } else if (k == 'g') { /* send a Clawd next door right now (to try crossing) */
-                    char buf[64];
-                    room_order(&room);
-                    snprintf(flash, sizeof flash, "%s", room.has_geo ? room_send_one(&room, &room.geo, now, buf, sizeof buf) : "NO WINDOW NEXT TO THIS ONE");
-                    flash_until = wall() + 4; dirty = 1;
+                } else if (k == 'g') { /* send a Clawd next door right now: with several linked rooms, a list of where to */
+                    static const char *ARROW[SIDES] = {"<", ">", "^", "V"};
+                    int park = room.theme == theme_get("park");
+                    static const char *GATE_NAME[2][SIDES] = {{"DOOR", "DOOR", "STAIRS UP", "STAIRS DOWN"}, {"GATE", "GATE", "TREEHOUSE", "STEPS DOWN"}};
+                    go_n = 0;
+                    for (int sd = 0; sd < SIDES; sd++) for (int q = 0; q < room.nnb; q++) if (room.nb[q].side == sd) {
+                        const char *nm = room.nb[q].id;
+                        for (int p = 0; p < room.npeers; p++) if (!strcmp(room.peers[p].side, SIDE_NAME[sd])) nm = room.peers[p].name;
+                        char up[24];
+                        snprintf(up, sizeof up, "%.12s", nm);
+                        for (char *c = up; *c; c++) if (*c >= 'a' && *c <= 'z') *c -= 32;
+                        snprintf(go_label[go_n], sizeof go_label[0], "%s  %s  %s", up, GATE_NAME[park][sd], ARROW[sd]); /* (the arrow key that picks it, at the end) */
+                        go_labels[go_n] = go_label[go_n]; go_side[go_n++] = sd;
+                    }
+                    if (go_n >= 2) { go_menu = 1; go_pick = 0; }
+                    else {
+                        char buf[64];
+                        room_order(&room);
+                        snprintf(flash, sizeof flash, "%s", room.has_geo ? room_send_one(&room, &room.geo, now, buf, sizeof buf) : "NO WINDOW NEXT TO THIS ONE");
+                        flash_until = wall() + 4;
+                    }
+                    dirty = 1;
                 } else if (k == 'b') { /* call our Clawds back from next door (or send the visitors home) */
                     char buf[64];
                     snprintf(flash, sizeof flash, "%s", room_recall(&room, now, buf, sizeof buf));
@@ -396,6 +429,8 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                 }
             }
             memcpy(held, new_held, sizeof held); nheld = n_new_held; /* attached now (also counts while its gate is closed) */
+            int seen_mask = 0; /* (for the gate log: the windows found next to this one) */
+            for (int q = 0; q < room.nnb; q++) seen_mask |= 1 << room.nb[q].side;
             if (!a->no_split) { /* the linked rooms share the sessions: each shows its own part */
                 int m = 0;
                 snprintf(room.owner_ids[m++], 40, "%s", link.id);
@@ -424,8 +459,14 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                     const int *pa = watcher_area(&desk.w, ids[q]);
                     o += snprintf(sig + o, sizeof sig - (size_t)o, "%s:", ids[q]);
                     if (pa) o += snprintf(sig + o, sizeof sig - (size_t)o, "%d,%d,%d,%d", floordiv(pa[0], 4), floordiv(pa[1], 4), floordiv(pa[2], 4), floordiv(pa[3], 4));
-                    for (int p = 0; p < link.npeers; p++) if (!strcmp(link.peers[p].id, ids[q]) && link.peers[p].has_grid)
-                        o += snprintf(sig + o, sizeof sig - (size_t)o, ":%d,%d,%d", (int)nearbyint(link.peers[p].grid[2]), (int)nearbyint(link.peers[p].grid[3]), (int)nearbyint(link.peers[p].grid[4]));
+                    for (int p = 0; p < link.npeers; p++) if (!strcmp(link.peers[p].id, ids[q])) { /* (its grid as last heard: a heartbeat without one is not a move) */
+                        static struct { char id[40]; int g[3]; } known[MAX_LINK_PEERS];
+                        int k = 0;
+                        while (k < MAX_LINK_PEERS && known[k].id[0] && strcmp(known[k].id, ids[q])) k++;
+                        if (k == MAX_LINK_PEERS) k = 0;
+                        if (link.peers[p].has_grid) { snprintf(known[k].id, sizeof known[k].id, "%s", ids[q]); for (int j = 0; j < 3; j++) known[k].g[j] = (int)nearbyint(link.peers[p].grid[2 + j]); }
+                        if (known[k].id[0] && !strcmp(known[k].id, ids[q])) o += snprintf(sig + o, sizeof sig - (size_t)o, ":%d,%d,%d", known[k].g[0], known[k].g[1], known[k].g[2]);
+                    }
                     o += snprintf(sig + o, sizeof sig - (size_t)o, ";");
                 }
             }
@@ -459,6 +500,15 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                 int w = 0;
                 for (int q = 0; q < room.nnb; q++) if (!ps.closed[room.nb[q].side]) room.nb[w++] = room.nb[q];
                 room.nnb = w;
+                if (getenv("CLAWD_SIZE_LOG")) { /* test hook: why a gate is there or not, whenever that changes */
+                    static char logged_g[256];
+                    char cur[256];
+                    int closed = 0, shown = 0;
+                    for (int i = 0; i < SIDES; i++) if (ps.closed[i]) closed |= 1 << i;
+                    for (int q = 0; q < room.nnb; q++) shown |= 1 << room.nb[q].side;
+                    snprintf(cur, sizeof cur, "gates seen=%d still=%d closed=%d shown=%d scale=%d grid=%d sig=%s", seen_mask, wall() - still_since >= 1.0, closed, shown, room.scale, has_grid, still_sig);
+                    if (strcmp(cur, logged_g)) { snprintf(logged_g, sizeof logged_g, "%s", cur); FILE *lf = fopen(getenv("CLAWD_SIZE_LOG"), "a"); if (lf) { fprintf(lf, "%.1f %s\n", wall(), cur); fclose(lf); } }
+                }
                 for (int i = 0; i < room.npeers; i++) { int sd = side_index(room.peers[i].side); if (sd >= 0 && ps.closed[sd]) room.peers[i].side[0] = 0; }
             }
             if (getenv("CLAWD_SIZE_LOG")) { /* test hook: note where the gates go whenever that changes */
@@ -535,6 +585,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                     snprintf(note + l, sizeof note - l, "%s%s", l ? "   " : "", lab);
                 }
                 if (size_menu) draw_size_menu(&cv, SIZE_LABEL, N_SIZES, size_pick);
+                if (go_menu) draw_list_menu(&cv, "SEND A CLAWD", go_labels, go_n, go_pick);
                 overlay_text(over, sizeof over, paused, help_on, note, wall() < flash_until ? flash : "");
                 Cells cells = cells_from_canvas(&cv, over);
                 show(&cells, have_prev ? &prev : NULL, 1);

@@ -25,6 +25,7 @@ extern const int SIZE_MAX_W[N_SIZES], SIZE_MAX_H[N_SIZES];
 int size_scale(int pw, int ph, int size, int n, const Room *room); /* (room: AUTO asks the placer; NULL: the old estimate) */ /* grow, then scale: the smallest scale that keeps the room within the size */
 void draw_menu(Canvas *cv, int pick, int solo, double t);
 void draw_size_menu(Canvas *cv, const char *const *labels, int n, int pick); /* the ROOM SIZE list (r key) over the room */
+void draw_list_menu(Canvas *cv, const char *title, const char *const *labels, int n, int pick); /* a list over the room (ROOM SIZE, SEND A CLAWD) */
 Canvas render_menu(int cols, int rows, int pick, int solo, double t); /* the menu centred in the terminal canvas */
 /* plain-text frame for tests: lit pixels as block characters, no colour codes; the caller frees the result */
 char *dump_text(int cols, int rows, Room *room, double now, double t);

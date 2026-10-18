@@ -23,7 +23,7 @@ tags:
 | ← → or A D, Tab | while following: pick the previous / next Clawd (the camera stays on it) |
 | `c` | switch **auto follow ↔ free camera** |
 | arrows / W A S D | free camera only: move the view a quarter at a time |
-| `g` | send an idle Clawd to the next window |
+| `g` | send an idle Clawd next door; with several linked rooms a **SEND A CLAWD** list: the arrow pointing that way picks a room (or Tab, then Enter), Esc closes |
 | `b` | **call back**: our Clawds next door walk home; with none away, visitors here are sent home |
 | `f` | auto font and scale again (WSL and iTerm2), camera back to 1x |
 | `o` | **debug overlay**: item boxes by layer, anchors, gate points (in green, mid yellow, out red), where Clawds are walking |

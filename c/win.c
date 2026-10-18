@@ -201,7 +201,7 @@ void watcher_stop(Watcher *w) {
 }
 
 static const WinInfo *find(const Watcher *w, const char *room_id) {
-    if (wall() - w->updated > 3.0) return NULL;
+    if (wall() - w->updated > 10.0) return NULL; /* (the helper can be slow with several rooms open: keep the last list a while, windows rarely move) */
     char title[128];
     snprintf(title, sizeof title, "%s%s", WIN_PREFIX, room_id);
     for (int i = 0; i < w->ncur; i++) if (!strcmp(w->cur[i].title, title)) return &w->cur[i];

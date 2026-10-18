@@ -84,7 +84,7 @@ flowchart LR
 > The agreed plan to replace this with items, layers and a placer is in [[Engine Design]].
 
 > [!tip] Test hooks
-> `CLAWD_EVENTS` (events file) · `CLAWD_LINK_DIR` (link folder) · `CLAWD_SIZE_LOG` (sizes, gate positions, who the camera follows) · `--dump COLSxROWS` with `--zoom`, `--room-size`.
+> `CLAWD_EVENTS` (events file) · `CLAWD_LINK_DIR` (link folder) · `CLAWD_SIZE_LOG` (sizes, gate positions and why a gate is shown or not, who the camera follows; `--try` writes one per room in `~/.clawd-room/try/`) · `--dump COLSxROWS` with `--zoom`, `--room-size`.
 
 ---
 ## 🎲 Random numbers

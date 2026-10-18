@@ -34,6 +34,9 @@ sequenceDiagram
     L-->>B: the Clawd comes out of beta's gate
 ```
 
+> [!bug] Fixed: gates came and went (2026-10-18)
+> Each room's helper walks every iTerm2 window; with several rooms open a list could take over 3 s, the room then "lost" its own window, dropped its gates and waited again for still windows. The last list is now kept for 10 s, and a neighbour's heartbeat without its grid no longer counts as a move. `CLAWD_SIZE_LOG` notes why a gate is shown or not (`gates seen= still= closed= shown=`).
+
 > [!warning] Hands off the user's windows
 > The helpers only look at windows titled `clawd-room …`, never move windows to attach them, and never type into a window that does not have the focus.
 

@@ -309,10 +309,14 @@ const char *room_recall(Room *r, double now, char *buf, size_t n) {
     return buf;
 }
 
-const char *room_send_one(Room *r, const Geo *geo, double now, char *buf, size_t n) {
+const char *room_send_one(Room *r, const Geo *geo, double now, char *buf, size_t n) { return room_send_to(r, geo, now, -1, buf, n); }
+
+/* the g key: send an idle Clawd through the gate on `side` (-1: the first one) */
+const char *room_send_to(Room *r, const Geo *geo, double now, int side, char *buf, size_t n) {
     int any = 0;
     for (int i = 0; i < SIDES; i++) any |= has_nb(r, i);
     if (!any) return "NO WINDOW NEXT TO THIS ONE";
+    if (side >= 0 && !has_nb(r, side)) return "NO WINDOW THAT WAY";
     for (int i = 0; i < r->n; i++) {
         Session *s = r->s[i];
         if (s->has_away || s->has_travel || !s->has_pos || s->has_left || s->guest) continue;
@@ -321,7 +325,7 @@ const char *room_send_one(Room *r, const Geo *geo, double now, char *buf, size_t
             drop_social(s);
             set_state(s, "idle", now);
             s->last = now; /* wake it up */
-            int edge = -1;
+            int edge = side;
             for (int a = 0; a < SIDES && edge < 0; a++) if (has_nb(r, ALPHA[a])) edge = ALPHA[a];
             s->has_travel = 1; s->travel_edge = edge; snprintf(s->travel_peer, sizeof s->travel_peer, "%s", nb_id(r, edge));
             exit_route(s, edge, geo);
