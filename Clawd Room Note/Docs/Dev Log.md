@@ -46,6 +46,12 @@ gitGraph
 ---
 ## 2026-10-18
 
+### 🎞️ Engine step 4: the animator, animated props
+> [!info] Branch `feat/style-a`
+- `c/anim.c` eases named values over time; the **gates appearing** (ease out) and the **doors swinging** (ease in-out, turning back from wherever they are) use it instead of their own timers.
+- **Props can be animated**: frames `lamp~2`, `lamp~3` … are shown in turn; in the editor **`F`** adds the next frame. The pixel font got `~`.
+- With this the engine plan is done: scene and layers, the placer, sprites and room files with the editor, the animator.
+
 ### 🎨 Engine step 3: props as sprites, rooms as text files, the pixel editor
 > [!info] Branch `feat/style-a`
 - **`sprites/props.txt`** holds the window, plant, menu, lamps and shelf (made from the drawing code: every picture stayed the same). **`rooms/*.txt`** say where each room's wall items go.
@@ -299,7 +305,7 @@ Zaviel's sketch for the stairs and the doors that needed fixing:
 
 > [!todo] Waiting
 > - Merge `feat/camera-gates` and `feat/style-a` into `main` (after Zaviel's checks).
-> - The engine, in steps: ~~items and layers~~ → ~~placer~~ (0 overlaps) → ~~props as sprites, rooms as text, pixel editor~~ → animator ([[Engine Design]]).
+> - ~~The engine~~: all four steps are built ([[Engine Design]]).
 > - `README.md` still describes the old flat look in places (banner, gates at the window edge).
 > - WSL: the profile from the dropdown opens at Windows Terminal's default size, then jumps once; planned a shortcut with `wt.exe -w new --size 60,18 -p "Clawd Room"`.
 > - The room can block writing if the terminal stops reading (seen with iTerm2 in full screen).

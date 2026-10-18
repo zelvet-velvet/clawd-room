@@ -112,7 +112,8 @@ Gates sit **on the room's walls, ceiling and floor**, not at the window edge, so
 
 > [!tip] Editing the art yourself
 > - **Props** (window, plant, menu, lamps, shelf) are in `sprites/props.txt`; the Clawd in `sprites/clawd.txt`, bubbles and signs in `sprites/items.txt`. `./clawd-room.sh --edit window` opens the pixel editor; rooms that are running show each stroke.
-> - **Where things go on the back wall** is in `rooms/<room>.txt` (one line per item: size, band, preferred place, priority, when).
+> - **Animated props**: add frames `lamp~2`, `lamp~3` … (in the editor: `F`); the room shows them in turn.
+- **Where things go on the back wall** is in `rooms/<room>.txt` (one line per item: size, band, preferred place, priority, when).
 
 > [!tip] How visual changes are made
 > Rendered **mockups first** (drawn with the room's own canvas code), Zaviel picks, then the code is changed.

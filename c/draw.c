@@ -558,23 +558,28 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
             if (present[sd] && !room->gate_seen[sd]) { /* starts when the windows stopped moving (+1 s), the same moment for both rooms */
                 room->gate_seen[sd] = 1;
                 room->gate_t0[sd] = !room->drawn ? t - GATE_ANIM : room->has_gate_sync && room->gate_sync_t > t - GATE_ANIM ? room->gate_sync_t : t;
+                char key[8];
+                snprintf(key, sizeof key, "gate%d", sd);
+                anim_start(&room->anim, key, 0, 1, room->gate_t0[sd], GATE_ANIM, EASE_OUT); /* (rises fast, settles) */
             }
             else if (!present[sd]) room->gate_seen[sd] = 0;
         }
         room->drawn = 1;
-        double dt = fmin(0.25, fmax(0.0, t - room->door_t)); /* the leaves swing towards open while a Clawd is near the door */
-        room->door_t = t;
+        room->door_t = t; /* the leaves swing open while a Clawd is near the door, and closed after (eased both ways) */
         for (int sd = SIDE_LEFT; sd <= SIDE_RIGHT; sd++) {
             int near = 0;
             for (int i = 0; i < room->n + room->ng && !near; i++) {
                 const Session *q = i < room->n ? room->s[i] : room->guests[i - room->n];
                 if (q->has_pos && !q->has_away && fabs(q->px - geo.gate_out[sd][0]) < DOOR_NEAR && fabs(q->py + 8 - geo.gate_out[sd][1]) < 6) near = 1;
             }
-            double step = dt / DOOR_SWING;
-            room->door_open[sd] = near ? fmin(1.0, room->door_open[sd] + step) : fmax(0.0, room->door_open[sd] - step);
+            char key[8];
+            snprintf(key, sizeof key, "door%d", sd);
+            if (anim_target(&room->anim, key, 0) != near) anim_to(&room->anim, key, near, t, DOOR_SWING, EASE_IN_OUT);
+            room->door_open[sd] = anim_value(&room->anim, key, t, 0);
         }
     }
     /* ---- the scene: every item on its layer, then drawn back to front (scene.h) -------------------------------------- */
+    theme_set_time(t);
     Scene *sc = &g_scene;
     scene_clear(sc);
     sc->measure = room->debug_overlay || g_measure;
@@ -584,7 +589,9 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
     scene_add(sc, (SceneItem){.kind = "background", .layer = LAYER_SKY, .owner = -1, .draw = it_background});
     for (int i = 0; i < room->nnb; i++) {
         int side = room->nb[i].side;
-        double p = fmin(1.0, fmax(0.0, (t - room->gate_t0[side]) / GATE_ANIM));
+        char gk[8];
+        snprintf(gk, sizeof gk, "gate%d", side);
+        double p = fmin(1.0, fmax(0.0, anim_value(&room->anim, gk, t, 1))); /* (eased by the animator; clamped: EASE_BACK may pass 1) */
         int park = room->theme == theme_get("park");
         if (side == SIDE_UP && !park) { /* the stairs: the steps, the platform, the opening (things may stand in front of the platform) */
             scene_add(sc, (SceneItem){.kind = "gate-up", .layer = LAYER_STRUCT, .owner = -1, .ax = geo.gate_in[side][0], .ay = geo.gate_in[side][1], .draw = it_gate, .i = side, .j = 0, .p = p});
@@ -618,7 +625,7 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
     /* the workspaces and the Clawds, back to front by where they stand on the floor (a desk's front edge, a Clawd's feet);
      * the stairs' railing is one more item at the back wall's foot: Clawds on the stairs and the platform are behind it */
     X.rail_p = -1;
-    for (int i = 0; i < room->nnb; i++) if (room->nb[i].side == SIDE_UP) X.rail_p = fmin(1.0, fmax(0.0, (t - room->gate_t0[SIDE_UP]) / GATE_ANIM));
+    for (int i = 0; i < room->nnb; i++) if (room->nb[i].side == SIDE_UP) X.rail_p = fmin(1.0, fmax(0.0, anim_value(&room->anim, "gate2", t, 1)));
     double rail_key = geo.view.bb - 0.25;
     for (int i = 0; i < geo.shown; i++)
         scene_add(sc, (SceneItem){.kind = "desk", .layer = LAYER_DEPTH, .depth = geo.home[i][1] + 0.5, .owner = -1, .ax = geo.home[i][0], .ay = geo.home[i][1], .draw = it_desk, .i = i});

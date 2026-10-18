@@ -5,7 +5,7 @@ tags:
   - engine
   - plan
 ---
-# 🧱 Engine Design (agreed 2026-10-18; steps 1–3 built)
+# 🧱 Engine Design (agreed 2026-10-18; all four steps built)
 
 > [!abstract] In short
 > Everything on screen becomes an **item** in one list, drawn in **seven layers**, placed by a **placer** that keeps items apart. Rooms are described as **data**, small props are **sprite files** you edit in a **pixel editor inside the room**, and one **animator** moves doors, gates and props. An **overlap check**, a **debug overlay** and a **gallery** come with it. Today's drawing is in [[Engine and Tests]]; the look in [[Rooms and Art]].
@@ -21,6 +21,11 @@ tags:
 > - **Debug overlay**: key `o`.
 >
 > ![[2026-10-18 debug overlay.png|320]] ![[2026-10-18 gallery coffee (part).png|420]]
+
+> [!success] Step 4 (2026-10-18): the animator
+> - `c/anim.c`: named values eased from one number to another over a time (`linear`, `out`, `in-out`, `back`); a value can be sent somewhere new from wherever it is (turning back half way takes half the time).
+> - The **gates appearing** (ease out, still starting at the moment both windows agree on) and the **doors swinging** (ease in-out, both ways) use it.
+> - **Animated props**: frames named `lamp~2`, `lamp~3` … next to `lamp` in `sprites/props.txt` are shown in turn (about three a second). In the editor **`F`** adds the next frame (a copy of the sprite) and opens it.
 
 > [!success] Step 3 (2026-10-18): props as sprites, rooms as text, the pixel editor
 > - **`sprites/props.txt`**: the window, plant, menu, lamps and shelf as sprites (made from the code's drawing, so nothing changed); a prop's size is its grid's size, and the placer uses it.
@@ -114,7 +119,7 @@ room coffee
 ```mermaid
 %%{init: {"flowchart": {"defaultRenderer": "elk"}}}%%
 flowchart LR
-    S0["0 --try<br/>✅ done"] --> S1["1 items, layers,<br/>marks follow owner<br/>✅ done"] --> S2["2 placer +<br/>rooms as data<br/>✅ done"] --> S3["3 props as sprites<br/>+ pixel editor<br/>✅ done"] --> S4["4 animator"]
+    S0["0 --try<br/>✅ done"] --> S1["1 items, layers,<br/>marks follow owner<br/>✅ done"] --> S2["2 placer +<br/>rooms as data<br/>✅ done"] --> S3["3 props as sprites<br/>+ pixel editor<br/>✅ done"] --> S4["4 animator<br/>✅ done"]
     S1 -.-> T["overlap check, overlay,<br/>gallery ✅"]
 ```
 

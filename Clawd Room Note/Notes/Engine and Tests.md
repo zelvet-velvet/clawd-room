@@ -48,6 +48,8 @@ flowchart LR
 | `scene.c` | the scene: items on layers, drawn back to front, measured for the overlap check and the overlay |
 | `gallery.c` | `--check` (overlaps) and `--gallery DIR` (contact sheets) |
 | `place.c` | the placer: wall items by priority around what must stay clear |
+| `anim.c` | the animator: eased values (gates appearing, doors swinging) |
+| `editor.c` | the pixel editor (`--edit`) |
 | `theme.c` | the three rooms: backgrounds, workspaces, gates, signs |
 | `persp.c` | vanishing point, floor mapping, quads, boxes |
 | `camera.c` | what the zoomed camera follows |

@@ -48,6 +48,7 @@ tags:
 | `u` / `r` | undo / redo |
 | `<` `>` (or `[` `]`) | the sprite before / after; Tab: the next file (props, items, Clawd) |
 | `+` `-` | zoom |
+| `F` | a new frame of this sprite (`NAME~2`, `~3` …, a copy); a prop with frames is animated in the room |
 | `w` `n` / `t` `s` | wider / narrower, taller / shorter |
 | `q` | quit: with changes it asks **S** save, **D** discard (the files go back to how they were when you opened them), **Esc** back to editing |
 

@@ -27,6 +27,7 @@ void theme_furniture(const Theme *th, Canvas *cv, int cx, int by, int on, Rgb co
 #include "place.h"
 #include "sprites.h"
 void theme_set_props(const SpriteFile *props); /* sprites/props.txt: wall items drawn from it when it has them */
+void theme_set_time(double t);                 /* the drawing time (animated props) */
 void theme_set_rooms_dir(const char *dir);     /* rooms/: each room's wall items as a text file (read again when changed) */
 int theme_wall_specs(const Theme *th, const char *title, WallSpec *out, int max); /* the room's wall items, as data */
 void theme_wall_item(const Theme *th, Canvas *c, const Placed *pl, const char *title, int has_up); /* one, drawn where the placer put it */

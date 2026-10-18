@@ -494,7 +494,21 @@ void theme_gate(const Theme *th, Canvas *cv, const Geo *g, int side, double p, d
 /* ---- props drawn from sprites/props.txt when it has them (else by the code below) ---------------------------------- */
 static const SpriteFile *g_props;
 void theme_set_props(const SpriteFile *props) { g_props = props; }
+static double g_time;
+void theme_set_time(double t) { g_time = t; }
 static const Sprite *prop(const char *kind) { return g_props ? sprites_by_name(g_props, kind) : NULL; }
+/* a prop's frame now: "lamp", then "lamp~2", "lamp~3" ... if the file has them, about three a second */
+static const Sprite *prop_frame(const char *kind) {
+    const Sprite *base = prop(kind);
+    if (!base) return NULL;
+    int n = 1;
+    char nm[80];
+    for (;; n++) { snprintf(nm, sizeof nm, "%s~%d", kind, n + 1); if (!prop(nm)) break; }
+    int k = n > 1 ? (int)(g_time / 0.3) % n : 0;
+    if (k == 0) return base;
+    snprintf(nm, sizeof nm, "%s~%d", kind, k + 1);
+    return prop(nm);
+}
 
 /* ---- the rooms' wall items, as data (place.h): what, how big, where it would like to be, how much it matters ----------- */
 static const WallSpec OFFICE_WALL[] = {
@@ -591,7 +605,7 @@ void theme_wall_item(const Theme *th, Canvas *c, const Placed *pl, const char *t
         canvas_rect(c, x0, gy - 20, w, 9, RGB(150, 112, 72));
         canvas_rect(c, x0, gy - 12, w, 1, RGB(110, 80, 52));
         canvas_text(c, x0 + 3, gy - 18, t, RGB(250, 236, 200));
-    } else if (prop(pl->kind)) sprite_blit(c, prop(pl->kind), x0, y0, C_CLAWD); /* edited in sprites/props.txt */
+    } else if (prop(pl->kind)) sprite_blit(c, prop_frame(pl->kind), x0, y0, C_CLAWD); /* edited in sprites/props.txt (with frames: animated) */
     else if (!strcmp(pl->kind, "window")) {
         canvas_rect(c, x0, y0, 14, 9, RGB(240, 244, 250));
         canvas_rect(c, x0 + 1, y0 + 1, 12, 7, RGB(150, 200, 236));

@@ -7,6 +7,7 @@
 #include "sprites.h"
 #include "theme.h"
 #include "persp.h"
+#include "anim.h"
 
 enum { SIDE_LEFT, SIDE_RIGHT, SIDE_UP, SIDE_DOWN, SIDES };
 extern const char *SIDE_NAME[SIDES];     /* "left" "right" "up" "down" */
@@ -72,6 +73,7 @@ typedef struct {
     int gate_seen[SIDES]; double gate_t0[SIDES]; /* when each gate appeared (it animates in: draw.c GATE_ANIM) */
     int drawn;               /* a frame has been drawn (gates there from the start do not animate) */
     double door_open[SIDES], door_t; /* how far each door leaf is open (0..1, opens while a Clawd passes) and when it was last moved */
+    Animator anim;           /* eased values: gates appearing ("gate0".."gate3"), doors swinging ("door0", "door1") */
     int has_gate_sync; double gate_sync_t; /* when the windows stopped moving + 1 s, in draw time: both rooms start the animation then */
     /* movement state */
     int has_last_now; double last_now;

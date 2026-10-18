@@ -172,6 +172,46 @@ static int save(Ed *e) {
     return 0;
 }
 
+/* F: a new frame of this sprite (NAME~2, ~3 ...), a copy of it, right after its last frame; then that one is open */
+static int new_frame(Ed *e) {
+    File *f = &e->f;
+    char base[64];
+    snprintf(base, sizeof base, "%s", e->name);
+    char *tilde = strrchr(base, '~');
+    if (tilde) *tilde = 0;
+    int k = 2, after = e->sp;
+    for (int i = 0; i < f->nsprite; i++) { /* the next number, and the last frame of this sprite */
+        const char *nm = f->line[f->sprite_line[i]] + 1;
+        while (*nm == ' ') nm++;
+        size_t bl = strlen(base);
+        if (strncmp(nm, base, bl)) continue;
+        if (nm[bl] == '~') { int q = atoi(nm + bl + 1); if (q >= k) k = q + 1; after = i; }
+        else if (nm[bl] == ' ' || nm[bl] == '|' || !nm[bl]) { if (after < i) after = i; }
+    }
+    int at = f->sprite_line[after] + 1;
+    while (at < f->nline && f->line[at][0] && f->line[at][0] != '@' && f->line[at][0] != '#' && f->line[at][0] != ':') at++;
+    if (f->nline + e->h + 3 >= MAX_LINES) return -1;
+    char head[160];
+    snprintf(head, sizeof head, "@ %s~%d | %s~%d", base, k, base, k);
+    int add = e->h + 2; /* a blank line, the head, the rows */
+    memmove(&f->line[at + add], &f->line[at], sizeof(char *) * (size_t)(f->nline - at));
+    f->line[at] = strdup("");
+    f->line[at + 1] = strdup(head);
+    for (int y = 0; y < e->h; y++) { char row[MAXW + 1]; memcpy(row, e->g[y], (size_t)e->w); row[e->w] = 0; f->line[at + 2 + y] = strdup(row); }
+    f->nline += add;
+    FILE *out = fopen(f->path, "w");
+    if (!out) return -1;
+    for (int i = 0; i < f->nline; i++) fprintf(out, "%s\n", f->line[i]);
+    fclose(out);
+    char path[700];
+    snprintf(path, sizeof path, "%s", f->path);
+    file_load(f, path);
+    e->changed[e->file] = 1;
+    for (int i = 0; i < f->nsprite; i++) if (f->sprite_line[i] == at + 1) { sprite_open(e, i); break; }
+    snprintf(e->msg, sizeof e->msg, "NEW FRAME %s~%d", base, k);
+    return 0;
+}
+
 static char letter_for(Ed *e, Rgb c) { /* a palette letter for colour c, adding one to the file if needed */
     File *f = &e->f;
     for (int i = 0; i < f->npal; i++) if (!f->pal_body[i] && rgb_eq(f->pal_c[i], c)) return f->pal_ch[i];
@@ -221,7 +261,7 @@ typedef struct { int gx, gy, z, px; } Layout; /* the grid's origin and zoom; the
 /* the help: what each key and button does, as key caps (bright) and what they do (dim), in three groups */
 typedef struct { const char *key, *what; } Help;
 static const Help H_MOUSE[] = {{"LEFT", "PAINT"}, {"RIGHT", "ERASE"}, {"ALT+LEFT", "PICK A COLOUR"}};
-static const Help H_EDIT[] = {{"U", "UNDO"}, {"R", "REDO"}, {"< >", "OTHER SPRITE"}, {"TAB", "OTHER FILE"}, {"+ -", "ZOOM"}, {"#", "TYPE A COLOUR"}};
+static const Help H_EDIT[] = {{"U", "UNDO"}, {"R", "REDO"}, {"< >", "OTHER SPRITE"}, {"TAB", "OTHER FILE"}, {"+ -", "ZOOM"}, {"#", "TYPE A COLOUR"}, {"F", "NEW FRAME"}};
 static const Help H_SIZE[] = {{"W", "WIDER"}, {"N", "NARROWER"}, {"T", "TALLER"}, {"S", "SHORTER"}, {"Q", "QUIT (S SAVE / D DISCARD)"}};
 static int help_row(Canvas *cv, int y, const char *title, const Help *h, int n, int W) { /* returns the rows it took */
     int x = 4, rows = 1;
@@ -241,11 +281,11 @@ static int help_row(Canvas *cv, int y, const char *title, const Help *h, int n, 
     return rows;
 }
 static int help(Canvas *cv, int W, int H) { /* the rows the help takes (drawn at the bottom when cv is given) */
-    int r = help_row(NULL, 0, "", H_MOUSE, 3, W) + help_row(NULL, 0, "", H_EDIT, 6, W) + help_row(NULL, 0, "", H_SIZE, 5, W);
+    int r = help_row(NULL, 0, "", H_MOUSE, 3, W) + help_row(NULL, 0, "", H_EDIT, 7, W) + help_row(NULL, 0, "", H_SIZE, 5, W);
     if (cv) {
         int y = H - r * 8 - 1;
         y += 8 * help_row(cv, y, "MOUSE", H_MOUSE, 3, W);
-        y += 8 * help_row(cv, y, "EDIT", H_EDIT, 6, W);
+        y += 8 * help_row(cv, y, "EDIT", H_EDIT, 7, W);
         help_row(cv, y, "SIZE", H_SIZE, 5, W);
     }
     return r;
@@ -559,6 +599,7 @@ int editor_run(const char *dir, const char *name) {
                 continue;
             }
             if (ch == '#') { e.typing = 1; e.tbuf[0] = 0; continue; }
+            if (ch == 'f' || ch == 'F') { new_frame(&e); e.zoom = 0; continue; } /* a new frame (props with frames are animated in the room) */
             if (ch == 'q') { int any = 0; for (int f = 0; f < NFILES; f++) any |= e.changed[f]; if (any) e.asking = 1; else quit = 1; }
             else if (ch == 'u' && e.nundo) { e.nundo--; swap_undo(&e, e.nundo); e.nredo++; save(&e); }
             else if (ch == 'r' && e.nredo) { swap_undo(&e, e.nundo); e.nundo++; e.nredo--; save(&e); }
