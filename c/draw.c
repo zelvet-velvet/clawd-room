@@ -184,7 +184,7 @@ static void floor_rows(const View *v, int w, int h, Rows *r) {
         double xl, xr;
         view_floor_span(v, by, &xl, &xr);
         double x0 = xl + ROW_MARGIN, x1 = xr - ROW_MARGIN;
-        if (by - 22 < wfy) x1 = fmin(x1, wx0 - 3); /* a row whose workspaces would reach the stair well stops short of it */
+        if (by + 4 > wfy - WELL_DEEP - 1) x0 = fmax(x0, wx1 + 3); /* a row whose workspaces would reach the stair well starts right of it */
         int cnt = imin(PER_ROW, (int)((x1 - x0) / SLOT_MIN_W));
         if (cnt < 1) continue;
         r->by[r->n] = (int)by; r->count[r->n] = cnt; r->x0[r->n] = x0; r->x1[r->n] = x1; r->n++;
@@ -252,7 +252,7 @@ void geo_init(Geo *g, const Room *room, int w, int h) {
         g->gate_has_mid[SIDE_UP] = 1; g->gate_mid[SIDE_UP][0] = x1 + 2; g->gate_mid[SIDE_UP][1] = yl - 1; /* up the stairs, then along the platform */
         g->gate_out[SIDE_UP][0] = v->br - ARCH_IN - ARCH_W / 2.0; g->gate_out[SIDE_UP][1] = yl - 1;       /* along it to the opening at its right end */
     }
-    { /* the stair well at the back right (the park's is stone): its steps go down from its right end to its left, carrying
+    { /* the stair well at the front left (the park's is stone): its steps go down from its right end to its left, carrying
        * on the stairs that go up to the right below; in at the right, onto the top step, down to the left end */
         double fy, wx, wx0, wx1;
         well_place(v, &fy, &wx, &wx0, &wx1);

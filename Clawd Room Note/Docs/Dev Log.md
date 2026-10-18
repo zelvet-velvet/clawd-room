@@ -46,6 +46,13 @@ gitGraph
 ---
 ## 2026-10-18
 
+### ↙️ The well at the front left, fewer balusters
+> [!info] Branch `feat/style-a`
+- The stair well moved to the **front left** of the floor in every room; workspace rows near the front start right of it (in the park the front-left bush gives way).
+- The half floor's railing has **fewer balusters** (every 7 px in the coffee shop, 9 px in the office).
+
+![[2026-10-18 coffee well at the front left, fewer balusters.png|300]] ![[2026-10-18 park well at the front left.png|300]]
+
 ### ↔️ The well's steps run right to left, steps stand out
 > [!info] Branch `feat/style-a`
 - The stair well's steps now go **down from its right end to the left**, carrying on the stairs that go up to the right in the room below. A Clawd going down steps in at the right end and walks down to the left.

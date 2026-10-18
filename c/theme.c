@@ -344,8 +344,8 @@ void stairs_geometry(const View *v, double *x0, double *x1, double *yl) {
 }
 /* the two stair styles: the coffee shop's wooden stairs with balusters, the office's steel stairs with slim steel balusters */
 typedef struct { Rgb side, tread, riser, rail; int baluster_gap; } StairStyle;
-static const StairStyle WOOD_STAIRS = {{118, 82, 60}, {214, 186, 150}, {140, 102, 76}, {84, 56, 40}, 3};  /* (darker than the wall and the floor) */   /* wooden balusters, close */
-static const StairStyle STEEL_STAIRS = {{110, 116, 128}, {206, 210, 218}, {140, 146, 158}, {70, 76, 88}, 5}; /* slim steel balusters, wider apart */
+static const StairStyle WOOD_STAIRS = {{118, 82, 60}, {214, 186, 150}, {140, 102, 76}, {84, 56, 40}, 7};  /* (darker than the wall and the floor) */   /* wooden balusters */
+static const StairStyle STEEL_STAIRS = {{110, 116, 128}, {206, 210, 218}, {140, 146, 158}, {70, 76, 88}, 9}; /* slim steel balusters, further apart */
 
 /* the way up from the platform: an opening in the back wall with the stairs carrying on upwards inside, into the dark,
  * a warm light at the top; its bottom on the platform floor (Zaviel kept this one over the lit archway) */
@@ -405,13 +405,13 @@ static void back_stairs(Canvas *c, const View *v, int coffee, double p) {
     if (coffee && xr - x1 > 20 && y0 - yl >= 11) menu_board(c, (x1 + xr) / 2 - 8, yl + 1 + (y0 - yl - 11) / 2); /* the menu on the platform's face */
 }
 
-/* the stair well at the back right (every room; the park's is stone): its front edge's y and middle x, and how far it
+/* the stair well at the front left (every room; the park's is stone): its front edge's y and middle x, and how far it
  * reaches across on screen (rim included) */
 void well_place(const View *v, double *fy, double *wx, double *x0, double *x1) {
     double xl, xr, X, Z;
-    *fy = v->bb + WELL_BACK;
+    *fy = v->h - WELL_FRONT;
     view_floor_span(v, *fy, &xl, &xr);
-    *wx = xr - WELL_SIDE;
+    *wx = xl + WELL_SIDE;
     view_world(v, *wx, *fy, &X, &Z);
     *x0 = view_sx(v, X - WELL_HALF_W - 0.02, Z); *x1 = view_sx(v, X + WELL_HALF_W + 0.02, Z);
 }
@@ -479,7 +479,7 @@ void theme_sign(const Theme *th, Canvas *c, const char *title, int has_up, int f
     if (th == &PARK) for (int i = 0; i < 4; i++) { /* bushes along the sides without a fence, nearer = bigger */
         double y = v.bb + 2 + (c->h - v.bb) * i / 4.0, xl, xr;
         view_floor_span(&v, y, &xl, &xr);
-        if (!(fence_sides & 1)) blob(c, (int)xl, (int)y, 2 + i, RGB(60, 120, 62));
+        if (!(fence_sides & 1) && i < 3) blob(c, (int)xl, (int)y, 2 + i, RGB(60, 120, 62)); /* (not the front one: the stair well is there) */
         if (!(fence_sides & 2)) blob(c, (int)xr, (int)y, 2 + i, RGB(56, 114, 58));
     }
     char t[24];
