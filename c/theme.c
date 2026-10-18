@@ -746,6 +746,20 @@ const char *theme_role(const Theme *th, int index) {
 typedef struct { const Theme *th; int w, h; Canvas bg; } Cache;
 static Cache cache[8];
 
+/* the cached background of this room at this size (the floor in front of the well is put back from it), or NULL */
+const Canvas *theme_background_for(const Theme *th, int w, int h) {
+    for (int i = 0; i < 8; i++) if (cache[i].th == th && cache[i].w == w && cache[i].h == h) return &cache[i].bg;
+    return NULL;
+}
+/* the stair well's front: from row *y (the hole's front edge) down, across [*x0, *x1), the rim and the floor are in front of the hole */
+void theme_well_front(const View *v, int *x0, int *x1, int *y) {
+    double fy, wx, sx0, sx1, X, Z0;
+    well_place(v, &fy, &wx, &sx0, &sx1);
+    view_world(v, wx, fy + 1, &X, &Z0);
+    *x0 = (int)view_sx(v, X - WELL_HALF_W - 0.03, Z0) - 1; *x1 = (int)view_sx(v, X + WELL_HALF_W + 0.03, Z0) + 2;
+    *y = (int)view_sy(v, Z0, 0); /* (the hole's front edge: the rim and the floor in front of it are below) */
+}
+
 void theme_background(const Theme *th, Canvas *cv, int banner) {
     (void)banner;
     Cache *hit = NULL, *free_slot = NULL;

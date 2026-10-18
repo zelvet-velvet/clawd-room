@@ -70,5 +70,6 @@ tags:
 - [ ] `./clawd-room.sh --edit window`: paint, erase, pick, add a colour, undo; the rooms show it as you draw; your typed-in window stays
 - [ ] `q` after changes asks save / discard; D puts the file back (the rooms change back too); `--edit list` prints the names
 - [ ] In the editor, `F` on a prop adds `NAME~2`; draw it: the prop animates in a running room
+- [ ] Going down the well: the Clawd walks down its steps and disappears into the hole; coming up it rises out of it
 - [ ] Gates rise in eased (fast, then settling); doors swing open and shut smoothly, turning back if a Clawd comes back
 - [ ] Change a line in `rooms/office.txt` (e.g. the window's prefer): the window moves in a running room

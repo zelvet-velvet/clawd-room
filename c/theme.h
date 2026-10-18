@@ -22,6 +22,8 @@ const Theme *theme_get(const char *name); /* unknown name = office */
 const Theme *theme_pick(const char *room_name, const char *theme_name); /* the theme named, or guessed from the room name */
 /* paints the background (cached per theme and size, copied after the first time) */
 void theme_background(const Theme *th, Canvas *cv, int banner);
+const Canvas *theme_background_for(const Theme *th, int w, int h); /* the cached background (or NULL) */
+void theme_well_front(const View *v, int *x0, int *x1, int *y);   /* below row y, across [x0, x1): floor in front of the well */
 /* a workspace whose front edge is (cx, by); variant (a hash of the session) picks the device / drink / park thing */
 void theme_furniture(const Theme *th, Canvas *cv, int cx, int by, int on, Rgb color, double t, const char *role, unsigned variant);
 #include "place.h"

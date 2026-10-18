@@ -46,6 +46,12 @@ gitGraph
 ---
 ## 2026-10-18
 
+### 🕳️ Down the well, not across it
+> [!info] Branch `feat/style-a`
+- A Clawd going down the stair well now **walks down its steps**: drawn lower the further along the steps it is, and cut off at the hole's front edge, so it disappears into the hole (and rises out of it coming up).
+
+![[2026-10-18 down the well.png|600]]
+
 ### 🔀 Merged into main
 > [!success] `main` = `feat/style-a` (with `feat/camera-gates` in it), fast-forwarded on 2026-10-18.
 

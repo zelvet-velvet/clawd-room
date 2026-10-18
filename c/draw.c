@@ -120,7 +120,15 @@ typedef struct { int x0, y0, x1, y1; } IRect;
 
 /* where a Clawd is drawn: on the stairs its feet are on the steps' front edges, parallel to the hand rail (its route runs
  * straight from the foot of the stairs to the top) */
-static double shown_py(const Geo *g, int stairs, const Session *s) {
+#define WELL_SINK 11 /* how far a Clawd goes down the well's steps, from its right end (floor level) to its left end */
+static double well_sink(const Geo *g, const Session *s) { /* how far down the well's steps it is (0: not in the well) */
+    double my = g->gate_out[SIDE_DOWN][1], top = g->gate_mid[SIDE_DOWN][0], end = g->gate_out[SIDE_DOWN][0];
+    if (fabs(s->py + 8 - my) > 2.5 || s->px < end - 1 || s->px > top + 1 || top - end < 1) return 0;
+    double k = (top - s->px) / (top - end);
+    return WELL_SINK * (k < 0 ? 0 : k > 1 ? 1 : k);
+}
+static double shown_py(const Geo *g, int stairs, int well, const Session *s) {
+    if (well) { double d = well_sink(g, s); if (d > 0) return s->py + d; } /* down the well's steps */
     if (!stairs) return s->py;
     double cx = s->px + 0.5, feet = s->py + 8;
     double fx0, fx1, fyl;
@@ -428,6 +436,7 @@ typedef struct {
     Room *room;
     const Geo *geo;
     double now, t, rail_p;
+    int well;                /* there is a stair well (a gate down) */
     int active, has_up, fence_sides, np, nshown_people;
     int seated[256];
     const Session *people[512];
@@ -464,14 +473,23 @@ static void it_desk(Canvas *cv, const SceneItem *it, void *ctx) {
     const Session *s = X->room->s[it->i];
     draw_desk(cv, X->geo->home[it->i][0], X->geo->home[it->i][1], session_shown(s, X->now), s->tool, X->t, X->room->theme, X->roles[it->i], crc32_str(s->sid));
 }
-static double shown_py(const Geo *g, int stairs, const Session *s);
+static double shown_py(const Geo *g, int stairs, int well, const Session *s);
 static void it_clawd(Canvas *cv, const SceneItem *it, void *ctx) {
     DrawCtx *X = ctx;
     const Session *s = X->people[it->i];
     const char *role = "";
     if (it->i < X->nshown_people) for (int q = 0; q < X->geo->shown; q++) if (X->room->s[q] == s) role = X->roles[q];
     Pose p = pose_for(s, X->pstate[it->i], X->t, X->now);
-    draw_clawd(cv, (int)s->px, (int)shown_py(X->geo, X->rail_p >= 0, s), &p, g_frames, C_CLAWD, X->room->theme, role);
+    int x0 = 0, x1 = 0, fy = cv->h, sink = X->well && well_sink(X->geo, s) > 0;
+    static Rgb keep[64 * 256];
+    if (sink) { /* going down the well: the rim and the floor in front of the hole stay in front of it (cut off at the hole's edge) */
+        theme_well_front(&X->geo->view, &x0, &x1, &fy);
+        x0 = x0 < 0 ? 0 : x0; x1 = x1 > cv->w ? cv->w : x1;
+        if (x1 - x0 > 256 || cv->h - fy > 64 || fy < 0) sink = 0;
+        for (int y = fy; sink && y < cv->h; y++) memcpy(keep + (y - fy) * 256, cv->p + y * cv->w + x0, sizeof(Rgb) * (size_t)(x1 - x0));
+    }
+    draw_clawd(cv, (int)s->px, (int)shown_py(X->geo, X->rail_p >= 0, X->well, s), &p, g_frames, C_CLAWD, X->room->theme, role);
+    for (int y = fy; sink && y < cv->h; y++) memcpy(cv->p + y * cv->w + x0, keep + (y - fy) * 256, sizeof(Rgb) * (size_t)(x1 - x0));
 }
 static void it_marks(Canvas *cv, const SceneItem *it, void *ctx) { /* the dot, bubbles, signs, swing ropes, a held cup */
     DrawCtx *X = ctx;
@@ -479,7 +497,7 @@ static void it_marks(Canvas *cv, const SceneItem *it, void *ctx) { /* the dot, b
     int is_seated = 0;
     for (int q = 0; q < X->geo->shown; q++) if (X->room->s[q] == s && X->seated[q]) is_seated = 1;
     IRect rects[1];
-    double sy = shown_py(X->geo, X->rail_p >= 0, s);
+    double sy = shown_py(X->geo, X->rail_p >= 0, X->well, s);
     if (sy != s->py) { Session tmp = *s; tmp.py = sy; draw_extras(cv, &tmp, X->pstate[it->i], X->t, X->now, is_seated, rects, 0, &X->geo->spots, it->p > 0); }
     else draw_extras(cv, s, X->pstate[it->i], X->t, X->now, is_seated, rects, 0, &X->geo->spots, it->p > 0);
 }
@@ -627,6 +645,7 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
     X.rail_p = -1;
     for (int i = 0; i < room->nnb; i++) if (room->nb[i].side == SIDE_UP) X.rail_p = fmin(1.0, fmax(0.0, anim_value(&room->anim, "gate2", t, 1)));
     double rail_key = geo.view.bb - 0.25;
+    for (int i = 0; i < room->nnb; i++) if (room->nb[i].side == SIDE_DOWN) X.well = 1;
     for (int i = 0; i < geo.shown; i++)
         scene_add(sc, (SceneItem){.kind = "desk", .layer = LAYER_DEPTH, .depth = geo.home[i][1] + 0.5, .owner = -1, .ax = geo.home[i][0], .ay = geo.home[i][1], .draw = it_desk, .i = i});
     for (int i = 0; i < X.np; i++) {
