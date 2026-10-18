@@ -333,28 +333,30 @@ static void wall_door(Canvas *c, const View *v, int right, double fx, double fy,
  * windows upstairs) with its door, the way through (part 1: the same door as indoors, it opens while a Clawd passes;
  * -1 both); p: the building rises */
 static void wall_door(Canvas *c, const View *v, int right, double fx, double fy, double p, double open);
+static void wall_line(Canvas *c, const View *v, double X, double z0, double z1, double e, Rgb col) { /* a clean 1-pixel line along a side wall at height e */
+    canvas_line(c, (int)view_sx(v, X, z0), (int)view_sy(v, z0, e), (int)view_sx(v, X, z1), (int)view_sy(v, z1, e), col);
+}
 static void fence_gate(Canvas *c, const View *v, int right, double fx, double fy, double p, int part, double open) {
-    double xw = right ? v->xw : -v->xw, z0 = 0.6, z1 = v->zb, e = view_e(v, 58) * p, X, Z;
+    double xw = right ? v->xw : -v->xw, z0 = 0.6, z1 = v->zb, e = view_e(v, 58) * p;
     if (e <= 0) return;
-    view_world(v, fx, fy, &X, &Z);
-    Rgb brick = right ? RGB(160, 88, 68) : RGB(170, 94, 72), mortar = dk(brick, 0.14), trim = RGB(222, 204, 176), glass = RGB(150, 190, 220);
+    Rgb brick = right ? RGB(160, 88, 68) : RGB(170, 94, 72), mortar = dk(brick, 0.12), trim = RGB(222, 204, 176), glass = RGB(150, 190, 220);
     if (part <= 0) {
         wq(c, v, xw, z0, 0, xw, z1, 0, xw, z1, e, xw, z0, e, brick);
-        for (int k = 1; k < 7; k++) { double ee = e * k / 7; wq(c, v, xw, z0, ee, xw, z1, ee, xw, z1, ee + e * 0.015, xw, z0, ee + e * 0.015, mortar); } /* brick courses */
-        wq(c, v, xw, z0, e * 0.5, xw, z1, e * 0.5, xw, z1, e * 0.53, xw, z0, e * 0.53, trim); /* the line between the floors */
-        { /* a plain roof: one slope rising away from the park, a darker line along its eave */
-            double sd = right ? 1 : -1, rx = xw + sd * 0.16, re = e * 1.6;
-            wq(c, v, xw, z0, e, xw, z1, e, rx, z1, re, rx, z0, re, RGB(96, 104, 120));
-            wq(c, v, xw, z0, e, xw, z1, e, xw, z1, e * 1.05, xw, z0, e * 1.05, RGB(70, 76, 90));
-        }
-        wq(c, v, xw, z0, e, xw, z1, e, xw, z1, e * 1.04, xw, z0, e * 1.04, trim); /* the cornice */
-        for (double z = 0.98; z < z1 - 0.06; z += 0.13) { /* windows upstairs: a frame, a cross bar, a sill (none right over the door) */
-            if (fabs(z + 0.04 - Z) < 0.07) continue;
-            double za = z, zc = z + 0.08, eb = e * 0.64, et = e * 0.86;
+        for (int k = 1; k < 7; k++) if (k != 3) wall_line(c, v, xw, z0, z1, e * k / 7, mortar); /* brick courses */
+        wall_line(c, v, xw, z0, z1, e * 0.5, trim);                                          /* the line between the floors */
+        /* a flat roof: a parapet along the top, its coping in a light stone, a shadow under it */
+        wq(c, v, xw, z0, e, xw, z1, e, xw, z1, e * 1.08, xw, z0, e * 1.08, trim);
+        wall_line(c, v, xw, z0, z1, e * 1.08, RGB(240, 230, 210));
+        wall_line(c, v, xw, z0, z1, e * 0.995, dk(brick, 0.3));
+        /* windows upstairs, evenly spaced along the wall (the door is on the ground floor) */
+        int n = 3;
+        double za0 = 1.0, za1 = z1 - 0.06, step = (za1 - za0) / n, ww = step * 0.42;
+        for (int k = 0; k < n; k++) {
+            double za = za0 + step * k + (step - ww) / 2, zc = za + ww, eb = e * 0.63, et = e * 0.88, zm = (za + zc) / 2;
             wq(c, v, xw, za, eb, xw, zc, eb, xw, zc, et, xw, za, et, trim);
-            wq(c, v, xw, za + 0.012, eb + e * 0.03, xw, zc - 0.012, eb + e * 0.03, xw, zc - 0.012, et - e * 0.03, xw, za + 0.012, et - e * 0.03, glass);
-            wq(c, v, xw, (za + zc) / 2 - 0.004, eb, xw, (za + zc) / 2 + 0.004, eb, xw, (za + zc) / 2 + 0.004, et, xw, (za + zc) / 2 - 0.004, et, trim);
-            wq(c, v, xw, za - 0.006, eb - e * 0.02, xw, zc + 0.006, eb - e * 0.02, xw, zc + 0.006, eb + e * 0.01, xw, za - 0.006, eb + e * 0.01, RGB(200, 184, 160)); /* the sill */
+            wq(c, v, xw, za + ww * 0.15, eb + e * 0.03, xw, zc - ww * 0.15, eb + e * 0.03, xw, zc - ww * 0.15, et - e * 0.03, xw, za + ww * 0.15, et - e * 0.03, glass);
+            canvas_line(c, (int)view_sx(v, xw, zm), (int)view_sy(v, zm, eb), (int)view_sx(v, xw, zm), (int)view_sy(v, zm, et), trim); /* the cross bar */
+            wall_line(c, v, xw, za - ww * 0.1, zc + ww * 0.1, eb - e * 0.01, RGB(200, 184, 160));                                      /* the sill */
         }
     }
     if (part == 0) return;
