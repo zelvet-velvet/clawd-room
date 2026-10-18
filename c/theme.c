@@ -401,7 +401,7 @@ static const StairStyle *stair_style(const Theme *th) { return th == &COFFEE ? &
  * a plaque, two lamps), centred at door_cx with its sill on floor_y */
 int park_door_cx(int x1) { return x1 + PARK_DOOR_DX; }
 static int platform_right(const View *v, int x1) { return v->outdoor ? park_door_cx(x1) + PARK_DOOR_W / 2 + 6 : (int)ceil(v->br); }
-static void stoop_building(Canvas *c, int x0, int ground, int floor_y, int door_cx, int landing_x1, int part) {
+static void stoop_building(Canvas *c, int x0, int ground, int floor_y, int door_cx, int landing_x1, int corner, int part) {
     Rgb brick = RGB(172, 104, 80), mortar = RGB(156, 92, 70), pier = RGB(150, 88, 66), trim = RGB(230, 216, 192), stone = RGB(200, 190, 172), stone_dk = RGB(170, 160, 144), glass = RGB(140, 180, 214);
     int W = c->w, base = floor_y, dw = PARK_DOOR_W, dh = PARK_DOOR_H, dx = door_cx - dw / 2, dy = floor_y - dh;
     if (part == 0) {
@@ -428,6 +428,14 @@ static void stoop_building(Canvas *c, int x0, int ground, int floor_y, int door_
         canvas_rect(c, x0, base - 2, W - x0, 2, trim);                   /* the band on top of it, its shadow */
         canvas_rect(c, x0, base, W - x0, 1, dk(stone, 0.25));
         canvas_rect(c, x0, 0, 1, ground, dk(brick, 0.2));                /* the building's corner */
+        if (corner < W) { /* beyond the park's back corner (above and behind the right-hand building): another building, grey and modern */
+            Rgb con = RGB(146, 156, 176), win = RGB(70, 84, 110), lit = RGB(236, 226, 180);
+            canvas_rect(c, corner, 0, W - corner, ground, con);
+            canvas_rect(c, corner, 0, 1, ground, dk(con, 0.35));            /* where the two meet */
+            for (int y = 3; y + 4 < ground; y += 7)
+                for (int x = corner + 3; x + 3 < W; x += 6) canvas_rect(c, x, y, 3, 4, ((x * 7 + y * 3) % 11) < 2 ? lit : win);
+            for (int y = 8; y < ground; y += 7) canvas_rect(c, corner + 1, y, W - corner - 1, 1, dk(con, 0.12)); /* floor lines */
+        }
         return;
     }
     canvas_rect(c, dx - 2, dy - 6, dw + 4, dh + 6, trim);                /* the door surround */
@@ -471,7 +479,7 @@ static void back_stairs(Canvas *c, const View *v, const Theme *th, double p, int
     if (shown <= 0) return;
     Rgb side = st->side, tread = st->tread, riser = st->riser;
     int pr = platform_right(v, x1); /* where the platform ends (the park: the stoop's landing, just past the door) */
-    if (v->outdoor && (part < 0 || part == 3) && p >= 1) stoop_building(c, x0 - 4, y0 + 1, yl - 1, park_door_cx(x1), pr, 0); /* (part 3, the park: the building behind the stairs) */
+    if (v->outdoor && (part < 0 || part == 3) && p >= 1) stoop_building(c, x0 - 4, y0 + 1, yl - 1, park_door_cx(x1), pr, xr, 0); /* (part 3, the park: the building behind the stairs) */
     if (part == 3) return;
     /* the steps, seen from the front: each a block from the floor up to its tread (so the side is a sawtooth), the tread a
      * lit strip on top (seen from above), a shadow line where the next step rises */
@@ -483,14 +491,14 @@ static void back_stairs(Canvas *c, const View *v, const Theme *th, double p, int
     }
     if (p < 1 || part == 0) return;
     int dw = ARCH_W, dh = (int)fmin(ARCH_H, yl - v->bt - 2), dxl = xr - dw - ARCH_IN; /* at the right end of the platform */
-    if (part == 2) { if (v->outdoor) stoop_building(c, x0 - 4, y0 + 1, yl - 1, park_door_cx(x1), pr, 2); else if (dh > 6) upstairs_opening(c, dxl, yl - 1, dw, dh, st); return; }
+    if (part == 2) { if (v->outdoor) stoop_building(c, x0 - 4, y0 + 1, yl - 1, park_door_cx(x1), pr, xr, 2); else if (dh > 6) upstairs_opening(c, dxl, yl - 1, dw, dh, st); return; }
     /* the platform: its top (a strip, lit), its front face down to the floor, its end against the right-hand wall (the park: the landing) */
     canvas_rect(c, x1, yl - 1, pr - x1, 2, tread);
     canvas_rect(c, x1, yl + 1, pr - x1, y0 - yl, side);
     canvas_rect(c, x1, yl + 1, pr - x1, 1, riser);
     if (v->outdoor) { for (int y = yl + 4; y < y0; y += 3) canvas_rect(c, x1, y, pr - x1, 1, dk(side, 0.1)); canvas_rect(c, pr - 1, yl - 1, 1, y0 - yl + 2, dk(side, 0.3)); } /* stone joints, its end in shade */
     canvas_rect(c, x0, y0, pr - x0, 1, dk(side, 0.45)); /* a dark skirting along the floor, under the steps and the platform */
-    if (part < 0) { if (v->outdoor) stoop_building(c, x0 - 4, y0 + 1, yl - 1, park_door_cx(x1), pr, 2); else if (dh > 6) upstairs_opening(c, dxl, yl - 1, dw, dh, st); }
+    if (part < 0) { if (v->outdoor) stoop_building(c, x0 - 4, y0 + 1, yl - 1, park_door_cx(x1), pr, xr, 2); else if (dh > 6) upstairs_opening(c, dxl, yl - 1, dw, dh, st); }
     if (coffee && xr - x1 > 20 && y0 - yl >= 11) menu_board(c, (x1 + xr) / 2 - 8, yl + 1 + (y0 - yl - 11) / 2); /* the menu on the platform's face */
 }
 

@@ -48,7 +48,9 @@ gitGraph
 
 ### 🏢 The park's building, redesigned
 > [!info] Branch `feat/style-a`
-- From a mockup and Zaviel's notes: a **tall building** (floors of windows up out of the picture, piers between bays, staggered brick, a stone ground floor with low windows), **behind the side buildings**; a **short stoop** (stone steps, an iron railing, a landing as wide as the entrance); a **double door** with a lit transom, a canopy, a plaque and two lamps. The building is its own item (`backdrop`), so desks and the side buildings may stand in front of it.
+- From a mockup and Zaviel's notes: a **tall building** (floors of windows up out of the picture, piers between bays, staggered brick, a stone ground floor with low windows), **behind the side buildings**; a **short stoop** (stone steps, an iron railing, a landing as wide as the entrance); a **double door** with a lit transom, a canopy, a plaque and two lamps. The building is its own item (`backdrop`), so desks and the side buildings may stand in front of it. Beyond the park's back corner (above the right-hand building) **another building** rises: grey and modern, a grid of windows, so the brick one does not just carry on.
+
+![[2026-10-18 park, another building beyond the corner.png|300]] ![[2026-10-18 park, another building (no side building).png|300]]
 
 ![[2026-10-18 park building mockup.png|300]] ![[2026-10-18 park tall building and stoop.png|420]]
 
