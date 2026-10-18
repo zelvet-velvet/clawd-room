@@ -46,6 +46,12 @@ gitGraph
 ---
 ## 2026-10-18
 
+### 🔧 The steps inside the opening stay inside
+> [!info] Branch `feat/style-a`
+- The steps going up inside the opening are drawn as blocks from each tread down to the opening's floor; before, the first step's riser poked out below the opening onto the platform's edge.
+
+![[2026-10-18 opening steps close-up.png|200]]
+
 ### 🪜 Real steps, no gaps, the window out from behind the sign
 > [!info] Branch `feat/style-a`
 - The stairs are **real steps**: blocks rising from the floor with a **lit tread** on each, a **baluster on each step** and the hand rail **parallel to the steps' edges** (a newel post at the foot). Same in the coffee shop.

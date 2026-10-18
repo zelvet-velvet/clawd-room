@@ -355,10 +355,12 @@ static void upstairs_opening(Canvas *c, int x, int floor_y, int w, int h, const 
     canvas_rect(c, x, floor_y - h, w, h, dark);
     canvas_rect(c, x + 1, floor_y - h, w - 2, 1, RGB(250, 214, 140));         /* light from upstairs */
     int n = 4;
-    for (int i = 0; i < n; i++) {                                             /* steps going up inside, fading into the dark */
-        int sy = floor_y - 1 - i * (h - 3) / n, sx = x + 1 + i * (w - 2) / n, sw = w - 1 - (sx - x);
+    int rise = (h - 3) / n < 1 ? 1 : (h - 3) / n;
+    for (int i = 0; i < n; i++) { /* steps going up inside, fading into the dark: each a block from its tread down to the opening's floor */
+        int sy = floor_y - (i + 1) * rise, sx = x + 1 + i * (w - 2) / n, sw = w - 1 - (sx - x);
+        if (sy <= floor_y - h + 1) break;
+        canvas_rect(c, sx, sy + 1, sw, floor_y - sy - 1, rgb_mix(st->riser, dark, 0.45 + 0.12 * i));
         canvas_rect(c, sx, sy, sw, 1, rgb_mix(st->tread, dark, 0.1 + 0.15 * i));
-        canvas_rect(c, sx, sy + 1, 1, (h - 3) / n - 1, rgb_mix(st->riser, dark, 0.3 + 0.15 * i));
     }
 }
 
