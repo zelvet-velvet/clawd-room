@@ -99,8 +99,9 @@ typedef struct {
 #define PARK_STAIRS_FOOT 0.58 /* the park's stone stairs: their foot and top along the back (parts of its width), */
 #define PARK_STAIRS_TOP 0.68
 #define PARK_TERRACE_UP 0.45  /* ... the terrace this far up from the back of the lawn towards the top of the picture, */
-#define BUILDING_DOOR_W 8     /* ... and behind it a building whose front door, this big, is the way up */
-#define BUILDING_DOOR_H 13
+#define PARK_DOOR_W 10        /* ... and behind it a tall building whose double door, this big, is the way up, */
+#define PARK_DOOR_H 14
+#define PARK_DOOR_DX 10       /* ... this far past the top of the steps */
 #define STAIRS_FOOT 0.2     /* the stairs on the back wall start this far along it ... */
 #define STAIRS_TOP 0.42     /* ... and reach the platform here */
 #define ARCH_W 12           /* the opening up: width, height (room pixels), and how far in from the platform's right end */
@@ -131,6 +132,7 @@ int theme_keep_clear(const Theme *th, const Geo *g, int side, Box *out, int *mas
 void theme_stair_rail(const Theme *th, Canvas *c, const Geo *g, double p); /* the stairs' railing (drawn in among the Clawds) */
 void stairs_geometry(const View *v, double *x0, double *x1, double *yl); /* the stairs on the back wall: foot x, top x, landing y */
 int stairs_feet_y(const View *v, double x); /* the row a Clawd's feet are on at column x on the stairs (-1 off them) */
+int park_door_cx(int x1); /* the park building's door, from the top of the stairs */
 void well_place(const View *v, double *fy, double *wx, double *x0, double *x1); /* the stair well: front edge y, middle x, left and right x (rim included) */
 int geo_home(const Geo *g, const Room *room, const Session *s, int *cx, int *by); /* 1 if it has a desk */
 const char *geo_role(const Geo *g, const Room *room, const Session *s);

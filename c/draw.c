@@ -410,7 +410,7 @@ void geo_init(Geo *g, const Room *room, int w, int h) {
         stairs_geometry(v, &x0, &x1, &yl);
         g->gate_in[SIDE_UP][0] = x0 - 4; g->gate_in[SIDE_UP][1] = v->bb + 2;
         g->gate_has_mid[SIDE_UP] = 1; g->gate_mid[SIDE_UP][0] = x1 + 2; g->gate_mid[SIDE_UP][1] = yl - 1; /* up the stairs, then along the platform */
-        g->gate_out[SIDE_UP][0] = park ? (x1 - 2 + ceil(v->br)) / 2.0 : v->br - ARCH_IN - ARCH_W / 2.0; g->gate_out[SIDE_UP][1] = yl - 1; /* along it to the opening (the park: the building's front door) */
+        g->gate_out[SIDE_UP][0] = park ? park_door_cx((int)x1) : v->br - ARCH_IN - ARCH_W / 2.0; g->gate_out[SIDE_UP][1] = yl - 1; /* along it to the opening (the park: the building's double door) */
     }
     { /* the stair well at the front left (the park's is stone): its steps go down from its right end to its left, carrying
        * on the stairs that go up to the right below; in at the right, onto the top step, down to the left end */
@@ -621,7 +621,8 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
         snprintf(gk, sizeof gk, "gate%d", side);
         double p = fmin(1.0, fmax(0.0, anim_value(&room->anim, gk, t, 1))); /* (eased by the animator; clamped: EASE_BACK may pass 1) */
         int park = room->theme == theme_get("park");
-        if (side == SIDE_UP) { /* the stairs: the steps, the platform (the park: the terrace), the opening (the park: the stair tower) */
+        if (side == SIDE_UP) { /* the stairs: (the park: the building behind them,) the steps, the platform (the park: the stoop's landing), the opening (the park: its door) */
+            if (park) scene_add(sc, (SceneItem){.kind = "backdrop", .layer = LAYER_STRUCT, .owner = -1, .draw = it_gate, .i = side, .j = 3, .p = p});
             scene_add(sc, (SceneItem){.kind = "gate-up", .layer = LAYER_STRUCT, .owner = -1, .ax = geo.gate_in[side][0], .ay = geo.gate_in[side][1], .draw = it_gate, .i = side, .j = 0, .p = p});
             scene_add(sc, (SceneItem){.kind = "platform", .layer = LAYER_STRUCT, .owner = -1, .draw = it_gate, .i = side, .j = 1, .p = p});
             scene_add(sc, (SceneItem){.kind = "opening", .layer = LAYER_STRUCT, .owner = -1, .ax = geo.gate_out[side][0], .ay = geo.gate_out[side][1], .draw = it_gate, .i = side, .j = 2, .p = p});

@@ -37,7 +37,7 @@ static const char *SESSIONS[] = {
 
 /* which kinds must not paint over each other: gates, wall items, bushes, the playground, desks, the railing */
 static char cat(const char *kind) {
-    static const char *const K[] = {"gate-left", "gate-right", "gate-up", "gate-down", "opening", "platform", "building", "streetlamp", "bench", "sign", "signpost", "window",
+    static const char *const K[] = {"gate-left", "gate-right", "gate-up", "gate-down", "opening", "platform", "building", "backdrop", "streetlamp", "bench", "sign", "signpost", "window",
                                     "plant", "menu", "lamp", "shelf", "bush", "swing", "slide", "desk", "rail"};
     for (size_t i = 0; i < sizeof K / sizeof K[0]; i++) if (!strcmp(kind, K[i])) return 1;
     return 0;
@@ -47,7 +47,7 @@ static int allowed(const char *a, const char *b) {
         {"rail", "gate-up"}, {"rail", "platform"}, {"rail", "opening"}, {"platform", "gate-up"}, {"opening", "platform"}, /* one structure */
         {"gate-left", "building"}, {"gate-right", "building"}, /* its door */
         {"desk", "platform"}, {"desk", "building"}, {"swing", "building"}, {"slide", "building"}, {"gate-up", "building"}, {"platform", "building"}, {"rail", "building"}, {"opening", "building"}, /* (the park's stairs, terrace and tower against the building) */
-        {"opening", "gate-up"}, {"gate-right", "gate-up"}, {"gate-left", "gate-up"}, /* (the park: the door of the building behind the steps; the side doors stand in front of it) */ /* standing in front of the platform's face or a plain fence */
+        {"opening", "gate-up"}, {"gate-right", "gate-up"}, {"gate-left", "gate-up"}, {"gate-up", "backdrop"}, {"platform", "backdrop"}, {"opening", "backdrop"}, {"rail", "backdrop"}, {"building", "backdrop"}, {"gate-left", "backdrop"}, {"gate-right", "backdrop"}, {"desk", "backdrop"}, {"swing", "backdrop"}, {"slide", "backdrop"}, /* (all in front of the building at the back) */ /* (the park: the door of the building behind the steps; the side doors stand in front of it) */ /* standing in front of the platform's face or a plain fence */
     };
     for (size_t i = 0; i < sizeof OK / sizeof OK[0]; i++)
         if ((!strcmp(a, OK[i][0]) && !strcmp(b, OK[i][1])) || (!strcmp(b, OK[i][0]) && !strcmp(a, OK[i][1]))) return 1;
