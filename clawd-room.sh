@@ -27,10 +27,10 @@ fi
 # escape code that would switch an open window's profile, so run from another window this opens the room's window in the
 # quarter of the screen that window is in and closes the window it was typed in (when that has no other tabs or panes; --keep leaves it).
 # --here (or CLAWD_HERE=1) runs the room in the current window; so does a run that only prints.
-here_only=0 keep=0
+here_only=0 keep=0 editing=0
 prev=""
 for a in "$@"; do
-  case "$a" in --here) here_only=1 ;; --keep) keep=1 ;; --dump*|--build-art*|-h|--help|--version) here_only=1 ;; --edit) keep=1 ;; esac # (the editor: your window stays)
+  case "$a" in --here) here_only=1 ;; --keep) keep=1 ;; --dump*|--build-art*|-h|--help|--version) here_only=1 ;; --edit) keep=1 editing=1 ;; esac # (the editor: your window stays)
   [ "$prev" = --edit ] && [ "$a" = list ] && here_only=1 # (--edit list just prints)
   prev=$a
 done
@@ -84,13 +84,18 @@ if [ "$(uname -s)" = Darwin ] && [ "$TERM_PROGRAM" = iTerm.app ] && [ -z "$TMUX"
     for a in "$@"; do cmd="$cmd '$(printf %s "$a" | sed "s/'/'\\\\''/g")'"; done
     run="cd '$PWD' && exec env CLAWD_HERE=1 $cmd" # (iTerm2 starts the command with its own environment: pass on the folder)
     # open the room's window over this one; say whether this window holds only this session
-    alone=$(CR_RUN="$run" CR_SID="${ITERM_SESSION_ID#*:}" osascript -l JavaScript -e '
+    alone=$(CR_RUN="$run" CR_SID="${ITERM_SESSION_ID#*:}" CR_EDIT="$editing" osascript -l JavaScript -e '
       const env = $.NSProcessInfo.processInfo.environment, get = k => env.objectForKey(k).js;
       const it = Application("iTerm2"), sid = get("CR_SID");
       let mine = null, alone = false;
       it.windows().forEach(w => w.tabs().forEach(t => t.sessions().forEach(s => { if (s.id() === sid) { mine = w; alone = w.tabs().length === 1 && t.sessions().length === 1; } })));
       const nw = it.createWindowWithProfile("Clawd Room", {command: "/bin/sh -lc " + JSON.stringify(get("CR_RUN"))});
-      if (mine) { /* the quarter of the screen this window is in, like the room would pick */
+      if (get("CR_EDIT") === "1") { /* the editor: big, in the middle of the screen */
+        ObjC.import("AppKit");
+        const scr = $.NSScreen.mainScreen, f = scr.frame, v = scr.visibleFrame;
+        const vx = v.origin.x, vy = f.size.height - v.origin.y - v.size.height, vw = v.size.width, vh = v.size.height, ww = Math.round(vw * 0.7), wh = Math.round(vh * 0.78);
+        nw.bounds = {x: Math.round(vx + (vw - ww) / 2), y: Math.round(vy + (vh - wh) / 2), width: ww, height: wh};
+      } else if (mine) { /* the quarter of the screen this window is in, like the room would pick */
         ObjC.import("AppKit");
         const scr = $.NSScreen.mainScreen, f = scr.frame, v = scr.visibleFrame, b = mine.bounds();
         const vx = v.origin.x, vy = f.size.height - v.origin.y - v.size.height, vw = v.size.width, vh = v.size.height;

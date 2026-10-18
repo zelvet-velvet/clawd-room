@@ -35,14 +35,15 @@ tags:
 ---
 ## 🎨 The pixel editor
 
-`./clawd-room.sh --edit NAME` opens it in its own Clawd Room window (in iTerm2); the window you typed in stays, and you are back there when you quit. `./clawd-room.sh --edit list` prints the names it can open. It saves after each stroke, so running rooms show the change; on quitting you choose to keep or discard.
+`./clawd-room.sh --edit NAME` opens it in its own Clawd Room window in the middle of the screen (in iTerm2); the window you typed in stays, and you are back there when you quit. `./clawd-room.sh --edit list` prints the names it can open. It saves after each stroke, so running rooms show the change; on quitting you choose to keep or discard.
 
 | Input | Does |
 | --- | --- |
 | left click / drag | paint with the chosen colour |
 | right click | erase (see-through) |
 | Alt + click | pick the colour under the pointer |
-| click a swatch | choose it (ADD: a new colour, added to the file when used) |
+| the panel | **COLOUR**: the colour to paint, with red / green / blue sliders (on a file colour they recolour every pixel using it, in the whole file); **SHADES**: darker to lighter; **IN THIS FILE**: erase and the file's colours (a dot: used in this sprite); **MORE COLOURS**: 16 colours and greys (a new one joins the file's palette when you paint with it) |
+| pointer over the grid | the pixel is outlined; its place and colour show under the grid |
 | `u` / `r` | undo / redo |
 | `<` `>` (or `[` `]`) | the sprite before / after; Tab: the next file (props, items, Clawd) |
 | `+` `-` | zoom |
