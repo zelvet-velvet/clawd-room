@@ -25,6 +25,7 @@
 #include "term.h"
 #include "win.h"
 #include "ui.h"
+#define OWNER_GRACE 15.0 /* seconds a linked room that went quiet (but has not closed) keeps its share of the sessions */
 
 #define FPS 16
 #define REPLAY_SECONDS 600
@@ -145,6 +146,17 @@ static int read_keys(char *keys, size_t n, Reports *rep) {
     return (int)k;
 }
 
+/* how long after a key's last repeat it may still be held: the first repeat comes after the delay set in the Mac's keyboard
+ * settings, the next ones each interval after that (a terminal never says when a key is let go) */
+static void key_repeat(double *first, double *next) {
+    *first = 0.8; *next = 0.25; /* (not set: a safe guess; the room learns the real timing from the repeats it gets) */
+    int v;
+    FILE *p = popen("defaults read -g InitialKeyRepeat 2>/dev/null", "r");
+    if (p) { if (fscanf(p, "%d", &v) == 1 && v > 0) *first = v * 0.015 + 0.12; pclose(p); }
+    p = popen("defaults read -g KeyRepeat 2>/dev/null", "r");
+    if (p) { if (fscanf(p, "%d", &v) == 1 && v > 0) *next = v * 0.015 * 2 + 0.06; pclose(p); }
+}
+
 static int key_ready(double wait) {
     fd_set fds;
     FD_ZERO(&fds);
@@ -236,6 +248,8 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
     char flash[96] = "";
     double flash_until = 0;
     int last_closed[SIDES] = {0};
+    static struct { char id[40]; double last; char homes[MAX_CLAIMS][72]; int nhomes; } owners[MAX_LINK_PEERS]; /* the rooms sharing the sessions */
+    int nowners = 0;
     static char held[MAX_LINK_PEERS][40];
     int nheld = 0;
     char still_sig[1024] = "";
@@ -261,6 +275,9 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
     double t0 = mono(), frozen_now = 0, frozen_t = 0;
     int paused = 0, help_on = 0, dirty = 1, cols = 0, rows = 0, size_menu = 0, size_pick = 0;
     double go_until = 0; /* g held (its key repeats keep this going): an arrow then picks where to send a Clawd */
+    double rep_first, rep_next;
+    key_repeat(&rep_first, &rep_next);
+    double go_last = 0; int go_reps = 0; /* the last g / m press and how many repeats since it went down */
     char go_key = 'g', move_sid[72] = ""; /* ... or m held: where the picked Clawd moves to */
     Cells prev = {0, 0, NULL};
     int have_prev = 0;
@@ -354,10 +371,17 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                             continue;
                         }
                     }
-                    if (wall() >= go_until || go_key != k) go_until = 0;
+                    int again = wall() < go_until && go_key == k; /* a repeat: still held */
+                    if (again) { /* learn how fast this keyboard repeats */
+                        double gap = wall() - go_last;
+                        if (go_reps == 0 && gap > 0.1 && gap < 1.6) rep_first = gap + 0.12;
+                        else if (go_reps > 0 && gap < 0.3) rep_next = gap * 2 + 0.05;
+                        go_reps++;
+                    } else { go_until = 0; go_reps = 0; }
+                    go_last = wall();
                     go_key = k;
                     if (room.nnb >= 2 || k == 'm') { /* the hint along the bottom (draw_bar below); the key repeats while it is held keep it up */
-                        go_until = wall() + 1.5;
+                        go_until = wall() + (again ? rep_next : rep_first); /* shown only while held: gone soon after the repeats stop */
                     } else {
                         char buf[64];
                         room_order(&room);
@@ -468,18 +492,34 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
             memcpy(held, new_held, sizeof held); nheld = n_new_held; /* attached now (also counts while its gate is closed) */
             int seen_mask = 0; /* (for the gate log: the windows found next to this one) */
             for (int q = 0; q < room.nnb; q++) seen_mask |= 1 << room.nb[q].side;
+            /* the rooms that share the sessions: the live ones, and for OWNER_GRACE s one that went quiet but has not closed
+             * (its presence file is still there: busy drawing, say), so its Clawds do not hop to other rooms and back */
+            for (int i = 0; i < link.npeers; i++) {
+                int q = 0;
+                while (q < nowners && strcmp(owners[q].id, link.peers[i].id)) q++;
+                if (q == nowners) { if (nowners >= MAX_LINK_PEERS) continue; nowners++; snprintf(owners[q].id, sizeof owners[q].id, "%s", link.peers[i].id); }
+                owners[q].last = wall();
+                owners[q].nhomes = link.peers[i].nhomes;
+                memcpy(owners[q].homes, link.peers[i].homes, sizeof owners[q].homes[0] * (size_t)link.peers[i].nhomes);
+            }
+            for (int q = 0; q < nowners;) {
+                int live = 0;
+                for (int i = 0; i < link.npeers; i++) if (!strcmp(link.peers[i].id, owners[q].id)) live = 1;
+                if (!live && (!link_peer_file(&link, owners[q].id) || wall() - owners[q].last > OWNER_GRACE)) { owners[q] = owners[--nowners]; continue; }
+                q++;
+            }
             link.nhomes = room.nmine; /* who moved in here (m key), said in our heartbeat; and who moved into the other rooms */
             memcpy(link.homes, room.mine, sizeof room.mine[0] * (size_t)room.nmine);
             room.nclaim = 0;
-            for (int i = 0; i < link.npeers; i++)
-                for (int q = 0; q < link.peers[i].nhomes && room.nclaim < MAX_CLAIMS * 4; q++) {
-                    snprintf(room.claim_sid[room.nclaim], 72, "%s", link.peers[i].homes[q]);
-                    snprintf(room.claim_room[room.nclaim++], 40, "%s", link.peers[i].id);
+            for (int i = 0; i < nowners; i++)
+                for (int q = 0; q < owners[i].nhomes && room.nclaim < MAX_CLAIMS * 4; q++) {
+                    snprintf(room.claim_sid[room.nclaim], 72, "%s", owners[i].homes[q]);
+                    snprintf(room.claim_room[room.nclaim++], 40, "%s", owners[i].id);
                 }
             if (!a->no_split) { /* the linked rooms share the sessions: each shows its own part */
                 int m = 0;
                 snprintf(room.owner_ids[m++], 40, "%s", link.id);
-                for (int i = 0; i < link.npeers && m < 17; i++) snprintf(room.owner_ids[m++], 40, "%s", link.peers[i].id);
+                for (int i = 0; i < nowners && m < 17; i++) snprintf(room.owner_ids[m++], 40, "%s", owners[i].id);
                 for (int i = 0; i < m; i++) for (int j = i + 1; j < m; j++) if (strcmp(room.owner_ids[j], room.owner_ids[i]) < 0) { char tt[40]; strcpy(tt, room.owner_ids[i]); strcpy(room.owner_ids[i], room.owner_ids[j]); strcpy(room.owner_ids[j], tt); }
                 room.n_owner_ids = m; room.split = 1;
                 snprintf(room.owner_me, sizeof room.owner_me, "%s", link.id);
@@ -659,6 +699,13 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                     bar[nbar++] = (BarPiece){arrows, C_YELLOW, 0};
                 }
                 draw_bar(&cv, bar, nbar);
+                if (getenv("CLAWD_SHOWN_LOG")) { /* test hook: which sessions this room shows, whenever that changes */
+                    static char logged_shown[4096];
+                    char cur[4096] = "";
+                    room_order(&room);
+                    for (int i = 0; i < room.n; i++) { size_t l = strlen(cur); snprintf(cur + l, sizeof cur - l, "%s%s", i ? " " : "", room.s[i]->sid); }
+                    if (strcmp(cur, logged_shown)) { snprintf(logged_shown, sizeof logged_shown, "%s", cur); FILE *lf = fopen(getenv("CLAWD_SHOWN_LOG"), "a"); if (lf) { fprintf(lf, "%.3f %s\n", wall(), cur); fclose(lf); } }
+                }
                 if (getenv("CLAWD_STATUS_LOG")) { /* test hook: the bar is pixels now, so its text goes to a file whenever it changes */
                     static char logged[1024];
                     char cur[1024] = "";

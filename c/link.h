@@ -36,6 +36,7 @@ void link_close(Link *l);
 /* one call per frame: keeps our presence fresh, notices rooms coming and going; returns the number of events */
 int link_update(Link *l, double now, int cols, int rows, LinkEvent *out, int max);
 /* a "walk" or "recall" message (or hello/bye/ping/pong with no data); 0 if that room is gone */
+int link_peer_file(const Link *l, const char *id); /* that room's presence file is still there (it has not closed, maybe just slow) */
 int link_send_msg(Link *l, const char *to, const Msg *m);
 int link_send_num(Link *l, const char *to, const char *type, const char *key, double value);
 int link_send_simple(Link *l, const char *to, const char *type, const char *key, const char *value);

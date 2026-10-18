@@ -153,6 +153,7 @@ void room_receive(Room *r, const Msg *m);
 void room_peer_gone(Room *r, const char *peer);
 const char *room_send_one(Room *r, const Geo *geo, double now, char *buf, size_t n); /* send an idle Clawd through the first gate */
 const char *room_send_to(Room *r, const Geo *geo, double now, int side, char *buf, size_t n); /* the g key: ... through the gate on that side */
+int room_owner_of(const Room *r, const char *sid); /* linked rooms: which of owner_ids shows the session (no claim) */
 const char *room_move_to(Room *r, const Geo *geo, double now, const char *sid, int side, char *buf, size_t n); /* the m key: that Clawd moves to the room on that side */
 const char *room_recall(Room *r, double now, char *buf, size_t n); /* the b key: call our Clawds home, or send visitors home */
 

@@ -103,6 +103,13 @@ void link_start(Link *l) {
     beat(l, wall(), 0, 0, 1);
 }
 
+int link_peer_file(const Link *l, const char *id) {
+    char p[600];
+    struct stat st;
+    path(l, id, "peer", p, sizeof p);
+    return id_ok(id) && stat(p, &st) == 0;
+}
+
 /* ---- sending ------------------------------------------------------------------------------------ */
 static int send_line(Link *l, const char *to, const char *line) {
     char p[600];

@@ -59,7 +59,22 @@ static int owns(const Room *r, const Session *s) {
     if (s->move && (s->has_travel || s->has_away)) return 1;
     if (is_mine(r, s->sid)) return 1;
     if (claimed_by(r, s->sid)) return 0;
-    return !strcmp(r->owner_ids[crc32_str(s->sid) % (unsigned)r->n_owner_ids], r->owner_me);
+    return !strcmp(r->owner_ids[room_owner_of(r, s->sid)], r->owner_me);
+}
+
+/* the room a session belongs to: the one that scores highest for it (rendezvous hashing), so a room opening only takes its
+ * own share and a room closing only gives its own away; nobody else's Clawd changes room */
+int room_owner_of(const Room *r, const char *sid) {
+    int best = 0;
+    unsigned top = 0;
+    for (int k = 0; k < r->n_owner_ids; k++) {
+        char key[120];
+        snprintf(key, sizeof key, "%s|%s", sid, r->owner_ids[k]);
+        unsigned h = crc32_str(key);
+        h ^= h >> 16; h *= 0x85ebca6bu; h ^= h >> 13; h *= 0xc2b2ae35u; h ^= h >> 16; /* (mixed: crc32 alone is too even across similar keys) */
+        if (k == 0 || h > top) { top = h; best = k; }
+    }
+    return best;
 }
 
 void room_order(Room *r) {

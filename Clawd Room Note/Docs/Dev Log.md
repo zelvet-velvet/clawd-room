@@ -48,6 +48,15 @@ gitGraph
 
 ## 2026-10-19
 
+### 🧭 Desks stay in their room
+> [!bug] Fixed
+> With several rooms open, workspaces vanished from one room and showed up in another. Two causes: the split was `crc32 % number of rooms`, so a room opening or closing moved nearly **every** session; and a room busy drawing that missed its heartbeat for 4 s counted as gone, so everything was split again (and back).
+- Now each session goes to the room that scores highest for it (**rendezvous hashing**): opening a room only takes its share, closing one only gives its own away. A quiet room whose presence file is still there keeps its share (and its moved-in claims) for 15 s.
+- `tools/split_smoke.py`: three rooms, a fourth opens, one freezes for 7 s, the fourth closes: no other Clawd changes room, every session shown once.
+
+### ⌨️ The g / m hint only while the key is held
+- It goes soon after the key's repeats stop (a terminal never says a key was let go); the room learns the keyboard's repeat delay and rate from the repeats it gets.
+
 ### 💬 One bar along the bottom
 > [!info] Branch `feat/style-a`
 - The white status line was the terminal's last row, tiny at the fixed font: it is now drawn **in the room's pixel font** on a dark bar (as big as the yellow hint), centred, wrapped between phrases, growing upwards for the help.

@@ -36,9 +36,12 @@ with tempfile.TemporaryDirectory() as tmp:
     b = Proc("c", ["--room", "beta", "--theme", "coffee", "--left", "alpha", "--events", events], env)
     for _ in range(40):  # both start, see each other, show their gates
         a.pump(0.1); b.pump(0.1)
-    a.key(b"\t"); a.pump(0.3); b.pump(0.1)
-    a.key(b"m"); a.pump(0.3); b.pump(0.1)
-    a.key(b"\x1b[C"); a.pump(0.3)
+    for _ in range(6):  # pick a Clawd (Tab) and move it right; again if that one was busy going somewhere (a visit)
+        a.key(b"\t"); a.pump(0.3); b.pump(0.1)
+        a.key(b"m"); a.pump(0.3); b.pump(0.1)
+        a.key(b"\x1b[C"); a.pump(0.5); b.pump(0.1)
+        if b"MOVING" in open(a.status_log, "rb").read():
+            break
     for _ in range(100):  # it walks to the door and through it; beta claims it; alpha lets go
         a.pump(0.1); b.pump(0.1)
     walks = []
