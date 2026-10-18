@@ -6,6 +6,8 @@
 #include "clawd.h"
 #include "room.h"
 #include "scene.h"
+#include "place.h"
+#include "ui.h"
 
 static const SpriteFile *g_frames, *g_items;
 void draw_set_sprites(const SpriteFile *frames, const SpriteFile *items) { g_frames = frames; g_items = items; }
@@ -196,15 +198,11 @@ static void draw_extras(Canvas *cv, const Session *s, const char *state, double 
 /* rows of workspaces on the floor, from the back: each row's front edge (y) and how many fit across it */
 typedef struct { int n; int by[16], count[16]; double x0[16], x1[16]; } Rows;
 static void floor_rows(const View *v, int w, int h, Rows *r) {
-    double wfy, wwx, wx0, wx1;
-    well_place(v, &wfy, &wwx, &wx0, &wx1);
-    (void)wwx;
     r->n = 0;
     for (double by = v->bb + fmax(9.0, (h - v->bb) * 0.24); by <= h - WALK_MIN && r->n < 16; by += ROW_PITCH) {
         double xl, xr;
         view_floor_span(v, by, &xl, &xr);
         double x0 = xl + ROW_MARGIN, x1 = xr - ROW_MARGIN;
-        if (by + 4 > wfy - WELL_DEEP - 1) x0 = fmax(x0, wx1 + 3); /* a row whose workspaces would reach the stair well starts right of it */
         int cnt = imin(PER_ROW, (int)((x1 - x0) / SLOT_MIN_W));
         if (cnt < 1) continue;
         r->by[r->n] = (int)by; r->count[r->n] = cnt; r->x0[r->n] = x0; r->x1[r->n] = x1; r->n++;
@@ -225,13 +223,150 @@ void layout_slots(int w, int h, int n, int *banner, int *per_row, int *slot_w, i
     (void)n;
 }
 
+/* ---- the placer's part of the layout (Engine Design, step 2) ----------------------------------------------------------
+ * After the rows and the gate points: what must stay clear (the gates, then the wall items placed around them, the park's
+ * playground and posts, the bushes that fit), then the workspaces put only where they keep clear of all that. */
+#define PER_ROW_MAX PER_ROW
+static void add_keep(Geo *g, Box b, int mask) { if (g->nkeep < 48) { g->keep[g->nkeep] = b; g->keep_mask[g->nkeep++] = mask; } }
+static int floor_clear_soft(const Geo *g, Box b, int soft) { /* soft 0: the walkways count too */
+    for (int k = 0; k < g->nkeep; k++) if ((g->keep_mask[k] & 1) && !(soft && (g->keep_mask[k] & 4)) && box_hit(b, g->keep[k])) return 0;
+    return 1;
+}
+static int floor_clear(const Geo *g, Box b) { return floor_clear_soft(g, b, 0); }
+static void place_room(Geo *g, const Room *room, const Rows *r, int n) {
+    const Theme *th = room->theme;
+    const View *v = &g->view;
+    int w = g->w, h = g->h, park = !strcmp(th->name, "park"), coffee = !strcmp(th->name, "coffee");
+    for (int i = 0; i < room->nnb; i++) { int sd = room->nb[i].side; if (sd == SIDE_UP) g->has_up = 1; if (park && sd == SIDE_LEFT) g->fence_sides |= 1; if (park && sd == SIDE_RIGHT) g->fence_sides |= 2; }
+    /* measured once per room, size and gates (drawing on an empty canvas costs a little) */
+    static struct { const Theme *th; int w, h, gates, door_y; Box keep[48]; int mask[48], n; Box fp, bar, play[2]; } C;
+    int gates = 0;
+    for (int i = 0; i < room->nnb; i++) gates |= 1 << room->nb[i].side;
+    if (C.th != th || C.w != w || C.h != h || C.gates != gates || C.door_y != (int)g->gate_out[SIDE_LEFT][1]) {
+        C.th = th; C.w = w; C.h = h; C.gates = gates; C.door_y = (int)g->gate_out[SIDE_LEFT][1]; C.n = 0;
+        for (int sd = 0; sd < SIDES; sd++) if (gates & (1 << sd)) C.n += theme_keep_clear(th, g, sd, C.keep + C.n, C.mask + C.n, 48 - C.n);
+        C.fp = theme_footprint(th, w, h, "");
+        if (coffee) C.bar = theme_footprint(th, w, h, "barista");
+        if (park) { C.play[0] = theme_play_box(th, w, h, 0); C.play[1] = theme_play_box(th, w, h, 1); }
+    }
+    for (int k = 0; k < C.n; k++) add_keep(g, C.keep[k], C.mask[k]);
+    /* 1 the wall items, around the gates */
+    WallSpec spec[MAX_PLACED];
+    Box wk[48];
+    int nspec = theme_wall_specs(th, room->title[0] ? room->title : th->name, spec, MAX_PLACED), nwk = 0;
+    for (int k = 0; k < g->nkeep; k++) if (g->keep_mask[k] & 2) wk[nwk++] = g->keep[k];
+    place_wall(spec, nspec, g->has_up, w, v->bl, v->br, v->bt, v->bb, wk, nwk, &g->wall);
+    for (int k = 0; k < g->wall.n; k++) if (g->wall.p[k].box.y1 > v->bb - 14) add_keep(g, box_grow(g->wall.p[k].box, 1), 1); /* (standing on the floor: the plant, the signpost) */
+    /* 2 the park's bushes that fit */
+    int cand[8][4], nc = theme_bushes(th, v, g->fence_sides, cand, 8);
+    for (int k = 0; k < nc; k++) if (floor_clear(g, theme_bush_box(cand[k]))) memcpy(g->bush[g->nbush++], cand[k], sizeof cand[k]);
+    for (int k = 0; k < g->nbush; k++) add_keep(g, box_grow(theme_bush_box(g->bush[k]), 1), 1);
+    /* 3 the coffee shop's bar (the barista's place) first, at the back, from the left */
+    int first = 0;
+    if (coffee && n > 0)
+        for (int row = 0; row < r->n && !first; row++) {
+            double xl, xr;
+            view_floor_span(v, r->by[row], &xl, &xr);
+            for (int cx = (int)r->x0[row] - C.bar.x0; cx + C.bar.x1 <= (int)r->x1[row] && !first; cx += 2) {
+                Box b = {cx + C.bar.x0, r->by[row] + C.bar.y0, cx + C.bar.x1, r->by[row] + C.bar.y1};
+                if (b.x0 < (int)xl + 1 || b.x1 > (int)xr - 1 || !floor_clear_soft(g, b, 1)) continue;
+                g->home[0][0] = cx; g->home[0][1] = r->by[row]; first = 1;
+                add_keep(g, (Box){b.x0 - 1, r->by[row] - 4, b.x1 + 1, r->by[row] + 5}, 1); /* (only its own row: things in front stand in front of it) */
+            }
+        }
+    /* 4 the workspaces: places along each row, as far apart as a workspace is wide, kept only where they are clear */
+    Box fp = C.fp;
+    int fw = fp.x1 - fp.x0, fc = (fp.x0 + fp.x1) / 2, need = n - first;
+    int px[16][PER_ROW_MAX], pn[16] = {0}, total = 0;
+    for (int soft = 0; soft < 2 && total < need; soft++) { /* (too full: try again over the walkways, keeping clear of what shows) */
+        total = 0;
+        for (int row = 0; row < r->n; row++) {
+            pn[row] = 0;
+            double x0 = r->x0[row], x1 = r->x1[row], mid = (x0 + x1) / 2;
+            int k = (int)((x1 - x0) / (fw + 2));
+            if (k < 1) continue;
+            if (k > PER_ROW_MAX) k = PER_ROW_MAX;
+            double sw = fmax(fw + 2, fmin(SLOT_MAX_W, (x1 - x0) / k)), xl, xr;
+            view_floor_span(v, r->by[row], &xl, &xr);
+            int by = r->by[row], lo = (int)fmax(x0, xl + 1), hi = (int)fmin(x1, xr - 1);
+#define FITS(cx) ((cx) + fp.x0 >= lo && (cx) + fp.x1 <= hi && floor_clear_soft(g, (Box){(cx) + fp.x0, by + fp.y0, (cx) + fp.x1, by + fp.y1}, soft))
+            for (int j = 0; j < k; j++) { /* evenly spread places ... */
+                int cx = (int)(mid - sw * k / 2 + sw * (j + 0.5)) - fc;
+                if (FITS(cx)) px[row][pn[row]++] = cx;
+            }
+            if (pn[row] < k) { /* ... or, when something is in the way, packed around it, if that gives more */
+                int gx[PER_ROW_MAX], gn = 0;
+                for (int cx = lo - fp.x0; cx + fp.x1 <= hi && gn < PER_ROW_MAX; cx++)
+                    if (FITS(cx)) { gx[gn++] = cx; cx += fw + 1; }
+                if (gn > pn[row]) { memcpy(px[row], gx, sizeof gx[0] * (size_t)gn); pn[row] = gn; }
+            }
+#undef FITS
+            total += pn[row];
+        }
+    }
+    int keep = need;
+    if (keep > total) keep = total > 1 ? total - 1 : total; /* the last place says "+N MORE" */
+    g->shown = first + keep; g->more = n - g->shown; g->has_more_pos = 0;
+    int extra = (g->more && total > 1) ? 1 : 0, count = need < keep + extra ? need : keep + extra, i = 0, last_by = first ? g->home[0][1] : 0;
+    for (int row = 0; row < r->n && i < count; row++) { /* fill the rows from the back; a row not filled uses its middle places */
+        int in_row = pn[row] < count - i ? pn[row] : count - i;
+        if (in_row <= 0) continue;
+        int use[PER_ROW_MAX] = {0}, mid = (int)((r->x0[row] + r->x1[row]) / 2);
+        for (int c = 0; c < in_row; c++) { /* the free place nearest the middle not taken yet */
+            int best = -1;
+            for (int j = 0; j < pn[row]; j++) if (!use[j] && (best < 0 || abs(px[row][j] + fc - mid) < abs(px[row][best] + fc - mid))) best = j;
+            use[best] = 1;
+        }
+        for (int j = 0; j < pn[row]; j++) if (use[j]) {
+            if (i < keep) { g->home[first + i][0] = px[row][j]; g->home[first + i][1] = r->by[row]; }
+            else { g->has_more_pos = 1; g->more_pos[0] = px[row][j]; g->more_pos[1] = r->by[row] - 8; }
+            add_keep(g, box_grow((Box){px[row][j] + fp.x0, r->by[row] + fp.y0, px[row][j] + fp.x1, r->by[row] + fp.y1}, 1), 1);
+            i++;
+        }
+        if (r->by[row] > last_by) last_by = r->by[row];
+    }
+    if (last_by && last_by - 6 > g->ymin) { g->ymin = last_by - 6; g->ymax = g->ymax > g->ymin ? g->ymax : g->ymin; } /* (the walking strip: in front of the last row) */
+    /* 5 the park's swing set and slide in the floor that is left: moved across to the nearest clear place, or left out */
+    if (park) {
+        for (int k = 0; k < 2; k++) {
+            Box b0 = C.play[k], b = b0;
+            int placed = 0;
+            for (int d = 0; d <= w / 2 && !placed; d++)
+                for (int sg = 0; sg < (d ? 2 : 1) && !placed; sg++) {
+                    int dx = sg ? -d : d;
+                    Box t = {b0.x0 + dx, b0.y0, b0.x1 + dx, b0.y1};
+                    if (t.x0 < 1 || t.x1 > w - 1 || !floor_clear(g, box_grow(t, 1))) continue;
+                    b = t; g->play_dx[k] = dx; placed = 1;
+                }
+            g->play_on[k] = placed;
+            g->play[k] = b;
+            if (placed) add_keep(g, box_grow(b, 1), 1);
+        }
+        g->nplay = 2;
+        g->spots = theme_spots(th, w, h, g->play_dx);
+        g->spots.no_swing = !g->play_on[0]; g->spots.no_slide = !g->play_on[1];
+    }
+}
+
+/* AUTO room size: the scale the old estimate picks, or smaller until the placer seats all of this room's Clawds */
+int room_auto_scale(int pw, int ph, const Room *room) { /* (never bigger pixels than the old estimate; smaller when the placer needs it) */
+    static Geo g;
+    for (int k = auto_scale(pw, ph, room->n); k >= 1; k--) {
+        int w = pw / k, h = ph / k / 2 * 2;
+        if (w < SLOT_MIN_W || h < SLOT_H || w < ROAM_W || h < ROAM_H) continue;
+        geo_init(&g, room, w, h);
+        if (g.more == 0) return k;
+    }
+    return 1;
+}
+
 void geo_init(Geo *g, const Room *room, int w, int h) {
     int n = room->n, park = !strcmp(room->theme->name, "park");
     memset(g, 0, sizeof *g);
     g->w = w; g->h = h;
     View *v = &g->view;
     view_init(v, w, h);
-    g->spots = theme_spots(room->theme, w, h);
+    g->spots = theme_spots(room->theme, w, h, NULL);
     g->floor_y = (int)v->bb;
     Rows r;
     floor_rows(v, w, h, &r);
@@ -284,6 +419,7 @@ void geo_init(Geo *g, const Room *room, int w, int h) {
     for (int side = 0; side < 2; side++) g->door_y[side] = fy - 8;
     g->rope_x = (int)g->gate_in[SIDE_UP][0]; g->stairs_x = (int)g->gate_in[SIDE_DOWN][0];
     g->rope_end = (int)g->gate_in[SIDE_UP][1];
+    place_room(g, room, &r, n);
 }
 
 
@@ -308,12 +444,14 @@ static void draw_background(Canvas *cv, const Room *room, int banner, int count)
 static void it_background(Canvas *cv, const SceneItem *it, void *ctx) { DrawCtx *X = ctx; (void)it; draw_background(cv, X->room, X->geo->banner, X->active); }
 static void it_gate(Canvas *cv, const SceneItem *it, void *ctx) {
     DrawCtx *X = ctx;
-    theme_gate(X->room->theme, cv, X->geo, it->i, it->p, it->i < 2 ? X->room->door_open[it->i] : 0);
+    theme_gate(X->room->theme, cv, X->geo, it->i, it->p, it->i < 2 ? X->room->door_open[it->i] : 0, it->j);
 }
-static void it_sign(Canvas *cv, const SceneItem *it, void *ctx) {
+static void it_wall(Canvas *cv, const SceneItem *it, void *ctx) {
     DrawCtx *X = ctx;
-    theme_sign(X->room->theme, cv, X->room->title[0] ? X->room->title : X->room->theme->name, X->has_up, X->fence_sides, it->i);
+    theme_wall_item(X->room->theme, cv, &X->geo->wall.p[it->i], X->room->title[0] ? X->room->title : X->room->theme->name, X->has_up);
 }
+static void it_bush(Canvas *cv, const SceneItem *it, void *ctx) { DrawCtx *X = ctx; theme_bush(cv, X->geo->bush[it->i]); }
+static void it_play(Canvas *cv, const SceneItem *it, void *ctx) { DrawCtx *X = ctx; theme_play(X->room->theme, cv, it->i, X->geo->play_dx[it->i]); }
 static void it_no_sessions(Canvas *cv, const SceneItem *it, void *ctx) {
     DrawCtx *X = ctx;
     (void)it;
@@ -447,14 +585,22 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
     for (int i = 0; i < room->nnb; i++) {
         int side = room->nb[i].side;
         double p = fmin(1.0, fmax(0.0, (t - room->gate_t0[side]) / GATE_ANIM));
-        scene_add(sc, (SceneItem){.kind = GATE_KIND[side], .layer = LAYER_STRUCT, .owner = -1, .ax = geo.gate_out[side][0], .ay = geo.gate_out[side][1], .draw = it_gate, .i = side, .p = p});
+        int park = room->theme == theme_get("park");
+        if (side == SIDE_UP && !park) { /* the stairs: the steps, the platform, the opening (things may stand in front of the platform) */
+            scene_add(sc, (SceneItem){.kind = "gate-up", .layer = LAYER_STRUCT, .owner = -1, .ax = geo.gate_in[side][0], .ay = geo.gate_in[side][1], .draw = it_gate, .i = side, .j = 0, .p = p});
+            scene_add(sc, (SceneItem){.kind = "platform", .layer = LAYER_STRUCT, .owner = -1, .draw = it_gate, .i = side, .j = 1, .p = p});
+            scene_add(sc, (SceneItem){.kind = "opening", .layer = LAYER_STRUCT, .owner = -1, .ax = geo.gate_out[side][0], .ay = geo.gate_out[side][1], .draw = it_gate, .i = side, .j = 2, .p = p});
+        } else if (side < 2 && park) { /* the park's fence along the side, and the gate in it */
+            scene_add(sc, (SceneItem){.kind = "fence", .layer = LAYER_STRUCT, .owner = -1, .draw = it_gate, .i = side, .j = 0, .p = p});
+            scene_add(sc, (SceneItem){.kind = GATE_KIND[side], .layer = LAYER_STRUCT, .owner = -1, .ax = geo.gate_out[side][0], .ay = geo.gate_out[side][1], .draw = it_gate, .i = side, .j = 1, .p = p});
+        } else scene_add(sc, (SceneItem){.kind = GATE_KIND[side], .layer = LAYER_STRUCT, .owner = -1, .ax = geo.gate_out[side][0], .ay = geo.gate_out[side][1], .draw = it_gate, .i = side, .j = -1, .p = p});
     }
     /* the room's name as a sign in the room (after the gates: it hangs in front of the stairs), the park's bushes, the
      * things on the back wall */
-    for (int i = 0; i < room->nnb; i++) { if (room->nb[i].side == SIDE_UP) X.has_up = 1; if (room->nb[i].side == SIDE_LEFT) X.fence_sides |= 1; if (room->nb[i].side == SIDE_RIGHT) X.fence_sides |= 2; }
-    scene_add(sc, (SceneItem){.kind = "bushes", .layer = LAYER_STRUCT, .owner = -1, .draw = it_sign, .i = SIGN_BUSHES});
-    scene_add(sc, (SceneItem){.kind = "wall-decor", .layer = LAYER_STRUCT, .owner = -1, .draw = it_sign, .i = SIGN_DECOR});
-    scene_add(sc, (SceneItem){.kind = "sign", .layer = LAYER_STRUCT, .owner = -1, .draw = it_sign, .i = SIGN_BOARD});
+    X.has_up = geo.has_up; X.fence_sides = geo.fence_sides;
+    for (int k = 0; k < geo.wall.n; k++) /* the wall items where the placer put them (the sign hangs in front of the stairs) */
+        scene_add(sc, (SceneItem){.kind = geo.wall.p[k].kind, .layer = LAYER_STRUCT, .owner = -1, .ax = (geo.wall.p[k].box.x0 + geo.wall.p[k].box.x1) / 2.0, .ay = geo.wall.p[k].box.y1, .draw = it_wall, .i = k});
+    for (int k = 0; k < geo.nbush; k++) scene_add(sc, (SceneItem){.kind = "bush", .layer = LAYER_FLOOR, .owner = -1, .ax = geo.bush[k][0], .ay = geo.bush[k][1], .draw = it_bush, .i = k});
     int anyone = 0; /* any live session at all: linked rooms share them out, so this room may have none of its own */
     for (int i = 0; i < room->npool; i++) if (!room->pool[i].has_left) anyone = 1;
     if (room->n == 0 && !anyone) /* no Claude Code running anywhere: say so (visitors from other windows are still drawn) */
@@ -481,6 +627,8 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
         int me = scene_add(sc, (SceneItem){.kind = "clawd", .layer = LAYER_DEPTH, .depth = s->py + 8, .owner = -1, .ax = s->px, .ay = s->py + 8, .draw = it_clawd, .i = i});
         scene_add(sc, (SceneItem){.kind = "marks", .layer = LAYER_DEPTH, .owner = me, .draw = it_marks, .i = i}); /* (right after it: behind whatever stands in front) */
     }
+    for (int k = 0; k < geo.nplay; k++) if (geo.play_on[k]) /* the park's swing set and slide, in among the Clawds */
+        scene_add(sc, (SceneItem){.kind = k ? "slide" : "swing", .layer = LAYER_DEPTH, .depth = theme_play_ground(&geo.view, k), .owner = -1, .draw = it_play, .i = k});
     if (X.rail_p >= 0) scene_add(sc, (SceneItem){.kind = "rail", .layer = LAYER_DEPTH, .depth = rail_key, .owner = -1, .draw = it_rail});
     scene_add(sc, (SceneItem){.kind = "particles", .layer = LAYER_PARTICLE, .owner = -1, .draw = it_particles});
     for (int i = 0; i < X.np; i++) if (!X.people[i]->has_left && !strcmp(X.pstate[i], "wait")) /* the name of one that needs you, over everything */

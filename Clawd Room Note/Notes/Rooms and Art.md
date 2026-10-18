@@ -56,7 +56,7 @@ flowchart TB
 
 - Workspaces stand in **rows on the floor**, filled from the back; the **walking strip** is in front of the last row, down to the front edge.
 - A Clawd **sits behind its workspace** (its lower half hidden by the furniture).
-- Rows near the front **start right of the stair well** (front left), so no workspace lands on it.
+- **The placer** keeps everything apart (see [[Engine Design]]): wall items (sign, window, plant, menu, lamps, shelf, signpost) take free places by priority; workspaces only go where they keep clear of the gates (steps, opening, doors, well, treehouse and the floor in front of them), the playground, posts and bushes; a crowded park leaves out its swing and slide; a bush that would cover something is left out. `clawd-room --check` proves it: 0 overlaps in every room × gates × crowd × size.
 - When there are more sessions than places, the last place says **+N MORE**.
 
 | Constant | Value | Meaning |

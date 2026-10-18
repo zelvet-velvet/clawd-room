@@ -32,6 +32,8 @@ tags:
 - [ ] Office stairs are steel with slim steel balusters (no glass), coffee shop stairs wooden; the way up is a tall opening at the right end of the platform with steps going up and a light
 - [ ] The stair well's steps go down from its right end to the left (matching the stairs below); a Clawd going down walks in at the right
 - [ ] Coffee shop: the steps and the platform stand out from the wall and the floor (darker wood, a dark skirting)
+- [ ] Nothing overlaps in any room: sign, window, plant, menu, lamps, shelf; desks clear of the stairs, doors, well and treehouse (`o` shows the boxes)
+- [ ] Crowded park: the swing and slide give way to workspaces; a quiet park keeps them
 - [ ] With many sessions no workspace sits on the stair well
 - [ ] Stairs read as real steps (lit treads, a baluster on each step, the rail parallel to them); the platform reaches the corner; office window and coffee lamps clear of the sign and the opening
 - [ ] Side doors look tall enough for a Clawd; the stair well sits on open floor with a wooden rim and reads as a hole with steps going down

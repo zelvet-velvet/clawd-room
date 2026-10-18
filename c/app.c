@@ -314,7 +314,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                         opensetup_init(&setup, &desk.tool, title, a->font, a->size, &reports, 0, a->profile_font); has_setup = 1;
                         font_set = font_set || a->font;
                         room_order(&room);
-                        room.scale = size_scale(cols, rows * 2, size, room.n);
+                        room.scale = size_scale(cols, rows * 2, size, room.n, &room);
                         snprintf(flash, sizeof flash, "AUTO FONT AND SCALE");
                         flash_until = wall() + 3; have_prev = 0;
                         wipe();
@@ -337,7 +337,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
             cols = c; rows = r;
             have_prev = 0; dirty = 1;
             int prescale = room.scale;
-            if (auto_ && !strcmp(room.ratio, "auto") && !a->no_auto) { room_order(&room); room.scale = size_scale(cols, rows * 2, size, room.n); seen_n = room.n; } /* at once; undone below if it was the font */
+            if (auto_ && !strcmp(room.ratio, "auto") && !a->no_auto) { room_order(&room); room.scale = size_scale(cols, rows * 2, size, room.n, &room); seen_n = room.n; } /* at once; undone below if it was the font */
             if (!pend.has) { pend.has = 1; pend.t = wall(); pend.has_cell = reports.has_cell; pend.cell[0] = reports.cell[0]; pend.cell[1] = reports.cell[1]; pend.prescale = prescale; }
             reports.has_cell = 0;
             wipe(); puts_("\x1b[14t\x1b[16t"); /* ... and ask how big the text area and a cell are in pixels */
@@ -514,7 +514,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                 if (auto_ && !a->no_auto && !a->scale && !strcmp(room.ratio, "auto")) { /* grow, then scale: pick the scale again when the size or the Clawds change */
                     room_order(&room);
                     if (room.n != seen_n) {
-                        int k2 = size_scale(cols, rows * 2, size, room.n);
+                        int k2 = size_scale(cols, rows * 2, size, room.n, &room);
                         if (k2 != room.scale) { room.scale = k2; have_prev = 0; }
                         seen_n = room.n;
                     }
@@ -749,7 +749,7 @@ int app_main(int argc, char **argv) {
         room_prune(&room, now);
         draw_set_sprites(&frames, &items);
         room.freeze = 0;
-        if (a.room_size) { room_order(&room); room.scale = size_scale(cols, rows * 2, a.room_size, room.n); } /* (--scale is not used here, as before) */
+        if (a.room_size) { room_order(&room); room.scale = size_scale(cols, rows * 2, a.room_size, room.n, &room); } /* (--scale is not used here, as before) */
         char *text = dump_text(cols, rows, &room, now, 0.0);
         puts(text);
         free(text);

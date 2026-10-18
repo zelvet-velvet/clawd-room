@@ -46,6 +46,18 @@ gitGraph
 ---
 ## 2026-10-18
 
+### 📐 Engine step 2: the placer, 107 overlaps → 0
+> [!info] Branch `feat/style-a`
+- Wall items (sign, window, plant, menu, lamps, cup shelf, park signpost) are placed from each room's data by priority, around what the gates need to keep clear; the sign hangs higher instead of overlapping in small windows.
+- Workspaces are measured and only put where they are clear of the stairs, opening, doors, well, treehouse, playground and bushes; the bar first in the coffee shop; packed around obstacles when spreading evenly does not fit.
+- The park's swing and slide take the floor that is left (left out when crowded); bushes that would cover something are left out.
+- `--check`: **0 overlaps** in every room × gates × crowd × size. Very small rooms seat fewer Clawds than before (they used to overlap); AUTO room size asks the placer.
+- Found while testing with `--try`: gates come and go between linked rooms (older than this step); `--try` now uses a fixed scale while that is looked into.
+
+![[2026-10-18 placer office all gates 181x53.png|420]]
+![[2026-10-18 placer coffee all gates 181x53.png|420]]
+![[2026-10-18 placer park all gates 181x53.png|420]]
+
 ### 🧱 Engine step 1: the scene, the overlap check, the gallery, the overlay
 > [!info] Branch `feat/style-a`
 - The room is now drawn as a **scene of items on layers** (`c/scene.c`). The switch changed no pixel (every snapshot matched before updating).
@@ -267,7 +279,8 @@ Zaviel's sketch for the stairs and the doors that needed fixing:
 
 > [!todo] Waiting
 > - Merge `feat/camera-gates` and `feat/style-a` into `main` (after Zaviel's checks).
-> - The engine, in steps: ~~items and layers~~ (done) → placer and rooms as data (bring the 107 overlaps to 0) → props as sprites and the pixel editor → animator ([[Engine Design]]).
+> - The engine, in steps: ~~items and layers~~ → ~~placer~~ (0 overlaps) → props as sprites, rooms as text files and the pixel editor → animator ([[Engine Design]]).
+> - **Gates come and go between linked rooms** (seen with `--try`; also before the placer): find out why with `CLAWD_SIZE_LOG`. AUTO changing the scale as Clawds visit resets the "windows still" timer; `--try` now runs at `--scale 1`.
 > - `README.md` still describes the old flat look in places (banner, gates at the window edge).
 > - WSL: the profile from the dropdown opens at Windows Terminal's default size, then jumps once; planned a shortcut with `wt.exe -w new --size 60,18 -p "Clawd Room"`.
 > - The room can block writing if the terminal stops reading (seen with iTerm2 in full screen).

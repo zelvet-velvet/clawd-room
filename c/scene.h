@@ -27,6 +27,7 @@ struct SceneItem {
     double ax, ay;     /* the anchor (room pixels): where it stands */
     ItemDraw draw;
     int i;             /* for the draw callback: which desk / person / side */
+    int j;             /* ... a second one (which part of a gate) */
     double p;          /* for the draw callback: a parameter (a gate's appear animation) */
     /* filled by scene_draw when measuring */
     int seq, has_box, bx0, by0, bx1, by1; /* what it painted: [bx0, bx1) x [by0, by1) */

@@ -2,10 +2,11 @@
 #ifndef THEME_H
 #define THEME_H
 #include "canvas.h"
+#include "persp.h"
 
 typedef struct { int x, y, bar; } SwingSpot;
 typedef struct { int base[2], top[2], bottom[2]; } SlideSpot;
-typedef struct { int has; SwingSpot swing; SlideSpot slide; } Spots;
+typedef struct { int has, no_swing, no_slide; SwingSpot swing; SlideSpot slide; } Spots; /* (no_*: left out, no room for it) */
 
 typedef struct { const char *kind; double dur; } Emote;
 
@@ -23,10 +24,18 @@ const Theme *theme_pick(const char *room_name, const char *theme_name); /* the t
 void theme_background(const Theme *th, Canvas *cv, int banner);
 /* a workspace whose front edge is (cx, by); variant (a hash of the session) picks the device / drink / park thing */
 void theme_furniture(const Theme *th, Canvas *cv, int cx, int by, int on, Rgb color, double t, const char *role, unsigned variant);
-enum { SIGN_BUSHES, SIGN_DECOR, SIGN_BOARD }; /* theme_sign's parts: the park's bushes, things on the back wall (office window, coffee menu), the sign itself */
-void theme_sign(const Theme *th, Canvas *cv, const char *title, int has_up, int fence_sides, int part); /* the room's name as a sign in the room (and the coffee shop's menu when there are no stairs to hang it on) */
+#include "place.h"
+int theme_wall_specs(const Theme *th, const char *title, WallSpec *out, int max); /* the room's wall items, as data */
+void theme_wall_item(const Theme *th, Canvas *c, const Placed *pl, const char *title, int has_up); /* one, drawn where the placer put it */
+int theme_bushes(const Theme *th, const View *v, int fence_sides, int (*out)[4], int max); /* the park's bushes: x, y, size, right side */
+Box theme_bush_box(const int *bush);
+void theme_bush(Canvas *c, const int *bush);
+void theme_play(const Theme *th, Canvas *c, int which, int dx);   /* the park's swing set (0) and slide (1), moved dx across */
+double theme_play_ground(const View *v, int which);                /* ... how far forward they stand */
+Box theme_play_box(const Theme *th, int w, int h, int which);      /* ... what they cover */
+Box theme_footprint(const Theme *th, int w, int h, const char *role); /* a workspace and its seated Clawd, relative to (cx, by) */
 void theme_accessory(const Theme *th, Canvas *cv, int x, int y, const char *role);
 /* roles for the ordered sessions: role[i] is "" , "barista" or "customer" */
 const char *theme_role(const Theme *th, int index);
-Spots theme_spots(const Theme *th, int w, int h);
+Spots theme_spots(const Theme *th, int w, int h, const int *dx);
 #endif

@@ -117,8 +117,8 @@ static void swing_set(Canvas *c, int cx, int gy, int half, int seat_y) {
     canvas_rect(c, cx - 7, seat_y + 1, 15, 1, dk(seat, 0.3));
 }
 /* the playground's swing set: where it stands and where a Clawd on it is (for theme_spots) */
-static void play_swing(Canvas *c, const View *v, int w, int h, Spots *sp) {
-    int cx = (int)(w * PLAY_SWING_X), gy = (int)(v->bb + (h - v->bb) * PLAY_Y), seat_y = gy - 4;
+static void play_swing(Canvas *c, const View *v, int w, int h, Spots *sp, int dx) {
+    int cx = (int)(w * PLAY_SWING_X) + dx, gy = (int)(v->bb + (h - v->bb) * PLAY_Y), seat_y = gy - 4;
     if (sp) { sp->swing.x = cx; sp->swing.y = seat_y - 8; sp->swing.bar = seat_y - 13; return; }
     swing_set(c, cx, gy, 12, seat_y);
 }
@@ -142,27 +142,12 @@ static void slide_45(Canvas *c, const View *v, double fx, double fy, Spots *sp) 
 /* ---- backgrounds ----------------------------------------------------------------------------------------------------- */
 static void paint_office(const Theme *th, Canvas *c, const View *v) {
     room_box(c, v, RGB(150, 160, 178), th->wall, th->wall2, RGB(170, 178, 196), th->floor, th->floor2, 0, th->base);
-    if (v->bb - v->bt > 16) { /* (the window is drawn with the sign, where it is free) */
-        int px = (int)(v->br - (v->br - v->bl) * 0.1); /* a plant */
-        canvas_rect(c, px - 3, (int)v->bb - 13, 6, 8, RGB(90, 150, 90));
-        canvas_rect(c, px - 2, (int)v->bb - 5, 4, 4, RGB(170, 110, 80));
-    }
+    (void)v; /* (the window and the plant are wall items, placed by the placer) */
 }
 
 static void paint_coffee(const Theme *th, Canvas *c, const View *v) {
     room_box(c, v, RGB(118, 86, 66), th->wall, th->wall2, RGB(140, 104, 80), th->floor, th->floor2, 1, th->base);
-    for (int i = 0; i < 2; i++) { /* hanging lamps with a warm glow */
-        int lx = (int)(v->bl + (v->br - v->bl) * (0.6 + 0.16 * i)); /* (between the sign over the stairs and the opening at the platform's right end) */
-        canvas_rect(c, lx, (int)v->bt, 1, 4, RGB(80, 60, 48));
-        canvas_rect(c, lx - 2, (int)v->bt + 4, 5, 2, RGB(230, 190, 110));
-        canvas_px(c, lx, (int)v->bt + 6, RGB(255, 230, 150));
-    }
-    if (v->bb - v->bt > 16) {
-        int sx0 = (int)(v->bl + (v->br - v->bl) * 0.36), sy0 = (int)v->bb - 9; /* a shelf of cups and beans */
-        canvas_rect(c, sx0, sy0, 24, 1, RGB(120, 92, 66));
-        for (int i = 0; i < 5; i++) canvas_rect(c, sx0 + 1 + i * 5, sy0 - 3, 3, 3, i % 2 ? C_WHITE : RGB(120, 80, 50));
-
-    }
+    (void)v; /* (the lamps, the shelf and the menu are wall items, placed by the placer) */
 }
 
 static void paint_park(const Theme *th, Canvas *c, const View *v) {
@@ -182,8 +167,7 @@ static void paint_park(const Theme *th, Canvas *c, const View *v) {
     canvas_rect(c, tx - 2, ty - 26, 5, 26, RGB(120, 86, 56));
     blob(c, tx, ty - 30, 6, RGB(70, 140, 70));
     blob(c, tx - 8, ty - 25, 4, RGB(66, 132, 66));
-    play_swing(c, v, w, h, NULL);
-    slide_45(c, v, w * PLAY_SLIDE_X, v->bb + (h - v->bb) * PLAY_Y, NULL);
+    /* (the swing and the slide are items in among the Clawds) */
 }
 
 /* ---- the workspaces (at the front edge (cx, by); the Clawd sits behind, its body top at by + SEAT_DY) -------------------- */
@@ -324,12 +308,15 @@ static void wall_door(Canvas *c, const View *v, int right, double fx, double fy,
         if (in_leaf && back - 1 == leaf_cols - 1 && open < 0.4 && p >= 1) canvas_px(c, x, (top + bot) / 2, KNOB);
     }
 }
-static void fence_gate(Canvas *c, const View *v, int right, double fx, double fy, double p) { /* the park: a fence along that side with a gate */
+static void fence_gate(Canvas *c, const View *v, int right, double fx, double fy, double p, int part) { /* the park: a fence along that side (part 0) with a gate (part 1; -1 both) */
     double xw = right ? v->xw : -v->xw, X, Z, zf = 1.0, zb = v->zb, e = view_e(v, 8) * p;
     view_world(v, fx, fy, &X, &Z);
     if (e <= 0) return;
-    for (double z = zf; z <= zb; z += 0.05) canvas_rect(c, (int)view_sx(v, xw, z), (int)view_sy(v, z, e), 1, (int)(view_sy(v, z, 0) - view_sy(v, z, e)) + 1, RGB(214, 186, 138));
-    wq(c, v, xw, zf, e * 0.8, xw, zb, e * 0.8, xw, zb, e * 0.9, xw, zf, e * 0.9, RGB(214, 186, 138));
+    if (part <= 0) {
+        for (double z = zf; z <= zb; z += 0.05) canvas_rect(c, (int)view_sx(v, xw, z), (int)view_sy(v, z, e), 1, (int)(view_sy(v, z, 0) - view_sy(v, z, e)) + 1, RGB(214, 186, 138));
+        wq(c, v, xw, zf, e * 0.8, xw, zb, e * 0.8, xw, zb, e * 0.9, xw, zf, e * 0.9, RGB(214, 186, 138));
+    }
+    if (part == 0) return;
     double g0 = Z - 0.06 * Z, g1 = Z + 0.06 * Z, ge = view_e(v, 11) * p;
     wq(c, v, xw, g0, 0, xw, g1, 0, xw, g1, ge, xw, g0, ge, RGB(150, 118, 80));
     wq(c, v, xw, g0 + 0.01, view_e(v, 1), xw, g1 - 0.01, view_e(v, 1), xw, g1 - 0.01, ge * 0.85, xw, g0 + 0.01, ge * 0.85, RGB(226, 200, 150));
@@ -377,7 +364,7 @@ static void upstairs_opening(Canvas *c, int x, int floor_y, int w, int h, const 
     }
 }
 
-static void back_stairs(Canvas *c, const View *v, int coffee, double p) {
+static void back_stairs(Canvas *c, const View *v, int coffee, double p, int part) { /* part: -1 all, 0 the steps, 1 the platform, 2 the opening */
     const StairStyle *st = coffee ? &WOOD_STAIRS : &STEEL_STAIRS;
     double fx0, fx1, fyl;
     stairs_geometry(v, &fx0, &fx1, &fyl);
@@ -388,20 +375,21 @@ static void back_stairs(Canvas *c, const View *v, int coffee, double p) {
     Rgb side = st->side, tread = st->tread, riser = st->riser;
     /* the steps, seen from the front: each a block from the floor up to its tread (so the side is a sawtooth), the tread a
      * lit strip on top (seen from above), a shadow line where the next step rises */
-    for (int i = 0; i < shown; i++) {
+    for (int i = 0; i < shown && part <= 0; i++) {
         int sx = x0 + (x1 - x0) * i / n, ex = x0 + (x1 - x0) * (i + 1) / n, ty = y0 - (y0 - yl) * (i + 1) / n;
         canvas_rect(c, sx, ty + 1, ex - sx, y0 - ty, side);
         canvas_rect(c, sx, ty - 1, ex - sx, 2, tread);
         canvas_rect(c, sx, ty + 1, ex - sx, 1, riser);
     }
-    if (p < 1) return;
+    if (p < 1 || part == 0) return;
+    int dw = ARCH_W, dh = (int)fmin(ARCH_H, yl - v->bt - 2), dxl = xr - dw - ARCH_IN; /* at the right end of the platform */
+    if (part == 2) { if (dh > 6) upstairs_opening(c, dxl, yl - 1, dw, dh, st); return; }
     /* the platform: its top (a strip, lit), its front face down to the floor, its end against the right-hand wall */
     canvas_rect(c, x1, yl - 1, xr - x1, 2, tread);
     canvas_rect(c, x1, yl + 1, xr - x1, y0 - yl, side);
     canvas_rect(c, x1, yl + 1, xr - x1, 1, riser);
     canvas_rect(c, x0, y0, xr - x0, 1, dk(side, 0.45)); /* a dark skirting along the floor, under the steps and the platform */
-    int dw = ARCH_W, dh = (int)fmin(ARCH_H, yl - v->bt - 2), dxl = xr - dw - ARCH_IN; /* at the right end of the platform */
-    if (dh > 6) upstairs_opening(c, dxl, yl - 1, dw, dh, st);
+    if (part < 0 && dh > 6) upstairs_opening(c, dxl, yl - 1, dw, dh, st);
     if (coffee && xr - x1 > 20 && y0 - yl >= 11) menu_board(c, (x1 + xr) / 2 - 8, yl + 1 + (y0 - yl - 11) / 2); /* the menu on the platform's face */
 }
 
@@ -488,75 +476,188 @@ void theme_stair_rail(const Theme *th, Canvas *c, const Geo *g, double p) {
     (void)x1;
 }
 
-void theme_gate(const Theme *th, Canvas *cv, const Geo *g, int side, double p, double open) {
+void theme_gate(const Theme *th, Canvas *cv, const Geo *g, int side, double p, double open, int part) {
     const View *v = &g->view;
     if (side == SIDE_LEFT || side == SIDE_RIGHT) {
-        if (th == &PARK) fence_gate(cv, v, side == SIDE_RIGHT, g->gate_out[side][0], g->gate_out[side][1], p);
+        if (th == &PARK) fence_gate(cv, v, side == SIDE_RIGHT, g->gate_out[side][0], g->gate_out[side][1], p, part);
         else wall_door(cv, v, side == SIDE_RIGHT, g->gate_out[side][0], g->gate_out[side][1], p, open);
     } else if (side == SIDE_UP) {
         if (th == &PARK) treehouse(cv, cv->w, v, p);
-        else back_stairs(cv, v, th == &COFFEE, p);
+        else back_stairs(cv, v, th == &COFFEE, p, part);
     } else {
         stair_well(cv, v, p, th == &PARK);
     }
 }
 
-/* ---- the room's sign: an office plaque, the coffee shop's sign, a park signpost --------------------------------------- */
-void theme_sign(const Theme *th, Canvas *c, const char *title, int has_up, int fence_sides, int part) {
+/* ---- the rooms' wall items, as data (place.h): what, how big, where it would like to be, how much it matters ----------- */
+static const WallSpec OFFICE_WALL[] = {
+    {"sign", 0, 9, BAND_TOP, 0.5, 0.2, 9, WHEN_ALWAYS},
+    {"window", 14, 9, BAND_TOP, 0.12, 0.6, 5, WHEN_ALWAYS},
+    {"plant", 6, 12, BAND_FLOOR, 0.9, 0.1, 2, WHEN_ALWAYS},
+};
+static const WallSpec COFFEE_WALL[] = {
+    {"sign", 0, 9, BAND_TOP, 0.32, 0.2, 9, WHEN_ALWAYS},
+    {"menu", 16, 11, BAND_TOP, 0.82, 0.82, 6, WHEN_NO_UP}, /* (with stairs it hangs on the platform's face) */
+    {"lamp", 5, 7, BAND_CEIL, 0.6, 0.6, 3, WHEN_ALWAYS},
+    {"lamp", 5, 7, BAND_CEIL, 0.76, 0.76, 3, WHEN_ALWAYS},
+    {"shelf", 24, 4, BAND_SHELF, 0.46, 0.1, 2, WHEN_ALWAYS},
+};
+static const WallSpec PARK_WALL[] = {
+    {"signpost", 0, 20, BAND_POST, 0.12, 0.12, 9, WHEN_ALWAYS},
+};
+static void sign_words(const char *title, char *t, size_t n) {
+    snprintf(t, n, "%.12s", title);
+    for (char *p = t; *p; p++) if (*p >= 'a' && *p <= 'z') *p -= 32;
+}
+int theme_wall_specs(const Theme *th, const char *title, WallSpec *out, int max) {
+    const WallSpec *src = th == &COFFEE ? COFFEE_WALL : th == &PARK ? PARK_WALL : OFFICE_WALL;
+    int n = th == &COFFEE ? (int)(sizeof COFFEE_WALL / sizeof *COFFEE_WALL) : th == &PARK ? (int)(sizeof PARK_WALL / sizeof *PARK_WALL) : (int)(sizeof OFFICE_WALL / sizeof *OFFICE_WALL);
+    char t[24];
+    sign_words(title, t, sizeof t);
+    for (int i = 0; i < n && i < max; i++) {
+        out[i] = src[i];
+        if (out[i].w == 0) out[i].w = text_width(t) + 6; /* the sign: as wide as its words */
+    }
+    return n < max ? n : max;
+}
+/* a placed wall item, drawn in its box */
+void theme_wall_item(const Theme *th, Canvas *c, const Placed *pl, const char *title, int has_up) {
+    int x0 = pl->box.x0, y0 = pl->box.y0, w = pl->box.x1 - pl->box.x0;
+    char t[24];
+    sign_words(title, t, sizeof t);
+    if (!strcmp(pl->kind, "sign")) {
+        Rgb board = th == &COFFEE ? RGB(120, 70, 48) : RGB(70, 84, 110), ink = th == &COFFEE ? RGB(250, 226, 170) : RGB(235, 240, 250);
+        if (has_up) for (int k = 1; k <= 2; k++) { canvas_px(c, x0 + 2, y0 - k, RGB(70, 56, 46)); canvas_px(c, x0 + w - 3, y0 - k, RGB(70, 56, 46)); } /* cords: it hangs */
+        canvas_rect(c, x0, y0, w, 9, board);
+        canvas_rect(c, x0, y0 + 8, w, 1, dk(board, 0.35));
+        canvas_text(c, x0 + 3, y0 + 2, t, ink);
+    } else if (!strcmp(pl->kind, "signpost")) { /* the park: a board on a post */
+        int gx = x0 + w / 2, gy = pl->box.y1;
+        canvas_rect(c, gx, gy - 12, 1, 12, RGB(120, 86, 56));
+        canvas_rect(c, x0, gy - 20, w, 9, RGB(150, 112, 72));
+        canvas_rect(c, x0, gy - 12, w, 1, RGB(110, 80, 52));
+        canvas_text(c, x0 + 3, gy - 18, t, RGB(250, 236, 200));
+    } else if (!strcmp(pl->kind, "window")) {
+        canvas_rect(c, x0, y0, 14, 9, RGB(240, 244, 250));
+        canvas_rect(c, x0 + 1, y0 + 1, 12, 7, RGB(150, 200, 236));
+        canvas_rect(c, x0 + 6, y0, 1, 9, RGB(240, 244, 250));
+    } else if (!strcmp(pl->kind, "plant")) {
+        canvas_rect(c, x0, y0, 6, 8, RGB(90, 150, 90));
+        canvas_rect(c, x0 + 1, y0 + 8, 4, 4, RGB(170, 110, 80));
+    } else if (!strcmp(pl->kind, "menu")) menu_board(c, x0, y0);
+    else if (!strcmp(pl->kind, "lamp")) { /* hanging from the ceiling, a warm glow */
+        int lx = x0 + 2;
+        canvas_rect(c, lx, y0, 1, 4, RGB(80, 60, 48));
+        canvas_rect(c, lx - 2, y0 + 4, 5, 2, RGB(230, 190, 110));
+        canvas_px(c, lx, y0 + 6, RGB(255, 230, 150));
+    } else if (!strcmp(pl->kind, "shelf")) { /* cups and beans */
+        canvas_rect(c, x0, y0 + 3, 24, 1, RGB(120, 92, 66));
+        for (int i = 0; i < 5; i++) canvas_rect(c, x0 + 1 + i * 5, y0, 3, 3, i % 2 ? C_WHITE : RGB(120, 80, 50));
+    }
+}
+
+/* the park's bushes along the sides without a fence (nearer = bigger): where they would go; the room leaves out any that
+ * would cover something */
+int theme_bushes(const Theme *th, const View *v, int fence_sides, int (*out)[4], int max) {
+    int n = 0;
+    if (th != &PARK) return 0;
+    for (int i = 0; i < 4; i++) {
+        double y = v->bb + 2 + (v->h - v->bb) * i / 4.0, xl, xr;
+        view_floor_span(v, y, &xl, &xr);
+        if (!(fence_sides & 1) && n < max) { out[n][0] = (int)xl; out[n][1] = (int)y; out[n][2] = 2 + i; out[n][3] = 0; n++; }
+        if (!(fence_sides & 2) && n < max) { out[n][0] = (int)xr; out[n][1] = (int)y; out[n][2] = 2 + i; out[n][3] = 1; n++; }
+    }
+    return n;
+}
+Box theme_bush_box(const int *b) { return (Box){b[0] - b[2] - 2, b[1] - b[2], b[0] + b[2] + 3, b[1] + b[2] + 1}; }
+void theme_bush(Canvas *c, const int *b) { blob(c, b[0], b[1], b[2], b[3] ? RGB(56, 114, 58) : RGB(60, 120, 62)); }
+
+/* the park's playground: 0 the swing set, 1 the slide; where it stands (its ground y, for the depth) */
+void theme_play(const Theme *th, Canvas *c, int which, int dx) {
+    if (th != &PARK) return;
     View v;
     view_init(&v, c->w, c->h);
-    if (part == SIGN_BUSHES && th == &PARK) for (int i = 0; i < 4; i++) { /* bushes along the sides without a fence, nearer = bigger */
-        double y = v.bb + 2 + (c->h - v.bb) * i / 4.0, xl, xr;
-        view_floor_span(&v, y, &xl, &xr);
-        if (!(fence_sides & 1) && i < 3) blob(c, (int)xl, (int)y, 2 + i, RGB(60, 120, 62)); /* (not the front one: the stair well is there) */
-        if (!(fence_sides & 2)) blob(c, (int)xr, (int)y, 2 + i, RGB(56, 114, 58));
+    if (which == 0) play_swing(c, &v, c->w, c->h, NULL, dx);
+    else slide_45(c, &v, c->w * PLAY_SLIDE_X + dx, v.bb + (c->h - v.bb) * PLAY_Y, NULL);
+}
+double theme_play_ground(const View *v, int which) { return which == 0 ? (int)(v->bb + (v->h - v->bb) * PLAY_Y) - 6 : v->bb + (v->h - v->bb) * PLAY_Y + 1; }
+
+/* ---- measuring: what a drawing covers (drawn once on an empty canvas of the room's size) ------------------------------ */
+static const Rgb KEY = {1, 2, 3};
+static Box changed(const Canvas *c) {
+    Box b = {c->w, c->h, -1, -1};
+    for (int y = 0; y < c->h; y++) for (int x = 0; x < c->w; x++) {
+        if (rgb_eq(c->p[y * c->w + x], KEY)) continue;
+        if (x < b.x0) b.x0 = x;
+        if (y < b.y0) b.y0 = y;
+        if (x + 1 > b.x1) b.x1 = x + 1;
+        if (y + 1 > b.y1) b.y1 = y + 1;
     }
-    char t[24];
-    snprintf(t, sizeof t, "%.12s", title);
-    for (char *p = t; *p; p++) if (*p >= 'a' && *p <= 'z') *p -= 32;
-    int tw = text_width(t), w = tw + 6;
-    if (part == SIGN_BUSHES) return;
-    if (th == &PARK) {
-        if (part != SIGN_BOARD) return;
-        int gx = (int)(c->w * 0.12), gy = (int)v.bb + 4;
-        canvas_rect(c, gx, gy - 12, 1, 12, RGB(120, 86, 56));
-        canvas_rect(c, gx - w / 2, gy - 20, w, 9, RGB(150, 112, 72));
-        canvas_rect(c, gx - w / 2, gy - 12, w, 1, RGB(110, 80, 52));
-        canvas_text(c, gx - w / 2 + 3, gy - 18, t, RGB(250, 236, 200));
-        return;
+    if (b.x1 < 0) b = (Box){0, 0, 0, 0};
+    return b;
+}
+Box theme_play_box(const Theme *th, int w, int h, int which) { /* (where it stands without moving it; dx shifts the box) */
+    Canvas c = canvas_new(w, h, KEY);
+    theme_play(th, &c, which, 0);
+    Box b = changed(&c);
+    canvas_free(&c);
+    return b;
+}
+/* a workspace with its Clawd seated, relative to its front edge (cx, by): the union over its variants */
+Box theme_footprint(const Theme *th, int w, int h, const char *role) {
+    View v;
+    view_init(&v, w, h);
+    int cx = w / 2, by = (int)(v.bb + (h - v.bb) * 0.5);
+    Canvas c = canvas_new(w, h, KEY);
+    for (unsigned k = 0; k < 6; k++) theme_furniture(th, &c, cx, by, 1, RGB(110, 230, 120), 0, role, k);
+    Box b = changed(&c);
+    canvas_free(&c);
+    Box me = {cx - 5 - 7, by + SEAT_DY - 5, cx - 5 + 8, by + SEAT_DY + 9}; /* the seated Clawd and the dot over it */
+    if (me.x0 < b.x0) b.x0 = me.x0;
+    if (me.y0 < b.y0) b.y0 = me.y0;
+    if (me.x1 > b.x1) b.x1 = me.x1;
+    if (me.y1 > b.y1) b.y1 = me.y1;
+    return (Box){b.x0 - cx, b.y0 - by, b.x1 - cx, b.y1 - by};
+}
+/* what must stay clear around a gate: the steps, their foot and the opening (not the platform's face: things in front of it
+ * are fine); the door, the gate in the fence, the well, the treehouse, and the floor between a gate's in and out points.
+ * mask: 1 for the floor (workspaces, bushes), 2 for the wall (wall items), 4 soft (only walked on: given up when the room
+ * is too full) */
+int theme_keep_clear(const Theme *th, const Geo *g, int side, Box *out, int *mask, int max) {
+    const View *v = &g->view;
+    int n = 0;
+#define KEEP(B, M) do { if (n < max) { out[n] = (B); mask[n] = (M); n++; } } while (0)
+    double ix = g->gate_in[side][0], iy = g->gate_in[side][1], ox = g->gate_out[side][0], oy = g->gate_out[side][1];
+    if (side == SIDE_UP && th != &PARK) {
+        double fx0, fx1, fyl;
+        stairs_geometry(v, &fx0, &fx1, &fyl);
+        int x0 = (int)fx0, x1 = (int)fx1, xr = (int)ceil(v->br), yl = (int)fyl, bb = (int)v->bb;
+        int dw = ARCH_W, dh = (int)fmin(ARCH_H, yl - v->bt - 2), dxl = xr - dw - ARCH_IN;
+        KEEP(((Box){x0 - 3, yl - 9, x1 + 2, bb + 1}), 3);              /* the steps and their railing */
+        KEEP(((Box){x1, yl - 9, xr + 1, bb + 1}), 2);                  /* the platform (only for the wall items) */
+        KEEP(((Box){dxl - 2, yl - 2 - dh, dxl + dw + 2, yl + 1}), 3);  /* the opening */
+        KEEP(((Box){x0 - 14, bb - 1, x0 + 4, bb + 10}), 5);            /* the foot of the stairs */
+        return n;
     }
-    if (part == SIGN_DECOR && th == &COFFEE && !has_up && v.bb - v.bt > 16) menu_board(c, (int)(v.bl + (v.br - v.bl) * 0.76), (int)v.bt + 4); /* (with stairs it hangs on them) */
-    Rgb board = th == &COFFEE ? RGB(120, 70, 48) : RGB(70, 84, 110), ink = th == &COFFEE ? RGB(250, 226, 170) : RGB(235, 240, 250);
-    /* centred on the back wall; with the stairs there, in the free space at the top left (above the stairs' foot) */
-    int cx = has_up ? (int)(v.bl + (v.br - v.bl) * 0.16) + 4 : th == &COFFEE ? (int)(v.bl + (v.br - v.bl) * 0.32) : c->w / 2, y = (int)v.bt + (has_up ? 1 : 2);
-    if (cx - w / 2 < (int)v.bl - 6) cx = (int)v.bl - 6 + w / 2;
-    if (part == SIGN_BOARD && has_up) { canvas_px(c, cx - w / 2 + 2, y - 1, RGB(70, 56, 46)); canvas_px(c, cx + w / 2 - 3, y - 1, RGB(70, 56, 46)); canvas_px(c, cx - w / 2 + 2, y - 2, RGB(70, 56, 46)); canvas_px(c, cx + w / 2 - 3, y - 2, RGB(70, 56, 46)); } /* cords: it hangs in front of the stairs */
-    if (part == SIGN_DECOR && th == &OFFICE && v.bb - v.bt > 16) { /* a window on the back wall: left of the sign, or with the stairs over the platform */
-        double sx0, sx1, syl;
-        stairs_geometry(&v, &sx0, &sx1, &syl);
-        int wx = has_up ? (int)(v.bl + (v.br - v.bl) * 0.6) - 7 : (int)(v.bl + (v.br - v.bl) * 0.12), wy = (int)v.bt + (has_up ? 3 : 4);
-        int clear = (wx + 14 < cx - w / 2 - 2 || wx > cx + w / 2 + 2) && (!has_up || (wy + 9 < syl - 9 && wx + 14 < v.br - ARCH_IN - ARCH_W - 2));
-        if (clear) {
-            canvas_rect(c, wx, wy, 14, 9, RGB(240, 244, 250));
-            canvas_rect(c, wx + 1, wy + 1, 12, 7, RGB(150, 200, 236));
-            canvas_rect(c, wx + 6, wy, 1, 9, RGB(240, 244, 250));
-        }
-    }
-    if (part != SIGN_BOARD) return;
-    canvas_rect(c, cx - w / 2, y, w, 9, board);
-    canvas_rect(c, cx - w / 2, y + 8, w, 1, dk(board, 0.35));
-    canvas_text(c, cx - w / 2 + 3, y + 2, t, ink);
+    Canvas c = canvas_new(v->w, v->h, KEY);
+    theme_gate(th, &c, g, side, 1.0, 0.0, (th == &PARK && side < 2) ? 1 : -1); /* (the park: only the gate in the fence) */
+    Box b = changed(&c);
+    canvas_free(&c);
+    if (b.x1 > b.x0) KEEP(box_grow(b, 1), 3);
+    KEEP(((Box){(int)fmin(ix, ox) - 8, (int)fmin(iy, oy) - 10, (int)fmax(ix, ox) + 8, (int)fmax(iy, oy) + 4}), 5); /* stepping on and off */
+#undef KEEP
+    return n;
 }
 
 /* ---- common ---------------------------------------------------------------------------------------------------------- */
-Spots theme_spots(const Theme *th, int w, int h) { /* the park's swing and slide (where a Clawd sits, climbs and slides) */
+Spots theme_spots(const Theme *th, int w, int h, const int *dx) { /* the park's swing and slide (where a Clawd sits, climbs and slides), moved by dx[] */
     Spots s = {0};
     if (th != &PARK) return s;
     View v;
     view_init(&v, w, h);
     s.has = 1;
-    play_swing(NULL, &v, w, h, &s);
-    slide_45(NULL, &v, w * PLAY_SLIDE_X, v.bb + (h - v.bb) * PLAY_Y, &s);
+    play_swing(NULL, &v, w, h, &s, dx ? dx[0] : 0);
+    slide_45(NULL, &v, w * PLAY_SLIDE_X + (dx ? dx[1] : 0), v.bb + (h - v.bb) * PLAY_Y, &s);
     return s;
 }
 

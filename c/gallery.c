@@ -35,18 +35,22 @@ static const char *SESSIONS[] = {
 };
 #define N(a) ((int)(sizeof a / sizeof a[0]))
 
-/* which kinds must not paint over each other: gates, the sign, things on the wall, the park's bushes, desks, the railing */
+/* which kinds must not paint over each other: gates, wall items, bushes, the playground, desks, the railing */
 static char cat(const char *kind) {
-    if (!strncmp(kind, "gate-", 5)) return 'G';
-    if (!strcmp(kind, "sign")) return 'S';
-    if (!strcmp(kind, "wall-decor")) return 'W';
-    if (!strcmp(kind, "bushes")) return 'B';
-    if (!strcmp(kind, "desk")) return 'D';
-    if (!strcmp(kind, "rail")) return 'R';
+    static const char *const K[] = {"gate-left", "gate-right", "gate-up", "gate-down", "opening", "platform", "fence", "sign", "signpost", "window",
+                                    "plant", "menu", "lamp", "shelf", "bush", "swing", "slide", "desk", "rail"};
+    for (size_t i = 0; i < sizeof K / sizeof K[0]; i++) if (!strcmp(kind, K[i])) return 1;
     return 0;
 }
-static int allowed(const char *a, const char *b) { /* the railing belongs to the stairs */
-    return (!strcmp(a, "rail") && !strcmp(b, "gate-up")) || (!strcmp(b, "rail") && !strcmp(a, "gate-up"));
+static int allowed(const char *a, const char *b) {
+    static const char *const OK[][2] = {
+        {"rail", "gate-up"}, {"rail", "platform"}, {"rail", "opening"}, {"platform", "gate-up"}, {"opening", "platform"}, /* one structure */
+        {"gate-left", "fence"}, {"gate-right", "fence"}, /* one fence */
+        {"desk", "platform"}, {"desk", "fence"}, {"swing", "fence"}, {"slide", "fence"}, /* standing in front of the platform's face or a plain fence */
+    };
+    for (size_t i = 0; i < sizeof OK / sizeof OK[0]; i++)
+        if ((!strcmp(a, OK[i][0]) && !strcmp(b, OK[i][1])) || (!strcmp(b, OK[i][0]) && !strcmp(a, OK[i][1]))) return 1;
+    return 0;
 }
 
 static int one(const char *theme, int g, int people, int cols, int rows, Canvas *out, int *problems) {

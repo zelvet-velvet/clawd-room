@@ -43,6 +43,11 @@ typedef struct {
     int home[MAX_SESS][2];   /* by index in room->s (only the first `shown`) */
     double door_y[2];
     Spots spots;
+    int has_up, fence_sides;   /* stairs or a treehouse; the sides with a park fence (1 left, 2 right) */
+    WallPlan wall;             /* the wall items where the placer put them */
+    Box keep[48]; int keep_mask[48], nkeep; /* what must stay clear: the gates, the playground, posts, bushes (mask 1 floor, 2 wall) */
+    int bush[8][4], nbush;     /* the park's bushes that fit: x, y, size, right side */
+    Box play[2]; int nplay, play_dx[2], play_on[2]; /* the park's swing set and slide, and how far the placer moved them across */
 } Geo;
 
 typedef struct {
@@ -111,10 +116,12 @@ typedef struct {
 #define SEAT_DY -12 /* a Clawd sits behind its desk / table: its body top this far above the furniture's front edge */
 
 
+int room_auto_scale(int pw, int ph, const Room *room); /* AUTO room size: the biggest scale at which the placer seats everyone */
 void layout_slots(int w, int h, int n, int *banner, int *per_row, int *slot_w, int *rows_shown, int *ys);
 void geo_init(Geo *g, const Room *room, int w, int h);
 /* a gate in this theme (door / fence gate, stairs / treehouse, stair well / stone steps); p 0..1 how far it has appeared */
-void theme_gate(const Theme *th, Canvas *cv, const Geo *g, int side, double p, double open);
+void theme_gate(const Theme *th, Canvas *cv, const Geo *g, int side, double p, double open, int part); /* part -1: all of it */
+int theme_keep_clear(const Theme *th, const Geo *g, int side, Box *out, int *mask, int max); /* what must stay clear around a gate (mask 1 floor, 2 wall) */
 void theme_stair_rail(const Theme *th, Canvas *c, const Geo *g, double p); /* the stairs' railing (drawn in among the Clawds) */
 void stairs_geometry(const View *v, double *x0, double *x1, double *yl); /* the stairs on the back wall: foot x, top x, landing y */
 int stairs_feet_y(const View *v, double x); /* the row a Clawd's feet are on at column x on the stairs (-1 off them) */

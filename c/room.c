@@ -401,6 +401,7 @@ static void plan(Room *r, Session *s, int has_seat, double seat_x, double seat_y
         set_floor_goal(s, geo, x, y);
     } else if (social && roll < 0.87) {
         Emote em = r->theme->emotes[rng_choice(rng, r->theme->nemotes)];
+        if ((!strcmp(em.kind, "swing") && geo->spots.no_swing) || (!strcmp(em.kind, "slide") && geo->spots.no_slide)) em.kind = "wave"; /* (left out: no room) */
         int spot = geo->spots.has && (!strcmp(em.kind, "swing") || !strcmp(em.kind, "slide"));
         if (spot) { /* play equipment: walk there first */
             if (!strcmp(em.kind, "swing")) set_goal(s, geo->spots.swing.x, geo->spots.swing.y);

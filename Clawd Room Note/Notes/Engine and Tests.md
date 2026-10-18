@@ -47,6 +47,7 @@ flowchart LR
 | `draw.c` | layout (`geo_init`), building the frame's scene, the debug overlay, the camera view |
 | `scene.c` | the scene: items on layers, drawn back to front, measured for the overlap check and the overlay |
 | `gallery.c` | `--check` (overlaps) and `--gallery DIR` (contact sheets) |
+| `place.c` | the placer: wall items by priority around what must stay clear |
 | `theme.c` | the three rooms: backgrounds, workspaces, gates, signs |
 | `persp.c` | vanishing point, floor mapping, quads, boxes |
 | `camera.c` | what the zoomed camera follows |

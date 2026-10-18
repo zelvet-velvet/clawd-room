@@ -35,8 +35,8 @@ const char *const SIZE_LABEL[N_SIZES] = {"AUTO", "S  120X60", "M  160X90", "L  2
 const char *const SIZE_KEY[N_SIZES] = {"auto", "s", "m", "l", "xl"};
 const int SIZE_MAX_W[N_SIZES] = {0, 120, 160, 220, 300}, SIZE_MAX_H[N_SIZES] = {0, 60, 90, 120, 160};
 
-int size_scale(int pw, int ph, int size, int n) {
-    if (size <= 0 || size >= N_SIZES) return auto_scale(pw, ph, n);
+int size_scale(int pw, int ph, int size, int n, const Room *room) {
+    if (size <= 0 || size >= N_SIZES) return room ? room_auto_scale(pw, ph, room) : auto_scale(pw, ph, n);
     int kw = (pw + SIZE_MAX_W[size] - 1) / SIZE_MAX_W[size], kh = (ph + SIZE_MAX_H[size] - 1) / SIZE_MAX_H[size];
     int k = kw > kh ? kw : kh;
     return k < 1 ? 1 : k;
