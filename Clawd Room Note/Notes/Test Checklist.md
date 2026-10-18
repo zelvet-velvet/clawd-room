@@ -24,7 +24,7 @@ tags:
 ## Gates and crossing ([[Interaction]])
 - [x] Two linked windows side by side: gates appear, `g` sends a Clawd across (2026-10-17, older gates)
 - [ ] Side by side: a door on each room's facing wall; `g`: the Clawd walks to the door, it opens, the Clawd goes through and comes out of the other room's door
-- [ ] Stacked: the upper room shows the small stair well at the back right (office / coffee) or stone steps (park); the lower room shows the stairs on the back wall (office / coffee) or the treehouse (park)
+- [ ] Stacked: the upper room shows the small stair well at the back right (office / coffee) or a small stone well between the swing and the slide (park); the lower room shows the stairs on the back wall (office / coffee) or the treehouse (park)
 - [ ] Office stairs are steel with slim steel balusters (no glass), coffee shop stairs wooden; the way up is a tall opening at the right end of the platform with steps going up and a light
 - [ ] Side doors look tall enough for a Clawd; the stair well sits on open floor with a wooden rim and reads as a hole with steps going down
 - [ ] Going up: the Clawd climbs the stairs to the half floor, walks along it and goes through the opening (or up the treehouse ladder); coming down the other way round; going down: it walks into the well / steps

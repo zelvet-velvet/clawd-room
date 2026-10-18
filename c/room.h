@@ -100,11 +100,11 @@ typedef struct {
 #define PLAY_Y 0.62        /* the park's swing and slide stand this far down the floor */
 #define PLAY_SWING_X 0.23  /* ... the swing this far across, the slide there */
 #define PLAY_SLIDE_X 0.6
+#define PARK_WELL_X 0.4   /* the park's stone well stands this far across (between them) */
 #define WELL_BACK 17         /* the stair well (indoors): its front edge this far in front of the back wall (room pixels), */
 #define WELL_SIDE 14        /* ... its middle this far in from the right-hand wall, */
 #define WELL_DEEP 5         /* ... this deep on screen, */
 #define WELL_HALF_W 0.07    /* ... this wide (world units each side) */
-#define WELL_H 0.3         /* its depth on screen, as a part of the floor's height */
 #define CAM_MAX_ZOOM 4     /* [ ] camera zoom steps over the room */
 #define PER_ROW 5
 #define BANNER_H 8

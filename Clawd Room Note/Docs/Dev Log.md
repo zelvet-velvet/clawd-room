@@ -46,6 +46,12 @@ gitGraph
 ---
 ## 2026-10-18
 
+### 🪨 The park's way down is a small stone well
+> [!info] Branch `feat/style-a`
+- The park's stone steps at the front were far too big and ran into the slide. The way down is now the **same small well as indoors** with a **stone rim and steps**, at the back of the lawn **between the swing and the slide** (`PARK_WELL_X` 0.4), clear of the tree.
+
+![[2026-10-18 park stone well.png|300]]
+
 ### 📏 Taller doors and way up, the well on open floor, no glass
 > [!info] Branch `feat/style-a`
 - The **way up** (the opening on the platform) and the **side doors** are taller (up to 16 and 22 room pixels).

@@ -383,35 +383,23 @@ static void back_stairs(Canvas *c, const View *v, int coffee, double p) {
 /* indoors, down: a small stair well at the back right of the floor (in front of the platform's end): a trapezoid opening, its side walls going down, the
  * steps going down from its back edge towards the front (lit at the back, darker towards the front), a wooden rim
  * all round (no railing: it looked like a bench); p: the opening grows */
-static void stair_well(Canvas *c, const View *v, double cx, double front_y, double hgt, double p) {
+static void stair_well(Canvas *c, const View *v, double cx, double front_y, double hgt, double p, int stone) {
     if (p <= 0) return;
     double X, Z0, Z1, Xb;
     view_world(v, cx, front_y, &X, &Z0);
     view_world(v, cx, front_y - hgt * p, &Xb, &Z1);
     double hw = WELL_HALF_W * p, x0 = X - hw, x1 = X + hw, dep = 0.03;
-    wq(c, v, x0 - 0.02, Z0 - 0.015, 0, x1 + 0.02, Z0 - 0.015, 0, x1 + 0.02, Z1 + 0.01, 0, x0 - 0.02, Z1 + 0.01, 0, RGB(96, 70, 50)); /* a wooden rim all round */
-    wq(c, v, x0 - 0.01, Z0 - 0.007, 0, x1 + 0.01, Z0 - 0.007, 0, x1 + 0.01, Z1 + 0.004, 0, x0 - 0.01, Z1 + 0.004, 0, RGB(150, 112, 80));
+    wq(c, v, x0 - 0.02, Z0 - 0.015, 0, x1 + 0.02, Z0 - 0.015, 0, x1 + 0.02, Z1 + 0.01, 0, x0 - 0.02, Z1 + 0.01, 0, stone ? RGB(112, 112, 120) : RGB(96, 70, 50)); /* a wooden (park: stone) rim all round */
+    wq(c, v, x0 - 0.01, Z0 - 0.007, 0, x1 + 0.01, Z0 - 0.007, 0, x1 + 0.01, Z1 + 0.004, 0, x0 - 0.01, Z1 + 0.004, 0, stone ? RGB(176, 176, 182) : RGB(150, 112, 80));
     wq(c, v, x0, Z0, 0, x1, Z0, 0, x1, Z1, 0, x0, Z1, 0, RGB(24, 20, 18));
     wq(c, v, x0, Z0, 0, x0, Z1, 0, x0, Z1, -dep, x0, Z0, -dep, RGB(52, 44, 40));
     wq(c, v, x1, Z0, 0, x1, Z1, 0, x1, Z1, -dep, x1, Z0, -dep, RGB(52, 44, 40));
     int n = 4;
     for (int i = 0; i < n; i++) { /* step i: from the back edge (high, lit) down towards the front */
         double za = Z1 - (Z1 - Z0) * i / n, zb = Z1 - (Z1 - Z0) * (i + 1) / n, e = -dep * (i + 1) / n;
-        wq(c, v, x0, za, e + dep / n, x1, za, e + dep / n, x1, za, e, x0, za, e, dk(RGB(150, 126, 102), 0.14 * i)); /* riser */
-        wq(c, v, x0, za, e, x1, za, e, x1, zb, e, x0, zb, e, dk(RGB(206, 182, 150), 0.14 * i));                       /* tread */
+        wq(c, v, x0, za, e + dep / n, x1, za, e + dep / n, x1, za, e, x0, za, e, dk(stone ? RGB(132, 132, 140) : RGB(150, 126, 102), 0.14 * i)); /* riser */
+        wq(c, v, x0, za, e, x1, za, e, x1, zb, e, x0, zb, e, dk(stone ? RGB(190, 190, 196) : RGB(206, 182, 150), 0.14 * i)); /* tread */
     }
-}
-/* the park, down: stone steps going into the ground, low stone walls round them */
-static void stone_steps(Canvas *c, const View *v, double cx, double front_y, double hgt, double p) {
-    if (p <= 0) return;
-    double X, Z0, Z1, Xb;
-    view_world(v, cx, front_y, &X, &Z0);
-    view_world(v, cx, front_y - hgt * p, &Xb, &Z1);
-    double hw = 0.12 * p, x0 = X - hw, x1 = X + hw, e = view_e(v, 3);
-    for (int i = 0; i < 4; i++) { double za = Z0 + (Z1 - Z0) * i / 4, zb = Z0 + (Z1 - Z0) * (i + 1) / 4; wq(c, v, x0, za, 0, x1, za, 0, x1, zb, 0, x0, zb, 0, dk(RGB(170, 170, 176), 0.1 + 0.16 * (4 - i))); }
-    view_box(c, v, x0 - 0.03, x0, Z0, Z1 + 0.02, e, RGB(176, 176, 182), RGB(140, 140, 148), RGB(120, 120, 128));
-    view_box(c, v, x1, x1 + 0.03, Z0, Z1 + 0.02, e, RGB(176, 176, 182), RGB(140, 140, 148), RGB(120, 120, 128));
-    view_box(c, v, x0 - 0.03, x1 + 0.03, Z1, Z1 + 0.03, e, RGB(176, 176, 182), RGB(140, 140, 148), RGB(120, 120, 128));
 }
 /* the park, up: a little house on a platform in the tree and a ladder up to it; p: the ladder grows */
 static void treehouse(Canvas *c, int w, const View *v, double p) {
@@ -436,9 +424,7 @@ void theme_gate(const Theme *th, Canvas *cv, const Geo *g, int side, double p, d
         if (th == &PARK) treehouse(cv, cv->w, v, p);
         else back_stairs(cv, v, th == &COFFEE, p);
     } else {
-        double hgt = g->gate_in[SIDE_DOWN][1] - g->gate_out[SIDE_DOWN][1] + 2;
-        if (th == &PARK) stone_steps(cv, v, g->gate_in[SIDE_DOWN][0], g->gate_in[SIDE_DOWN][1] + 1, hgt, p);
-        else stair_well(cv, v, g->gate_out[SIDE_DOWN][0], g->gate_out[SIDE_DOWN][1] + 1, g->gate_out[SIDE_DOWN][1] - g->gate_mid[SIDE_DOWN][1] + 1, p);
+        stair_well(cv, v, g->gate_out[SIDE_DOWN][0], g->gate_out[SIDE_DOWN][1] + 1, g->gate_out[SIDE_DOWN][1] - g->gate_mid[SIDE_DOWN][1] + 1, p, th == &PARK);
     }
 }
 

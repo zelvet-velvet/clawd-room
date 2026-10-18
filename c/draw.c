@@ -247,15 +247,12 @@ void geo_init(Geo *g, const Room *room, int w, int h) {
         g->gate_has_mid[SIDE_UP] = 1; g->gate_mid[SIDE_UP][0] = x1 + 2; g->gate_mid[SIDE_UP][1] = yl - 1; /* up the stairs, then along the platform */
         g->gate_out[SIDE_UP][0] = v->br - ARCH_IN - ARCH_W / 2.0; g->gate_out[SIDE_UP][1] = yl - 1;       /* along it to the opening at its right end */
     }
-    if (park) { /* stone steps at the front, going away */
-        double wx = w * 0.5, wh = (h - v->bb) * WELL_H;
-        g->gate_in[SIDE_DOWN][0] = wx; g->gate_in[SIDE_DOWN][1] = h - 1;
-        g->gate_out[SIDE_DOWN][0] = wx; g->gate_out[SIDE_DOWN][1] = h - 1 - wh + 2;
-    } else { /* the stair well at the back right: in beside its back edge, over to the top step, down to its front */
+    { /* the stair well at the back right (park: stone, between the swing and the slide, clear of the tree): in beside its back edge, over
+       * to the top step, down to its front */
         double fy = v->bb + WELL_BACK, xl, xr;
         view_floor_span(v, fy, &xl, &xr);
-        double wx = xr - WELL_SIDE;
-        g->gate_in[SIDE_DOWN][0] = wx - 12; g->gate_in[SIDE_DOWN][1] = fy - WELL_DEEP + 1;
+        double wx = park ? w * PARK_WELL_X : xr - WELL_SIDE, in = park ? 12 : -12;
+        g->gate_in[SIDE_DOWN][0] = wx + in; g->gate_in[SIDE_DOWN][1] = fy - WELL_DEEP + 1;
         g->gate_has_mid[SIDE_DOWN] = 1; g->gate_mid[SIDE_DOWN][0] = wx; g->gate_mid[SIDE_DOWN][1] = fy - WELL_DEEP + 1;
         g->gate_out[SIDE_DOWN][0] = wx; g->gate_out[SIDE_DOWN][1] = fy;
     }
