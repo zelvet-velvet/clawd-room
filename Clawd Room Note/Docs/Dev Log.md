@@ -55,7 +55,7 @@ gitGraph
 - Then the editor opens **in the middle of the screen**; the help is grouped (MOUSE / EDIT / SIZE) with **key caps**; the panel shows the **colour to paint with sliders** (a file colour recolours all its pixels), its **shades**, the file's colours (a dot: used in this sprite) and more colours; the **pixel under the pointer** is outlined with its place and colour.
 
   ![[2026-10-18 pixel editor, new palette and help.png|480]]
-- From Zaviel: `--edit list` prints what can be opened; `q` asks **keep or discard** (discard puts the files back as they were when opened; the rooms change back too); the editor opens in its own window **without closing the one you typed in**, so `q` takes you back to your prompt.
+- From Zaviel: `--edit list` prints what can be opened; `q` asks **save (S) or discard (D)** (discard puts the files back as they were when opened; the rooms change back too); the editor opens in its own window **without closing the one you typed in**, so `q` takes you back to your prompt.
 
 ![[2026-10-18 pixel editor with rooms.png|480]]
 

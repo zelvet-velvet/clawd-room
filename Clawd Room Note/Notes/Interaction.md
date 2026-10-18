@@ -48,7 +48,7 @@ tags:
 | `<` `>` (or `[` `]`) | the sprite before / after; Tab: the next file (props, items, Clawd) |
 | `+` `-` | zoom |
 | `w` `n` / `t` `s` | wider / narrower, taller / shorter |
-| `q` | quit: with changes it asks **Y** keep, **N** discard (the files go back to how they were when you opened them), **Esc** back to editing |
+| `q` | quit: with changes it asks **S** save, **D** discard (the files go back to how they were when you opened them), **Esc** back to editing |
 
 ## 📐 Room size and resizing
 

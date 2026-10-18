@@ -221,7 +221,7 @@ typedef struct { int gx, gy, z, px; } Layout; /* the grid's origin and zoom; the
 typedef struct { const char *key, *what; } Help;
 static const Help H_MOUSE[] = {{"LEFT", "PAINT"}, {"RIGHT", "ERASE"}, {"ALT+LEFT", "PICK A COLOUR"}};
 static const Help H_EDIT[] = {{"U", "UNDO"}, {"R", "REDO"}, {"< >", "OTHER SPRITE"}, {"TAB", "OTHER FILE"}, {"+ -", "ZOOM"}};
-static const Help H_SIZE[] = {{"W", "WIDER"}, {"N", "NARROWER"}, {"T", "TALLER"}, {"S", "SHORTER"}, {"Q", "QUIT"}};
+static const Help H_SIZE[] = {{"W", "WIDER"}, {"N", "NARROWER"}, {"T", "TALLER"}, {"S", "SHORTER"}, {"Q", "QUIT (S SAVE / D DISCARD)"}};
 static int help_row(Canvas *cv, int y, const char *title, const Help *h, int n, int W) { /* returns the rows it took */
     int x = 4, rows = 1;
     if (cv) canvas_text(cv, x, y + 1, title, RGB(110, 110, 130));
@@ -364,7 +364,7 @@ static void draw(const Ed *e, Canvas *cv) {
         for (int yy = 0; yy < e->h; yy++) for (int xx = 0; xx < e->w; xx++) { int t2; Rgb c = colour_of(&e->f, e->g[yy][xx], &t2); if (!t2) canvas_rect(cv, ox + xx * k, oy + yy * k, k, k, c); }
     }
     if (e->asking) { /* q with changes */
-        const char *a = "KEEP THE CHANGES?", *b = "Y KEEP    N DISCARD    ESC BACK";
+        const char *a = "SAVE THE CHANGES?", *b = "S SAVE    D DISCARD    ESC BACK";
         int w = (text_width(b) > text_width(a) ? text_width(b) : text_width(a)) + 12, h = 24, bx = (cv->w - w) / 2, by = (cv->h - h) / 2;
         canvas_rect(cv, bx - 1, by - 1, w + 2, h + 2, C_GREY);
         canvas_rect(cv, bx, by, w, h, RGB(20, 20, 28));
@@ -507,8 +507,8 @@ int editor_run(const char *dir, const char *name) {
             }
             char ch = in[i++];
             if (e.asking) { /* keep or discard */
-                if (ch == 'y' || ch == 'Y') quit = 1;
-                else if (ch == 'n' || ch == 'N') { /* put every changed file back as it was */
+                if (ch == 's' || ch == 'S' || ch == 'y' || ch == 'Y') quit = 1; /* (save: they are in the file already) */
+                else if (ch == 'd' || ch == 'D' || ch == 'n' || ch == 'N') { /* discard: put every changed file back as it was */
                     for (int f = 0; f < NFILES; f++) if (e.changed[f] && e.orig[f]) {
                         char path[700];
                         snprintf(path, sizeof path, "%s/%s", dir, FILES[f]);
