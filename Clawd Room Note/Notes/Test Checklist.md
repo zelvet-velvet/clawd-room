@@ -14,15 +14,27 @@ tags:
 
 What to test next, one big callout per group: a box per test with its checks as sub-boxes; tick them as you check (with your name and the date), open **How to test** for the steps. A test whose boxes are all ticked moves down into its subject below.
 
+> [!info]- Box legend ([[Checkbox Style]])
+> - [ ] to test
+> - [/] partly checked
+> - [x] works (name, date)
+> - [!] fails: say what you saw, open an issue
+> - [?] unsure: say why
+> - [-] dropped (no longer applies)
+> - [>] moved to later
+> - [i] a note, not a check
+
 > [!tip] Setting up a test
 > `./clawd-room.sh --try` opens **four linked rooms**, one in each quarter of the screen (office, coffee shop / park, office), with **made-up Clawds** in them, so every gate shows at once. Quit any one to close all four, or `./clawd-room.sh --try close`. `--try real` shows only your real sessions. On WSL `--try --desktop N` opens them on virtual desktop N without switching to it (switch there yourself to look).
 
 > [!todo]+ WSL2 + Windows Terminal (since 2026-10-19)
 > - [ ] **1. The Clawd Room profile at 5 pt**
+>     - [i] Needs `python3 setup_profile.py --update` once (Zaviel ran it on 2026-10-19)
 >     - [ ] From Windows Terminal's dropdown the room starts and its window moves to the quarter of the screen it is in
 >     - [ ] Room pixels are square and about as many as on the Mac (the whole room fits, the park shows the swing set and the building's plaque)
 >     - [ ] `q` closes the room and the window; nothing is left behind
 > - [ ] **2. The rooms and the bottom bar**
+>     - [?] Once all four `--try` rooms closed together after about 15 s (cause unknown). If it happens: `cat ~/.clawd-room/try/stop` says which room ended it; note it here
 >     - [ ] Office, coffee shop and park look as on the Mac (style A, the park plaza and its buildings)
 >     - [ ] The bottom bar's text is readable at 5 pt (`?` shows the help)
 >     - [ ] Hold `g` or `m`: the yellow hint shows only while the key is held and goes right after letting go
