@@ -12,69 +12,43 @@ tags:
 ---
 ## 🧪 Test queue
 
-What to test next, in order. Each test is a callout: tick its boxes as you check them (with your name and the date), open **How to test** for the steps. A test whose boxes are all ticked moves down into its subject below.
+What to test next, one big callout per group: a box per test with its checks as sub-boxes; tick them as you check (with your name and the date), open **How to test** for the steps. A test whose boxes are all ticked moves down into its subject below.
 
 > [!tip] Setting up a test
 > `./clawd-room.sh --try` opens **four linked rooms**, one in each quarter of the screen (office, coffee shop / park, office), with **made-up Clawds** in them, so every gate shows at once. Quit any one to close all four, or `./clawd-room.sh --try close`. `--try real` shows only your real sessions. On WSL `--try --desktop N` opens them on virtual desktop N without switching to it (switch there yourself to look).
 
-> [!todo]+ 1. WSL: the Clawd Room profile at 5 pt
-> - [ ] Opened from Windows Terminal's dropdown, the room starts and its window moves to the quarter of the screen it is in
-> - [ ] Room pixels are square and about as many as on the Mac (the whole room fits, the park shows the swing set and the building's plaque)
-> - [ ] `q` closes the room and the window; nothing is left behind
+> [!todo]+ WSL2 + Windows Terminal (since 2026-10-19)
+> - [ ] **1. The Clawd Room profile at 5 pt**
+>     - [ ] From Windows Terminal's dropdown the room starts and its window moves to the quarter of the screen it is in
+>     - [ ] Room pixels are square and about as many as on the Mac (the whole room fits, the park shows the swing set and the building's plaque)
+>     - [ ] `q` closes the room and the window; nothing is left behind
+> - [ ] **2. The rooms and the bottom bar**
+>     - [ ] Office, coffee shop and park look as on the Mac (style A, the park plaza and its buildings)
+>     - [ ] The bottom bar's text is readable at 5 pt (`?` shows the help)
+>     - [ ] Hold `g` or `m`: the yellow hint shows only while the key is held and goes right after letting go
+> - [ ] **3. Sending and moving Clawds between rooms**
+>     - [ ] `g` + an arrow: a Clawd walks to that gate (door, stairs, well), goes through and comes out in the room next to it
+>     - [ ] `m` + an arrow: the picked Clawd packs its desk into a box (poof), carries it out and unpacks at a new desk in the other room
+>     - [ ] The room it left does not blink; `m` + arrow while it carries the box sends it straight to the new gate
+>     - [ ] `b` calls your Clawds back
+> - [ ] **4. Desks stay in their room**
+>     - [ ] Opening the rooms one by one, a desk never jumps to another room
+>     - [ ] Closing one room: only its Clawds show up elsewhere
+> - [ ] **5. The pixel editor with the mouse**
+>     - [ ] `./clawd-room.sh --edit window`: left click paints, right click erases, the palette picks a colour
+>     - [ ] A running room shows the change as you draw
+>     - [ ] `q` asks save (S) or discard (D); D puts the picture back, in the room too
 >
 > > [!example]- How to test
-> > 1. Windows Terminal → the ⌄ next to the tabs → **Clawd Room**.
-> > 2. Pick a scene in the start menu (office / coffee shop / park).
-> > 3. Watch the window: it should jump once into the quarter of the screen it opened in.
-> > 4. Compare with `Screenshots/2026-10-19 wsl try, four rooms at 5 pt.png`.
-> > 5. Press `q`.
-
-> [!todo]+ 2. WSL: the rooms and the bottom bar
-> - [ ] Office, coffee shop and park look as on the Mac (style A, the park plaza and its buildings)
-> - [ ] The bottom bar's text is readable at 5 pt (`?` shows the help)
-> - [ ] Hold `g` or `m`: the yellow hint shows only while the key is held and goes right after letting go
->
-> > [!example]- How to test
-> > 1. In a WSL shell in the repo: `./clawd-room.sh --try`.
-> > 2. Look at each of the four rooms for a minute while the made-up Clawds work and walk.
-> > 3. Click into one room, press `?`, read the help in the bar, press `?` again.
-> > 4. Hold `g` for two seconds, let go; then the same with `m`.
-> > 5. `./clawd-room.sh --try close` (or `q` in any room).
-
-> [!todo]+ 3. WSL: sending and moving Clawds between rooms
-> - [ ] `g` + an arrow: a Clawd walks to that gate (door, stairs, well), goes through and comes out in the room next to it
-> - [ ] `m` + an arrow: the picked Clawd packs its desk into a box (poof), carries it out, and unpacks at a new desk in the other room
-> - [ ] The room it left does not blink; `m` + arrow while it carries the box sends it straight to the new gate
-> - [ ] `b` calls your Clawds back
->
-> > [!example]- How to test
-> > 1. `./clawd-room.sh --try` and wait until the gates show (about 10 s).
-> > 2. In the top-left room hold `g` and press → (to the coffee shop), then ↓ (to the park).
-> > 3. Press `Tab` until a Clawd at a desk is picked, then `m` + →; watch both rooms.
-> > 4. Pick a Clawd carrying a box, press `m` + ↓.
-> > 5. Press `b`.
-
-> [!todo]+ 4. WSL: desks stay in their room
-> - [ ] Opening the rooms one by one, a desk never jumps to another room
-> - [ ] Closing one room: only its Clawds show up elsewhere
->
-> > [!example]- How to test
-> > 1. Have at least one real Claude Code session running.
-> > 2. Open **Clawd Room** from the dropdown (office); note where the desks are.
-> > 3. Open a second and a third one (coffee shop, park); move them next to the first.
-> > 4. Watch the first room: its desks stay.
-> > 5. Quit the coffee shop: only the Clawds that were there move to another room.
-
-> [!todo]+ 5. WSL: the pixel editor with the mouse
-> - [ ] `./clawd-room.sh --edit window` opens the editor; left click paints, right click erases, the palette picks a colour
-> - [ ] A running room shows the change as you draw
-> - [ ] `q` asks save (S) or discard (D); D puts the picture back, in the room too
->
-> > [!example]- How to test
-> > 1. Start a room (office has the window prop): `./clawd-room.sh --try` or the profile.
-> > 2. In a second Windows Terminal window: `./clawd-room.sh --edit window`.
-> > 3. Paint a few pixels; look at the room's window.
-> > 4. `q`, then `D`; the room's window is back as before.
+> > **1.** Windows Terminal → the ⌄ next to the tabs → **Clawd Room** → pick a scene → the window jumps once into its quarter; compare with `Screenshots/2026-10-19 wsl try, four rooms at 5 pt.png`; press `q`.
+> >
+> > **2.** In a WSL shell in the repo: `./clawd-room.sh --try` → look at the four rooms for a minute → click into one, `?` to read the help, `?` again → hold `g` two seconds and let go, then the same with `m` → `./clawd-room.sh --try close`.
+> >
+> > **3.** `./clawd-room.sh --try`, wait for the gates (about 10 s) → in the top-left room hold `g` and press → (coffee shop), then ↓ (park) → `Tab` until a Clawd at a desk is picked, `m` + →, watch both rooms → pick a Clawd carrying a box, `m` + ↓ → `b`.
+> >
+> > **4.** With at least one real Claude Code session running: open **Clawd Room** (office), note the desks → open a second and a third (coffee shop, park) next to it → the first room's desks stay → quit the coffee shop: only its Clawds move.
+> >
+> > **5.** Start a room (`--try` or the profile; the office has the window) → in a second window `./clawd-room.sh --edit window` → paint a few pixels and watch the room's window → `q`, then `D`: the window is back as before.
 
 ## Rooms and art ([[Rooms and Art]])
 - [ ] Each room (office, coffee shop, park) looks like the mockups at your window size
