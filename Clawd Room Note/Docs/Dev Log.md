@@ -48,6 +48,15 @@ gitGraph
 
 ## 2026-10-19
 
+### 🎨 The pixel editor: a colour picker like Figma's (Zaviel)
+> [!info] Branch `test/wsl-queue`
+- Picked from three mockups (A Office colour menu, **B Figma**, C Photoshop swatches): **Paint / Erase / Pick** buttons, a **colour field** (saturation × brightness) and a **hue bar** to click or drag, then the colour's hex and red / green / blue on one line (click to type), the file's colours with **+ Add** for a new one, and shades. The four sliders and the 16-colour set are gone.
+- Changing a file colour still recolours its pixels everywhere; starting from the body colour or Erase makes a new colour.
+- Fixed: in a short window the shortcut list ran over the colours. Now it is one line (`? SHORTCUTS  Q QUIT`) and **`?`** shows them in a box.
+
+![[2026-10-19 editor palette mockup A, office.png|250]] ![[2026-10-19 editor palette mockup B, figma (picked).png|250]] ![[2026-10-19 editor palette mockup C, photoshop.png|250]]
+![[2026-10-19 pixel editor, colour field palette.png|300]] ![[2026-10-19 pixel editor, a new colour added and painted.png|300]] ![[2026-10-19 pixel editor, shortcuts box in a short window.png|300]]
+
 ### 🎨 The pixel editor opens in its own window on WSL (Zaviel)
 > [!info] Branch `test/wsl-queue`
 - `./clawd-room.sh --edit NAME` opens the editor in its own **Clawd Room** window in the middle of the screen (70 x 78 %), as on the Mac; the window you typed in stays. `--here` runs it in the current window.

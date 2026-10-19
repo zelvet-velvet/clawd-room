@@ -79,17 +79,23 @@ What to test next, one `[!example] Group X · …` callout per group. Each test 
 > > 2. Open a second and a third (coffee shop, park) next to it: the first room's desks stay.
 > > 3. Quit the coffee shop: only its Clawds move.
 
-> [!example] Group E · WSL: the pixel editor with the mouse
+> [!example] Group E · WSL: the pixel editor with the mouse (T18–T22: the new colour panel)
 > - [ ] **T14** `./clawd-room.sh --edit window` → the editor opens in its own Clawd Room window in the middle of the screen; the window you typed in stays.
 > - [ ] **T15** Left click paints, right click erases, the palette picks a colour.
 > - [ ] **T16** A running room shows the change as you draw.
 > - [ ] **T17** `q` → asks save (S) or discard (D); D puts the picture back, in the room too.
+> - [ ] **T18** Colour field and hue bar: click or drag → the colour changes; on a file colour every pixel using it changes with it.
+> - [ ] **T19** From the body colour or ERASE, a click in the field → a new colour; **+ ADD** → it joins IN THIS FILE; painting with it works.
+> - [ ] **T20** ERASE → left click erases; PICK → the next click on the grid takes that pixel's colour; PAINT → back to the colour before.
+> - [ ] **T21** Click the hex code or a red / green / blue number → type a value, Enter.
+> - [ ] **T22** A short editor window → one line `? SHORTCUTS  Q QUIT`, nothing runs over the colours; `?` opens and closes the shortcuts box.
 >
-> > [!tip]- T14–T17 · how to run them
+> > [!tip]- T14–T22 · how to run them
 > > 1. Start a room (`--try` or the profile; the office has the window).
 > > 2. In a WSL shell: `./clawd-room.sh --edit window`.
 > > 3. Paint a few pixels, erase some, pick another colour; watch the room's window.
 > > 4. `q`, then `D`: the window is back as before.
+> > 5. T18–T22: the new colour panel (like Figma). Compare with ![[2026-10-19 pixel editor, colour field palette.png|300]]
 
 ## Rooms and art ([[Rooms and Art]])
 - [ ] Each room (office, coffee shop, park) looks like the mockups at your window size
