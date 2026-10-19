@@ -47,6 +47,7 @@ typedef struct {
     char msg[96];
     char *orig[NFILES]; int changed[NFILES]; /* each file as it was when first opened, to put back on discard */
     int asking;                               /* q with changes: keep or discard? */
+    int show_help;                            /* ?: the shortcuts in a box (when the window is too short to list them) */
 } Ed;
 
 static char *slurp(const char *path) {
@@ -257,7 +258,7 @@ static int g_nreg;
 static void region(int kind, int i, int x, int y, int w, int h, Rgb c) { if (g_nreg < 160) g_reg[g_nreg++] = (Region){kind, i, x, y, x + w, y + h, c}; }
 static const Region *hit(int x, int y) { for (int k = g_nreg - 1; k >= 0; k--) if (x >= g_reg[k].x0 && x < g_reg[k].x1 && y >= g_reg[k].y0 - 1 && y < g_reg[k].y1 + 1) return &g_reg[k]; return NULL; }
 
-typedef struct { int gx, gy, z, px; } Layout; /* the grid's origin and zoom; the panel's left edge */
+typedef struct { int gx, gy, z, px, hy, hw; } Layout; /* the grid's origin and zoom; the panel's left edge; the help's top and width */
 
 /* the help: what each key and button does, as key caps (bright) and what they do (dim), in three groups */
 typedef struct { const char *key, *what; } Help;
@@ -281,23 +282,28 @@ static int help_row(Canvas *cv, int y, const char *title, const Help *h, int n, 
     }
     return rows;
 }
-static int help(Canvas *cv, int W, int H) { /* the rows the help takes (drawn at the bottom when cv is given) */
-    int r = help_row(NULL, 0, "", H_MOUSE, 3, W) + help_row(NULL, 0, "", H_EDIT, 7, W) + help_row(NULL, 0, "", H_SIZE, 5, W);
-    if (cv) {
-        int y = H - r * 8 - 1;
-        y += 8 * help_row(cv, y, "MOUSE", H_MOUSE, 3, W);
-        y += 8 * help_row(cv, y, "EDIT", H_EDIT, 7, W);
-        help_row(cv, y, "SIZE", H_SIZE, 5, W);
-    }
-    return r;
+/* the colour panel's height down to the end of MORE COLOURS (the real-size view below it fits itself in) */
+static int panel_h(const Ed *e) { return 7 + 32 + 7 + 12 + 7 + ((e->f.npal + 1 + 7) / 8) * 10 + 4 + 7 + 32; }
+static int help_rows(int W) { return help_row(NULL, 0, "", H_MOUSE, 3, W) + help_row(NULL, 0, "", H_EDIT, 7, W) + help_row(NULL, 0, "", H_SIZE, 5, W); }
+static void help(Canvas *cv, int y, int W) { /* the help from row y, wrapped at W */
+    y += 8 * help_row(cv, y, "MOUSE", H_MOUSE, 3, W);
+    y += 8 * help_row(cv, y, "EDIT", H_EDIT, 7, W);
+    help_row(cv, y, "SIZE", H_SIZE, 5, W);
 }
 
+static int grid_zoom(const Ed *e, int room_w, int room_h) {
+    int z = e->zoom;
+    if (z <= 0) { z = 2; while (z + 2 <= 16 && e->w * (z + 2) <= room_w && e->h * (z + 2) <= room_h) z += 2; }
+    return z;
+}
+/* The grid top left, the colour panel on its right, the help along the bottom. When the window is too short for the help
+   under the panel, only a line "? SHORTCUTS  Q QUIT" is shown and ? opens the help in a box (hw = 0). */
 static Layout layout(const Ed *e, int W, int H) {
     Layout L;
-    L.gx = 4; L.gy = 12;
-    int room_w = W - 120, room_h = H - L.gy - 8 * help(NULL, W, H) - 14;
-    L.z = e->zoom;
-    if (L.z <= 0) { L.z = 2; while (L.z + 2 <= 16 && e->w * (L.z + 2) <= room_w && e->h * (L.z + 2) <= room_h) L.z += 2; }
+    L.gx = 4; L.gy = 12; L.hw = W;
+    L.hy = H - help_rows(W) * 8 - 1;
+    if (L.hy < L.gy + panel_h(e) + 2) { L.hw = 0; L.hy = H - 9; }
+    L.z = grid_zoom(e, W - 120, L.hy - L.gy - 14);
     L.px = L.gx + e->w * L.z + 10;
     return L;
 }
@@ -411,12 +417,28 @@ static void draw(const Ed *e, Canvas *cv) {
         if (e->pk == 2 && rgb_eq(e->prgb, c)) frame(cv, sx, sy, 8, 8, C_WHITE);
     }
     y += 32;
-    int bottom = cv->h - 8 * help(cv, cv->w, cv->h) - 3, big = y + 8 + e->h * 2 <= bottom && x + e->w * 3 + 6 <= cv->w ? 2 : 1;
+    if (L.hw) help(cv, L.hy, L.hw);
+    else { /* short window: one line, the rest behind ? */
+        static const Help H_SHORT[] = {{"?", "SHORTCUTS"}, {"Q", "QUIT"}};
+        help_row(cv, L.hy, "", H_SHORT, 2, cv->w);
+    }
+    int bottom = L.hy - 3, big = y + 8 + e->h * 2 <= bottom && x + e->w * 3 + 6 <= cv->w ? 2 : 1;
     if (y + 8 + e->h <= bottom) canvas_text(cv, x, y, "AS IN THE ROOM", RGB(110, 110, 130)); /* the sprite at its real size (and twice) */
     for (int k = 1; k <= big && y + 8 + e->h <= bottom; k++) {
         int ox = x + (k - 1) * (e->w + 6), oy = y + 8;
         canvas_rect(cv, ox, oy, e->w * k, e->h * k, RGB(196, 204, 218));
         for (int yy = 0; yy < e->h; yy++) for (int xx = 0; xx < e->w; xx++) { int t2; Rgb c = colour_of(&e->f, e->g[yy][xx], &t2); if (!t2) canvas_rect(cv, ox + xx * k, oy + yy * k, k, k, c); }
+    }
+    if (e->show_help && !L.hw) { /* ?: the shortcuts in a box over the editor */
+        int bw = cv->w - 16 < 300 ? cv->w - 16 : 300, rows = help_rows(bw - 4), bh = rows * 8 + 14, bx = (cv->w - bw) / 2, by = (cv->h - bh) / 2;
+        canvas_rect(cv, bx - 1, by - 1, bw + 2, bh + 2, C_GREY);
+        canvas_rect(cv, bx, by, bw, bh, RGB(20, 20, 28));
+        canvas_text(cv, bx + 4, by + 3, "SHORTCUTS  (? CLOSES)", C_YELLOW);
+        /* the rows are laid out from x = 4: draw them on a canvas shifted into the box */
+        Canvas box = canvas_new(bw, bh - 11, RGB(20, 20, 28));
+        help(&box, 0, bw - 4);
+        for (int yy = 0; yy < box.h; yy++) for (int xx = 0; xx < box.w; xx++) canvas_px(cv, bx + xx, by + 11 + yy, box.p[yy * box.w + xx]);
+        canvas_free(&box);
     }
     if (e->asking) { /* q with changes */
         const char *a = "SAVE THE CHANGES?", *b = "S SAVE    D DISCARD    ESC BACK";
@@ -600,6 +622,7 @@ int editor_run(const char *dir, const char *name) {
                 continue;
             }
             if (ch == '#') { e.typing = 1; e.tbuf[0] = 0; continue; }
+            if (ch == '?') { e.show_help = !e.show_help; continue; }
             if (ch == 'f' || ch == 'F') { new_frame(&e); e.zoom = 0; continue; } /* a new frame (props with frames are animated in the room) */
             if (ch == 'q') { int any = 0; for (int f = 0; f < NFILES; f++) any |= e.changed[f]; if (any) e.asking = 1; else quit = 1; }
             else if (ch == 'u' && e.nundo) { e.nundo--; swap_undo(&e, e.nundo); e.nredo++; save(&e); }
