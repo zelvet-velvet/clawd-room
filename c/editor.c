@@ -264,7 +264,7 @@ typedef struct { int gx, gy, z, px, hy, hw; } Layout; /* the grid's origin and z
 /* the help: what each key and button does, as key caps (bright) and what they do (dim), in three groups */
 typedef struct { const char *key, *what; } Help;
 static const Help H_MOUSE[] = {{"LEFT", "PAINT"}, {"RIGHT", "ERASE"}, {"ALT+LEFT", "PICK A COLOUR"}};
-static const Help H_EDIT[] = {{"U", "UNDO"}, {"R", "REDO"}, {"< >", "OTHER SPRITE"}, {"TAB", "OTHER FILE"}, {"+ -", "ZOOM"}, {"#", "TYPE A COLOUR"}, {"F", "NEW FRAME"}};
+static const Help H_EDIT[] = {{"CTRL+Z", "UNDO"}, {"CTRL+Y", "REDO"}, {"< >", "OTHER SPRITE"}, {"TAB", "OTHER FILE"}, {"+ -", "ZOOM"}, {"#", "TYPE A COLOUR"}, {"F", "NEW FRAME"}};
 static const Help H_SIZE[] = {{"W", "WIDER"}, {"N", "NARROWER"}, {"T", "TALLER"}, {"S", "SHORTER"}, {"Q", "QUIT (S SAVE / D DISCARD)"}};
 static int help_row(Canvas *cv, int y, const char *title, const Help *h, int n, int W) { /* returns the rows it took */
     int x = 4, rows = 1;
@@ -494,7 +494,7 @@ static void put(const char *s) { size_t n = strlen(s); while (n) { ssize_t k = w
 static void tty_on(void) {
     struct termios t;
     tcgetattr(STDIN_FILENO, &g_old);
-    t = g_old; t.c_lflag &= ~(tcflag_t)(ICANON | ECHO); t.c_cc[VMIN] = 0; t.c_cc[VTIME] = 0;
+    t = g_old; t.c_lflag &= ~(tcflag_t)(ICANON | ECHO | ISIG | IEXTEN); t.c_cc[VMIN] = 0; t.c_cc[VTIME] = 0; /* (no signal keys: Ctrl+Z / Ctrl+Y are undo / redo, Ctrl+C asks like q) */
     tcsetattr(STDIN_FILENO, TCSAFLUSH, &t);
     put("\x1b[?1049h\x1b[?25l\x1b[?7l\x1b[?1000h\x1b[?1003h\x1b[?1006h\x1b]0;Clawd Room pixel editor\x07"); /* alt screen, mouse (SGR) */
 }
@@ -650,6 +650,9 @@ int editor_run(const char *dir, const char *name) {
             if (ch == '#') { e.typing = 1; e.tbuf[0] = 0; continue; }
             if (ch == '?') { e.show_help = !e.show_help; continue; }
             if (ch == 'f' || ch == 'F') { new_frame(&e); e.zoom = 0; continue; } /* a new frame (props with frames are animated in the room) */
+            if (ch == 0x1A) ch = 'u'; /* Ctrl+Z: undo; Ctrl+Y: redo (U / R too) */
+            else if (ch == 0x19) ch = 'r';
+            else if (ch == 0x03) ch = 'q'; /* Ctrl+C: quit, asking about changes */
             if (ch == 'q') { int any = 0; for (int f = 0; f < NFILES; f++) any |= e.changed[f]; if (any) e.asking = 1; else quit = 1; }
             else if (ch == 'u' && e.nundo) { e.nundo--; swap_undo(&e, e.nundo); e.nredo++; save(&e); }
             else if (ch == 'r' && e.nredo) { swap_undo(&e, e.nundo); e.nundo++; e.nredo--; save(&e); }

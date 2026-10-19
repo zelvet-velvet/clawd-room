@@ -42,7 +42,8 @@ applaud when a friend finishes, and do little solo acts (stretch, dance, jump, w
     ./clawd-room.sh --room coffee             # window 2
     ./clawd-room.sh --edit list               # what the pixel editor can open (props, items, Clawd frames)
     ./clawd-room.sh --edit window             # the pixel editor (its own window): draw a prop with the mouse, colours in a
-                                              # Figma-like picker; rooms show it at once; ? shortcuts; q: keep or discard
+                                              # Figma-like picker; rooms show it at once; Ctrl+Z / Ctrl+Y undo / redo;
+                                              # ? shortcuts; q: keep or discard
     ./clawd-room.sh --try                     # iTerm2 / WSL: four linked rooms in the four quarters, with made-up Clawds
                                               # (quit one to close all; --try close; --try real for real sessions only;
                                               # WSL: --try --desktop N opens them on virtual desktop N without switching to it)
