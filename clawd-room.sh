@@ -65,6 +65,7 @@ if [ "${1:-}" = --try ] && [ -n "${WSL_DISTRO_NAME:-}" ] && command -v wt.exe >/
   for a in "$@"; do [ "$prev" = --desktop ] && desk="--desktop $a"; prev=$a; done
   [ -n "$desk" ] && { python3 "$here/tools/try_wsl.py" --check $desk || exit 1; } # (before a running --try is ended)
   try_setup "$@"
+  [ -z "$desk" ] && echo "clawd-room: opening 4 rooms and snapping them into a group: hands off the keyboard for a few seconds" >&2
   python3 "$here/tools/try_wsl.py" "$bin" "$try" "$ev" $desk || { touch "$try/stop"; exit 1; }
   echo "clawd-room: --try opened 4 rooms (quit one to close all, or ./clawd-room.sh --try close)" >&2
   exit 0

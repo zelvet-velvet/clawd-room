@@ -5,7 +5,8 @@
     python3 tools/try_wsl.py BIN TRY_DIR EVENTS [--desktop N]
 
 The four open minimized one after another, then are placed and shown together (their visible frames on the quarters, like a
-snap layout; Windows has no way for a program to make them a snap group: Win+Z on one does that). --desktop N puts the windows
+snap layout). On your own desktop they are then snapped with the keyboard (Win + arrows, sent only to each room window while it
+has the focus), which makes them a snap group: one taskbar entry. That takes the focus for a few seconds. --desktop N puts the windows
 on virtual desktop N (1 = the first) without switching to it: each is moved there while minimized, then shown without activating. That uses Explorer's undocumented virtual desktop interfaces
 (Windows 11 24H2 and later); it is for testing while you keep working on another desktop.
 """
@@ -66,7 +67,20 @@ public static class T {
   /* SW_SHOWNOACTIVATE, then the visible frame onto r (x, y, w, h) like Windows' snap layout: the window rectangle includes an
      invisible resize border, so it is grown by that border (DWMWA_EXTENDED_FRAME_BOUNDS is the visible part); no z-order, no activate */
   [DllImport("user32.dll")] static extern bool SetForegroundWindow(IntPtr h);
-  public static void Focus(IntPtr h) { SetForegroundWindow(h); }
+  [DllImport("user32.dll")] static extern IntPtr GetForegroundWindow();
+  [DllImport("user32.dll")] static extern void keybd_event(byte k, byte s, uint f, UIntPtr e);
+  /* the focus to h (a tap of Alt lets a background process set it); true only if h really has it */
+  public static bool Focus(IntPtr h) { keybd_event(0x12, 0, 0, UIntPtr.Zero); keybd_event(0x12, 0, 2, UIntPtr.Zero); SetForegroundWindow(h); System.Threading.Thread.Sleep(250); return GetForegroundWindow() == h; }
+  static void WinKey(byte k) { keybd_event(0x5B, 0, 0, UIntPtr.Zero); keybd_event(k, 0, 1, UIntPtr.Zero); keybd_event(k, 0, 3, UIntPtr.Zero); keybd_event(0x5B, 0, 2, UIntPtr.Zero); System.Threading.Thread.Sleep(500); }
+  /* snap h into a quarter with the keyboard (Win + left / right: a half, then Win + up / down: the quarter), as a person would;
+     windows snapped this way become a snap group (one taskbar entry). Keys go only to h while it has the focus; no Esc (it
+     quits a room). False if h could not be focused. */
+  public static bool Snap(IntPtr h, byte side, byte half) {
+    if (!Focus(h)) return false;
+    WinKey(side);
+    if (GetForegroundWindow() != h && !Focus(h)) return false;  // (Snap Assist may have taken the focus: focusing h closes it)
+    WinKey(half); return true;
+  }
   public static void Show(IntPtr h, int[] r) {
     ShowWindow(h, 4); SetWindowPos(h, IntPtr.Zero, r[0], r[1], r[2], r[3], 0x0014);
     int[] w = new int[4], f = new int[4];
@@ -116,8 +130,10 @@ def main():
         "$t = [Diagnostics.Stopwatch]::StartNew(); while (@($all | ? { -not [ClawdTry.T]::Started($_[0]) }).Count -gt 0 -and $t.ElapsedMilliseconds -lt 15000) { Start-Sleep -Milliseconds 50 }",
         "'started all ' + $clk.ElapsedMilliseconds",
         "foreach ($a in $all) { [ClawdTry.T]::Show($a[0], $a[1]) }", "'shown all ' + $clk.ElapsedMilliseconds"]
-    if not desk and not check_only:
-        lines.append("[ClawdTry.T]::Focus($all[0][0])")
+    if not desk and not check_only:  # on your own desktop: snap them by keyboard, so they form a snap group (a few seconds, takes the focus)
+        keys = [("0x25", "0x26"), ("0x27", "0x26"), ("0x25", "0x28"), ("0x27", "0x28")]  # left/right, then up/down
+        lines += ["if (-not [ClawdTry.T]::Snap($all[%d][0], %s, %s)) { 'not snapped: %s' }" % (i, k[0], k[1], ROOMS[i][0]) for i, k in enumerate(keys)]
+        lines.append("[void][ClawdTry.T]::Focus($all[0][0])")
     script = "\n".join(lines)
     # through a file in Windows' temp folder (with the PATHs the script is too long for -EncodedCommand)
     tmp = subprocess.run(["cmd.exe", "/d", "/c", "echo %TEMP%"], capture_output=True, text=True, cwd="/mnt/c").stdout.strip()

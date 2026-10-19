@@ -33,6 +33,7 @@ What to test next, one big callout per group: a box per test with its checks as 
 >     - [ ] From Windows Terminal's dropdown the room starts and its window moves to the quarter of the screen it is in
 >     - [ ] Room pixels are square and about as many as on the Mac (the whole room fits, the park shows the swing set and the building's plaque)
 >     - [ ] `q` closes the room and the window; nothing is left behind
+>     - [ ] `./clawd-room.sh --try real`: all four rooms appear together, snapped into the quarters, and show as one **Group** in the taskbar
 > - [ ] **2. The rooms and the bottom bar**
 >     - [?] Once all four `--try` rooms closed together after about 15 s (cause unknown). If it happens: `cat ~/.clawd-room/try/stop` says which room ended it; note it here
 >     - [ ] Office, coffee shop and park look as on the Mac (style A, the park plaza and its buildings)

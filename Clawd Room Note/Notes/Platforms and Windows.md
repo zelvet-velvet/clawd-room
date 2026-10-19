@@ -60,7 +60,7 @@ sequenceDiagram
 
 - A small `powershell.exe` started by the room reports the windows (rectangles, DPI); it stops with the room.
 - On open the room sets the window to **110x32 cells** and the font to **8 pt** (`--size`, `--font`; `off` leaves them). `setup_profile.py` makes the "Clawd Room" profile; `--apply-global` edits `settings.json` with a backup.
-- `--try` (`tools/try_wsl.py`): four Clawd Room windows open minimized, are placed on the quarters (visible frames edge to edge, as a snap layout would) and shown together once each room has started; `--desktop N` puts them on virtual desktop N without switching (Explorer's undocumented virtual desktop interfaces). Windows cannot be made a **snap group** by a program (no API; Win + arrow keys sent to them made none, 2026-10-19).
+- `--try` (`tools/try_wsl.py`): four Clawd Room windows open minimized, are placed on the quarters (visible frames edge to edge, as a snap layout would) and shown together once each room has started; `--desktop N` puts them on virtual desktop N without switching (Explorer's undocumented virtual desktop interfaces). On your own desktop they are then snapped with **Win + arrows** (sent only to each room window while it has the focus), which makes them a **snap group** (Windows has no API for groups; keyboard snaps form one, 2026-10-19).
 - Font keys are sent only to a window that already has the focus. Focus mode is not used (it dropped the window in tests).
 
 > [!todo] Not yet
