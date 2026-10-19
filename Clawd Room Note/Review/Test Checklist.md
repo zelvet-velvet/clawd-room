@@ -79,8 +79,8 @@ What to test next, one `[!example] Group X · …` callout per group. Each test 
 > > 3. Quit the coffee shop: only its Clawds move.
 
 > [!example] Group E · WSL: the pixel editor with the mouse (T18–T22: the new colour panel; T23: Ctrl+Z / Ctrl+Y)
-> - [ ] **T14** `./clawd-room.sh --edit window` → the editor opens in its own Clawd Room window in the middle of the screen; the window you typed in stays.
-> - [ ] **T15** Left click paints, right click erases, the palette picks a colour.
+> - [x] **T14** `./clawd-room.sh --edit window` → the editor opens in its own Clawd Room window in the middle of the screen; the window you typed in stays.
+> - [x] **T15** Left click paints, right click erases, the palette picks a colour.
 > - [ ] **T16** A running room shows the change as you draw.
 > - [ ] **T17** `q` → asks save (S) or discard (D); D puts the picture back, in the room too.
 > - [ ] **T18** Colour field and hue bar: click or drag → the colour changes; on a file colour every pixel using it changes with it.
