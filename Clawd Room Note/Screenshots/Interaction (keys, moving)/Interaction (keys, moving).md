@@ -1,0 +1,30 @@
+---
+title: Screenshots · Interaction (keys, moving)
+tags:
+  - clawd-room
+  - screenshots
+up: "[[Screenshots]]"
+---
+# 📷 Interaction (keys, moving)
+
+Pictures of keys, hints, sending and moving Clawds, newest first. The files are the source in this folder; this note is written by `tools/vault_gallery.py` (do not edit it by hand: add a picture, then run the tool).
+
+## 2026-10-19
+
+> [!example]+ Move, unpacking in the park
+> ![[2026-10-19 move, unpacking in the park.png|420]]
+> Shown in: [[Dev Log#📦 Moving a Clawd: packing and unpacking (step 2 of 3)|📦 Moving a Clawd: packing and unpacking (step 2 of 3)]]
+
+> [!example]+ Move, packing in the office
+> ![[2026-10-19 move, packing in the office.png|420]]
+> Shown in: [[Dev Log#📦 Moving a Clawd: packing and unpacking (step 2 of 3)|📦 Moving a Clawd: packing and unpacking (step 2 of 3)]]
+
+> [!example]+ Bottom bar, status and g m hint
+> ![[2026-10-19 bottom bar, status and g m hint.png|420]]
+> Shown in: [[Dev Log#💬 One bar along the bottom|💬 One bar along the bottom]]
+
+## 2026-10-18
+
+> [!example]+ Hold g hint
+> ![[2026-10-18 hold g hint.png|420]]
+> Shown in: [[Dev Log#🚪 Gates stay put; `g` asks where to|🚪 Gates stay put; `g` asks where to]]
