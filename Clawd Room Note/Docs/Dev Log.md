@@ -410,6 +410,11 @@ Zaviel's sketch for the stairs and the doors that needed fixing:
 > - The room can block writing if the terminal stops reading (seen with iTerm2 in full screen).
 > - Windows Terminal split panes are not seen separately yet.
 
+> [!todo] Later: less CPU (Zaviel, 2026-10-19)
+> - **Dirty rects**: redraw only the parts of the canvas that changed (the terminal output is already diffed cell by cell and written once per frame, i.e. double buffered; the cost left is drawing the whole canvas 16 times a second).
+> - **Idle frames**: skip drawing when nothing moves (the same frame again).
+> - **Hidden windows**: when the room's window is covered, minimised or on another virtual desktop, stop drawing (FPS 0) and only keep reading events and the link heartbeats at a slow rate; draw again when it shows.
+
 ## 💡 Ideas
 
 > [!question] Maybe later

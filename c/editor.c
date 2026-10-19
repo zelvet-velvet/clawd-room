@@ -85,7 +85,8 @@ static int file_load(File *f, const char *path) {
             f->pal_body[f->npal] = !strncmp(p, "body", 4);
             int r = 0, g = 0, b = 0;
             if (!f->pal_body[f->npal]) sscanf(p, "%d,%d,%d", &r, &g, &b);
-            f->pal_c[f->npal++] = f->pal_body[f->npal - 1] ? C_CLAWD : RGB(r, g, b);
+            f->pal_c[f->npal] = f->pal_body[f->npal] ? C_CLAWD : RGB(r, g, b);
+            f->npal++;
             f->last_pal_line = f->nline;
         } else if (buf[0] == '@' && f->nsprite < 512) f->sprite_line[f->nsprite++] = f->nline;
         f->nline++;
