@@ -6,4 +6,5 @@ bin=$1 stop=$2
 shift 2
 ( while [ ! -e "$stop" ]; do sleep 0.3; done; pkill -TERM -P $$ ) &
 "$bin" "$@"
-touch "$stop"
+rc=$?
+[ -e "$stop" ] || echo "$* exit $rc" > "$stop" # (the stop file says which room ended the --try, and how)
