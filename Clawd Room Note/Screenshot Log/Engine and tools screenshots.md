@@ -3,11 +3,11 @@ title: Screenshots · Engine and tools
 tags:
   - clawd-room
   - screenshots
-up: "[[Screenshots]]"
+up: "[[Screenshots index]]"
 ---
 # 📷 Engine and tools
 
-Pictures of the debug overlay, the placer, the pixel editor, the gallery, newest first. The files are the source in this folder; this note is written by `tools/vault_gallery.py` (do not edit it by hand: add a picture, then run the tool).
+Pictures of the debug overlay, the placer, the pixel editor, the gallery, newest first. The files are the source in `Screenshots/Engine and tools/`; this note is written by `tools/vault_gallery.py` (do not edit it by hand: add a picture, then run the tool).
 
 ## 2026-10-19
 

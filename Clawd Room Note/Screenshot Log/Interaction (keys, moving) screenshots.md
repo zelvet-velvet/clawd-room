@@ -3,11 +3,11 @@ title: Screenshots · Interaction (keys, moving)
 tags:
   - clawd-room
   - screenshots
-up: "[[Screenshots]]"
+up: "[[Screenshots index]]"
 ---
 # 📷 Interaction (keys, moving)
 
-Pictures of keys, hints, sending and moving Clawds, newest first. The files are the source in this folder; this note is written by `tools/vault_gallery.py` (do not edit it by hand: add a picture, then run the tool).
+Pictures of keys, hints, sending and moving Clawds, newest first. The files are the source in `Screenshots/Interaction (keys, moving)/`; this note is written by `tools/vault_gallery.py` (do not edit it by hand: add a picture, then run the tool).
 
 ## 2026-10-19
 

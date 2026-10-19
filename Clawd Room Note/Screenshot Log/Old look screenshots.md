@@ -3,11 +3,11 @@ title: Screenshots · Old look
 tags:
   - clawd-room
   - screenshots
-up: "[[Screenshots]]"
+up: "[[Screenshots index]]"
 ---
 # 📷 Old look
 
-Pictures of how it looked before style A, newest first. The files are the source in this folder; this note is written by `tools/vault_gallery.py` (do not edit it by hand: add a picture, then run the tool).
+Pictures of how it looked before style A, newest first. The files are the source in `Screenshots/Old look/`; this note is written by `tools/vault_gallery.py` (do not edit it by hand: add a picture, then run the tool).
 
 ## 2026-10-18
 

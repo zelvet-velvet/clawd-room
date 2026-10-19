@@ -4,9 +4,10 @@
     python3 tools/vault_gallery.py
 
 `Clawd Room Note/Screenshots/` is the source: one folder per subject holding the picture files, named
-`YYYY-MM-DD subject.png`. For people to browse them this writes, in each subject folder, a note named after the folder
-(newest first: the picture, its caption, the Dev Log entry and notes that show it) and `Screenshots/Screenshots.md`, the
-index. Run it after adding pictures (CMD_SYNC does). Only those notes are rewritten; nothing else changes.
+`YYYY-MM-DD subject.png`. For people to browse them this writes `Clawd Room Note/Screenshot Log/`: a note per subject,
+`SUBJECT screenshots.md` (newest first: the picture, its caption, the Dev Log entry and notes that show it), and
+`Screenshots index.md`. (Notes named like their folder are make.md's folder notes: never written here.) Run it after
+adding pictures (CMD_SYNC does). Only the notes in Screenshot Log are rewritten.
 """
 import os
 import re
@@ -15,6 +16,7 @@ import sys
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 VAULT = os.path.join(ROOT, "Clawd Room Note")
 SHOTS = os.path.join(VAULT, "Screenshots")
+LOG = os.path.join(VAULT, "Screenshot Log")
 PIC = (".png", ".gif", ".jpg", ".jpeg")
 NAME = re.compile(r"^(\d{4}-\d{2}-\d{2}) (.+)\.(?:png|gif|jpe?g)$", re.I)
 SUBJECT_ORDER = ["Office", "Coffee shop", "Park", "Gates (stairs, doors, wells)", "Interaction (keys, moving)", "Engine and tools",
@@ -32,8 +34,8 @@ ABOUT = {
 }
 
 
-def generated_name(folder):
-    return folder + ".md"
+def note_name(folder):
+    return folder + " screenshots"
 
 
 def where_shown():
@@ -42,7 +44,7 @@ def where_shown():
     for root, dirs, files in os.walk(VAULT):
         dirs[:] = [d for d in dirs if not d.startswith(".")]
         for f in files:
-            if not f.endswith(".md") or root.startswith(SHOTS):
+            if not f.endswith(".md") or root.startswith(LOG):
                 continue
             note = f[:-3]
             heading = ""
@@ -85,10 +87,10 @@ def links(name, shown):
 def write_subject(folder, shown):
     path = os.path.join(SHOTS, folder)
     pics = sorted((f for f in os.listdir(path) if f.lower().endswith(PIC)), key=lambda f: (f[:10], f), reverse=True)
-    lines = ["---", "title: Screenshots · %s" % folder, "tags:", "  - clawd-room", "  - screenshots", "up: \"[[Screenshots]]\"",
+    lines = ["---", "title: Screenshots · %s" % folder, "tags:", "  - clawd-room", "  - screenshots", "up: \"[[Screenshots index]]\"",
              "---", "# 📷 %s" % folder, "",
-             "Pictures of %s, newest first. The files are the source in this folder; this note is written by "
-             "`tools/vault_gallery.py` (do not edit it by hand: add a picture, then run the tool)." % ABOUT.get(folder, folder.lower()), ""]
+             "Pictures of %s, newest first. The files are the source in `Screenshots/%s/`; this note is written by "
+             "`tools/vault_gallery.py` (do not edit it by hand: add a picture, then run the tool)." % (ABOUT.get(folder, folder.lower()), folder), ""]
     day = None
     for f in pics:
         m = NAME.match(f)
@@ -97,12 +99,13 @@ def write_subject(folder, shown):
             day = date
             lines += ["## %s" % date, ""]
         lines += ["> [!example]+ %s" % caption(subject).replace("**", ""), "> ![[%s|420]]" % f, "> Shown in: %s" % links(f, shown), ""]
-    with open(os.path.join(path, generated_name(folder)), "w", encoding="utf-8") as fh:
+    with open(os.path.join(LOG, note_name(folder) + ".md"), "w", encoding="utf-8") as fh:
         fh.write("\n".join(lines).rstrip() + "\n")
     return pics
 
 
 def main():
+    os.makedirs(LOG, exist_ok=True)
     shown = where_shown()
     folders = [d for d in os.listdir(SHOTS) if os.path.isdir(os.path.join(SHOTS, d)) and not d.startswith(".")]
     folders.sort(key=lambda d: (SUBJECT_ORDER.index(d) if d in SUBJECT_ORDER else 99, d))
@@ -111,22 +114,23 @@ def main():
     for d in folders:
         pics = write_subject(d, shown)
         newest = pics[0] if pics else None
-        rows.append("| [[%s]] | %s | %d | %s | %s |" % (d, ABOUT.get(d, ""), len(pics), newest[:10] if newest else "", "![[%s\\|160]]" % newest if newest else ""))  # (a | in a table cell needs a backslash)
-    index = ["---", "title: Screenshots", "tags:", "  - clawd-room", "  - screenshots", "---", "# 📷 Screenshots", "",
+        rows.append("| [[%s]] | %s | %d | %s | %s |" % (note_name(d), ABOUT.get(d, ""), len(pics), newest[:10] if newest else "", "![[%s\\|160]]" % newest if newest else ""))  # (a | in a table cell needs a backslash)
+    index = ["---", "title: Screenshots index", "tags:", "  - clawd-room", "  - screenshots", "---", "# 📷 Screenshots", "",
              "The pictures of clawd-room: what the room looked like, mockups that were picked from, the user's own screenshots. "
-             "**This folder is the source**: one folder per subject with the picture files (`YYYY-MM-DD subject.png`; a person's "
-             "own: `... (Zaviel).png`; the picked mockup: `... (picked).png`). Browse them in the subject notes below; the "
+             "**`Screenshots/` is the source**: one folder per subject with the picture files (`YYYY-MM-DD subject.png`; a person's "
+             "own: `... (Zaviel).png`; the picked mockup: `... (picked).png`). Browse them in the notes below (this folder, "
+             "Screenshot Log, written by `tools/vault_gallery.py`); the "
              "[[Dev Log]] shows them with what changed.", "",
              "> [!tip] Adding a picture",
              "> 1. Save it in the subject folder that fits, named `YYYY-MM-DD subject.png` (names stay unique across folders).",
              "> 2. Embed it in its [[Dev Log]] entry: `![[YYYY-MM-DD subject.png|300]]`.",
-             "> 3. `python3 tools/vault_gallery.py` rewrites these notes (CMD_SYNC runs it too).", "",
+             "> 3. `python3 tools/vault_gallery.py` rewrites the notes in Screenshot Log (CMD_SYNC runs it too).", "",
              "| Subject | What | Pictures | Newest | |", "| --- | --- | --- | --- | --- |"] + rows
     if loose:
         index += ["", "> [!warning] Not in a subject folder yet", "> " + ", ".join(sorted(loose))]
-    with open(os.path.join(SHOTS, "Screenshots.md"), "w", encoding="utf-8") as fh:
+    with open(os.path.join(LOG, "Screenshots index.md"), "w", encoding="utf-8") as fh:
         fh.write("\n".join(index) + "\n")
-    print("wrote %d subject notes and Screenshots.md (%d pictures)" % (len(folders), sum(int(r.split("|")[3]) for r in rows)))
+    print("wrote %d subject notes and Screenshots index.md in Screenshot Log (%d pictures)" % (len(folders), sum(int(r.split("|")[3]) for r in rows)))
     return 0
 
 

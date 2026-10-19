@@ -20,7 +20,7 @@ What changed and when, in short. How things work now is in the topic notes:
 | [[Test Checklist]] | what is still to check by eye |
 | [[Animations]] | every Clawd frame |
 
-Pictures are in `Screenshots/`, one folder per subject; [[Screenshots]] lists them, each folder has a note to browse its pictures. Details of every change: `git log`.
+Pictures are in `Screenshots/`, one folder per subject; browse them from [[Screenshots index]] (in `Screenshot Log/`). Details of every change: `git log`.
 
 > [!info] Where the work is (branches)
 > Since 2026-10-19 (William joined) every change is a branch and a pull request into `main`, merged by Zaviel ([[Collaboration]]). Before that `main` was kept equal to `feat/style-a`.
@@ -49,8 +49,8 @@ gitGraph
 ## 2026-10-19
 
 ### 📷 Notes to browse the screenshots (Zaviel)
-- `Screenshots/` is the **source** (the picture files, one folder per subject). Each folder now has a **note** showing its pictures newest first, each with its caption and the [[Dev Log]] entry or note it is in; [[Screenshots]] is the index (subjects, counts, the newest picture).
-- `python3 tools/vault_gallery.py` writes them from the files and the log; CMD_SYNC runs it. The Interaction folder became "Interaction (keys, moving)" (a note called Interaction exists).
+- `Screenshots/` is the **source** (the picture files, one folder per subject). A new folder **`Screenshot Log/`** has a note per subject (e.g. [[Park screenshots]]) showing its pictures newest first, each with its caption and the [[Dev Log]] entry or note it is in, and [[Screenshots index]] (subjects, counts, the newest picture).
+- `python3 tools/vault_gallery.py` writes them from the files and the log; CMD_SYNC runs it. Notes named like their folder stay make.md's folder notes. The Interaction folder became "Interaction (keys, moving)".
 
 ### 🎨 The pixel editor: a colour picker like Figma's (Zaviel)
 > [!info] Branch `test/wsl-queue`
