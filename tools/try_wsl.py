@@ -129,7 +129,7 @@ def main():
         "$t = [Diagnostics.Stopwatch]::StartNew(); while (@($all | ? { -not [ClawdTry.T]::Started($_[0]) }).Count -gt 0 -and $t.ElapsedMilliseconds -lt 15000) { Start-Sleep -Milliseconds 50 }",
         "'started all ' + $clk.ElapsedMilliseconds",
         "foreach ($a in $all) { [ClawdTry.T]::Show($a[0], $a[1]) }", "'shown all ' + $clk.ElapsedMilliseconds"]
-    if not desk and not check_only:  # on your own desktop: snap them by keyboard, so they form a snap group (a few seconds, takes the focus)
+    if not desk and not check_only and os.environ.get("CLAWD_TRY_SNAP") != "0":  # on your own desktop: snap them by keyboard, so they form a snap group (a few seconds, takes the focus; CLAWD_TRY_SNAP=0: not)
         keys = [("0x25", "0x26"), ("0x27", "0x26"), ("0x25", "0x28"), ("0x27", "0x28")]  # left/right, then up/down
         lines += ["if (-not [ClawdTry.T]::Snap($all[%d][0], %s, %s)) { 'not snapped: %s' }" % (i, k[0], k[1], ROOMS[i][0]) for i, k in enumerate(keys)]
         lines.append("[void][ClawdTry.T]::Focus($all[0][0])")
