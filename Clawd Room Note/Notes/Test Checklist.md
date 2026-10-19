@@ -10,15 +10,57 @@ tags:
 > Things only a person can check by looking. **Ticked = a person confirmed it**, with their name and the date: `(William, 2026-10-21)`; looks and art are ticked by Zaviel. Assistants never tick. Automatic tests are in [[Engine and Tests]]. Checks for things that were replaced are removed.
 
 ---
-> [!tip] Setting up a test (iTerm2)
-> `./clawd-room.sh --try` opens **four linked rooms**, one in each quarter of the screen (office, coffee shop / park, office), with **made-up Clawds** in them, so every gate shows at once. Quit any one to close all four, or `./clawd-room.sh --try close`. `--try real` shows only your real sessions.
+## 🧪 Test queue
 
-## WSL2 + Windows Terminal (next session) ([[Platforms and Windows]])
-- [ ] `make -C c test`, the smoke tests and `--check` pass on WSL
-- [ ] Style A rooms, the park plaza and buildings look as on macOS at the WSL font
-- [ ] The bottom bar is readable; the `g` / `m` hint shows only while the key is held
-- [ ] Two linked windows (side by side, stacked): gates, `g`, `m` with packing / unpacking, no desks hopping
-- [ ] `--edit NAME`: the pixel editor works with the mouse in Windows Terminal
+What to test next, one big callout per group: a box per test with its checks as sub-boxes; tick them as you check (with your name and the date), open **How to test** for the steps. A test whose boxes are all ticked moves down into its subject below.
+
+> [!info]- Box legend ([[Checkbox Style]])
+> - [ ] to test
+> - [/] partly checked
+> - [x] works (name, date)
+> - [!] fails: say what you saw, open an issue
+> - [?] unsure: say why
+> - [-] dropped (no longer applies)
+> - [>] moved to later
+> - [i] a note, not a check
+
+> [!tip] Setting up a test
+> `./clawd-room.sh --try` opens **four linked rooms**, one in each quarter of the screen (office, coffee shop / park, office), with **made-up Clawds** in them, so every gate shows at once. Quit any one to close all four, or `./clawd-room.sh --try close`. `--try real` shows only your real sessions. On WSL `--try --desktop N` opens them on virtual desktop N without switching to it (switch there yourself to look).
+
+> [!todo]+ WSL2 + Windows Terminal (since 2026-10-19)
+> - [ ] **1. The Clawd Room profile at 5 pt**
+>     - [i] Needs `python3 setup_profile.py --update` once (Zaviel ran it on 2026-10-19)
+>     - [ ] From Windows Terminal's dropdown the room starts and its window moves to the quarter of the screen it is in
+>     - [ ] Room pixels are square and about as many as on the Mac (the whole room fits, the park shows the swing set and the building's plaque)
+>     - [ ] `q` closes the room and the window; nothing is left behind
+> - [ ] **2. The rooms and the bottom bar**
+>     - [?] Once all four `--try` rooms closed together after about 15 s (cause unknown). If it happens: `cat ~/.clawd-room/try/stop` says which room ended it; note it here
+>     - [ ] Office, coffee shop and park look as on the Mac (style A, the park plaza and its buildings)
+>     - [ ] The bottom bar's text is readable at 5 pt (`?` shows the help)
+>     - [ ] Hold `g` or `m`: the yellow hint shows only while the key is held and goes right after letting go
+> - [ ] **3. Sending and moving Clawds between rooms**
+>     - [ ] `g` + an arrow: a Clawd walks to that gate (door, stairs, well), goes through and comes out in the room next to it
+>     - [ ] `m` + an arrow: the picked Clawd packs its desk into a box (poof), carries it out and unpacks at a new desk in the other room
+>     - [ ] The room it left does not blink; `m` + arrow while it carries the box sends it straight to the new gate
+>     - [ ] `b` calls your Clawds back
+> - [ ] **4. Desks stay in their room**
+>     - [ ] Opening the rooms one by one, a desk never jumps to another room
+>     - [ ] Closing one room: only its Clawds show up elsewhere
+> - [ ] **5. The pixel editor with the mouse**
+>     - [ ] `./clawd-room.sh --edit window`: left click paints, right click erases, the palette picks a colour
+>     - [ ] A running room shows the change as you draw
+>     - [ ] `q` asks save (S) or discard (D); D puts the picture back, in the room too
+>
+> > [!example]- How to test
+> > **1.** Windows Terminal → the ⌄ next to the tabs → **Clawd Room** → pick a scene → the window jumps once into its quarter; compare with `Screenshots/2026-10-19 wsl try, four rooms at 5 pt.png`; press `q`.
+> >
+> > **2.** In a WSL shell in the repo: `./clawd-room.sh --try` → look at the four rooms for a minute → click into one, `?` to read the help, `?` again → hold `g` two seconds and let go, then the same with `m` → `./clawd-room.sh --try close`.
+> >
+> > **3.** `./clawd-room.sh --try`, wait for the gates (about 10 s) → in the top-left room hold `g` and press → (coffee shop), then ↓ (park) → `Tab` until a Clawd at a desk is picked, `m` + →, watch both rooms → pick a Clawd carrying a box, `m` + ↓ → `b`.
+> >
+> > **4.** With at least one real Claude Code session running: open **Clawd Room** (office), note the desks → open a second and a third (coffee shop, park) next to it → the first room's desks stay → quit the coffee shop: only its Clawds move.
+> >
+> > **5.** Start a room (`--try` or the profile; the office has the window) → in a second window `./clawd-room.sh --edit window` → paint a few pixels and watch the room's window → `q`, then `D`: the window is back as before.
 
 ## Rooms and art ([[Rooms and Art]])
 - [ ] Each room (office, coffee shop, park) looks like the mockups at your window size
@@ -67,9 +109,7 @@ tags:
 - [ ] Words stay small when zoomed and never cover a Clawd
 
 ## Platforms ([[Platforms and Windows]])
-- [x] WSL: profile from the dropdown, 110x32 at 8 pt, drag / scale / font keys (2026-10-16)
-- [x] WSL: `wt.exe -w new --size 60,18 -p "Clawd Room"` opens at the final size (2026-10-16)
-- [ ] WSL: quitting puts the terminal font back
+- [ ] WSL: started from a normal shell (14 pt), the room sets 5 pt and quitting puts the terminal font back
 - [ ] iTerm2: Profiles → Clawd Room starts the room directly, already a quarter of the screen (no resize); `q` closes the window
 - [ ] iTerm2: `./clawd-room.sh` typed in a normal window: the room's window opens in its place (4x4 pt square pixels) and the typed-in window closes; `--keep` keeps it, `--here` runs in it
 - [ ] iTerm2: Cmd + / − / 0 do nothing in a room window
