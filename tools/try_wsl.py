@@ -5,7 +5,7 @@
     python3 tools/try_wsl.py BIN TRY_DIR EVENTS [--desktop N]
 
 The four open minimized one after another, then are placed and shown together (their visible frames on the quarters, like a
-snap layout). On your own desktop they are then snapped with the keyboard (Win + arrows, sent only to each room window while it
+snap layout). On your own desktop they are then snapped with the keyboard (hold Win, tap two arrows, sent only to each room window while it
 has the focus), which makes them a snap group: one taskbar entry. That takes the focus for a few seconds. --desktop N puts the windows
 on virtual desktop N (1 = the first) without switching to it: each is moved there while minimized, then shown without activating. That uses Explorer's undocumented virtual desktop interfaces
 (Windows 11 24H2 and later); it is for testing while you keep working on another desktop.
@@ -71,15 +71,14 @@ public static class T {
   [DllImport("user32.dll")] static extern void keybd_event(byte k, byte s, uint f, UIntPtr e);
   /* the focus to h (a tap of Alt lets a background process set it); true only if h really has it */
   public static bool Focus(IntPtr h) { keybd_event(0x12, 0, 0, UIntPtr.Zero); keybd_event(0x12, 0, 2, UIntPtr.Zero); SetForegroundWindow(h); System.Threading.Thread.Sleep(250); return GetForegroundWindow() == h; }
-  static void WinKey(byte k) { keybd_event(0x5B, 0, 0, UIntPtr.Zero); keybd_event(k, 0, 1, UIntPtr.Zero); keybd_event(k, 0, 3, UIntPtr.Zero); keybd_event(0x5B, 0, 2, UIntPtr.Zero); System.Threading.Thread.Sleep(500); }
-  /* snap h into a quarter with the keyboard (Win + left / right: a half, then Win + up / down: the quarter), as a person would;
+  static void Tap(byte k) { keybd_event(k, 0, 1, UIntPtr.Zero); keybd_event(k, 0, 3, UIntPtr.Zero); System.Threading.Thread.Sleep(60); }
+  /* snap h into a quarter with the keyboard as a person would: hold Win, tap left / right then up / down, let go of Win;
      windows snapped this way become a snap group (one taskbar entry). Keys go only to h while it has the focus; no Esc (it
      quits a room). False if h could not be focused. */
   public static bool Snap(IntPtr h, byte side, byte half) {
     if (!Focus(h)) return false;
-    WinKey(side);
-    if (GetForegroundWindow() != h && !Focus(h)) return false;  // (Snap Assist may have taken the focus: focusing h closes it)
-    WinKey(half); return true;
+    keybd_event(0x5B, 0, 0, UIntPtr.Zero); Tap(side); Tap(half); keybd_event(0x5B, 0, 2, UIntPtr.Zero);
+    System.Threading.Thread.Sleep(400); return true;
   }
   public static void Show(IntPtr h, int[] r) {
     ShowWindow(h, 4); SetWindowPos(h, IntPtr.Zero, r[0], r[1], r[2], r[3], 0x0014);
