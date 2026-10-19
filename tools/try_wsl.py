@@ -77,7 +77,7 @@ public static class T {
      quits a room). False if h could not be focused. */
   public static bool Snap(IntPtr h, byte side, byte half) {
     if (!Focus(h)) return false;
-    keybd_event(0x5B, 0, 0, UIntPtr.Zero); Tap(side); Tap(half); keybd_event(0x5B, 0, 2, UIntPtr.Zero);
+    keybd_event(0x5B, 0, 0, UIntPtr.Zero); Tap(side); System.Threading.Thread.Sleep(300); Tap(half); keybd_event(0x5B, 0, 2, UIntPtr.Zero);  // (the second arrow only once the first snap is done, or it stays a half)
     System.Threading.Thread.Sleep(400); return true;
   }
   public static void Show(IntPtr h, int[] r) {
