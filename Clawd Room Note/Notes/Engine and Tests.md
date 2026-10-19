@@ -4,9 +4,8 @@ tags:
   - clawd-room
   - engine
   - tests
+sticker: emoji//2699-fe0f
 ---
-# ⚙️ Engine and Tests
-
 > [!abstract] In short
 > The room is a small C11 program (`c/`, no libraries). Snapshot tests pin its output; pty tests drive the real program; one seeded random generator per Clawd keeps behaviour repeatable.
 

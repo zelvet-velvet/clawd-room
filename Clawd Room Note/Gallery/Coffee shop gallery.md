@@ -4,9 +4,8 @@ tags:
   - clawd-room
   - screenshots
 up: "[[Gallery index]]"
+sticker: emoji//2615
 ---
-# 📷 Coffee shop
-
 Pictures of the coffee shop, newest first: ✅ current (open), ♻️ replaced and ❌ not picked (folded; the status is in [[Snapshot status]]). The files are the source in `Snapshots/Coffee shop/`; this note is written by `tools/vault_gallery.py` (do not edit it by hand: add a picture, then run the tool).
 
 ## 2026-10-18

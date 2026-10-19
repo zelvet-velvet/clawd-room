@@ -7,8 +7,6 @@ tags:
   - clawd-room
 sticker: lucide//book-open
 ---
-# 📝 clawd-room Dev Log
-
 What changed and when, in short. How things work now is in the topic notes:
 
 | Note | About |
@@ -51,7 +49,8 @@ gitGraph
 ### 📷 Snapshots and a gallery to browse them (Zaviel)
 - The picture folder is now **`Snapshots/`** (it was `Screenshots/`), the **source**: the picture files, one folder per subject. A new folder **`Gallery/`** has a note per subject (e.g. [[Park gallery]]) showing its pictures newest first, each with its caption and the [[Dev Log]] entry or note it is in, and [[Gallery index]] (subjects, counts, the newest picture).
 - Each picture is marked **✅ current**, **♻️ replaced** (with the picture that replaced it) or **❌ not picked** in [[Snapshot status]] (all 91 marked: 21 current, 60 replaced, 10 not picked); current ones show open, the others folded.
-- `python3 tools/vault_gallery.py` writes them from the files, the status table and the log; CMD_SYNC runs it. Notes named like their folder stay make.md's folder notes. The Interaction folder became "Interaction (keys, moving)".
+- `python3 tools/vault_gallery.py` writes them from the files, the status table and the log; CMD_SYNC runs it.
+- Notes have no `# Title` heading any more (Obsidian shows the file name); the notes in `Notes/` and `Gallery/` have a sticker instead (the emoji their heading had). Notes named like their folder stay make.md's folder notes. The Interaction folder became "Interaction (keys, moving)".
 
 ### 🎨 The pixel editor: a colour picker like Figma's (Zaviel)
 > [!info] Branch `test/wsl-queue`

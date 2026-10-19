@@ -6,8 +6,6 @@ tags:
   - clawd-room
 sticker: lucide//users
 ---
-# 🤝 Collaboration
-
 How Zaviel (owner) and William (collaborator) work on clawd-room together, and how to share this vault through git. The full rules are in `CONTRIBUTING.md` at the repo root; this note is the short version plus what is special about Obsidian.
 
 ---

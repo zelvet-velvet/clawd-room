@@ -3,9 +3,8 @@ title: Platforms and Windows
 tags:
   - clawd-room
   - platforms
+sticker: emoji//1fa9f
 ---
-# 🪟 Platforms and Windows
-
 > [!abstract] In short
 > The room runs in **Windows Terminal (WSL)** and in **iTerm2 (macOS)**. A small helper the room starts (PowerShell or osascript) tells it where the clawd-room windows are; linked rooms talk through files. Nothing goes over the network.
 

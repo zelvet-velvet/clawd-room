@@ -23,6 +23,14 @@ PIC = (".png", ".gif", ".jpg", ".jpeg")
 NAME = re.compile(r"^(\d{4}-\d{2}-\d{2}) (.+)\.(?:png|gif|jpe?g)$", re.I)
 SUBJECT_ORDER = ["Office", "Coffee shop", "Park", "Gates (stairs, doors, wells)", "Interaction (keys, moving)", "Engine and tools",
                  "Platforms", "Style and mockups", "Old look"]
+ICON = {"Office": "💼", "Coffee shop": "☕", "Park": "🌳", "Gates (stairs, doors, wells)": "🚪", "Interaction (keys, moving)": "⌨️",
+        "Engine and tools": "🔧", "Platforms": "🖥️", "Style and mockups": "🎨", "Old look": "🕰️"}  # (each note's make.md sticker)
+
+
+def sticker(ch):
+    return "emoji//" + "-".join("%x" % ord(c) for c in ch)
+
+
 ABOUT = {
     "Office": "the office room",
     "Coffee shop": "the coffee shop",
@@ -103,7 +111,7 @@ def write_subject(folder, shown, status):
     path = os.path.join(SHOTS, folder)
     pics = sorted((f for f in os.listdir(path) if f.lower().endswith(PIC)), key=lambda f: (f[:10], f), reverse=True)
     lines = ["---", "title: Gallery · %s" % folder, "tags:", "  - clawd-room", "  - screenshots", "up: \"[[Gallery index]]\"",
-             "---", "# 📷 %s" % folder, "",
+             "sticker: " + sticker(ICON.get(folder, "📷")), "---",
              "Pictures of %s, newest first: ✅ current (open), ♻️ replaced and ❌ not picked (folded; the status is in "
              "[[Snapshot status]]). The files are the source in `Snapshots/%s/`; this note is written by "
              "`tools/vault_gallery.py` (do not edit it by hand: add a picture, then run the tool)." % (ABOUT.get(folder, folder.lower()), folder), ""]
@@ -139,7 +147,7 @@ def main():
         cur = [p for p in pics if status.get(p, ("current", ""))[0] == "current"]
         newest = cur[0] if cur else pics[0] if pics else None  # (the newest picture that is still current, if there is one)
         rows.append("| [[%s]] | %s | %d | %d | %d | %s | %s |" % (note_name(d), ABOUT.get(d, ""), count["current"], count["replaced"], count["not picked"], newest[:10] if newest else "", "![[%s\\|160]]" % newest if newest else ""))  # (a | in a table cell needs a backslash)
-    index = ["---", "title: Gallery index", "tags:", "  - clawd-room", "  - screenshots", "---", "# 📷 Gallery", "",
+    index = ["---", "title: Gallery index", "tags:", "  - clawd-room", "  - screenshots", "sticker: " + sticker("🖼️"), "---",
              "The pictures of clawd-room (snapshots): what the room looked like, mockups that were picked from, the user's own screenshots. "
              "**`Snapshots/` is the source**: one folder per subject with the picture files (`YYYY-MM-DD subject.png`; a person's "
              "own: `... (Zaviel).png`; the picked mockup: `... (picked).png`). Browse them in the notes below (this folder, "

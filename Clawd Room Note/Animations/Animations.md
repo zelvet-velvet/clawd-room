@@ -6,8 +6,6 @@ tags:
   - clawd-room
 sticker: lucide//film
 ---
-# 🎞️ Animations
-
 Every frame a Clawd can show, and the items it carries. All pictures are drawn by the real sprite code, not screenshots.
 
 > [!TODO] Edit a frame
