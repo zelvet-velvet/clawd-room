@@ -57,7 +57,7 @@ gitGraph
 - **`--try` on WSL**: four linked rooms in the screen quarters with Windows Terminal; `--try --desktop 3` opens them on another virtual desktop without switching to it (for testing while you work).
 - **5 pt, like the Mac**: the Clawd Room profile's font is 5 pt and a room opens as the quarter of the screen it is in, so a room shows as many pixels as on the Mac (it was 117x68 room pixels a quarter at 8 pt, now about 188x100). Needs `python3 setup_profile.py --update` once.
 
-![[2026-10-19 wsl try, four rooms at 8 pt.png|420]]
+![[2026-10-19 wsl try, four rooms at 8 pt.png|300]] → ![[2026-10-19 wsl try, four rooms at 5 pt.png|300]]
 
 ### 🧭 Desks stay in their room
 > [!bug] Fixed
