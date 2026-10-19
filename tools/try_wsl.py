@@ -48,6 +48,9 @@ public static class T {
   static System.Collections.Generic.HashSet<IntPtr> seen = new System.Collections.Generic.HashSet<IntPtr>();
   /* Windows Terminal's windows; Fresh() gives one that was not there at the last call (the room sets its own title later) */
   public static void Mark() { EnumWindows((h, l) => { var s = new StringBuilder(64); GetClassName(h, s, 64); if (s.ToString() == "CASCADIA_HOSTING_WINDOW_CLASS") seen.Add(h); return true; }, IntPtr.Zero); }
+  /* the room in it has started (it sets the title "clawd-room NAME-PID"): Windows Terminal is done opening the window, which
+     would otherwise minimize it again after it was shown */
+  public static bool Started(IntPtr h) { var s = new StringBuilder(256); GetWindowText(h, s, 256); return s.ToString().StartsWith("clawd-room "); }
   public static IntPtr Fresh() { IntPtr r = IntPtr.Zero; EnumWindows((h, l) => { var s = new StringBuilder(64); GetClassName(h, s, 64); if (s.ToString() == "CASCADIA_HOSTING_WINDOW_CLASS" && !seen.Contains(h)) { r = h; return false; } return true; }, IntPtr.Zero); if (r != IntPtr.Zero) seen.Add(r); return r; }
   static IServiceProvider10 Shell() { return (IServiceProvider10)Activator.CreateInstance(Type.GetTypeFromCLSID(new Guid("C2F03A33-21F5-47FA-B4BB-156362A2F239"))); }
   static IVirtualDesktopManagerInternal Mgr() { Guid c = new Guid("C5E0CDCA-7B6E-41B2-9FC4-D93975CC467B"), i = typeof(IVirtualDesktopManagerInternal).GUID; return (IVirtualDesktopManagerInternal)Shell().QueryService(ref c, ref i); }
@@ -109,7 +112,10 @@ def main():
         lines.append("$all += ,@($hw, $r); 'opened %s ' + $clk.ElapsedMilliseconds" % name)
     # all four show together: each opened minimized (and moved to its desktop) above, now placed and shown in one go;
     # on your own desktop the first one gets the focus
-    lines += [] if check_only else ["foreach ($a in $all) { [ClawdTry.T]::Show($a[0], $a[1]) }", "'shown all ' + $clk.ElapsedMilliseconds"]
+    lines += [] if check_only else [
+        "$t = [Diagnostics.Stopwatch]::StartNew(); while (@($all | ? { -not [ClawdTry.T]::Started($_[0]) }).Count -gt 0 -and $t.ElapsedMilliseconds -lt 15000) { Start-Sleep -Milliseconds 50 }",
+        "'started all ' + $clk.ElapsedMilliseconds",
+        "foreach ($a in $all) { [ClawdTry.T]::Show($a[0], $a[1]) }", "'shown all ' + $clk.ElapsedMilliseconds"]
     if not desk and not check_only:
         lines.append("[ClawdTry.T]::Focus($all[0][0])")
     script = "\n".join(lines)
