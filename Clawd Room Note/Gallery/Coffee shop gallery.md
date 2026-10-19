@@ -1,13 +1,13 @@
 ---
-title: Screenshots · Coffee shop
+title: Gallery · Coffee shop
 tags:
   - clawd-room
   - screenshots
-up: "[[Snapshots index]]"
+up: "[[Gallery index]]"
 ---
 # 📷 Coffee shop
 
-Pictures of the coffee shop, newest first: ✅ current (open), ♻️ replaced and ❌ not picked (folded; the status is in [[Snapshot status]]). The files are the source in `Screenshots/Coffee shop/`; this note is written by `tools/vault_gallery.py` (do not edit it by hand: add a picture, then run the tool).
+Pictures of the coffee shop, newest first: ✅ current (open), ♻️ replaced and ❌ not picked (folded; the status is in [[Snapshot status]]). The files are the source in `Snapshots/Coffee shop/`; this note is written by `tools/vault_gallery.py` (do not edit it by hand: add a picture, then run the tool).
 
 ## 2026-10-18
 

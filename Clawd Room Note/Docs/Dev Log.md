@@ -20,7 +20,7 @@ What changed and when, in short. How things work now is in the topic notes:
 | [[Test Checklist]] | what is still to check by eye |
 | [[Animations]] | every Clawd frame |
 
-Pictures are in `Screenshots/`, one folder per subject; browse them from [[Snapshots index]] (in `Snapshots/`). Details of every change: `git log`.
+Pictures are in `Snapshots/`, one folder per subject; browse them from [[Gallery index]] (in `Gallery/`). Details of every change: `git log`.
 
 > [!info] Where the work is (branches)
 > Since 2026-10-19 (William joined) every change is a branch and a pull request into `main`, merged by Zaviel ([[Collaboration]]). Before that `main` was kept equal to `feat/style-a`.
@@ -48,8 +48,8 @@ gitGraph
 
 ## 2026-10-19
 
-### 📷 Notes to browse the screenshots (Zaviel)
-- `Screenshots/` is the **source** (the picture files, one folder per subject). A new folder **`Snapshots/`** has a note per subject (e.g. [[Park snapshots]]) showing its pictures newest first, each with its caption and the [[Dev Log]] entry or note it is in, and [[Snapshots index]] (subjects, counts, the newest picture).
+### 📷 Snapshots and a gallery to browse them (Zaviel)
+- The picture folder is now **`Snapshots/`** (it was `Screenshots/`), the **source**: the picture files, one folder per subject. A new folder **`Gallery/`** has a note per subject (e.g. [[Park gallery]]) showing its pictures newest first, each with its caption and the [[Dev Log]] entry or note it is in, and [[Gallery index]] (subjects, counts, the newest picture).
 - Each picture is marked **✅ current**, **♻️ replaced** (with the picture that replaced it) or **❌ not picked** in [[Snapshot status]] (all 91 marked: 21 current, 60 replaced, 10 not picked); current ones show open, the others folded.
 - `python3 tools/vault_gallery.py` writes them from the files, the status table and the log; CMD_SYNC runs it. Notes named like their folder stay make.md's folder notes. The Interaction folder became "Interaction (keys, moving)".
 

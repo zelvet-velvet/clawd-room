@@ -1,13 +1,13 @@
 ---
-title: Screenshots · Office
+title: Gallery · Office
 tags:
   - clawd-room
   - screenshots
-up: "[[Snapshots index]]"
+up: "[[Gallery index]]"
 ---
 # 📷 Office
 
-Pictures of the office room, newest first: ✅ current (open), ♻️ replaced and ❌ not picked (folded; the status is in [[Snapshot status]]). The files are the source in `Screenshots/Office/`; this note is written by `tools/vault_gallery.py` (do not edit it by hand: add a picture, then run the tool).
+Pictures of the office room, newest first: ✅ current (open), ♻️ replaced and ❌ not picked (folded; the status is in [[Snapshot status]]). The files are the source in `Snapshots/Office/`; this note is written by `tools/vault_gallery.py` (do not edit it by hand: add a picture, then run the tool).
 
 ## 2026-10-18
 

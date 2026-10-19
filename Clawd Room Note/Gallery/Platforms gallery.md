@@ -1,13 +1,13 @@
 ---
-title: Screenshots · Platforms
+title: Gallery · Platforms
 tags:
   - clawd-room
   - screenshots
-up: "[[Snapshots index]]"
+up: "[[Gallery index]]"
 ---
 # 📷 Platforms
 
-Pictures of Windows Terminal, iTerm2, `--try`, newest first: ✅ current (open), ♻️ replaced and ❌ not picked (folded; the status is in [[Snapshot status]]). The files are the source in `Screenshots/Platforms/`; this note is written by `tools/vault_gallery.py` (do not edit it by hand: add a picture, then run the tool).
+Pictures of Windows Terminal, iTerm2, `--try`, newest first: ✅ current (open), ♻️ replaced and ❌ not picked (folded; the status is in [[Snapshot status]]). The files are the source in `Snapshots/Platforms/`; this note is written by `tools/vault_gallery.py` (do not edit it by hand: add a picture, then run the tool).
 
 ## 2026-10-19
 

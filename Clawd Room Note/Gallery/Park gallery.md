@@ -1,13 +1,13 @@
 ---
-title: Screenshots · Park
+title: Gallery · Park
 tags:
   - clawd-room
   - screenshots
-up: "[[Snapshots index]]"
+up: "[[Gallery index]]"
 ---
 # 📷 Park
 
-Pictures of the park plaza and its buildings, newest first: ✅ current (open), ♻️ replaced and ❌ not picked (folded; the status is in [[Snapshot status]]). The files are the source in `Screenshots/Park/`; this note is written by `tools/vault_gallery.py` (do not edit it by hand: add a picture, then run the tool).
+Pictures of the park plaza and its buildings, newest first: ✅ current (open), ♻️ replaced and ❌ not picked (folded; the status is in [[Snapshot status]]). The files are the source in `Snapshots/Park/`; this note is written by `tools/vault_gallery.py` (do not edit it by hand: add a picture, then run the tool).
 
 ## 2026-10-19
 
