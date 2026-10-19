@@ -43,7 +43,11 @@ try_setup() {
   try="$HOME/.clawd-room/try"
   mkdir -p "$try"
   if [ "${2:-}" = close ]; then touch "$try/stop"; exit 0; fi
-  touch "$try/stop"; sleep 0.8; rm -f "$try/stop" "$try/events.jsonl"; rm -rf "$try/link" # (end a --try still running)
+  # end a --try still running: wait until its rooms are gone (a room takes a moment to quit; one quitting after the new
+  # rooms started would write the stop file again and close them)
+  touch "$try/stop"; i=0
+  while pgrep -f "try_room.sh .* $try/stop" >/dev/null 2>&1 && [ $i -lt 50 ]; do sleep 0.2; i=$((i+1)); done
+  rm -f "$try/stop" "$try/events.jsonl"; rm -rf "$try/link"
   if [ "${2:-}" = real ]; then ev="$HOME/.clawd-room/events.jsonl"
   else
     ev="$try/events.jsonl"

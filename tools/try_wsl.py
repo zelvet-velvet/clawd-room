@@ -57,7 +57,16 @@ public static class T {
   public static void ToDesktop(IntPtr h, int n) { /* a new window has no view for a moment: try again for up to 5 s */
     for (int k = 0; ; k++) { try { IApplicationView v; Views().GetViewForHwnd(h, out v); Mgr().MoveViewToDesktop(v, At(n)); return; }
       catch (COMException) { if (k >= 250) throw; System.Threading.Thread.Sleep(20); } } }
-  public static void Show(IntPtr h, int[] r) { ShowWindow(h, 4); SetWindowPos(h, IntPtr.Zero, r[0], r[1], r[2], r[3], 0x0014); } /* SW_SHOWNOACTIVATE; no z-order, no activate */
+  [DllImport("user32.dll")] static extern bool GetWindowRect(IntPtr h, int[] r);
+  [DllImport("dwmapi.dll")] static extern int DwmGetWindowAttribute(IntPtr h, int a, int[] r, int n);
+  /* SW_SHOWNOACTIVATE, then the visible frame onto r (x, y, w, h) like Windows' snap layout: the window rectangle includes an
+     invisible resize border, so it is grown by that border (DWMWA_EXTENDED_FRAME_BOUNDS is the visible part); no z-order, no activate */
+  public static void Show(IntPtr h, int[] r) {
+    ShowWindow(h, 4); SetWindowPos(h, IntPtr.Zero, r[0], r[1], r[2], r[3], 0x0014);
+    int[] w = new int[4], f = new int[4];
+    if (GetWindowRect(h, w) && DwmGetWindowAttribute(h, 9, f, 16) == 0)
+      SetWindowPos(h, IntPtr.Zero, r[0] - (f[0] - w[0]), r[1] - (f[1] - w[1]), r[2] + (f[0] - w[0]) + (w[2] - f[2]), r[3] + (f[1] - w[1]) + (w[3] - f[3]), 0x0014);
+  }
 }}
 '''
 
@@ -76,7 +85,7 @@ def main():
     binp, tr, ev = args
     distro = os.environ.get("WSL_DISTRO_NAME", "Ubuntu")
     lines = ["$ErrorActionPreference = 'Stop'", "Add-Type -TypeDefinition " + ps_quote(VD_CS),
-             "[ClawdTry.T]::Mark(); $wa = [ClawdTry.T]::WorkArea(); $w = [int](($wa[2] - $wa[0]) / 2); $h = [int](($wa[3] - $wa[1]) / 2)"]
+             "$clk = [Diagnostics.Stopwatch]::StartNew(); [ClawdTry.T]::Mark(); $wa = [ClawdTry.T]::WorkArea(); $w = [int](($wa[2] - $wa[0]) / 2); $h = [int](($wa[3] - $wa[1]) / 2)"]
     if desk:
         lines += ["if ([ClawdTry.T]::Desktops() -lt %d) { throw 'there is no desktop %d' }" % (desk, desk),
                   "if ([ClawdTry.T]::OnCurrent(%d)) { throw 'desktop %d is the one you are on' }" % (desk - 1, desk)]
@@ -94,7 +103,7 @@ def main():
                   "if ($hw -eq [IntPtr]::Zero) { throw 'the %s window did not open' }" % name]
         if desk:
             lines.append("[ClawdTry.T]::ToDesktop($hw, %d)" % (desk - 1))
-        lines.append("[ClawdTry.T]::Show($hw, $r)")
+        lines.append("[ClawdTry.T]::Show($hw, $r); 'shown %s ' + $clk.ElapsedMilliseconds" % name)
     script = "\n".join(lines)
     # through a file in Windows' temp folder (with the PATHs the script is too long for -EncodedCommand)
     tmp = subprocess.run(["cmd.exe", "/d", "/c", "echo %TEMP%"], capture_output=True, text=True, cwd="/mnt/c").stdout.strip()
@@ -104,6 +113,8 @@ def main():
     p = subprocess.run(["powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", tmp + "\\clawd-room-try.ps1"],
                        capture_output=True, text=True)
     os.remove(path)
+    if os.environ.get("CLAWD_TRY_TIMING"):  # (how long each window took, in ms since the script started)
+        sys.stderr.write(p.stdout.replace("\r", ""))
     if p.returncode != 0:
         err = re.findall(r'<S S="Error">(.*?)</S>', p.stderr) or [l for l in p.stderr.replace("\r", "").splitlines() if l.strip()]
         err = [re.sub(r"_x000[DA]_", "", e).strip() for e in err]
