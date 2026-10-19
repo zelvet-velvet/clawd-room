@@ -3,7 +3,7 @@ title: Interaction
 tags:
   - clawd-room
   - interaction
-sticker: emoji//1f3ae
+sticker: lucide//gamepad-2
 ---
 > [!abstract] In short
 > Every Claude Code session is a Clawd. Keys zoom and steer a camera, pick the room size, and send Clawds to linked windows. Linked windows find each other by themselves; Clawds walk through doors and stairs between them. Looks are in [[Rooms and Art]], window handling in [[Platforms and Windows]].

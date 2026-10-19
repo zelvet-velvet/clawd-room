@@ -4,7 +4,7 @@ tags:
   - clawd-room
   - engine
   - plan
-sticker: emoji//1f9f1
+sticker: lucide//drafting-compass
 ---
 *Agreed 2026-10-18; all four steps built.*
 

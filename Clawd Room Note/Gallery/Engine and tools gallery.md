@@ -4,7 +4,7 @@ tags:
   - clawd-room
   - screenshots
 up: "[[Gallery index]]"
-sticker: emoji//1f527
+sticker: lucide//wrench
 ---
 Pictures of the debug overlay, the placer, the pixel editor, the gallery, newest first: ✅ current (open), ♻️ replaced and ❌ not picked (folded; the status is in [[Snapshot status]]). The files are the source in `Snapshots/Engine and tools/`; this note is written by `tools/vault_gallery.py` (do not edit it by hand: add a picture, then run the tool).
 

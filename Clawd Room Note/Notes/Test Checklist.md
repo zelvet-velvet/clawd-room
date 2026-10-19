@@ -3,7 +3,7 @@ title: Test Checklist
 tags:
   - clawd-room
   - tests
-sticker: emoji//2705
+sticker: lucide//list-checks
 ---
 > [!info] How to use this
 > Things only a person can check by looking. **Ticked = a person confirmed it**, with their name and the date: `(William, 2026-10-21)`; looks and art are ticked by Zaviel. Assistants never tick. Automatic tests are in [[Engine and Tests]]. Checks for things that were replaced are removed.

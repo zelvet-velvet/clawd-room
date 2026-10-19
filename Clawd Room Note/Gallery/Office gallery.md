@@ -4,7 +4,7 @@ tags:
   - clawd-room
   - screenshots
 up: "[[Gallery index]]"
-sticker: emoji//1f4bc
+sticker: lucide//briefcase
 ---
 Pictures of the office room, newest first: ✅ current (open), ♻️ replaced and ❌ not picked (folded; the status is in [[Snapshot status]]). The files are the source in `Snapshots/Office/`; this note is written by `tools/vault_gallery.py` (do not edit it by hand: add a picture, then run the tool).
 

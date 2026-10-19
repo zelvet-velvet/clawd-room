@@ -4,7 +4,7 @@ tags:
   - clawd-room
   - ui
   - art
-sticker: emoji//1f3a8
+sticker: lucide//palette
 ---
 > [!abstract] In short
 > The rooms are drawn in **one-point perspective** ("style A"): a back wall, slanted side walls, a floor in true perspective. Each session gets a workspace; gates to the next window sit on the walls, ceiling and floor. History is in [[Dev Log]]; keys and behaviour in [[Interaction]].

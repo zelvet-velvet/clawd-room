@@ -3,7 +3,7 @@ title: Gallery index
 tags:
   - clawd-room
   - screenshots
-sticker: emoji//1f5bc-fe0f
+sticker: lucide//images
 ---
 The pictures of clawd-room (snapshots): what the room looked like, mockups that were picked from, the user's own screenshots. **`Snapshots/` is the source**: one folder per subject with the picture files (`YYYY-MM-DD subject.png`; a person's own: `... (Zaviel).png`; the picked mockup: `... (picked).png`). Browse them in the notes below (this folder, Gallery, written by `tools/vault_gallery.py`); the [[Dev Log]] shows them with what changed.
 

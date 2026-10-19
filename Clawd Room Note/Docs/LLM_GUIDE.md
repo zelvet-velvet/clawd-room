@@ -144,7 +144,7 @@ When the user sends **`CMD_SYNC`**, update the notes for every feature or change
 ## 🗣️ Conventions
 
 - Call the user by name (**Zaviel** or **William**, from `git config user.name`). Reply in the language they write in; the notes stay English.
-- **Notes:** no `# Title` heading inside a note (Obsidian shows the file name as its title); each note in `Notes/` and `Gallery/` has a make.md `sticker:` in its frontmatter (`emoji//1f3a8` style; `Docs/` uses `lucide//…`). Never write a note named like its folder (make.md's folder notes).
+- **Notes:** no `# Title` heading inside a note (Obsidian shows the file name as its title); each note in `Notes/` and `Gallery/` has a make.md `sticker:` in its frontmatter (a lucide icon, `lucide//palette`). Never write a note named like its folder (make.md's folder notes).
 - Pixel text is upper case only (the 3x5 font has no lower case); keep UI strings short.
 - Times in the events file are epoch seconds; `--at TS` pretends "now" is TS.
 - Terminal sizes are `COLSxROWS`; a cell is 1 room pixel wide and 2 high, so room pixels are square on screen.
