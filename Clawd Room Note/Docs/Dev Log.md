@@ -48,6 +48,10 @@ gitGraph
 
 ## 2026-10-19
 
+### 🧪 A test queue (Zaviel)
+- The [[Test Checklist]] starts with a **test queue**: what to test next, in order, one callout per test with tick boxes and a foldable **How to test** with numbered steps. Five WSL tests are queued (the profile at 5 pt, the rooms and the bar, sending and moving, desks staying, the pixel editor).
+- Done tests move down into their subject; the old WSL list and the 8 pt checks it replaced are gone.
+
 ### 🤝 A collaborator: William (Zaviel)
 - William Pan (`WilliamPanTW`) joins. From now on **everyone works on branches and pull requests**; only Zaviel merges into `main` (the old "`feat/style-a` = `main`" practice ends).
 - `CONTRIBUTING.md` (setup, the everyday loop, what to work on, tests, rules), [[Collaboration]] (the same in short, and how to share this vault), a pull request template; `CLAUDE.md` and the [[LLM_GUIDE]] tell each person's Claude Code whom it works with.
