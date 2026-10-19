@@ -51,7 +51,7 @@ gitGraph
 ### 🎨 The pixel editor opens in its own window on WSL (Zaviel)
 > [!info] Branch `test/wsl-queue`
 - `./clawd-room.sh --edit NAME` opens the editor in its own **Clawd Room** window in the middle of the screen (70 x 78 %), as on the Mac; the window you typed in stays. `--here` runs it in the current window.
-- The test queue's titles have no box any more; their checks are the boxes.
+- The test queue is grouped (`Group A · …`), each test with an ID (**T1** … **T17**, questions **Q1**) to refer to, a `✅ date (who)` line for results and a folded *how to run* per group.
 
 ### 🪟 `--try` on WSL opens as one layout (Zaviel)
 > [!info] Branch `test/wsl-queue`
