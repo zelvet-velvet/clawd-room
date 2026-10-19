@@ -52,7 +52,7 @@ gitGraph
 > [!info] Branch `test/wsl-queue`
 - The four rooms open minimized, wait until each room has started, then **show together**, their visible frames edge to edge on the quarters like a snap layout (Windows 11's invisible window border is taken into account).
 - Fixed: starting a `--try` closed the new rooms when an old one quit late (a WSL room takes a second to quit); `--desktop` is checked before anything is closed.
-- They then form a **snap group** (one "Group" entry in the taskbar, minimise and bring back all four at once): Windows has no API for that, but snapping each room window with **Win + arrows** does it (tried on Zaviel's screen: the first try failed only because two windows were minimised). It takes the focus for a few seconds, only on your own desktop (not with `--desktop N`).
+- They then form a **snap group** (one "Group" entry in the taskbar, minimise and bring back all four at once): Windows has no API for that, but doing what a person does works: the first room is snapped into the top-left quarter with **Win + ← + ↑**, then the other three are **picked in Snap Assist** (found by their titles). Each goes straight into its quarter. It takes the focus for a few seconds, only on your own desktop (not with `--desktop N`); `CLAWD_TRY_SNAP=0` skips it. (Tried step by step on Zaviel's screen; on the way a window snapped twice jumped to the other monitor.)
 
 ### 🗂️ Screenshots in folders (Zaviel)
 - `Screenshots/` is sorted into one folder per subject: Office, Coffee shop, Park, Gates (stairs, doors, wells), Interaction, Engine and tools, Platforms, Style and mockups, Old look. Every picture in the notes still shows (Obsidian finds them by name).

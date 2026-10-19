@@ -5,8 +5,9 @@
     python3 tools/try_wsl.py BIN TRY_DIR EVENTS [--desktop N]
 
 The four open minimized one after another, then are placed and shown together (their visible frames on the quarters, like a
-snap layout). On your own desktop they are then snapped with the keyboard (hold Win, tap two arrows, sent only to each room window while it
-has the focus), which makes them a snap group: one taskbar entry. That takes the focus for a few seconds. --desktop N puts the windows
+snap layout). On your own desktop they are then made a snap group (one taskbar entry) as a person would: the first room snapped
+with the keyboard (hold Win, tap two arrows, only while it has the focus), the others picked in Snap Assist. That takes the focus
+for a few seconds (CLAWD_TRY_SNAP=0: not done). --desktop N puts the windows
 on virtual desktop N (1 = the first) without switching to it: each is moved there while minimized, then shown without activating. That uses Explorer's undocumented virtual desktop interfaces
 (Windows 11 24H2 and later); it is for testing while you keep working on another desktop.
 """
@@ -51,6 +52,7 @@ public static class T {
   public static void Mark() { EnumWindows((h, l) => { var s = new StringBuilder(64); GetClassName(h, s, 64); if (s.ToString() == "CASCADIA_HOSTING_WINDOW_CLASS") seen.Add(h); return true; }, IntPtr.Zero); }
   /* the room in it has started (it sets the title "clawd-room NAME-PID"): Windows Terminal is done opening the window, which
      would otherwise minimize it again after it was shown */
+  public static string Title(IntPtr h) { var s = new StringBuilder(256); GetWindowText(h, s, 256); return s.ToString(); }
   public static bool Started(IntPtr h) { var s = new StringBuilder(256); GetWindowText(h, s, 256); return s.ToString().StartsWith("clawd-room "); }
   public static IntPtr Fresh() { IntPtr r = IntPtr.Zero; EnumWindows((h, l) => { var s = new StringBuilder(64); GetClassName(h, s, 64); if (s.ToString() == "CASCADIA_HOSTING_WINDOW_CLASS" && !seen.Contains(h)) { r = h; return false; } return true; }, IntPtr.Zero); if (r != IntPtr.Zero) seen.Add(r); return r; }
   static IServiceProvider10 Shell() { return (IServiceProvider10)Activator.CreateInstance(Type.GetTypeFromCLSID(new Guid("C2F03A33-21F5-47FA-B4BB-156362A2F239"))); }
@@ -129,10 +131,28 @@ def main():
         "$t = [Diagnostics.Stopwatch]::StartNew(); while (@($all | ? { -not [ClawdTry.T]::Started($_[0]) }).Count -gt 0 -and $t.ElapsedMilliseconds -lt 15000) { Start-Sleep -Milliseconds 50 }",
         "'started all ' + $clk.ElapsedMilliseconds",
         "foreach ($a in $all) { [ClawdTry.T]::Show($a[0], $a[1]) }", "'shown all ' + $clk.ElapsedMilliseconds"]
-    if not desk and not check_only and os.environ.get("CLAWD_TRY_SNAP") != "0":  # on your own desktop: snap them by keyboard, so they form a snap group (a few seconds, takes the focus; CLAWD_TRY_SNAP=0: not)
+    if not desk and not check_only and os.environ.get("CLAWD_TRY_SNAP") != "0":
+        # on your own desktop make them a snap group (one taskbar entry), as a person would: snap the first room into the top-left
+        # quarter with the keyboard, then pick the other three in Snap Assist (found by their titles with UI Automation; it
+        # fills the next quarter each time). A room Snap Assist does not show within 3 s is snapped with its own keys instead.
+        # Takes the focus for a few seconds; CLAWD_TRY_SNAP=0: not done.
         keys = [("0x25", "0x26"), ("0x27", "0x26"), ("0x25", "0x28"), ("0x27", "0x28")]  # left/right, then up/down
-        lines += ["if (-not [ClawdTry.T]::Snap($all[%d][0], %s, %s)) { 'not snapped: %s' }" % (i, k[0], k[1], ROOMS[i][0]) for i, k in enumerate(keys)]
-        lines.append("[void][ClawdTry.T]::Focus($all[0][0])")
+        lines += [
+            "Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes",
+            "$A = [System.Windows.Automation.AutomationElement]; $explorer = @(Get-Process explorer | % { $_.Id })",
+            "$li = New-Object System.Windows.Automation.PropertyCondition($A::ControlTypeProperty, [System.Windows.Automation.ControlType]::ListItem)",
+            "function Assist($title) { $t = [Diagnostics.Stopwatch]::StartNew(); while ($t.ElapsedMilliseconds -lt 3000) {"
+            " $e = $A::RootElement.FindAll([System.Windows.Automation.TreeScope]::Children, [System.Windows.Automation.Condition]::TrueCondition) | ? { $explorer -contains $_.Current.ProcessId } |"
+            " % { $_.FindAll([System.Windows.Automation.TreeScope]::Descendants, $li) } | ? { $_.Current.ClassName -eq 'ListViewItem' -and"
+            " ((@($_.FindAll([System.Windows.Automation.TreeScope]::Descendants, [System.Windows.Automation.Condition]::TrueCondition) | % { $_.Current.Name })) -contains $title) } | select -First 1;"
+            " $p = $null; if ($e -and $e.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$p)) { $p.Invoke(); Start-Sleep -Milliseconds 500; return $true };"
+            " Start-Sleep -Milliseconds 150 }; return $false }",  # (Snap Assist is Explorer's; only a thumbnail with exactly our title is picked)
+            "$assist = [ClawdTry.T]::Snap($all[0][0], %s, %s); if (-not $assist) { 'not snapped: %s' }" % (keys[0][0], keys[0][1], ROOMS[0][0]),
+        ]
+        for i in range(1, 4):
+            lines.append("if (-not ($assist -and (Assist ([ClawdTry.T]::Title($all[%d][0]))))) { $assist = $false; if (-not [ClawdTry.T]::Snap($all[%d][0], %s, %s)) { 'not snapped: %s' } }"
+                         % (i, i, keys[i][0], keys[i][1], ROOMS[i][0]))
+        lines += ["'snapped ' + $clk.ElapsedMilliseconds", "[void][ClawdTry.T]::Focus($all[0][0])"]
     script = "\n".join(lines)
     # through a file in Windows' temp folder (with the PATHs the script is too long for -EncodedCommand)
     tmp = subprocess.run(["cmd.exe", "/d", "/c", "echo %TEMP%"], capture_output=True, text=True, cwd="/mnt/c").stdout.strip()
