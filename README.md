@@ -2,6 +2,10 @@
 
 A pixel room with one little character per running Claude Code session.
 
+**New here?** Read [`CONTRIBUTING.md`](CONTRIBUTING.md) (setup, how we work, what you can work on), then
+`Clawd Room Note/Docs/LLM_GUIDE.md` (map and rules) and the end of `Clawd Room Note/Docs/Dev Log.md` (what is pending).
+Quick look: `make -C c test`, then `./clawd-room.sh --try` (four linked rooms with made-up Clawds).
+
 - `hook.py` — Claude Code hook. Appends `{time, session id, event, folder name, tool name}` to
   `~/.clawd-room/events.jsonl` (mode 600). Never stores prompts, tool input/output or full paths.
 - `room.py` — the window (pygame-ce, via WSLg). Replays the last 10 min, then follows the file.

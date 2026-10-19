@@ -24,6 +24,7 @@ Read this first if you are an AI assistant (Claude Code or similar) working on t
 | You need | Read |
 | --- | --- |
 | Commands, flags | `README.md` |
+| How two people work together (branches, PRs, the vault) | `CONTRIBUTING.md`, [[Collaboration]] |
 | What changed and when (short, with pictures), pending, ideas | [[Dev Log]] |
 | The look: rooms, workspaces, gates, signs, art rules, layout numbers | [[Rooms and Art]] |
 | Keys, camera, room size, linked windows, crossing, sessions | [[Interaction]] |
@@ -69,7 +70,7 @@ Test hooks (environment): `CLAWD_EVENTS` (events file), `CLAWD_LINK_DIR` (link f
 - **Privacy of the events file.** Keep `{"t","sid","ev","cwd","tool"}`. No prompts, tool input/output or full paths, anywhere (hook, link messages, logs). Link messages carry a type and small values only.
 - **No dependencies.** The room is C11 and libc/libm only; the Python tools use the standard library only. No pip installs. Only `room.py` uses pygame (in `.venv`).
 - **No network, no background daemons.** Writes go only to the project folder and `~/.clawd-room/`; the one exception is `setup_profile.py --apply`, which the user runs by hand and which writes a single fragment file under Windows Terminal's `Fragments\clawd-room\` (`settings.json` only via the explicit `--apply-global`, with a `.clawd-room.bak` backup). The `powershell.exe` children belong to the room and must be stopped when it exits.
-- **Do not edit `~/.claude/settings.json` yourself.** Tell the user to run `python3 install_hooks.py` (prints the change); `--apply` only if they say so. The installed hook calls `python3 ~/clawd-room/hook.py`, so the **symlink `~/clawd-room` -> the Desktop folder must stay**.
+- **Do not edit `~/.claude/settings.json` yourself.** Tell the user to run `python3 install_hooks.py` (prints the change); `--apply` only if they say so. The installed hook calls `hook.py` by its full path, so the repo must not move: on Zaviel's WSL machine it calls `python3 ~/clawd-room/hook.py`, so the **symlink `~/clawd-room` -> the Desktop folder must stay**.
 - **Snapshots are the contract.** `make -C c test` must pass; a change that alters behaviour on purpose updates the snapshots (`tools/test.sh --update`) and says so in the Dev Log. New behaviour gets a fixture (`tools/fixtures/*.fx`) or scene (`tools/scenarios/*.sc`). The random generator is Python's Mersenne Twister, kept so the old comparisons stay valid: do not add or remove random calls casually. Launchers call `clawd-room.sh`, never the binary directly.
 - **Leave `room.py` alone** (reference only). Keep the state machine and its timings unless asked: 90 s sleep, 30 min stale, 2.5 s cheer, 0.8 s hold-working.
 - **Terminal hygiene.** Alternate screen, hidden cursor, one string written per frame, diff updates; restore the terminal on exit, Ctrl-C and exceptions.
@@ -93,7 +94,7 @@ Test hooks (environment): `CLAWD_EVENTS` (events file), `CLAWD_LINK_DIR` (link f
 7. `make -C c winsmoke`: real Windows Terminal windows (your own `alpha` / `beta`): sizing and gate positions. `clawd-room --list-windows` lists the `clawd-room` windows; `tools/place_windows.py` moves only the titles you give it. New Windows Terminal windows may open minimized, and the PowerShell helper needs a few seconds to start.
 8. `clawd-room --build-art` redraws the sprite sheet and GIFs; look at them.
 
-Run the tests that rewrite snapshots in a separate worktree (`git worktree add gallery/mock/wt`) when the working tree has Zaviel's own uncommitted edits (e.g. a sprite being drawn in `sprites/props.txt`): never commit or alter those.
+Run the tests that rewrite snapshots in a separate worktree (`git worktree add gallery/mock/wt`) when the working tree has the user's own uncommitted edits (e.g. a sprite being drawn in `sprites/props.txt`): never commit or alter those.
 
 ---
 ## 🔁 Workflow
@@ -107,45 +108,43 @@ Run the tests that rewrite snapshots in a separate worktree (`git worktree add g
 ---
 ## 🌿 Regulation: repo management
 
-The repo is private on GitHub (`zelvet-velvet/clawd-room`). History starts clean (2026-10-16): the first commit is `chore: start clean history`. The old repo, with the original pygame prototype and the branches `feature/terminal-ui` / `feature/room-link`, is archived (read-only, private) as `zelvet-velvet/clawd-room-archive`; look there only for old history. New work goes on branches off `main`.
+The repo is private on GitHub (`zelvet-velvet/clawd-room`). Two people work on it: **Zaviel** (owner, `zelvet-velvet`) and **William Pan** (collaborator, `WilliamPanTW`, since 2026-10-19). The human version of these rules, with the setup and the everyday loop, is `CONTRIBUTING.md`; the vault side is [[Collaboration]]. History starts clean (2026-10-16): the first commit is `chore: start clean history`. The old repo, with the original pygame prototype and the branches `feature/terminal-ui` / `feature/room-link`, is archived (read-only, private) as `zelvet-velvet/clawd-room-archive`; look there only for old history.
 
 **Branches**
-- `main` is the stable line. Do not commit to it directly; it only receives merges.
-- Work on a branch named `type/short-slug`, for example `feat/seesaw`, `fix/gate-offset`. 
+- `main` is the stable line. Nobody commits or pushes to it directly; it only receives pull requests.
+- Work on a branch off a fresh `main`, named `type/short-slug`, for example `feat/seesaw`, `fix/gate-offset`. One topic per branch; unrelated things go on a new branch.
+- (Until 2026-10-19 Zaviel worked alone with `feat/style-a` kept equal to `main`; that practice ended when William joined.)
 
 **Commit messages:** `type(scope): summary`, lowercase, imperative, no trailing period.
 - `type` is one of `feat`, `fix`, `refactor`, `chore`, `docs`.
 - `scope` is the area touched: `room`, `link`, `gates`, `themes`, `detect`, `hook`, `vault`, `docs`...
 - Example: `fix(gates): wait one second for still windows before showing a gate`.
 - End each commit message with the co-author line from the session's attribution rules.
-- Git identity: name `Zaviel`, email `you@example.com` (set in the repo, not globally).
+- Git identity: the user's own, set in the repo (not globally). Zaviel: `Zaviel`, `you@example.com`. Check `git config user.name` to know whom you work with.
 
-**Every change = commit + push** on the current feature branch, without asking; never force-push (the history was restarted once, on purpose, in a new repo).
+**Every change = commit + push** on the current feature branch, without asking; never force-push a shared branch or `main`.
 
-**Merging to `main`**
-- When a feature seems done, **ask the user** whether to open a PR or merge. Never merge without a yes.
-- Current practice (Zaviel said "merge to main", 2026-10-18): `feat/style-a` is the working branch and `main` is kept equal to it; each commit is pushed to both (`git branch -f main HEAD` while `main` is an ancestor, then `git push origin feat/style-a main`).
-- Merge with `--no-ff` so each feature shows as one branch: `git merge --no-ff <branch> -m "type(scope): summary"`, then push `main`. Do not chain a merge and a branch delete in one command.
-- After a merge, delete the merged branch (local and remote).
-- Unrelated things go on a new branch.
+**Pull requests and merging**
+- When a feature is done (tests pass, Dev Log entry written), **open a pull request** into `main` with `gh pr create` (the template asks for what changed, pictures, what was tested). Before that, `git fetch && git merge origin/main` and test again.
+- **Only Zaviel merges** (on GitHub: "Create a merge commit", so each feature shows as one branch). Never merge a PR yourself, and for Zaviel's own PRs ask before merging.
+- After a merge, delete the branch (GitHub's button, then `git branch -d` locally).
 
----
 ## 📜 Regulation: notes and `CMD_SYNC`
 
 When the user sends **`CMD_SYNC`**, update the notes for every feature or change added since the last sync:
 
 1. Find what changed: `git status`, `git log` since the previous `docs(vault): sync` commit, and the conversation so far.
-2. **[[Dev Log]]** (`Docs/Dev Log.md`): one short entry per change under its date (newest first): a title, two to four plain bullets of what changed for the user, the branch if not merged, a link to the topic note. No code details, no rounds of back and forth; superseded attempts get one line.
-3. **Pictures:** put screenshots (the user's, renders from the real program, chosen mockups) in `Screenshots/` named `YYYY-MM-DD subject.png` (the user's own: `... (Zaviel).png`, scaled to 1400 px) and embed them in the Dev Log entry (`![[name.png|250]]`).
+2. **[[Dev Log]]** (`Docs/Dev Log.md`): one short entry per change under its date (newest first): a title with the author's name in brackets, two to four plain bullets of what changed for the user, the branch if not merged, a link to the topic note. No code details, no rounds of back and forth; superseded attempts get one line.
+3. **Pictures:** put screenshots (the user's, renders from the real program, chosen mockups) in `Screenshots/` named `YYYY-MM-DD subject.png` (a person's own: `... (Zaviel).png` / `... (William).png`, scaled to 1400 px) and embed them in the Dev Log entry (`![[name.png|250]]`).
 4. **Topic notes** (`Notes/`): update the note(s) the change belongs to so they describe how things work *now* (rewrite, do not append history; use mermaid diagrams (flowcharts with `%%{init: {"flowchart": {"defaultRenderer": "elk"}}}%%`, state and sequence diagrams) and callouts where they explain better than text): [[Rooms and Art]], [[Interaction]], [[Platforms and Windows]], [[Engine and Tests]]. Constants go in the tables there.
 5. **[[Test Checklist]]:** add what the user still has to check by eye, under its subject; drop checks for things that were replaced. Do not tick anything; only the user's yes does that.
 6. Update `README.md` if commands, flags or keys changed, and this guide if a rule changed.
-7. Commit and push as `docs(vault): sync`, then finish with a short list of what was added.
+7. Commit and push as `docs(vault): sync` on its own branch, open a pull request, then finish with a short list of what was added.
 
 ---
 ## 🗣️ Conventions
 
-- Call the user **Zaviel**. Reply in the language they write in; the notes stay English.
+- Call the user by name (**Zaviel** or **William**, from `git config user.name`). Reply in the language they write in; the notes stay English.
 - Pixel text is upper case only (the 3x5 font has no lower case); keep UI strings short.
 - Times in the events file are epoch seconds; `--at TS` pretends "now" is TS.
 - Terminal sizes are `COLSxROWS`; a cell is 1 room pixel wide and 2 high, so room pixels are square on screen.

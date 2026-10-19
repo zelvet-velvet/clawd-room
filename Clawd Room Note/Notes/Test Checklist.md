@@ -7,7 +7,7 @@ tags:
 # ✅ Test Checklist
 
 > [!info] How to use this
-> Things only a person can check by looking. **Ticked = Zaviel confirmed it** (nobody else ticks). Automatic tests are in [[Engine and Tests]]. Checks for things that were replaced are removed.
+> Things only a person can check by looking. **Ticked = a person confirmed it**, with their name and the date: `(William, 2026-10-21)`; looks and art are ticked by Zaviel. Assistants never tick. Automatic tests are in [[Engine and Tests]]. Checks for things that were replaced are removed.
 
 ---
 > [!tip] Setting up a test (iTerm2)

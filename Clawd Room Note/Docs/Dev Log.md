@@ -23,7 +23,7 @@ What changed and when, in short. How things work now is in the topic notes:
 Pictures are in `Screenshots/`. Details of every change: `git log`.
 
 > [!info] Where the work is (branches)
-> `main` = `feat/style-a` (kept equal since Zaviel said "merge to main" on 2026-10-18; every commit goes to both). `feat/camera-gates` is older and merged into it.
+> Since 2026-10-19 (William joined) every change is a branch and a pull request into `main`, merged by Zaviel ([[Collaboration]]). Before that `main` was kept equal to `feat/style-a`.
 
 ```mermaid
 gitGraph
@@ -47,6 +47,17 @@ gitGraph
 ## 2026-10-18
 
 ## 2026-10-19
+
+### 🤝 A collaborator: William (Zaviel)
+- William Pan (`WilliamPanTW`) joins. From now on **everyone works on branches and pull requests**; only Zaviel merges into `main` (the old "`feat/style-a` = `main`" practice ends).
+- `CONTRIBUTING.md` (setup, the everyday loop, what to work on, tests, rules), [[Collaboration]] (the same in short, and how to share this vault), a pull request template; `CLAUDE.md` and the [[LLM_GUIDE]] tell each person's Claude Code whom it works with.
+
+### 🪟 On WSL again (Zaviel)
+- All tests pass on WSL. The Mac's snapshots were made with fused multiply-add (one rounding for `a*b+c`); the build now uses it on both platforms, so they agree (Zaviel's choice).
+- **`--try` on WSL**: four linked rooms in the screen quarters with Windows Terminal; `--try --desktop 3` opens them on another virtual desktop without switching to it (for testing while you work).
+- **5 pt, like the Mac**: the Clawd Room profile's font is 5 pt and a room opens as the quarter of the screen it is in, so a room shows as many pixels as on the Mac (it was 117x68 room pixels a quarter at 8 pt, now about 188x100). Needs `python3 setup_profile.py --update` once.
+
+![[2026-10-19 wsl try, four rooms at 8 pt.png|420]]
 
 ### 🧭 Desks stay in their room
 > [!bug] Fixed
