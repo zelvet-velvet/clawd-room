@@ -64,7 +64,7 @@ The vault is plain Markdown in git, so it travels with the code: notes change on
 - **Pictures:** `Assets/Snapshots/<subject folder>/YYYY-MM-DD subject.png`, a row in [[Snapshot status]], then `python3 tools/vault_gallery.py` (it writes the browsing notes in `Gallery/`) (folders: `Office/`, `Coffee shop/`, `Park/`, `Gates (stairs, doors, wells)/`, `Interaction (keys, moving)/`, `Engine and tools/`, `Platforms/`, `Style and mockups/`, `Old look/`; a new one if none fits); your own captures add your name, `... (William).png`. Embed with `![[name.png|300]]`.
 - **Renaming a note** updates links in the vault you have open, not in other people's branches: rename notes only in a PR of their own, and say so.
 - **Conflicts** in Markdown (two PRs adding to the same day's note): keep **both** entries, newest first. Separate day notes make this rare.
-- `CMD_SYNC` (see [[LLM Guide]]) is the bigger tidy-up of all the notes; whoever runs it does it on its own branch and PR.
+- Asking your Claude to keep the notes: `CMD_SYNC` (updates [[Dev Status]]), `CMD_JOURNAL` (writes the day note), `CMD_NOTES_SYNC` (design notes, test queue, gallery), `CMD_ROLLOVER` (a new day); see [[LLM Guide]]. Their changes go on their own branch and PR.
 
 ---
 ## 💬 Where to talk

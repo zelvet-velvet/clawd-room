@@ -7,7 +7,7 @@ tags:
   - clawd-room
 sticker: lucide//book-open
 ---
-What changed and when, in short: **one note per day** in `Log/` (newest first), listed below with their entries; then what is pending and ideas. How things work now is in the design notes:
+What changed and when, in short: **one note per day** in `Log/` (newest first), listed below with their entries. Where things stand now (today, ongoing, ideas, done): [[Dev Status]]. How things work now is in the design notes:
 
 | Note | About |
 | --- | --- |
@@ -64,32 +64,3 @@ for (const p of days) {
 ```
 
 ---
-## ⏳ Pending
-
-> [!todo] Next session (2026-10-20, on Windows WSL2)
-> Everything since 2026-10-17 was built and tested on macOS only. On WSL2:
-> 1. `git pull` (branch `feat/style-a` = `main`), `make -C c`, then `make -C c test`, `smoke`, `linksmoke`, `movesmoke`, `splitsmoke` and `clawd-room --check`: they should pass as on macOS (the snapshots came from macOS clang; if only float rounding differs, say so before updating anything).
-> 2. Check that the hook symlink `~/clawd-room` still points at the WSL copy of the repo.
-> 3. By eye in Windows Terminal (see [[Test Checklist]], the WSL2 part): style A rooms and the park, the bottom bar's size at the WSL font, linked rooms side by side and stacked, `g` / `m` with the hint, packing and unpacking, no desks hopping, the pixel editor with the mouse (`--edit`).
-> 4. WSL has no `--try` yet (it is iTerm2 only): open the linked windows by hand, or build a WSL `--try` with `wt.exe`.
->
-> Then: **moving, step 3**: drag a Clawd onto a door, the stairs or the well with the mouse. (Settled: `--try real` stays split; uneven shares are fine, `m` moves a Clawd.)
-
-> [!todo] Waiting
-> - ~~The engine~~: all four steps are built ([[Engine Design]]).
-> - `README.md` still describes the old flat look in places (banner, gates at the window edge).
-> - WSL: the profile from the dropdown opens at Windows Terminal's default size, then jumps once; planned a shortcut with `wt.exe -w new --size 60,18 -p "Clawd Room"`.
-> - The room can block writing if the terminal stops reading (seen with iTerm2 in full screen).
-> - Windows Terminal split panes are not seen separately yet.
-
-> [!todo] Later: less CPU (Zaviel, 2026-10-19)
-> - **Dirty rects**: redraw only the parts of the canvas that changed (the terminal output is already diffed cell by cell and written once per frame, i.e. double buffered; the cost left is drawing the whole canvas 16 times a second).
-> - **Idle frames**: skip drawing when nothing moves (the same frame again).
-> - **Hidden windows**: when the room's window is covered, minimised or on another virtual desktop, stop drawing (FPS 0) and only keep reading events and the link heartbeats at a slow rate; draw again when it shows.
-
-## 💡 Ideas
-
-> [!question] Maybe later
-> - A seesaw in the park; an empty-desk look for Clawds that are away.
-> - Camera polish: smooth zoom, a slight lead in the walking direction, a small bounce when a Clawd finishes, parallax in the park.
-> - Full screen: a "hub" room that others visit, or several rooms side by side in one window.

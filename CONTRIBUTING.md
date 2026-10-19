@@ -86,7 +86,7 @@ The notes are an Obsidian vault in git; setup, what is shared and how to write i
 - Every PR adds a short entry to today's note in `Clawd Room Note/Review/Log/<year>/<month>/<week>/` (`YYYY-MM-DD.md`, newest first; in Obsidian *Open today's daily note* makes it in the right folder): a title, two to four plain bullets about what changed **for someone using the room**, and `(William)` or `(Zaviel)` after the title. Pictures go in the subject folder under `Clawd Room Note/Assets/Snapshots/` (Office, Park, Gates ...) as `YYYY-MM-DD subject.png`.
 - Two people adding entries at the top of the same file conflict easily: when `git merge origin/main` reports a conflict in the Dev Log, keep **both** entries.
 - Do not commit your own Obsidian layout or settings (`git restore "Clawd Room Note/.obsidian"` if you changed one by accident).
-- Bigger rewrites of the topic notes (`Clawd Room Note/Design/`) are done by whoever runs the next `CMD_SYNC` (see the LLM guide).
+- Where things stand is in `Clawd Room Note/Review/Dev Status.md`. Your Claude keeps it and the notes with `CMD_SYNC`, `CMD_JOURNAL`, `CMD_NOTES_SYNC`, `CMD_ROLLOVER` (see the LLM guide); bigger rewrites of the design notes (`Clawd Room Note/Design/`) happen in `CMD_NOTES_SYNC`.
 
 ---
 ## 7. Rules that are not negotiable
