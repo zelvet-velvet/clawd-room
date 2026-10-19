@@ -48,6 +48,12 @@ gitGraph
 
 ## 2026-10-19
 
+### 🪟 `--try` on WSL opens as one layout (Zaviel)
+> [!info] Branch `test/wsl-queue`
+- The four rooms open minimized, wait until each room has started, then **show together**, their visible frames edge to edge on the quarters like a snap layout (Windows 11's invisible window border is taken into account).
+- Fixed: starting a `--try` closed the new rooms when an old one quit late (a WSL room takes a second to quit); `--desktop` is checked before anything is closed.
+- A real **snap group** (one taskbar entry for all four) cannot be made by a program: Windows has no API for it, and snapping with Win + arrow keys sent to the windows made no group (tried on Zaviel's screen). Win+Z on a room and picking the layout does it by hand.
+
 ### 🗂️ Screenshots in folders (Zaviel)
 - `Screenshots/` is sorted into one folder per subject: Office, Coffee shop, Park, Gates (stairs, doors, wells), Interaction, Engine and tools, Platforms, Style and mockups, Old look. Every picture in the notes still shows (Obsidian finds them by name).
 
