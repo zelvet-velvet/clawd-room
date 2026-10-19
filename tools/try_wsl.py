@@ -4,8 +4,9 @@
 
     python3 tools/try_wsl.py BIN TRY_DIR EVENTS [--desktop N]
 
---desktop N puts the windows on virtual desktop N (1 = the first) without switching to it: each opens minimized (so it never
-takes the focus), is moved there, then shown without activating. That uses Explorer's undocumented virtual desktop interfaces
+The four open minimized one after another, then are placed and shown together (their visible frames on the quarters, like a
+snap layout; Windows has no way for a program to make them a snap group: Win+Z on one does that). --desktop N puts the windows
+on virtual desktop N (1 = the first) without switching to it: each is moved there while minimized, then shown without activating. That uses Explorer's undocumented virtual desktop interfaces
 (Windows 11 24H2 and later); it is for testing while you keep working on another desktop.
 """
 import os
@@ -61,6 +62,8 @@ public static class T {
   [DllImport("dwmapi.dll")] static extern int DwmGetWindowAttribute(IntPtr h, int a, int[] r, int n);
   /* SW_SHOWNOACTIVATE, then the visible frame onto r (x, y, w, h) like Windows' snap layout: the window rectangle includes an
      invisible resize border, so it is grown by that border (DWMWA_EXTENDED_FRAME_BOUNDS is the visible part); no z-order, no activate */
+  [DllImport("user32.dll")] static extern bool SetForegroundWindow(IntPtr h);
+  public static void Focus(IntPtr h) { SetForegroundWindow(h); }
   public static void Show(IntPtr h, int[] r) {
     ShowWindow(h, 4); SetWindowPos(h, IntPtr.Zero, r[0], r[1], r[2], r[3], 0x0014);
     int[] w = new int[4], f = new int[4];
@@ -82,28 +85,33 @@ def main():
         i = args.index("--desktop")
         desk = int(args[i + 1])
         del args[i:i + 2]
-    binp, tr, ev = args
+    check_only = args == ["--check"]  # (only the desktop checks: run before a running --try is ended)
+    binp, tr, ev = ("", "", "") if check_only else args
     distro = os.environ.get("WSL_DISTRO_NAME", "Ubuntu")
     lines = ["$ErrorActionPreference = 'Stop'", "Add-Type -TypeDefinition " + ps_quote(VD_CS),
-             "$clk = [Diagnostics.Stopwatch]::StartNew(); [ClawdTry.T]::Mark(); $wa = [ClawdTry.T]::WorkArea(); $w = [int](($wa[2] - $wa[0]) / 2); $h = [int](($wa[3] - $wa[1]) / 2)"]
+             "$clk = [Diagnostics.Stopwatch]::StartNew(); $all = @(); [ClawdTry.T]::Mark(); $wa = [ClawdTry.T]::WorkArea(); $w = [int](($wa[2] - $wa[0]) / 2); $h = [int](($wa[3] - $wa[1]) / 2)"]
     if desk:
         lines += ["if ([ClawdTry.T]::Desktops() -lt %d) { throw 'there is no desktop %d' }" % (desk, desk),
                   "if ([ClawdTry.T]::OnCurrent(%d)) { throw 'desktop %d is the one you are on' }" % (desk - 1, desk)]
-    for name, theme, qx, qy in ROOMS:  # (PATH: wt.exe started from WSL passes on a PATH without Windows' folders, so no powershell.exe)
+    for name, theme, qx, qy in [] if check_only else ROOMS:  # (PATH: wt.exe started from WSL passes on a PATH without Windows' folders, so no powershell.exe)
         cmd = ["wsl.exe", "-d", distro, "-e", "env", "CLAWD_HERE=1", "PATH=" + os.environ.get("PATH", ""), "CLAWD_LINK_DIR=%s/link" % tr, "CLAWD_SIZE_LOG=%s/log-%s" % (tr, name),
                "sh", os.path.join(ROOT, "tools", "try_room.sh"), binp, tr + "/stop", "--room", name, "--theme", theme,
                "--scale", "1", "--size", "off", "--profile-font", "5", "--events", ev]  # (a fixed scale and the window's own size: the quarter)
         wt = ["-w", "new", "-p", "Clawd Room"] + cmd
         wt = ['"%s"' % a if " " in a else a for a in wt]  # (Start-Process joins the arguments with spaces)
-        style = "Minimized" if desk else "Normal"
         lines += ["$r = [int[]]@(($wa[0] + %d * $w), ($wa[1] + %d * $h), $w, $h)" % (qx, qy),  # (the comma binds before + and *)
-                  "Start-Process wt.exe -WindowStyle %s -ArgumentList @(%s)" % (style, ", ".join(ps_quote(a) for a in wt)),
+                  "Start-Process wt.exe -WindowStyle Minimized -ArgumentList @(%s)" % ", ".join(ps_quote(a) for a in wt),
                   "$hw = [IntPtr]::Zero; $t = [Diagnostics.Stopwatch]::StartNew()",
                   "while ($hw -eq [IntPtr]::Zero -and $t.ElapsedMilliseconds -lt 15000) { Start-Sleep -Milliseconds 20; $hw = [ClawdTry.T]::Fresh() }",
                   "if ($hw -eq [IntPtr]::Zero) { throw 'the %s window did not open' }" % name]
         if desk:
             lines.append("[ClawdTry.T]::ToDesktop($hw, %d)" % (desk - 1))
-        lines.append("[ClawdTry.T]::Show($hw, $r); 'shown %s ' + $clk.ElapsedMilliseconds" % name)
+        lines.append("$all += ,@($hw, $r); 'opened %s ' + $clk.ElapsedMilliseconds" % name)
+    # all four show together: each opened minimized (and moved to its desktop) above, now placed and shown in one go;
+    # on your own desktop the first one gets the focus
+    lines += [] if check_only else ["foreach ($a in $all) { [ClawdTry.T]::Show($a[0], $a[1]) }", "'shown all ' + $clk.ElapsedMilliseconds"]
+    if not desk and not check_only:
+        lines.append("[ClawdTry.T]::Focus($all[0][0])")
     script = "\n".join(lines)
     # through a file in Windows' temp folder (with the PATHs the script is too long for -EncodedCommand)
     tmp = subprocess.run(["cmd.exe", "/d", "/c", "echo %TEMP%"], capture_output=True, text=True, cwd="/mnt/c").stdout.strip()

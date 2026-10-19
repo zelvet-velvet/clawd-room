@@ -61,9 +61,10 @@ try_setup() {
 # WSL + Windows Terminal: --try opens the four windows with wt.exe (tools/try_wsl.py; --try --desktop N: on virtual desktop N,
 # without switching to it)
 if [ "${1:-}" = --try ] && [ -n "${WSL_DISTRO_NAME:-}" ] && command -v wt.exe >/dev/null 2>&1; then
-  try_setup "$@"
   desk=""
   for a in "$@"; do [ "$prev" = --desktop ] && desk="--desktop $a"; prev=$a; done
+  [ -n "$desk" ] && { python3 "$here/tools/try_wsl.py" --check $desk || exit 1; } # (before a running --try is ended)
+  try_setup "$@"
   python3 "$here/tools/try_wsl.py" "$bin" "$try" "$ev" $desk || { touch "$try/stop"; exit 1; }
   echo "clawd-room: --try opened 4 rooms (quit one to close all, or ./clawd-room.sh --try close)" >&2
   exit 0
