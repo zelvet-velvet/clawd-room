@@ -79,7 +79,7 @@ public static class T {
      quits a room). False if h could not be focused. */
   public static bool Snap(IntPtr h, byte side, byte half) {
     if (!Focus(h)) return false;
-    keybd_event(0x5B, 0, 0, UIntPtr.Zero); Tap(side); System.Threading.Thread.Sleep(200); Tap(half); keybd_event(0x5B, 0, 2, UIntPtr.Zero);  // (the second arrow only once the first snap is done, or it stays a half)
+    keybd_event(0x5B, 0, 0, UIntPtr.Zero); Tap(side); System.Threading.Thread.Sleep(120); Tap(half); keybd_event(0x5B, 0, 2, UIntPtr.Zero);  // (the second arrow only once the first snap is done, or it stays a half)
     return true;
   }
   public static void Show(IntPtr h, int[] r) {
@@ -117,18 +117,20 @@ def main():
                "--scale", "1", "--size", "off", "--profile-font", "5", "--events", ev]  # (a fixed scale and the window's own size: the quarter)
         wt = ["-w", "new", "-p", "Clawd Room"] + cmd
         wt = ['"%s"' % a if " " in a else a for a in wt]  # (Start-Process joins the arguments with spaces)
-        lines += ["$r = [int[]]@(($wa[0] + %d * $w), ($wa[1] + %d * $h), $w, $h)" % (qx, qy),  # (the comma binds before + and *)
-                  "Start-Process wt.exe -WindowStyle Minimized -ArgumentList @(%s)" % ", ".join(ps_quote(a) for a in wt),
-                  "$hw = [IntPtr]::Zero; $t = [Diagnostics.Stopwatch]::StartNew()",
-                  "while ($hw -eq [IntPtr]::Zero -and $t.ElapsedMilliseconds -lt 15000) { Start-Sleep -Milliseconds 20; $hw = [ClawdTry.T]::Fresh() }",
-                  "if ($hw -eq [IntPtr]::Zero) { throw 'the %s window did not open' }" % name]
-        if desk:
-            lines.append("[ClawdTry.T]::ToDesktop($hw, %d)" % (desk - 1))
-        lines.append("$all += ,@($hw, $r); 'opened %s ' + $clk.ElapsedMilliseconds" % name)
-    # all four show together: each opened minimized (and moved to its desktop) above, now placed and shown in one go;
-    # on your own desktop the first one gets the focus
+        lines.append("Start-Process wt.exe -WindowStyle Minimized -ArgumentList @(%s)" % ", ".join(ps_quote(a) for a in wt))
+    # all four start at once; their windows are collected as they appear (each moved to its desktop while still minimized),
+    # then, once each room has started and named its window, put in order by that name
+    if not check_only:
+        lines += ["$new = @(); $t = [Diagnostics.Stopwatch]::StartNew()",
+                  "while ($new.Count -lt %d -and $t.ElapsedMilliseconds -lt 15000) { $hw = [ClawdTry.T]::Fresh(); if ($hw -eq [IntPtr]::Zero) { Start-Sleep -Milliseconds 10; continue }; %s$new += $hw }"
+                  % (len(ROOMS), "[ClawdTry.T]::ToDesktop($hw, %d); " % (desk - 1) if desk else ""),
+                  "if ($new.Count -lt %d) { throw 'only ' + $new.Count + ' of the %d windows opened' }" % (len(ROOMS), len(ROOMS)),
+                  "'opened all ' + $clk.ElapsedMilliseconds"]
+        for name, theme, qx, qy in ROOMS:
+            lines.append("$all += ,@([IntPtr]::Zero, [int[]]@(($wa[0] + %d * $w), ($wa[1] + %d * $h), $w, $h), 'clawd-room %s-')" % (qx, qy, name))  # (the comma binds before + and *)
     lines += [] if check_only else [
-        "$t = [Diagnostics.Stopwatch]::StartNew(); while (@($all | ? { -not [ClawdTry.T]::Started($_[0]) }).Count -gt 0 -and $t.ElapsedMilliseconds -lt 15000) { Start-Sleep -Milliseconds 50 }",
+        "$t = [Diagnostics.Stopwatch]::StartNew(); while (@($new | ? { -not [ClawdTry.T]::Started($_) }).Count -gt 0 -and $t.ElapsedMilliseconds -lt 15000) { Start-Sleep -Milliseconds 20 }",
+        "foreach ($a in $all) { $a[0] = @($new | ? { [ClawdTry.T]::Title($_).StartsWith($a[2]) })[0]; if (-not $a[0]) { throw ('no window for ' + $a[2]) } }",
         "'started all ' + $clk.ElapsedMilliseconds",
         "foreach ($a in $all) { [ClawdTry.T]::Show($a[0], $a[1]) }", "'shown all ' + $clk.ElapsedMilliseconds"]
     if not desk and not check_only and os.environ.get("CLAWD_TRY_SNAP") != "0":
@@ -145,8 +147,8 @@ def main():
             " $e = $A::RootElement.FindAll([System.Windows.Automation.TreeScope]::Children, [System.Windows.Automation.Condition]::TrueCondition) | ? { $explorer -contains $_.Current.ProcessId } |"
             " % { $_.FindAll([System.Windows.Automation.TreeScope]::Descendants, $li) } | ? { $_.Current.ClassName -eq 'ListViewItem' -and"
             " ((@($_.Current.Name) + @($_.FindAll([System.Windows.Automation.TreeScope]::Descendants, [System.Windows.Automation.Condition]::TrueCondition) | % { $_.Current.Name })) -contains $title) } | select -First 1;"
-            " $p = $null; if ($e -and $e.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$p)) { $p.Invoke(); Start-Sleep -Milliseconds 150; return $true };"
-            " Start-Sleep -Milliseconds 50 }; return $false }",  # (Snap Assist is Explorer's; only a thumbnail with exactly our title is picked)
+            " $p = $null; if ($e -and $e.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$p)) { $p.Invoke(); Start-Sleep -Milliseconds 100; return $true };"
+            " Start-Sleep -Milliseconds 25 }; return $false }",  # (Snap Assist is Explorer's; only a thumbnail with exactly our title is picked)
             "$assist = [ClawdTry.T]::Snap($all[0][0], %s, %s); if (-not $assist) { 'not snapped: %s' } else { '%s: snapped with keys ' + $clk.ElapsedMilliseconds }" % (keys[0][0], keys[0][1], ROOMS[0][0], ROOMS[0][0]),
         ]
         for i in range(1, 4):
