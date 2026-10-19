@@ -35,6 +35,35 @@ for a in "$@"; do
   prev=$a
 done
 for a in "$@"; do shift; case "$a" in --here|--keep) ;; *) set -- "$@" "$a" ;; esac; done
+# --try: four Clawd Room windows, one in each quarter of the screen (office, coffee shop / park, office), so left/right
+# and up/down gates all show at once; made-up sessions in them (--try real: only your real sessions); quitting one
+# closes all (--try close closes them from anywhere). They use their own link folder, apart from rooms you run.
+# try_setup ends a --try still running and starts the made-up sessions; it sets $try and $ev (exits for --try close).
+try_setup() {
+  try="$HOME/.clawd-room/try"
+  mkdir -p "$try"
+  if [ "${2:-}" = close ]; then touch "$try/stop"; exit 0; fi
+  touch "$try/stop"; sleep 0.8; rm -f "$try/stop" "$try/events.jsonl"; rm -rf "$try/link" # (end a --try still running)
+  if [ "${2:-}" = real ]; then ev="$HOME/.clawd-room/events.jsonl"
+  else
+    ev="$try/events.jsonl"
+    : > "$ev"
+    # the made-up sessions start once all four rooms are up (or after 20 s): a session a room shows stays there, so
+    # sessions started before the others open would all stay in the first room
+    nohup sh -c 'i=0; while [ "$(ls "$1"/*.peer 2>/dev/null | wc -l)" -lt 4 ] && [ $i -lt 80 ]; do sleep 0.25; i=$((i+1)); done
+                 exec python3 "$2" "$3" "$4" 7' sh "$try/link" "$here/tools/demo_events.py" "$ev" "$try/stop" >/dev/null 2>&1 &
+  fi
+}
+# WSL + Windows Terminal: --try opens the four windows with wt.exe (tools/try_wsl.py; --try --desktop N: on virtual desktop N,
+# without switching to it)
+if [ "${1:-}" = --try ] && [ -n "${WSL_DISTRO_NAME:-}" ] && command -v wt.exe >/dev/null 2>&1; then
+  try_setup "$@"
+  desk=""
+  for a in "$@"; do [ "$prev" = --desktop ] && desk="--desktop $a"; prev=$a; done
+  python3 "$here/tools/try_wsl.py" "$bin" "$try" "$ev" $desk || { touch "$try/stop"; exit 1; }
+  echo "clawd-room: --try opened 4 rooms (quit one to close all, or ./clawd-room.sh --try close)" >&2
+  exit 0
+fi
 if [ "$(uname -s)" = Darwin ] && [ "$TERM_PROGRAM" = iTerm.app ] && [ -z "$TMUX" ]; then
   dyn="$HOME/Library/Application Support/iTerm2/DynamicProfiles"
   prof="$dyn/clawd-room.json"
@@ -47,23 +76,8 @@ if [ "$(uname -s)" = Darwin ] && [ "$TERM_PROGRAM" = iTerm.app ] && [ -z "$TMUX"
   if [ "$(cat "$prof" 2>/dev/null)" != "$want" ]; then
     mkdir -p "$dyn" && printf '%s\n' "$want" > "$prof" && sleep 1.5 # (iTerm2 picks the file up by itself)
   fi
-  # --try: four Clawd Room windows, one in each quarter of the screen (office, coffee shop / park, office), so left/right
-  # and up/down gates all show at once; made-up sessions in them (--try real: only your real sessions); quitting one
-  # closes all (--try close closes them from anywhere). They use their own link folder, apart from rooms you run.
   if [ "${1:-}" = --try ]; then
-    try="$HOME/.clawd-room/try"
-    mkdir -p "$try"
-    if [ "${2:-}" = close ]; then touch "$try/stop"; exit 0; fi
-    touch "$try/stop"; sleep 0.8; rm -f "$try/stop" "$try/events.jsonl"; rm -rf "$try/link" # (end a --try still running)
-    if [ "${2:-}" = real ]; then ev="$HOME/.clawd-room/events.jsonl"
-    else
-      ev="$try/events.jsonl"
-      : > "$ev"
-      # the made-up sessions start once all four rooms are up (or after 20 s): a session a room shows stays there, so
-      # sessions started before the others open would all stay in the first room
-      nohup sh -c 'i=0; while [ "$(ls "$1"/*.peer 2>/dev/null | wc -l)" -lt 4 ] && [ $i -lt 80 ]; do sleep 0.25; i=$((i+1)); done
-                   exec python3 "$2" "$3" "$4" 7' sh "$try/link" "$here/tools/demo_events.py" "$ev" "$try/stop" >/dev/null 2>&1 &
-    fi
+    try_setup "$@"
     CR_HERE="$here" CR_BIN="$bin" CR_TRY="$try" CR_EV="$ev" osascript -l JavaScript -e '
       ObjC.import("AppKit");
       const env = $.NSProcessInfo.processInfo.environment, get = k => env.objectForKey(k).js;
