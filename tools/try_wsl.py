@@ -96,6 +96,26 @@ def ps_quote(s):
     return "'" + s.replace("'", "''") + "'"
 
 
+def run_ps(script, name):
+    """Run a PowerShell script through a file in Windows' temp folder (with the PATHs it is too long for -EncodedCommand)."""
+    tmp = subprocess.run(["cmd.exe", "/d", "/c", "echo %TEMP%"], capture_output=True, text=True, cwd="/mnt/c").stdout.strip()
+    path = os.path.join(subprocess.run(["wslpath", "-u", tmp], capture_output=True, text=True).stdout.strip(), name)
+    with open(path, "w", encoding="utf-8-sig") as f:
+        f.write(script)
+    try:
+        return subprocess.run(["powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", tmp + "\\" + name],
+                              capture_output=True, text=True)
+    finally:
+        os.remove(path)
+
+
+def ps_error(p):
+    """The first error PowerShell reported, readable."""
+    err = re.findall(r'<S S="Error">(.*?)</S>', p.stderr) or [l for l in p.stderr.replace("\r", "").splitlines() if l.strip()]
+    err = [re.sub(r"_x000[DA]_", "", e).strip() for e in err]
+    return err[0] if err else "powershell failed"
+
+
 def main():
     args = sys.argv[1:]
     desk = 0
@@ -156,23 +176,13 @@ def main():
                          "if ([ClawdTry.T]::Snap($all[%d][0], %s, %s)) { '%s: snapped with keys' } else { 'not snapped: %s' } }"
                          % (i, ROOMS[i][0], i, keys[i][0], keys[i][1], ROOMS[i][0], ROOMS[i][0]))
         lines += ["'snapped ' + $clk.ElapsedMilliseconds", "[void][ClawdTry.T]::Focus($all[0][0])"]
-    script = "\n".join(lines)
-    # through a file in Windows' temp folder (with the PATHs the script is too long for -EncodedCommand)
-    tmp = subprocess.run(["cmd.exe", "/d", "/c", "echo %TEMP%"], capture_output=True, text=True, cwd="/mnt/c").stdout.strip()
-    path = os.path.join(subprocess.run(["wslpath", "-u", tmp], capture_output=True, text=True).stdout.strip(), "clawd-room-try.ps1")
-    with open(path, "w", encoding="utf-8-sig") as f:
-        f.write(script)
-    p = subprocess.run(["powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", tmp + "\\clawd-room-try.ps1"],
-                       capture_output=True, text=True)
-    os.remove(path)
+    p = run_ps("\n".join(lines), "clawd-room-try.ps1")
     with open(os.path.join(tr or "/tmp", "snap.log"), "w") as f:  # (how long each step took, in ms, and how the rooms were snapped)
         f.write(p.stdout.replace("\r", "") + p.stderr.replace("\r", "")[:2000])
     if os.environ.get("CLAWD_TRY_TIMING"):
         sys.stderr.write(p.stdout.replace("\r", ""))
     if p.returncode != 0:
-        err = re.findall(r'<S S="Error">(.*?)</S>', p.stderr) or [l for l in p.stderr.replace("\r", "").splitlines() if l.strip()]
-        err = [re.sub(r"_x000[DA]_", "", e).strip() for e in err]
-        sys.stderr.write("clawd-room: --try: %s\n" % (err[0] if err else "powershell failed"))
+        sys.stderr.write("clawd-room: --try: %s\n" % ps_error(p))
         return 1
     return 0
 

@@ -12,7 +12,7 @@ tags:
 ---
 ## 🧪 Test queue
 
-What to test next, one big callout per group: a box per test with its checks as sub-boxes; tick them as you check (with your name and the date), open **How to test** for the steps. A test whose boxes are all ticked moves down into its subject below.
+What to test next, one big callout per group: a bold title per test (no box) with its checks as boxes under it; tick them as you check (with your name and the date), open **How to test** for the steps. A test whose boxes are all ticked moves down into its subject below.
 
 > [!info]- Box legend ([[Checkbox Style]])
 > - [ ] to test
@@ -28,27 +28,28 @@ What to test next, one big callout per group: a box per test with its checks as 
 > `./clawd-room.sh --try` opens **four linked rooms**, one in each quarter of the screen (office, coffee shop / park, office), with **made-up Clawds** in them, so every gate shows at once. Quit any one to close all four, or `./clawd-room.sh --try close`. `--try real` shows only your real sessions. On WSL `--try --desktop N` opens them on virtual desktop N without switching to it (switch there yourself to look).
 
 > [!todo]+ WSL2 + Windows Terminal (since 2026-10-19)
-> - [ ] **1. The Clawd Room profile at 5 pt**
+> - **1. The Clawd Room profile at 5 pt**
 >     - [i] Needs `python3 setup_profile.py --update` once (Zaviel ran it on 2026-10-19)
->     - [ ] From Windows Terminal's dropdown the room starts and its window moves to the quarter of the screen it is in
->     - [ ] Room pixels are square and about as many as on the Mac (the whole room fits, the park shows the swing set and the building's plaque)
->     - [ ] `q` closes the room and the window; nothing is left behind
->     - [ ] `./clawd-room.sh --try real`: all four rooms appear together, snapped into the quarters, and show as one **Group** in the taskbar
-> - [ ] **2. The rooms and the bottom bar**
->     - [?] Once all four `--try` rooms closed together after about 15 s (cause unknown). If it happens: `cat ~/.clawd-room/try/stop` says which room ended it; note it here
->     - [ ] Office, coffee shop and park look as on the Mac (style A, the park plaza and its buildings)
->     - [ ] The bottom bar's text is readable at 5 pt (`?` shows the help)
->     - [ ] Hold `g` or `m`: the yellow hint shows only while the key is held and goes right after letting go
-> - [ ] **3. Sending and moving Clawds between rooms**
->     - [ ] `g` + an arrow: a Clawd walks to that gate (door, stairs, well), goes through and comes out in the room next to it
->     - [ ] `m` + an arrow: the picked Clawd packs its desk into a box (poof), carries it out and unpacks at a new desk in the other room
->     - [ ] The room it left does not blink; `m` + arrow while it carries the box sends it straight to the new gate
->     - [ ] `b` calls your Clawds back
-> - [ ] **4. Desks stay in their room**
->     - [ ] Opening the rooms one by one, a desk never jumps to another room
->     - [ ] Closing one room: only its Clawds show up elsewhere
-> - [ ] **5. The pixel editor with the mouse**
->     - [ ] `./clawd-room.sh --edit window`: left click paints, right click erases, the palette picks a colour
+>     - [x] From Windows Terminal's dropdown the room starts and its window moves to the quarter of the screen it is in
+>     - [x] Room pixels are square and about as many as on the Mac (the whole room fits, the park shows the swing set and the building's plaque)
+>     - [x] `q` closes the room and the window; nothing is left behind
+>     - [x] `./clawd-room.sh --try real`: all four rooms appear together, snapped into the quarters, and show as one **Group** in the taskbar
+> - **2. The rooms and the bottom bar**
+>     - [i] All four `--try` rooms once closed together after about 15 s: an old `--try` quitting late (fixed 2026-10-19). `cat ~/.clawd-room/try/stop` says which room ended a `--try`
+>     - [x] Office, coffee shop and park look as on the Mac (style A, the park plaza and its buildings)
+>     - [x] The bottom bar's text is readable at 5 pt (`?` shows the help)
+>     - [x] Hold `g` or `m`: the yellow hint shows only while the key is held and goes right after letting go
+> - **3. Sending and moving Clawds between rooms**
+>     - [x] `g` + an arrow: a Clawd walks to that gate (door, stairs, well), goes through and comes out in the room next to it
+>     - [x] `m` + an arrow: the picked Clawd packs its desk into a box (poof), carries it out and unpacks at a new desk in the other room
+>     - [x] The room it left does not blink; `m` + arrow while it carries the box sends it straight to the new gate
+>     - [x] `b` calls your Clawds back
+> - **4. Desks stay in their room**
+>     - [x] Opening the rooms one by one, a desk never jumps to another room
+>     - [x] Closing one room: only its Clawds show up elsewhere
+> - **5. The pixel editor with the mouse**
+>     - [ ] `./clawd-room.sh --edit window` opens the editor in its own Clawd Room window in the middle of the screen; the window you typed in stays
+>     - [ ] Left click paints, right click erases, the palette picks a colour
 >     - [ ] A running room shows the change as you draw
 >     - [ ] `q` asks save (S) or discard (D); D puts the picture back, in the room too
 >

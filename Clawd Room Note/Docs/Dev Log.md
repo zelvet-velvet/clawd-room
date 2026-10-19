@@ -48,6 +48,11 @@ gitGraph
 
 ## 2026-10-19
 
+### 🎨 The pixel editor opens in its own window on WSL (Zaviel)
+> [!info] Branch `test/wsl-queue`
+- `./clawd-room.sh --edit NAME` opens the editor in its own **Clawd Room** window in the middle of the screen (70 x 78 %), as on the Mac; the window you typed in stays. `--here` runs it in the current window.
+- The test queue's titles have no box any more; their checks are the boxes.
+
 ### 🪟 `--try` on WSL opens as one layout (Zaviel)
 > [!info] Branch `test/wsl-queue`
 - The four rooms open minimized, wait until each room has started, then **show together**, their visible frames edge to edge on the quarters like a snap layout (Windows 11's invisible window border is taken into account).
@@ -58,7 +63,7 @@ gitGraph
 - `Screenshots/` is sorted into one folder per subject: Office, Coffee shop, Park, Gates (stairs, doors, wells), Interaction, Engine and tools, Platforms, Style and mockups, Old look. Every picture in the notes still shows (Obsidian finds them by name).
 
 ### 🧪 A test queue (Zaviel)
-- The [[Test Checklist]] starts with a **test queue**: what to test next, one big callout per group with a box per test and its checks as sub-boxes, and a foldable **How to test** with the steps. Five WSL tests are queued (the profile at 5 pt, the rooms and the bar, sending and moving, desks staying, the pixel editor).
+- The [[Test Checklist]] starts with a **test queue**: what to test next, one big callout per group with a bold title per test and its checks as boxes under it, and a foldable **How to test** with the steps. Five WSL tests are queued (the profile at 5 pt, the rooms and the bar, sending and moving, desks staying, the pixel editor).
 - Done tests move down into their subject; the old WSL list and the 8 pt checks it replaced are gone.
 
 ### 🤝 A collaborator: William (Zaviel)
