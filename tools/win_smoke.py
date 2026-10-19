@@ -16,7 +16,7 @@ import time
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 
 gap = int(sys.argv[1]) if len(sys.argv) > 1 else 10
-HOME_ROOT = "~/clawd-room"  # the symlink the hook uses
+HOME_ROOT = ROOT  # this repo
 PROG = [HOME_ROOT + "/c/clawd-room"]
 
 
