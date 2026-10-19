@@ -72,15 +72,15 @@ public static class T {
   [DllImport("user32.dll")] static extern IntPtr GetForegroundWindow();
   [DllImport("user32.dll")] static extern void keybd_event(byte k, byte s, uint f, UIntPtr e);
   /* the focus to h (a tap of Alt lets a background process set it); true only if h really has it */
-  public static bool Focus(IntPtr h) { keybd_event(0x12, 0, 0, UIntPtr.Zero); keybd_event(0x12, 0, 2, UIntPtr.Zero); SetForegroundWindow(h); System.Threading.Thread.Sleep(250); return GetForegroundWindow() == h; }
+  public static bool Focus(IntPtr h) { keybd_event(0x12, 0, 0, UIntPtr.Zero); keybd_event(0x12, 0, 2, UIntPtr.Zero); SetForegroundWindow(h); for (int i = 0; i < 25 && GetForegroundWindow() != h; i++) System.Threading.Thread.Sleep(10); return GetForegroundWindow() == h; }
   static void Tap(byte k) { keybd_event(k, 0, 1, UIntPtr.Zero); keybd_event(k, 0, 3, UIntPtr.Zero); System.Threading.Thread.Sleep(60); }
   /* snap h into a quarter with the keyboard as a person would: hold Win, tap left / right then up / down, let go of Win;
      windows snapped this way become a snap group (one taskbar entry). Keys go only to h while it has the focus; no Esc (it
      quits a room). False if h could not be focused. */
   public static bool Snap(IntPtr h, byte side, byte half) {
     if (!Focus(h)) return false;
-    keybd_event(0x5B, 0, 0, UIntPtr.Zero); Tap(side); System.Threading.Thread.Sleep(300); Tap(half); keybd_event(0x5B, 0, 2, UIntPtr.Zero);  // (the second arrow only once the first snap is done, or it stays a half)
-    System.Threading.Thread.Sleep(400); return true;
+    keybd_event(0x5B, 0, 0, UIntPtr.Zero); Tap(side); System.Threading.Thread.Sleep(200); Tap(half); keybd_event(0x5B, 0, 2, UIntPtr.Zero);  // (the second arrow only once the first snap is done, or it stays a half)
+    return true;
   }
   public static void Show(IntPtr h, int[] r) {
     ShowWindow(h, 4); SetWindowPos(h, IntPtr.Zero, r[0], r[1], r[2], r[3], 0x0014);
@@ -145,12 +145,12 @@ def main():
             " $e = $A::RootElement.FindAll([System.Windows.Automation.TreeScope]::Children, [System.Windows.Automation.Condition]::TrueCondition) | ? { $explorer -contains $_.Current.ProcessId } |"
             " % { $_.FindAll([System.Windows.Automation.TreeScope]::Descendants, $li) } | ? { $_.Current.ClassName -eq 'ListViewItem' -and"
             " ((@($_.Current.Name) + @($_.FindAll([System.Windows.Automation.TreeScope]::Descendants, [System.Windows.Automation.Condition]::TrueCondition) | % { $_.Current.Name })) -contains $title) } | select -First 1;"
-            " $p = $null; if ($e -and $e.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$p)) { $p.Invoke(); Start-Sleep -Milliseconds 500; return $true };"
-            " Start-Sleep -Milliseconds 150 }; return $false }",  # (Snap Assist is Explorer's; only a thumbnail with exactly our title is picked)
-            "$assist = [ClawdTry.T]::Snap($all[0][0], %s, %s); if (-not $assist) { 'not snapped: %s' }" % (keys[0][0], keys[0][1], ROOMS[0][0]),
+            " $p = $null; if ($e -and $e.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$p)) { $p.Invoke(); Start-Sleep -Milliseconds 150; return $true };"
+            " Start-Sleep -Milliseconds 50 }; return $false }",  # (Snap Assist is Explorer's; only a thumbnail with exactly our title is picked)
+            "$assist = [ClawdTry.T]::Snap($all[0][0], %s, %s); if (-not $assist) { 'not snapped: %s' } else { '%s: snapped with keys ' + $clk.ElapsedMilliseconds }" % (keys[0][0], keys[0][1], ROOMS[0][0], ROOMS[0][0]),
         ]
         for i in range(1, 4):
-            lines.append("if ($assist -and (Assist ([ClawdTry.T]::Title($all[%d][0])))) { '%s: picked in Snap Assist' } else { $assist = $false; "
+            lines.append("if ($assist -and (Assist ([ClawdTry.T]::Title($all[%d][0])))) { '%s: picked in Snap Assist ' + $clk.ElapsedMilliseconds } else { $assist = $false; "
                          "if ([ClawdTry.T]::Snap($all[%d][0], %s, %s)) { '%s: snapped with keys' } else { 'not snapped: %s' } }"
                          % (i, ROOMS[i][0], i, keys[i][0], keys[i][1], ROOMS[i][0], ROOMS[i][0]))
         lines += ["'snapped ' + $clk.ElapsedMilliseconds", "[void][ClawdTry.T]::Focus($all[0][0])"]
