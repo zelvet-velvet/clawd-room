@@ -47,7 +47,7 @@ The vault is plain Markdown in git, so it travels with the code: notes change on
 
 | In git (shared) | Not in git (yours) |
 | --- | --- |
-| notes, `Snapshots/`, `Gallery/`, `Animations/` | `.obsidian/workspace.json` (open tabs, layout) |
+| notes (`Start/`, `Review/`, `Design/`), `Gallery/`, `Assets/` | `.obsidian/workspace.json` (open tabs, layout) |
 | `.obsidian/app.json`, `appearance.json`, `snippets/`, `themes/` | `.obsidian/plugins/` (plugin code and settings) |
 | `.obsidian/community-plugins.json`, `core-plugins.json` | `.makemd/`, `.space/`, `.trash/`, `Tags/` |
 
@@ -57,13 +57,13 @@ The vault is plain Markdown in git, so it travels with the code: notes change on
 ---
 ## ✍️ Writing in the vault
 
-- **[[Dev Log]]:** every PR adds a short entry under today's date (newest first), with the author after the title, e.g. `### 🛝 A seesaw in the park (William)`. Two to four plain bullets about what changed for someone using the room; a picture if visual.
-- **Topic notes** ([[Rooms and Art]], [[Interaction]], [[Platforms and Windows]], [[Engine and Tests]]) describe how things work **now**: rewrite the part that changed, do not append history.
+- **Dev Log:** every PR adds a short entry to **today's note** in `Review/Log/` (`2026-10-21.md`; a `## ` heading per entry, newest first), with the author after the title, e.g. `## 🛝 A seesaw in the park (William)`. Two to four plain bullets about what changed for someone using the room; a picture if visual. A new day: a new note (copy the frontmatter of the last one) and a line in the [[Dev Log]] index.
+- **Design notes** (`Design/`: [[Rooms and Art]], [[Interaction]], [[Platforms and Windows]], [[Engine and Tests]]) describe how things work **now**: rewrite the part that changed, do not append history.
 - **[[Test Checklist]]:** add what still needs someone's eyes to the **test queue** at the top (a `Group X` callout per group, each test a box with an ID like **T14** or a question **Q2**, a `✅ date: … (who)` line for the result, and a folded *how to run*); refer to tests by their ID in issues and PRs. Tick only what **you** checked, and say who: `- [x] the seesaw tips both ways (William, 2026-10-21)`. Visual items stay for Zaviel to tick.
-- **Pictures:** `Snapshots/<subject folder>/YYYY-MM-DD subject.png`, a row in [[Snapshot status]], then `python3 tools/vault_gallery.py` (it writes the browsing notes in `Gallery/`) (folders: `Office/`, `Coffee shop/`, `Park/`, `Gates (stairs, doors, wells)/`, `Interaction (keys, moving)/`, `Engine and tools/`, `Platforms/`, `Style and mockups/`, `Old look/`; a new one if none fits); your own captures add your name, `... (William).png`. Embed with `![[name.png|300]]`.
+- **Pictures:** `Assets/Snapshots/<subject folder>/YYYY-MM-DD subject.png`, a row in [[Snapshot status]], then `python3 tools/vault_gallery.py` (it writes the browsing notes in `Gallery/`) (folders: `Office/`, `Coffee shop/`, `Park/`, `Gates (stairs, doors, wells)/`, `Interaction (keys, moving)/`, `Engine and tools/`, `Platforms/`, `Style and mockups/`, `Old look/`; a new one if none fits); your own captures add your name, `... (William).png`. Embed with `![[name.png|300]]`.
 - **Renaming a note** updates links in the vault you have open, not in other people's branches: rename notes only in a PR of their own, and say so.
-- **Conflicts** in Markdown (usually the Dev Log top): keep **both** entries, newest first.
-- `CMD_SYNC` (see [[LLM_GUIDE]]) is the bigger tidy-up of all the notes; whoever runs it does it on its own branch and PR.
+- **Conflicts** in Markdown (two PRs adding to the same day's note): keep **both** entries, newest first. Separate day notes make this rare.
+- `CMD_SYNC` (see [[LLM Guide]]) is the bigger tidy-up of all the notes; whoever runs it does it on its own branch and PR.
 
 ---
 ## 💬 Where to talk

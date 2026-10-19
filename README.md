@@ -3,7 +3,7 @@
 A pixel room with one little character per running Claude Code session.
 
 **New here?** Read [`CONTRIBUTING.md`](CONTRIBUTING.md) (setup, how we work, what you can work on), then
-`Clawd Room Note/Docs/LLM_GUIDE.md` (map and rules) and the end of `Clawd Room Note/Docs/Dev Log.md` (what is pending).
+`Clawd Room Note/Start/LLM Guide.md` (map and rules) and `Clawd Room Note/Review/Dev Log.md` (what changed by day, what is pending).
 Quick look: `make -C c test`, then `./clawd-room.sh --try` (four linked rooms with made-up Clawds).
 
 - `hook.py` — Claude Code hook. Appends `{time, session id, event, folder name, tool name}` to
@@ -173,7 +173,7 @@ A window opened from the profile menu starts at Windows Terminal's own default s
 
 ## Editing the Clawd frames and items
 
-Every Clawd frame and the items it carries (speech bubbles, cup, sign) are text grids in `sprites/clawd.txt` and `sprites/items.txt`, one character per pixel. Edit them, then `clawd-room --build-art` redraws the sheet and one GIF per action in `Clawd Room Note/Animations/`; the room uses the same files when it starts. A frame missing from the files is drawn by the code. `clawd-room --export-sprites --force` rewrites the files from the code (`--add` only appends frames a file lacks).
+Every Clawd frame and the items it carries (speech bubbles, cup, sign) are text grids in `sprites/clawd.txt` and `sprites/items.txt`, one character per pixel. Edit them, then `clawd-room --build-art` redraws the sheet and one GIF per action in `Clawd Room Note/Assets/Animations/`; the room uses the same files when it starts. A frame missing from the files is drawn by the code. `clawd-room --export-sprites --force` rewrites the files from the code (`--add` only appends frames a file lacks).
 
 ## Notes vault
 
@@ -181,4 +181,4 @@ Every Clawd frame and the items it carries (speech bubbles, cup, sign) are text 
 the CSS snippets, the Minimal theme and the community plugins of another vault; the plugin code, the
 workspace state and Make.md's cache are not in git (see `.gitignore`), copy the plugins from that vault
 or install them from Obsidian's community plugins list (`.obsidian/community-plugins.json` names them).
-Start with `Docs/LLM_GUIDE.md`.
+Start with `Start/Home.md`.
