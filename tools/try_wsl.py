@@ -83,7 +83,7 @@ def main():
     for name, theme, qx, qy in ROOMS:  # (PATH: wt.exe started from WSL passes on a PATH without Windows' folders, so no powershell.exe)
         cmd = ["wsl.exe", "-d", distro, "-e", "env", "CLAWD_HERE=1", "PATH=" + os.environ.get("PATH", ""), "CLAWD_LINK_DIR=%s/link" % tr, "CLAWD_SIZE_LOG=%s/log-%s" % (tr, name),
                "sh", os.path.join(ROOT, "tools", "try_room.sh"), binp, tr + "/stop", "--room", name, "--theme", theme,
-               "--scale", "1", "--size", "off", "--profile-font", "8", "--events", ev]  # (a fixed scale and the window's own size: the quarter)
+               "--scale", "1", "--size", "off", "--profile-font", "5", "--events", ev]  # (a fixed scale and the window's own size: the quarter)
         wt = ["-w", "new", "-p", "Clawd Room"] + cmd
         wt = ['"%s"' % a if " " in a else a for a in wt]  # (Start-Process joins the arguments with spaces)
         style = "Minimized" if desk else "Normal"

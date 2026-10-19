@@ -323,8 +323,7 @@ void opensetup_init(OpenSetup *o, Tool *tool, const char *title, int font, const
     snprintf(o->size, sizeof o->size, "%s", window ? size : "off");
     for (char *p = o->size; *p; p++) if (*p >= 'A' && *p <= 'Z') *p += 32;
     o->size_screen = !strcmp(o->size, "screen");
-    if (o->size_screen && !use_mac()) o->size_off = 1; /* (only the iTerm2 helper knows the screen) */
-    else o->size_off = !strcmp(o->size, "off");
+    o->size_off = !strcmp(o->size, "off");
     o->stage = ST_RESET;
 }
 

@@ -845,14 +845,14 @@ int app_main(int argc, char **argv) {
     if (env) snprintf(a.events, sizeof a.events, "%s", env);
     else snprintf(a.events, sizeof a.events, "%s%s", home ? home : "", DEFAULT_EVENTS);
     snprintf(a.ratio, sizeof a.ratio, "auto");
-    a.font = 8; a.profile_font = 14; a.near = NEAR_PX; a.size = "110x32";
+    a.font = 5; a.profile_font = 14; a.near = NEAR_PX; a.size = "screen"; /* WSL: 5 pt (the Clawd Room profile's), a quarter of the screen, like iTerm2 */
     static const struct option opts[] = {
         {"events", 1, 0, 'e'}, {"at", 1, 0, 'a'}, {"room", 1, 0, 'r'}, {"theme", 1, 0, 't'}, {"left", 1, 0, 'L'}, {"right", 1, 0, 'R'},
         {"up", 1, 0, 'U'}, {"down", 1, 0, 'D'}, {"no-split", 0, 0, 'S'}, {"ratio", 1, 0, 'x'}, {"size", 1, 0, 'z'}, {"font", 1, 0, 'f'},
         {"profile-font", 1, 0, 'p'}, {"scale", 1, 0, 'c'}, {"no-auto", 0, 0, 'A'}, {"no-detect", 0, 0, 'N'}, {"near", 1, 0, 'n'},
         {"dump", 1, 0, 'd'}, {"build-art", 0, 0, 'B'}, {"export-sprites", 0, 0, 'X'}, {"force", 0, 0, 'F'}, {"add", 0, 0, 'P'},
         {"list-windows", 0, 0, 'W'}, {"zoom", 1, 0, 'Z'}, {"room-size", 1, 0, 'Y'}, {"help", 0, 0, 'h'}, {"edit", 1, 0, 'E'}, {0, 0, 0, 0}};
-    int o, font_given = 0, size_given = 0;
+    int o, font_given = 0;
     while ((o = getopt_long(argc, argv, "h", opts, NULL)) != -1) {
         switch (o) {
         case 'e': snprintf(a.events, sizeof a.events, "%s", optarg); break;
@@ -862,7 +862,7 @@ int app_main(int argc, char **argv) {
         case 'L': a.left = optarg; break; case 'R': a.right = optarg; break; case 'U': a.up = optarg; break; case 'D': a.down = optarg; break;
         case 'S': a.no_split = 1; break;
         case 'x': snprintf(a.ratio, sizeof a.ratio, "%s", optarg); break;
-        case 'z': a.size = optarg; size_given = 1; break;
+        case 'z': a.size = optarg; break;
         case 'f': a.font = atoi(optarg); font_given = 1; break;
         case 'p': a.profile_font = atoi(optarg); break;
         case 'c': a.scale = atoi(optarg); break;
@@ -878,7 +878,6 @@ int app_main(int argc, char **argv) {
         }
     }
     if (!font_given && !strcmp(win_platform(), "iTerm2")) a.font = 0; /* iTerm2: keep the font unless asked (the font keys need Accessibility) */
-    if (!size_given && !strcmp(win_platform(), "iTerm2")) a.size = "screen"; /* iTerm2: the window follows the screen, not a cell count */
     int ok = 0;
     for (int i = 0; i < N_RATIOS; i++) if (!strcmp(a.ratio, RATIO_CHOICES[i])) ok = 1;
     if (!ok) { fprintf(stderr, "clawd-room: bad --ratio %s\n", a.ratio); return 2; }

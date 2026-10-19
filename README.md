@@ -38,8 +38,9 @@ applaud when a friend finishes, and do little solo acts (stretch, dance, jump, w
     ./clawd-room.sh --room coffee             # window 2
     ./clawd-room.sh --edit list               # what the pixel editor can open (props, items, Clawd frames)
     ./clawd-room.sh --edit window             # the pixel editor: draw a prop with the mouse; rooms show it at once; q: keep or discard
-    ./clawd-room.sh --try                     # iTerm2: four linked rooms in the four quarters, with made-up Clawds
-                                              # (quit one to close all; --try close; --try real for real sessions only)
+    ./clawd-room.sh --try                     # iTerm2 / WSL: four linked rooms in the four quarters, with made-up Clawds
+                                              # (quit one to close all; --try close; --try real for real sessions only;
+                                              # WSL: --try --desktop N opens them on virtual desktop N without switching to it)
 
 Rooms on the same machine find each other and exchange small messages through files in
 `~/.clawd-room/link/` (private folder, no network, no daemon). The banner shows `LINK COFFEE`,
@@ -145,17 +146,17 @@ Hiding the tab bar and the scroll bar: a program cannot do that from inside Wind
 Windows Terminal fragment file (`settings.json` is not touched), `--remove` deletes it. Restart Windows Terminal,
 then open that profile (a start menu with a picture of each scene asks which to open: office, coffee shop or park, S = solo; passing `--room` or `--theme` skips it) or start a window with the `wt.exe -w new -p "Clawd Room" ...` line it prints.
 The tab bar is a global setting, so it needs the two lines from `wt_settings.py`, or
-`python3 setup_profile.py --apply-global`, which adds them (and the 8 pt font for the Clawd Room profile; a fragment's own font loses against the `profiles.defaults` font) to Windows Terminal's `settings.json` after copying it to
+`python3 setup_profile.py --apply-global`, which adds them (and the 5 pt font for the Clawd Room profile; a fragment's own font loses against the `profiles.defaults` font) to Windows Terminal's `settings.json` after copying it to
 `settings.json.clawd-room.bak` (copy that back to undo). Run it only if you want that.
 
-When a room opens on WSL (the start menu included) it sets the terminal font to 8 pt (`--font PT`, 0 = leave it) and
-the window to 110x32 cells (`--size COLSxROWS`, `off` = leave it; sized once in pixels together with the font change). The room is then drawn at a TUI scale (1x, 2x, 3x:
+When a room opens on WSL (the start menu included) it sets the terminal font to 5 pt (`--font PT`, 0 = leave it; the
+Clawd Room profile already has it, so a room pixel is about the size it is on macOS) and the window to the quarter of the
+screen it is in, like iTerm2 (`--size screen`; `COLSxROWS` for a cell count, `off` = leave it). The room is then drawn at a TUI scale (1x, 2x, 3x:
 every room pixel is scale x scale cells) that follows the window size and the number of sessions, and a window
 resize only changes that scale, never the font. Ctrl +/- sets the terminal font by
 hand; after that the automatic part stays off until `f` (font and scale automatic again, camera back to 1x). `--scale N` starts at a
 fixed scale, `--no-auto` turns all of it off. The terminal font is put back when the room quits.
-A window opened from the profile menu starts at Windows Terminal's own default size and is resized once to the
-size above; to open it already at that size use `wt.exe -w new --size 60,18 -p "Clawd Room"` (wt counts cells at the default 14 pt font, so 60,18 gives about 110x33 at 8 pt).
+A window opened from the profile menu starts at Windows Terminal's own default size and is then moved to its quarter.
 
 ## Building and testing
 

@@ -4,8 +4,8 @@
   python3 setup_profile.py            # print what would be written, change nothing
   python3 setup_profile.py --apply    # write the fragment file (settings.json is never touched)
   python3 setup_profile.py --remove   # delete the fragment file again
-  python3 setup_profile.py --update   # add the profile entry to settings.json if it is missing (8 pt font, shows up at once, no restart) or point it at clawd-room.sh, and rewrite the fragment; nothing else in settings.json changes (backup first)
-  python3 setup_profile.py --apply-global   # also hide the tab bar and give the profile an 8 pt font: edits settings.json (after a backup copy)
+  python3 setup_profile.py --update   # add the profile entry to settings.json if it is missing (5 pt font, shows up at once, no restart) or point it at clawd-room.sh, and rewrite the fragment; nothing else in settings.json changes (backup first)
+  python3 setup_profile.py --apply-global   # also hide the tab bar and give the profile a 5 pt font: edits settings.json (after a backup copy)
 
 Windows Terminal reads extra profiles from  %LOCALAPPDATA%\\Microsoft\\Windows Terminal\\Fragments\\clawd-room\\.
 Restart Windows Terminal afterwards. A fragment cannot set global options, so the tab bar still needs
@@ -21,7 +21,7 @@ import sys
 import zlib
 
 NAME = "Clawd Room"
-FONT_SIZE = 8  # the profile opens with this font size (the room's default font, c/app.c), so nothing has to zoom
+FONT_SIZE = 5  # the profile opens with this font size (the room's default font, c/app.c), so nothing has to zoom
 GUID = "{c1a3d0f2-7b64-4e1a-9a5c-2f6d8e4b0c13}"
 HERE = os.path.dirname(os.path.abspath(__file__))
 LAUNCHER = os.path.join(HERE, "clawd-room.sh")  # builds and starts the C program (see clawd-room.sh)
@@ -66,7 +66,7 @@ def patch_settings(text):
 
 def profile_stub():
     """The user-level entry for our profile. A fragment's own font is overridden by the user's profiles.defaults
-    font, so the 8 pt font (and the matching --profile-font) has to be set here, in settings.json."""
+    font, so the 5 pt font (and the matching --profile-font) has to be set here, in settings.json."""
     distro = os.environ.get("WSL_DISTRO_NAME")
     if not distro:
         raise OSError("WSL_DISTRO_NAME is not set; run this from inside WSL")
@@ -76,7 +76,7 @@ def profile_stub():
 
 
 def patch_profile(text):
-    """Add the profile entry at the start of "profiles"."list"; if it is there already, point its commandline at the launcher."""
+    """Add the profile entry at the start of "profiles"."list"; if it is there already, point its commandline at the launcher and set its font size."""
     if GUID in text:
         at = text.index(GUID)
         pat = re.compile(r'("commandline"\s*:\s*)"(?:[^"\\]|\\.)*"')
@@ -84,7 +84,9 @@ def patch_profile(text):
         if not m:
             return text
         cmd = json.dumps(profile_stub()["commandline"])
-        return text[:m.start()] + m.group(1) + cmd + text[m.end():]
+        text = text[:m.start()] + m.group(1) + cmd + text[m.end():]
+        f = re.compile(r'("font"\s*:\s*\{[^}]*?"size"\s*:\s*)[\d.]+').search(text, at, at + 800)  # and its font size
+        return text[:f.start()] + f.group(1) + str(FONT_SIZE) + text[f.end():] if f else text
     m = re.search(r'"list"\s*:\s*\[[ \t]*\r?\n', text)
     if not m:
         raise OSError('no "profiles": {"list": [ ... found in settings.json')
