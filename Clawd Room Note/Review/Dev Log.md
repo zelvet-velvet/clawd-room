@@ -46,69 +46,23 @@ gitGraph
 ---
 ## 📅 Days
 
-### [[2026-10-19]] · Monday
-- [[2026-10-19#🗂️ The vault, reorganised (Zaviel)|🗂️ The vault, reorganised (Zaviel)]]
-- [[2026-10-19#📷 Snapshots and a gallery to browse them (Zaviel)|📷 Snapshots and a gallery to browse them (Zaviel)]]
-- [[2026-10-19#🎨 The pixel editor: a colour picker like Figma's (Zaviel)|🎨 The pixel editor: a colour picker like Figma's (Zaviel)]]
-- [[2026-10-19#🎨 The pixel editor opens in its own window on WSL (Zaviel)|🎨 The pixel editor opens in its own window on WSL (Zaviel)]]
-- [[2026-10-19#🪟 `--try` on WSL opens as one layout (Zaviel)|🪟 `--try` on WSL opens as one layout (Zaviel)]]
-- [[2026-10-19#🗂️ Screenshots in folders (Zaviel)|🗂️ Screenshots in folders (Zaviel)]]
-- [[2026-10-19#🧪 A test queue (Zaviel)|🧪 A test queue (Zaviel)]]
-- [[2026-10-19#🤝 A collaborator: William (Zaviel)|🤝 A collaborator: William (Zaviel)]]
-- [[2026-10-19#🪟 On WSL again (Zaviel)|🪟 On WSL again (Zaviel)]]
-- [[2026-10-19#🧭 Desks stay in their room|🧭 Desks stay in their room]]
-- [[2026-10-19#⌨️ The g / m hint only while the key is held|⌨️ The g / m hint only while the key is held]]
-- [[2026-10-19#💬 One bar along the bottom|💬 One bar along the bottom]]
-- [[2026-10-19#📦 Moving a Clawd: packing and unpacking (step 2 of 3)|📦 Moving a Clawd: packing and unpacking (step 2 of 3)]]
-- [[2026-10-19#📦 Moving a Clawd to another room (step 1 of 3)|📦 Moving a Clawd to another room (step 1 of 3)]]
-- [[2026-10-19#🏙️ One building each|🏙️ One building each]]
+One note per day in `Review/Log/<year>/<month>/<ISO week>/` (e.g. `2026/10/W43/2026-10-19`). **Open today's daily note** (or the Calendar) makes today's in the right folder from [[Day note]]. In Obsidian the list below is built from those notes (newest first, with each day's entries).
 
-### [[2026-10-18]] · Sunday
-- [[2026-10-18#🏢 The park's building, redesigned|🏢 The park's building, redesigned]]
-- [[2026-10-18#🏛️ The park's way up: a terrace and a stair tower|🏛️ The park's way up: a terrace and a stair tower]]
-- [[2026-10-18#🔍 `o` works, and names what it shows|🔍 `o` works, and names what it shows]]
-- [[2026-10-18#🧱 The park's gates are buildings|🧱 The park's gates are buildings]]
-- [[2026-10-18#🏙️ The park is a city plaza|🏙️ The park is a city plaza]]
-- [[2026-10-18#🕳️ Down the well, not across it|🕳️ Down the well, not across it]]
-- [[2026-10-18#🔀 Merged into main|🔀 Merged into main]]
-- [[2026-10-18#🎞️ Engine step 4: the animator, animated props|🎞️ Engine step 4: the animator, animated props]]
-- [[2026-10-18#🎨 Engine step 3: props as sprites, rooms as text files, the pixel editor|🎨 Engine step 3: props as sprites, rooms as text files, the pixel editor]]
-- [[2026-10-18#🚪 Gates stay put; `g` asks where to|🚪 Gates stay put; `g` asks where to]]
-- [[2026-10-18#📐 Engine step 2: the placer, 107 overlaps → 0|📐 Engine step 2: the placer, 107 overlaps → 0]]
-- [[2026-10-18#🧱 Engine step 1: the scene, the overlap check, the gallery, the overlay|🧱 Engine step 1: the scene, the overlap check, the gallery, the overlay]]
-- [[2026-10-18#🧪 `--try`: four linked rooms in one command; the engine plan|🧪 `--try`: four linked rooms in one command; the engine plan]]
-- [[2026-10-18#🦶 Feet on the steps, a lower rail|🦶 Feet on the steps, a lower rail]]
-- [[2026-10-18#🚶 Walking the stairs behind the railing|🚶 Walking the stairs behind the railing]]
-- [[2026-10-18#↙️ The well at the front left, fewer balusters|↙️ The well at the front left, fewer balusters]]
-- [[2026-10-18#↔️ The well's steps run right to left, steps stand out|↔️ The well's steps run right to left, steps stand out]]
-- [[2026-10-18#🔧 The steps inside the opening stay inside|🔧 The steps inside the opening stay inside]]
-- [[2026-10-18#🪜 Real steps, no gaps, the window out from behind the sign|🪜 Real steps, no gaps, the window out from behind the sign]]
-- [[2026-10-18#🚀 iTerm2: the profile starts the room|🚀 iTerm2: the profile starts the room]]
-- [[2026-10-18#🛝 A real swing, the park's well at the back right|🛝 A real swing, the park's well at the back right]]
-- [[2026-10-18#🔲 iTerm2: a fixed pixel size|🔲 iTerm2: a fixed pixel size]]
-- [[2026-10-18#🪨 The park's way down is a small stone well|🪨 The park's way down is a small stone well]]
-- [[2026-10-18#📏 Taller doors and way up, the well on open floor, no glass|📏 Taller doors and way up, the well on open floor, no glass]]
-- [[2026-10-18#🪜 Way up at the platform's right end, stair well at the back right|🪜 Way up at the platform's right end, stair well at the back right]]
-- [[2026-10-18#🚪 The way up, on the left of the platform|🚪 The way up, on the left of the platform]]
-- [[2026-10-18#🏢 Steel stairs in the office, a new way up, a smaller playground|🏢 Steel stairs in the office, a new way up, a smaller playground]]
-- [[2026-10-18#🌳 Park playground at an angle, cleaner doors|🌳 Park playground at an angle, cleaner doors]]
-- [[2026-10-18#🗂️ Notes: plugins, diagrams, callouts|🗂️ Notes: plugins, diagrams, callouts]]
-- [[2026-10-18#🪜 The stairs go up to a half floor|🪜 The stairs go up to a half floor]]
-- [[2026-10-18#🏛️ The rooms in perspective are built|🏛️ The rooms in perspective are built]]
-- [[2026-10-18#🎨 A new look, picked from mockups|🎨 A new look, picked from mockups]]
-- [[2026-10-18#🚪 Doors and ladders before the new look (replaced)|🚪 Doors and ladders before the new look (replaced)]]
+```dataviewjs
+const days = dv.pages('"Review/Log"').where(p => /^\d{4}-\d{2}-\d{2}$/.test(p.file.name)).sort(p => p.file.name, "desc");
+let year = "", month = "", week = "";
+for (const p of days) {
+  const d = moment(p.file.name, "YYYY-MM-DD");
+  if (d.format("YYYY") !== year) { year = d.format("YYYY"); month = ""; dv.header(3, year); }
+  if (d.format("MM") !== month) { month = d.format("MM"); week = ""; dv.header(4, d.format("MMMM")); }
+  if (d.format("[W]WW") !== week) { week = d.format("[W]WW"); dv.paragraph("**" + week + "**"); }
+  const file = app.vault.getAbstractFileByPath(p.file.path);
+  const heads = (app.metadataCache.getFileCache(file)?.headings || []).filter(h => h.level === 2);
+  dv.paragraph(p.file.link + " · " + d.format("dddd"));
+  dv.list(heads.map(h => dv.sectionLink(p.file.path, h.heading, false, h.heading)));
+}
+```
 
-### [[2026-10-17]] · Saturday
-- [[2026-10-17#🎬 The camera at the gates|🎬 The camera at the gates]]
-- [[2026-10-17#🔗 Linked rooms|🔗 Linked rooms]]
-- [[2026-10-17#🩹 Resizing in iTerm2|🩹 Resizing in iTerm2]]
-- [[2026-10-17#🎥 Camera, room size and the iTerm2 helper|🎥 Camera, room size and the iTerm2 helper]]
-- [[2026-10-17#🍎 Runs on macOS|🍎 Runs on macOS]]
-
-### [[2026-10-16]] · Friday
-- [[2026-10-16#🔧 The room is written in C|🔧 The room is written in C]]
-- [[2026-10-16#🧭 Opening at the right size (WSL)|🧭 Opening at the right size (WSL)]]
-- [[2026-10-16#🌱 New repo|🌱 New repo]]
 ---
 ## ⏳ Pending
 

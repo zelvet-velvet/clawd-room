@@ -41,7 +41,8 @@ The vault is plain Markdown in git, so it travels with the code: notes change on
 **Setup (once):**
 1. In Obsidian: *Open folder as vault* → the `Clawd Room Note` folder (not the repo root).
 2. Settings → Community plugins → turn on community plugins, then install the ones listed in `.obsidian/community-plugins.json` (the plugin code is not in git): Dataview, Dataview Serializer, Templater, Calendar, Hover Editor, Breadcrumbs, Note Refactor, HTML Tags Autocomplete, make.md, Style Settings, Minimal Theme Settings, CSS Editor, Mermaid ELK Renderer. Without them the notes still read fine; the mermaid diagrams just lay out differently.
-3. Do **not** turn on an Obsidian Git plugin: commit with git (or Claude Code) like the code, on your branch.
+3. **Templater** (its settings are not in git): Settings → Templater → template folder `_Meta/Templates`, turn on *Trigger Templater on new file creation* and *Enable folder templates*, folder template `Review/Log` → `_Meta/Templates/Day note.md`. Daily notes is set already (in git).
+4. Do **not** turn on an Obsidian Git plugin: commit with git (or Claude Code) like the code, on your branch.
 
 **What is shared and what is yours:**
 
@@ -57,7 +58,7 @@ The vault is plain Markdown in git, so it travels with the code: notes change on
 ---
 ## ✍️ Writing in the vault
 
-- **Dev Log:** every PR adds a short entry to **today's note** in `Review/Log/` (`2026-10-21.md`; a `## ` heading per entry, newest first), with the author after the title, e.g. `## 🛝 A seesaw in the park (William)`. Two to four plain bullets about what changed for someone using the room; a picture if visual. A new day: a new note (copy the frontmatter of the last one) and a line in the [[Dev Log]] index.
+- **Dev Log:** every PR adds a short entry to **today's note** in `Review/Log/<year>/<month>/<week>/` (`2026/10/W43/2026-10-21.md`; a `## ` heading per entry, newest first), with the author after the title, e.g. `## 🛝 A seesaw in the park (William)`. Two to four plain bullets about what changed for someone using the room; a picture if visual. A new day: **Open today's daily note** (or the Calendar) makes it in the right folder from [[Day note]]; the [[Dev Log]] index lists it by itself.
 - **Design notes** (`Design/`: [[Rooms and Art]], [[Interaction]], [[Platforms and Windows]], [[Engine and Tests]]) describe how things work **now**: rewrite the part that changed, do not append history.
 - **[[Test Checklist]]:** add what still needs someone's eyes to the **test queue** at the top (a `Group X` callout per group, each test a box with an ID like **T14** or a question **Q2**, a `✅ date: … (who)` line for the result, and a folded *how to run*); refer to tests by their ID in issues and PRs. Tick only what **you** checked, and say who: `- [x] the seesaw tips both ways (William, 2026-10-21)`. Visual items stay for Zaviel to tick.
 - **Pictures:** `Assets/Snapshots/<subject folder>/YYYY-MM-DD subject.png`, a row in [[Snapshot status]], then `python3 tools/vault_gallery.py` (it writes the browsing notes in `Gallery/`) (folders: `Office/`, `Coffee shop/`, `Park/`, `Gates (stairs, doors, wells)/`, `Interaction (keys, moving)/`, `Engine and tools/`, `Platforms/`, `Style and mockups/`, `Old look/`; a new one if none fits); your own captures add your name, `... (William).png`. Embed with `![[name.png|300]]`.

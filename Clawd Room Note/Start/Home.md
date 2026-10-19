@@ -17,7 +17,7 @@ sticker: lucide//house
 | Folder | What | Written by |
 | --- | --- | --- |
 | `Start/` | this page, [[LLM Guide]], [[Collaboration]] | people |
-| `Review/` | [[Dev Log]] (the index of days, pending, ideas), `Log/` (one note per day), [[Test Checklist]] (the test queue T1, T2 …) | people |
+| `Review/` | [[Dev Log]] (the index of days, pending, ideas), `Log/<year>/<month>/<week>/` (one note per day; *Open today's daily note* makes today's), [[Test Checklist]] (the test queue T1, T2 …) | people |
 | `Design/` | how things work **now**: [[Rooms and Art]], [[Interaction]], [[Platforms and Windows]], [[Engine and Tests]], [[Engine Design]], [[Animations]] | people |
 | `Gallery/` | pictures and animations to browse: [[Gallery index]] | `tools/vault_gallery.py` (never by hand) |
 | `Assets/` | the files only: `Snapshots/<subject>/` pictures, `Animations/` GIFs and sheets | people (pictures), `--build-art` (animations) |
