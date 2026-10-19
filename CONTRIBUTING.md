@@ -83,7 +83,7 @@ Ideas waiting for someone are at the end of the Dev Log (Pending, Ideas); ask in
 
 The notes are an Obsidian vault in git; setup, what is shared and how to write in it: `Clawd Room Note/Docs/Collaboration.md`. In short:
 
-- Every PR adds a short entry to `Clawd Room Note/Docs/Dev Log.md` under today's date (newest first): a title, two to four plain bullets about what changed **for someone using the room**, and `(William)` or `(Zaviel)` after the title. Pictures go in `Clawd Room Note/Screenshots/` as `YYYY-MM-DD subject.png`.
+- Every PR adds a short entry to `Clawd Room Note/Docs/Dev Log.md` under today's date (newest first): a title, two to four plain bullets about what changed **for someone using the room**, and `(William)` or `(Zaviel)` after the title. Pictures go in the subject folder under `Clawd Room Note/Screenshots/` (Office, Park, Gates ...) as `YYYY-MM-DD subject.png`.
 - Two people adding entries at the top of the same file conflict easily: when `git merge origin/main` reports a conflict in the Dev Log, keep **both** entries.
 - Do not commit your own Obsidian layout or settings (`git restore "Clawd Room Note/.obsidian"` if you changed one by accident).
 - Bigger rewrites of the topic notes (`Clawd Room Note/Notes/`) are done by whoever runs the next `CMD_SYNC` (see the LLM guide).

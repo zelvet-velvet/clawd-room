@@ -20,7 +20,7 @@ What changed and when, in short. How things work now is in the topic notes:
 | [[Test Checklist]] | what is still to check by eye |
 | [[Animations]] | every Clawd frame |
 
-Pictures are in `Screenshots/`. Details of every change: `git log`.
+Pictures are in `Screenshots/`, one folder per subject (office, coffee shop, park, gates, interaction, engine and tools, platforms, style and mockups, the old look). Details of every change: `git log`.
 
 > [!info] Where the work is (branches)
 > Since 2026-10-19 (William joined) every change is a branch and a pull request into `main`, merged by Zaviel ([[Collaboration]]). Before that `main` was kept equal to `feat/style-a`.
@@ -47,6 +47,9 @@ gitGraph
 ## 2026-10-18
 
 ## 2026-10-19
+
+### 🗂️ Screenshots in folders (Zaviel)
+- `Screenshots/` is sorted into one folder per subject: Office, Coffee shop, Park, Gates (stairs, doors, wells), Interaction, Engine and tools, Platforms, Style and mockups, Old look. Every picture in the notes still shows (Obsidian finds them by name).
 
 ### 🧪 A test queue (Zaviel)
 - The [[Test Checklist]] starts with a **test queue**: what to test next, one big callout per group with a box per test and its checks as sub-boxes, and a foldable **How to test** with the steps. Five WSL tests are queued (the profile at 5 pt, the rooms and the bar, sending and moving, desks staying, the pixel editor).

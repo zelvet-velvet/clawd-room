@@ -52,7 +52,7 @@ What to test next, one big callout per group: a box per test with its checks as 
 >     - [ ] `q` asks save (S) or discard (D); D puts the picture back, in the room too
 >
 > > [!example]- How to test
-> > **1.** Windows Terminal → the ⌄ next to the tabs → **Clawd Room** → pick a scene → the window jumps once into its quarter; compare with `Screenshots/2026-10-19 wsl try, four rooms at 5 pt.png`; press `q`.
+> > **1.** Windows Terminal → the ⌄ next to the tabs → **Clawd Room** → pick a scene → the window jumps once into its quarter; compare with ![[2026-10-19 wsl try, four rooms at 5 pt.png|300]]; press `q`.
 > >
 > > **2.** In a WSL shell in the repo: `./clawd-room.sh --try` → look at the four rooms for a minute → click into one, `?` to read the help, `?` again → hold `g` two seconds and let go, then the same with `m` → `./clawd-room.sh --try close`.
 > >
