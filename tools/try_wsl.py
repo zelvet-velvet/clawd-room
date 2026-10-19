@@ -144,14 +144,15 @@ def main():
             "function Assist($title) { $t = [Diagnostics.Stopwatch]::StartNew(); while ($t.ElapsedMilliseconds -lt 3000) {"
             " $e = $A::RootElement.FindAll([System.Windows.Automation.TreeScope]::Children, [System.Windows.Automation.Condition]::TrueCondition) | ? { $explorer -contains $_.Current.ProcessId } |"
             " % { $_.FindAll([System.Windows.Automation.TreeScope]::Descendants, $li) } | ? { $_.Current.ClassName -eq 'ListViewItem' -and"
-            " ((@($_.FindAll([System.Windows.Automation.TreeScope]::Descendants, [System.Windows.Automation.Condition]::TrueCondition) | % { $_.Current.Name })) -contains $title) } | select -First 1;"
+            " ((@($_.Current.Name) + @($_.FindAll([System.Windows.Automation.TreeScope]::Descendants, [System.Windows.Automation.Condition]::TrueCondition) | % { $_.Current.Name })) -contains $title) } | select -First 1;"
             " $p = $null; if ($e -and $e.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$p)) { $p.Invoke(); Start-Sleep -Milliseconds 500; return $true };"
             " Start-Sleep -Milliseconds 150 }; return $false }",  # (Snap Assist is Explorer's; only a thumbnail with exactly our title is picked)
             "$assist = [ClawdTry.T]::Snap($all[0][0], %s, %s); if (-not $assist) { 'not snapped: %s' }" % (keys[0][0], keys[0][1], ROOMS[0][0]),
         ]
         for i in range(1, 4):
-            lines.append("if (-not ($assist -and (Assist ([ClawdTry.T]::Title($all[%d][0]))))) { $assist = $false; if (-not [ClawdTry.T]::Snap($all[%d][0], %s, %s)) { 'not snapped: %s' } }"
-                         % (i, i, keys[i][0], keys[i][1], ROOMS[i][0]))
+            lines.append("if ($assist -and (Assist ([ClawdTry.T]::Title($all[%d][0])))) { '%s: picked in Snap Assist' } else { $assist = $false; "
+                         "if ([ClawdTry.T]::Snap($all[%d][0], %s, %s)) { '%s: snapped with keys' } else { 'not snapped: %s' } }"
+                         % (i, ROOMS[i][0], i, keys[i][0], keys[i][1], ROOMS[i][0], ROOMS[i][0]))
         lines += ["'snapped ' + $clk.ElapsedMilliseconds", "[void][ClawdTry.T]::Focus($all[0][0])"]
     script = "\n".join(lines)
     # through a file in Windows' temp folder (with the PATHs the script is too long for -EncodedCommand)
@@ -162,7 +163,9 @@ def main():
     p = subprocess.run(["powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", tmp + "\\clawd-room-try.ps1"],
                        capture_output=True, text=True)
     os.remove(path)
-    if os.environ.get("CLAWD_TRY_TIMING"):  # (how long each window took, in ms since the script started)
+    with open(os.path.join(tr or "/tmp", "snap.log"), "w") as f:  # (how long each step took, in ms, and how the rooms were snapped)
+        f.write(p.stdout.replace("\r", "") + p.stderr.replace("\r", "")[:2000])
+    if os.environ.get("CLAWD_TRY_TIMING"):
         sys.stderr.write(p.stdout.replace("\r", ""))
     if p.returncode != 0:
         err = re.findall(r'<S S="Error">(.*?)</S>', p.stderr) or [l for l in p.stderr.replace("\r", "").splitlines() if l.strip()]
