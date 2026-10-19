@@ -5,7 +5,7 @@
   "graph": true,
   "backlink": false,
   "canvas": true,
-  "outgoing-link": true,
+  "outgoing-link": false,
   "tag-pane": false,
   "footnotes": false,
   "properties": false,

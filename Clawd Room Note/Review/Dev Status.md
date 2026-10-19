@@ -12,7 +12,7 @@ sticker: lucide//activity
 - **WSL Up to Date**: All tests pass on WSL; the build uses fused multiply-add on both platforms, so the Mac snapshots match.
 - **`--try` on WSL**: Four linked rooms open at once and become a Windows snap group (first room snapped with Win+←+↑, the others picked in Snap Assist, about 2.3 s); `--try --desktop N` for another virtual desktop; a `--try` that closed itself (an old one quitting late) fixed.
 - **5 pt Profile**: The Clawd Room profile is 5 pt and a room opens as its screen quarter, like iTerm2 (`setup_profile.py --update`).
-- **Pixel Editor**: Opens in its own window on WSL; a Figma-like colour picker (picked from three mockups); the shortcuts no longer run over the colours (`?` box in short windows).
+- **Pixel Editor**: Opens in its own window on WSL; a Figma-like colour picker (picked from three mockups); the shortcuts no longer run over the colours (`?` box in short windows); **Ctrl+Z / Ctrl+Y** undo and redo.
 - **Collaboration**: William Pan invited; `CONTRIBUTING.md`, [[Collaboration]], a PR template; every change through a branch and a PR, Zaviel merges.
 - **Test Queue**: [[Test Checklist]] grouped with test IDs (T1 … T22, Q1); WSL T1 – T13 ticked by Zaviel.
 - **Vault**: Reorganised (Start, Review, Design, Gallery, Assets); one Dev Log note per day in year / month / week folders with a Day note template; snapshots marked current / replaced / not picked; this status note and the `CMD_` set.
@@ -35,7 +35,7 @@ sticker: lucide//activity
 - [ ] **Moving, Step 3**: Drag a Clawd with the mouse onto a door, the stairs or the well. (Settled: `--try real` stays split; uneven shares are fine.)
 
 ### 🖥️ Platforms
-- [>] **WSL Test Queue**: Group E, the pixel editor (T14 – T22) in [[Test Checklist]].
+- [>] **WSL Test Queue**: Group E, the pixel editor (T14 – T23) in [[Test Checklist]].
 - [ ] **Mac Check**: Run `make -C c test` on the Mac after the fused multiply-add change (it should still match).
 - [ ] **Blocked Writes**: The room can block writing when the terminal stops reading (seen with iTerm2 in full screen).
 - [ ] **Windows Terminal Panes**: Split panes are not seen separately yet.
