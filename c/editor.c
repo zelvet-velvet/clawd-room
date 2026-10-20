@@ -717,7 +717,8 @@ static void draw(const Ed *e, Canvas *cv) {
          brighter under the pointer */
         int fx = cv->w - 4 - 9, fy = 3;
         Rgb k = g_fold_hover ? RGB(150, 150, 175) : RGB(76, 76, 96), fill = g_fold_hover ? RGB(90, 90, 112) : RGB(46, 46, 60);
-        frame(cv, fx + 1, fy + 1, 7, 3, k);
+        canvas_rect(cv, fx + 1, fy, 7, 1, k); canvas_rect(cv, fx + 1, fy + 4, 7, 1, k);       /* (its outline without the corner */
+        canvas_rect(cv, fx, fy + 1, 1, 3, k); canvas_rect(cv, fx + 8, fy + 1, 1, 3, k);       /*  pixels: softly rounded) */
         if (!g_panel_folded) canvas_rect(cv, fx + 6, fy + 1, 2, 3, fill);
         canvas_rect(cv, fx + 5, fy + 1, 1, 3, k);
         region(R_FOLD, 0, fx - 1, fy - 1, 11, 8, RGB(0, 0, 0));
