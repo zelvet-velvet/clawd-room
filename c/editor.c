@@ -612,7 +612,7 @@ static void draw_timeline(Canvas *cv, const Ed *e, double now, int preview, int 
     sprite_name(&e->f, e->sp, name, sizeof name);
     split_name(name, base, sizeof base, &num);
     canvas_rect(cv, 0, y0, cv->w, 1, RGB(44, 44, 56));
-    if (n > 1) snprintf(t, sizeof t, "%s  FRAME %d OF %d", base, at + 1, n); else snprintf(t, sizeof t, "%s  ONE FRAME", base);
+    if (n > 1) snprintf(t, sizeof t, "[ %s ]  FRAME %d OF %d", base, at + 1, n); else snprintf(t, sizeof t, "[ %s ]  ONE FRAME", base);
     for (char *q = t; *q; q++) if (*q >= 'a' && *q <= 'z') *q -= 32;
     /* the left column: the short help, under it the sprite as in the room, as big as the column lets it be */
     const char *sh = cv->w >= 220 ? "? SHORTCUTS  Q QUIT" : "? HELP  Q QUIT";
@@ -625,7 +625,7 @@ static void draw_timeline(Canvas *cv, const Ed *e, double now, int preview, int 
     int bw = text_width("ONION") + 9 + text_width(sp) + 9 + text_width(play) + 6, bx = sx1 - bw; /* (ONION, the speed, PLAY) */
     if (sx0 + text_width(t) + 8 + bw > sx1) { /* (no room: the short way, NAME 2/9) */
         canvas_rect(cv, sx0, y + 1, text_width(t), 7, RGB(18, 18, 24));
-        if (n > 1) snprintf(t, sizeof t, "%s %d/%d", base, at + 1, n); else snprintf(t, sizeof t, "%s", base);
+        if (n > 1) snprintf(t, sizeof t, "[ %s ] %d/%d", base, at + 1, n); else snprintf(t, sizeof t, "[ %s ]", base);
         for (char *q = t; *q; q++) if (*q >= 'a' && *q <= 'z') *q -= 32;
         canvas_text(cv, sx0, y + 2, t, C_YELLOW);
     }
