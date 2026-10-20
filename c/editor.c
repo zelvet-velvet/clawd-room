@@ -52,6 +52,7 @@ typedef struct {
     double hue;                              /* the colour field's hue (kept while the colour is grey) */
     int picking;                             /* PICK: the next click on the grid takes its colour */
     int last_pk, last_pi; Rgb last_prgb;     /* the colour before ERASE, for PAINT */
+    int recol;                               /* a file colour double-clicked (its index + 1): changing the colour changes it in the file */
     int typing; char tbuf[8];                /* typing a colour: 0 none, 1 the hex code, 2..4 red / green / blue (0..255) */
     int zoom, dirty_file;
     char msg[96];
@@ -330,6 +331,7 @@ static int find_sprite(const File *f, const char *name) {
 static void file_open(Ed *e, const char *dir, int which, const char *name) {
     char path[700];
     e->file = (which + NFILES) % NFILES;
+    e->recol = 0;
     char mpath[700];
     snprintf(path, sizeof path, "%s/%s", dir, FILES[e->file]);
     mine_path(mpath, sizeof mpath, e->file);
@@ -362,6 +364,7 @@ static int save_mine(Ed *e) {
     char held = e->pk == 1 ? e->f.pal_ch[e->pi] : 0; /* (the colour in hand: its swatch may go if nothing uses it now) */
     Rgb held_c = e->pk == 1 ? e->f.pal_c[e->pi] : RGB(0, 0, 0);
     file_load_merged(f, path, mpath);
+    e->recol = 0;
     if (held) { /* (still in the file: the same swatch; gone: kept in hand as a new colour, painting brings it back) */
         int found = -1;
         for (int q = 0; q < f->npal; q++) if (f->pal_ch[q] == held) found = q;
@@ -618,7 +621,7 @@ static Rgb pick_colour(const Ed *e, int *tr) { *tr = e->pk == 0; return e->pk ==
 static void frame(Canvas *cv, int x, int y, int w, int h, Rgb c) { canvas_rect(cv, x - 1, y - 1, w + 2, 1, c); canvas_rect(cv, x - 1, y + h, w + 2, 1, c); canvas_rect(cv, x - 1, y - 1, 1, h + 2, c); canvas_rect(cv, x + w, y - 1, 1, h + 2, c); }
 static void checker(Canvas *cv, int x, int y, int w, int h) { for (int dy = 0; dy < h; dy++) for (int dx = 0; dx < w; dx++) canvas_px(cv, x + dx, y + dy, ((dx / 2) + (dy / 2)) % 2 ? RGB(70, 70, 80) : RGB(52, 52, 60)); }
 static Rgb shade(Rgb c, int k) { /* k < 0 darker, k > 0 lighter */
-    double f = k < 0 ? 1 + 0.17 * k : 0.17 * k;
+    double f = k < 0 ? 1 + 0.15 * k : 0.15 * k;
     if (k < 0) return RGB((int)(c.r * f), (int)(c.g * f), (int)(c.b * f));
     return RGB((int)(c.r + (255 - c.r) * f), (int)(c.g + (255 - c.g) * f), (int)(c.b + (255 - c.b) * f));
 }
@@ -1298,7 +1301,7 @@ static void draw(const Ed *e, Canvas *cv) {
         }
     }
     /* the panel (like Figma's colour picker): PAINT / ERASE / PICK, a colour field and a hue bar, the colour's hex and red
-       green blue (click to type), the file's colours (+ ADD puts a new one in), shades, the real-size view */
+       green blue (click to type), the file's colours (the + slot first: a changed colour goes there, never into a file colour unless double-clicked), shades, the real-size view */
     int x = L.px, y = L.ty, tr;
     g_field_w = cv->w - x - 4 < 96 ? 96 : cv->w - x - 4 > 128 ? 128 : cv->w - x - 4;
     Rgb cur = pick_colour(e, &tr);
@@ -1356,23 +1359,27 @@ static void draw(const Ed *e, Canvas *cv) {
     y += 11;
     int pbot = L.ty + L.ah; /* (a dragged timeline may leave less than the whole panel: what does not fit is left out, the shades first) */
     if (y + SECTION + 8 <= pbot) section(cv, x, y, "IN THIS FILE");
-    if (y + SECTION + 8 <= pbot && e->pk == 2) { canvas_text(cv, x + FIELD_W - text_width("+ ADD"), y, "+ ADD", C_GREY); region(R_ADD, 0, x + FIELD_W - text_width("+ ADD") - 1, y - 1, text_width("+ ADD") + 2, 7, RGB(0, 0, 0)); }
     y += SECTION;
+    if (y + 8 <= pbot) { /* the + slot: empty, a plus; a new colour (not in the file yet) sits in it */
+        if (e->pk == 2) { canvas_rect(cv, x, y, 8, 8, e->prgb); frame(cv, x - 1, y - 1, 10, 10, RGB(150, 150, 170)); }
+        else { canvas_rect(cv, x, y, 8, 8, RGB(30, 30, 40)); canvas_rect(cv, x + 2, y + 4, 5, 1, RGB(150, 150, 170)); canvas_rect(cv, x + 4, y + 2, 1, 5, RGB(150, 150, 170)); }
+        region(R_ADD, 0, x, y, 8, 8, RGB(0, 0, 0));
+    }
     for (int i = 0; i < e->f.npal; i++) {
-        int sx = x + (i % 10) * 10, sy = y + (i / 10) * SW_ROW;
+        int sx = x + ((i + 1) % 10) * 10, sy = y + ((i + 1) / 10) * SW_ROW;
         if (sy + 8 > pbot) break;
         canvas_rect(cv, sx, sy, 8, 8, e->f.pal_c[i]);
         region(R_FILE, i, sx, sy, 8, 8, e->f.pal_c[i]);
         int used = 0;
         for (int yy = 0; yy < e->h && !used; yy++) for (int xx = 0; xx < e->w; xx++) if (e->g[yy][xx] == e->f.pal_ch[i]) { used = 1; break; }
         if (used) canvas_rect(cv, sx + 3, sy + 9, 2, 1, RGB(200, 200, 215)); /* (used in this sprite) */
-        if (e->pk == 1 && e->pi == i) frame(cv, sx - 1, sy - 1, 10, 10, RGB(150, 150, 170)); /* (the one painting: a soft ring, a dark gap inside it) */
+        if (e->pk == 1 && e->pi == i) frame(cv, sx - 1, sy - 1, 10, 10, e->recol == i + 1 ? RGB(230, 200, 90) : RGB(150, 150, 170)); /* (the one painting: a soft ring, a dark gap inside it; yellow: being changed in the file) */
     }
-    y += ((e->f.npal + 9) / 10) * SW_ROW + 2;
+    y += ((e->f.npal + 10) / 10) * SW_ROW + 2;
     if (y + SECTION + 8 <= pbot) section(cv, x, y, "SHADES");
     y += SECTION;
-    for (int k = -3; k <= 3 && y + 8 <= pbot; k++) { /* darker to lighter */
-        int sx = x + (k + 3) * 10;
+    for (int k = -4; k <= 5 && y + 8 <= pbot; k++) { /* darker to lighter, as many as a row of the file's colours */
+        int sx = x + (k + 4) * 10;
         Rgb c = shade(cur, k);
         if (!tr) { canvas_rect(cv, sx, y, 8, 8, c); region(R_NEW, 0, sx, y, 8, 8, c); }
         if (k == 0 && !tr) frame(cv, sx - 1, y - 1, 10, 10, RGB(90, 90, 108)); /* (this colour: a dimmer ring) */
@@ -1423,9 +1430,10 @@ static void draw(const Ed *e, Canvas *cv) {
 }
 
 static void set_file_colour(Ed *e, int i, Rgb c);
-/* the colour to paint becomes c: a file colour is changed in the file (all its pixels); erase or the body: a new colour */
+/* the colour to paint becomes c: a new colour in the + slot (one already in the file is that one); a double-clicked file
+   colour is changed in the file (all its pixels) */
 static void apply_colour(Ed *e, Rgb c) {
-    if (e->pk == 1 && !e->f.pal_body[e->pi]) { push_undo(e); set_file_colour(e, e->pi, c); save(e); }
+    if (e->pk == 1 && e->recol == e->pi + 1 && !e->f.pal_body[e->pi]) { push_undo(e); set_file_colour(e, e->pi, c); save(e); }
     else { e->pk = 2; e->prgb = c; for (int q = 0; q < e->f.npal; q++) if (!e->f.pal_body[q] && rgb_eq(e->f.pal_c[q], c)) { e->pk = 1; e->pi = q; } }
 }
 
@@ -1572,15 +1580,16 @@ int editor_run(const char *dir, const char *name) {
                         fx = fx < 0 ? 0 : fx > 1 ? 1 : fx; fy = fy < 0 ? 0 : fy > 1 ? 1 : fy;
                         if (k) h = fx * 359; else { sat = fx; val = 1 - fy; }
                         e.hue = h;
-                        if (e.drag < 0) { e.drag = k; if (e.pk == 1 && !e.f.pal_body[e.pi]) push_undo(&e); else { e.pk = 2; e.prgb = was; } } /* (a file colour changes in the file; erase or the body: a new colour) */
+                        int inplace = e.pk == 1 && e.recol == e.pi + 1 && !e.f.pal_body[e.pi];
+                        if (e.drag < 0) { e.drag = k; if (inplace) push_undo(&e); else { e.pk = 2; e.prgb = was; } } /* (a double-clicked file colour changes in the file; else a new colour, in the + slot) */
                         Rgb c = hsv_rgb(h, sat, val);
-                        if (e.pk == 1) set_file_colour(&e, e.pi, c); else e.prgb = c;
+                        if (inplace) set_file_colour(&e, e.pi, c); else e.prgb = c;
                         e.picking = 0;
                         continue;
                     }
                     if (r && r->kind == R_GRID && (alt || (e.picking && btn == 0))) { /* pick the colour under the pointer */
                         char ch = e.g[e.hy][e.hx];
-                        e.pk = 0;
+                        e.pk = 0; e.recol = 0;
                         for (int q = 0; q < e.f.npal; q++) if (e.f.pal_ch[q] == ch) { e.pk = 1; e.pi = q; }
                         e.picking = 0;
                         continue;
@@ -1623,10 +1632,20 @@ int editor_run(const char *dir, const char *name) {
                         else if (r->kind == R_SPEED) e.speed = e.speed < 0.75 ? 1 : e.speed < 1.5 ? 2 : 0.5;
                         else if (r->kind == R_ONION) e.onion = !e.onion;
                         else if (r->kind == R_FOLD) g_panel_folded = !g_panel_folded;
-                        else if (r->kind == R_ADD && e.pk == 2) { char ch = letter_for(&e, e.prgb); for (int q = 0; q < e.f.npal; q++) if (e.f.pal_ch[q] == ch) { e.pk = 1; e.pi = q; } save(&e); }
-                        else if (r->kind == R_FILE) { e.pk = 1; e.pi = r->i; e.picking = 0; }
+                        else if (r->kind == R_ADD && e.pk == 2) { char ch = letter_for(&e, e.prgb); for (int q = 0; q < e.f.npal; q++) if (e.f.pal_ch[q] == ch) { e.pk = 1; e.pi = q; } e.recol = 0; save(&e); } /* (the new colour into the file) */
+                        else if (r->kind == R_ADD) { /* an empty + slot: a new colour, from the one in hand */
+                            Rgb c = e.pk == 1 ? e.f.pal_c[e.pi] : e.last_pk == 1 ? e.f.pal_c[e.last_pi] : e.last_pk == 2 ? e.last_prgb : RGB(255, 255, 255);
+                            e.pk = 2; e.prgb = c; e.recol = 0; e.picking = 0;
+                        }
+                        else if (r->kind == R_FILE) { /* a file colour to paint with; double-clicked: changing the colour changes it in the file */
+                            static double last_t; static int last_i = -1;
+                            double t = wall_now();
+                            e.recol = t - last_t < 0.4 && last_i == r->i && !e.f.pal_body[r->i] ? r->i + 1 : 0;
+                            last_t = t; last_i = r->i;
+                            e.pk = 1; e.pi = r->i; e.picking = 0;
+                        }
                         else if (r->kind == R_NEW) { /* a colour already in the file is that one; else a new colour */
-                            e.pk = 2; e.prgb = r->c;
+                            e.pk = 2; e.prgb = r->c; e.recol = 0;
                             for (int q = 0; q < e.f.npal; q++) if (!e.f.pal_body[q] && rgb_eq(e.f.pal_c[q], r->c)) { e.pk = 1; e.pi = q; }
                         }
                     }

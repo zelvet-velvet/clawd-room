@@ -125,6 +125,8 @@ Whether each picture in `Assets/Snapshots/` still shows how things are. `tools/v
 | 2026-10-20 editor animation mockup A and B (A picked).png | replaced | [[2026-10-20 editor timeline, onion skin and fill.png]] |
 | 2026-10-20 editor colour panel folded to a ribbon.png | current |  |
 | 2026-10-20 editor colour titles and the chosen colour, A B C (A picked).png | replaced | [[2026-10-20 editor timeline, onion skin and fill.png]] |
+| 2026-10-20 editor new colour slot mockup, A and B (A picked).png | replaced | [[2026-10-20 editor new colour slot, a new colour, a file colour being changed.png]] |
+| 2026-10-20 editor new colour slot, a new colour, a file colour being changed.png | current |  |
 | 2026-10-20 editor nine frames in the timeline.png | current |  |
 | 2026-10-20 editor panel and timeline folded.png | current |  |
 | 2026-10-20 editor picker with yours marked, reset buttons.png | current |  |

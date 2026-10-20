@@ -76,6 +76,15 @@ Pictures of the debug overlay, the placer, the pixel editor, the gallery, newest
 > ![[2026-10-20 editor nine frames in the timeline.png|420]]
 > Shown in: not in a note yet
 
+> [!success]+ ✅ current · Editor new colour slot, a new colour, a file colour being changed
+> ![[2026-10-20 editor new colour slot, a new colour, a file colour being changed.png|420]]
+> Shown in: not in a note yet
+
+> [!quote]- ♻️ replaced · Editor new colour slot mockup, A and B (A picked)
+> ![[2026-10-20 editor new colour slot mockup, A and B (A picked).png|420]]
+> Replaced by: [[2026-10-20 editor new colour slot, a new colour, a file colour being changed.png]]
+> Shown in: not in a note yet
+
 > [!quote]- ♻️ replaced · Editor colour titles and the chosen colour, A B C (A picked)
 > ![[2026-10-20 editor colour titles and the chosen colour, A B C (A picked).png|420]]
 > Replaced by: [[2026-10-20 editor timeline, onion skin and fill.png]]
