@@ -123,8 +123,10 @@ Whether each picture in `Assets/Snapshots/` still shows how things are. `tools/v
 | 2026-10-20 construct v2 real parts, park stoop (picked).png | current |  |
 | 2026-10-20 editor FILL ALL on a prop.png | current |  |
 | 2026-10-20 editor animation mockup A and B (A picked).png | replaced | [[2026-10-20 editor timeline, onion skin and fill.png]] |
+| 2026-10-20 editor colour panel folded to a ribbon.png | current |  |
 | 2026-10-20 editor colour titles and the chosen colour, A B C (A picked).png | replaced | [[2026-10-20 editor timeline, onion skin and fill.png]] |
 | 2026-10-20 editor nine frames in the timeline.png | current |  |
+| 2026-10-20 editor panel and timeline folded.png | current |  |
 | 2026-10-20 editor playing a Clawd at the room's speed.png | current |  |
 | 2026-10-20 editor timeline before the divider, a prop's frames hidden.png | replaced | [[2026-10-20 editor timeline divider dragged up a little.png]] |
 | 2026-10-20 editor timeline divider dragged up a little.png | current |  |

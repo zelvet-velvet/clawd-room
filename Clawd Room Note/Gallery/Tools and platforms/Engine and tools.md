@@ -46,6 +46,10 @@ Pictures of the debug overlay, the placer, the pixel editor, the gallery, newest
 > ![[2026-10-20 editor playing a Clawd at the room's speed.png|420]]
 > Shown in: [[Interaction|Interaction]], [[Test Checklist|Test Checklist]], [[2026-10-20#🎞️ The pixel editor edits animations; a fill tool (Zaviel)|2026-10-20 · 🎞️ The pixel editor edits animations; a fill tool (Zaviel)]]
 
+> [!success]+ ✅ current · Editor panel and timeline folded
+> ![[2026-10-20 editor panel and timeline folded.png|420]]
+> Shown in: not in a note yet
+
 > [!success]+ ✅ current · Editor nine frames in the timeline
 > ![[2026-10-20 editor nine frames in the timeline.png|420]]
 > Shown in: not in a note yet
@@ -53,6 +57,10 @@ Pictures of the debug overlay, the placer, the pixel editor, the gallery, newest
 > [!quote]- ♻️ replaced · Editor colour titles and the chosen colour, A B C (A picked)
 > ![[2026-10-20 editor colour titles and the chosen colour, A B C (A picked).png|420]]
 > Replaced by: [[2026-10-20 editor timeline, onion skin and fill.png]]
+> Shown in: not in a note yet
+
+> [!success]+ ✅ current · Editor colour panel folded to a ribbon
+> ![[2026-10-20 editor colour panel folded to a ribbon.png|420]]
 > Shown in: not in a note yet
 
 > [!quote]- ♻️ replaced · Editor animation mockup A and B (A picked)

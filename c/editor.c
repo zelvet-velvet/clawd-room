@@ -357,7 +357,7 @@ static void swap_undo(Ed *e, int at) {
 
 /* ---- the screen: canvas pixels; one terminal cell is 1 pixel wide and 2 high ---------------------------------------- */
 /* what is where, filled while drawing, so a click finds what it is on */
-enum { R_GRID, R_TOOL, R_FILE, R_NEW, R_FIELD, R_HUE, R_HEX, R_NUM, R_ADD, R_FRAME, R_FADD, R_PLAY, R_SPEED, R_ONION, R_STRIP, R_DIV };
+enum { R_GRID, R_TOOL, R_FILE, R_NEW, R_FIELD, R_HUE, R_HEX, R_NUM, R_ADD, R_FRAME, R_FADD, R_PLAY, R_SPEED, R_ONION, R_STRIP, R_DIV, R_FOLD };
 typedef struct { int kind, i, x0, y0, x1, y1; Rgb c; } Region;
 static Region g_reg[320];
 static int g_nreg;
@@ -370,7 +370,7 @@ typedef struct { int gx, gy, z, px, hy, hw, ty, ah; } Layout; /* the grid's orig
 /* the help: what each key and button does, as key caps (bright) and what they do (dim), in three groups */
 typedef struct { const char *key, *what; } Help;
 static const Help H_MOUSE[] = {{"LEFT", "PAINT"}, {"RIGHT", "ERASE"}, {"ALT+LEFT", "PICK A COLOUR"}};
-static const Help H_EDIT[] = {{"CTRL+Z", "UNDO"}, {"CTRL+Y", "REDO"}, {"[ ]", "OTHER SPRITE"}, {"TAB", "OTHER FILE"}, {"B", "FILL"}, {"+ -", "ZOOM"}, {"#", "TYPE A COLOUR"}};
+static const Help H_EDIT[] = {{"CTRL+Z", "UNDO"}, {"CTRL+Y", "REDO"}, {"[ ]", "OTHER SPRITE"}, {"TAB", "OTHER FILE"}, {"B", "FILL"}, {"P", "FOLD THE COLOURS"}, {"+ -", "ZOOM"}, {"#", "TYPE A COLOUR"}};
 static const Help H_ANIM[] = {{"LEFT RIGHT", "FRAME"}, {"SPACE", "PLAY"}, {"O", "ONION SKIN"}, {"F", "NEW FRAME"}, {"X X", "DELETE FRAME"}};
 #define NH(a) ((int)(sizeof a / sizeof a[0]))
 static const Help H_SIZE[] = {{"W", "WIDER"}, {"N", "NARROWER"}, {"T", "TALLER"}, {"S", "SHORTER"}, {"Q", "QUIT (S SAVE / D DISCARD)"}};
@@ -420,19 +420,22 @@ static int grid_zoom(const Ed *e, int room_w, int room_h) {
  * number: more than fit scroll sideways. A short window gets only the line, a very short one no timeline. */
 static int panel_h(const Ed *e);
 static int tl_full(const Ed *e, int z) { return 15 + e->h * z + 9 + 3; }
-/* The divider above the timeline can be dragged (g_tl_user: the height asked for; 0 the automatic one, double-click it to
- * go back): the frames and the sprite on the left grow with it, the canvas above gives up the room, never all of it. */
+/* The divider above the timeline can be dragged (g_tl_user: the height asked for, -1 folded to its top line; 0 the automatic
+ * one, double-click it to go back): the frames and the sprite on the left grow with it, the canvas above gives up the room, never all of it. */
 static int g_tl_user, g_div_drag, g_div_hover;
+static int g_panel_folded; /* p or the fold button: the colour panel folded to a ribbon of the tools and the colour (like Obsidian's sidebar) */
+#define RIBBON 13      /* the ribbon's width: a key cap */
 #define TOP_LEAST 64 /* a dragged timeline leaves the canvas and the panel at least this: the tools, the colour field, the hex line */
 static int tl_most(const Ed *e, int H) { (void)e; return H - 12 - TOP_LEAST; }
 static int thumb_zoom(const Ed *e, int H);
 static int timeline_h(const Ed *e, int H) {
+    if (g_tl_user < 0) return H - 12 - 14 >= TOP_LEAST ? 14 : 0; /* (dragged down: folded to its top line) */
     if (g_tl_user) { int lo = tl_full(e, 1), hi = tl_most(e, H), h = g_tl_user < lo ? lo : g_tl_user > hi ? hi : g_tl_user; return h >= lo ? h : 0; }
     int full = tl_full(e, thumb_zoom(e, H)), rest = panel_h(e) - FIELD_H + 16;
     return H - 12 - full >= rest ? full : H - 12 - 14 >= rest ? 14 : 0;
 }
 static int thumb_zoom(const Ed *e, int H) {
-    if (g_tl_user) { int th = timeline_h(e, H), z = 1; while (z < 8 && tl_full(e, z + 1) <= th) z++; return z; } /* (as big as the dragged height allows) */
+    if (g_tl_user > 0) { int th = timeline_h(e, H), z = 1; while (z < 8 && tl_full(e, z + 1) <= th) z++; return z; } /* (as big as the dragged height allows) */
     int rest = panel_h(e) - FIELD_H + 16; /* (the panel with its smallest colour field) */
     if (H - 12 - tl_full(e, 2) >= rest && tl_full(e, 2) <= H / 4) return 2;
     return 1;
@@ -449,10 +452,11 @@ static Layout layout(const Ed *e, int W, int H) {
     if (L.hy < L.ty + rest + 44 + 2) { L.hw = 0; L.hy = th ? H - 1 : H - 9; } /* (short: "? SHORTCUTS  Q QUIT" goes in the timeline's top line) */
     int most = L.hy - 3 - L.ty - rest; /* (the tallest colour field there is room for) */
     most = most < 16 ? 16 : most > 44 ? 44 : most;
-    L.z = grid_zoom(e, W - 118, L.hy - L.ty - 14); /* (the panel keeps what it needs: 100 pixels, its widest row of colours) */
+    L.z = grid_zoom(e, g_panel_folded ? W - 18 - RIBBON - 4 : W - 118, L.hy - L.ty - 14); /* (the panel keeps what it needs: 100
+                                                         pixels, its widest row of colours; folded, the ribbon) */
     int gh = e->h * L.z, f = gh + 2 - rest; /* (the panel's last row ends 2 pixels above its height) */
     g_field_h = f < 16 ? 16 : f > most ? most : f;
-    int ph = rest + g_field_h - 2;
+    int ph = g_panel_folded ? 4 * 17 + 12 : rest + g_field_h - 2;
     L.ah = gh > ph ? gh : ph;
     if (L.ah > L.hy - 5 - L.ty) L.ah = L.hy - 5 - L.ty; /* (a dragged timeline: the panel shows what still fits; room for the handle) */
     if (L.ah < gh) L.ah = gh;
@@ -460,7 +464,8 @@ static Layout layout(const Ed *e, int W, int H) {
                                             pointer's line goes in the gap under them, if it fits there) */
     if (gap >= 10) L.ty = 9 + gap;
     L.gy = L.ty + (L.ah - gh) / 2;
-    L.px = L.gx + e->w * L.z + 10;
+    L.px = g_panel_folded ? W - 4 - RIBBON : L.gx + e->w * L.z + 10;
+    if (g_panel_folded) { int free = L.px - 10 - 4 - e->w * L.z; if (free > 0) L.gx = 4 + free / 2; } /* (folded: the canvas in the middle of its room) */
     return L;
 }
 
@@ -705,8 +710,16 @@ static void draw(const Ed *e, Canvas *cv) {
     snprintf(t, sizeof t, "EDIT %s  %s  %dX%d", e->name, FILES[e->file], e->w, e->h);
     for (char *p = t; *p; p++) if (*p >= 'a' && *p <= 'z') *p -= 32;
     canvas_text(cv, 4, 3, t, C_YELLOW);
-    int msg_top = e->msg[0] && 4 + text_width(t) + 12 + text_width(e->msg) + 4 <= cv->w; /* (a message that does not fit by the title goes under the grid) */
-    if (msg_top) canvas_text(cv, cv->w - text_width(e->msg) - 4, 3, e->msg, C_GREY);
+    int msg_top = e->msg[0] && 4 + text_width(t) + 12 + text_width(e->msg) + 4 + 16 <= cv->w; /* (a message that does not fit by the title goes under the grid) */
+    if (msg_top) canvas_text(cv, cv->w - 16 - text_width(e->msg) - 4, 3, e->msg, C_GREY);
+    { /* the fold button, top right: a window with its right part (the panel) filled while it is open */
+        int fx = cv->w - 4 - 11, fy = 2;
+        Rgb k = RGB(150, 150, 170);
+        frame(cv, fx + 1, fy + 1, 9, 5, k);
+        canvas_rect(cv, fx + 7, fy + 1, 1, 5, k);
+        if (!g_panel_folded) canvas_rect(cv, fx + 8, fy + 1, 2, 5, k);
+        region(R_FOLD, 0, fx - 1, fy - 1, 13, 9, RGB(0, 0, 0));
+    }
     Layout L = layout(e, cv->w, cv->h);
     /* onion skin: where this frame is see-through, the frame before shows faintly red, the one after blue (both: purple) */
     static char og[2][MAXH][MAXW + 1];
@@ -782,6 +795,12 @@ static void draw(const Ed *e, Canvas *cv) {
     int body = e->pk == 1 && e->f.pal_body[e->pi];
     static const char *TOOL[4] = {"PAINT", "ERASE", "PICK", "FILL"};
     int lit[4] = {!tr && !e->picking, tr && !e->picking, e->picking, e->filling > 0};
+    if (g_panel_folded) { /* folded: a ribbon at the right, the tools one over another, then the colour */
+        int ry = y;
+        for (int i = 0; i < 4; i++, ry += 17) { tool_button(cv, x, ry, i == 3 && e->filling == 2 ? 4 : i, lit[i]); region(R_TOOL, i, x, ry, 13, 15, RGB(0, 0, 0)); }
+        if (tr) checker(cv, x, ry + 2, 13, 9); else canvas_rect(cv, x, ry + 2, 13, 9, cur);
+        frame(cv, x, ry + 2, 13, 9, RGB(150, 150, 170));
+    } else {
     int roww = -7; /* (the row centred over the colour field) */
     for (int i = 0; i < 4; i++) roww += (text_width(TOOL[i]) > 13 ? text_width(TOOL[i]) : 13) + 7;
     for (int i = 0, tx = x + (FIELD_W - roww) / 2; i < 4; i++) {
@@ -849,6 +868,7 @@ static void draw(const Ed *e, Canvas *cv) {
         if (k == 0 && !tr) frame(cv, sx - 1, y - 1, 10, 10, RGB(90, 90, 108)); /* (this colour: a dimmer ring) */
     }
     y += 12;
+    } /* (the panel, unfolded) */
     if (L.hw) help(cv, L.hy, L.hw);
     else if (!timeline_h(e, cv->h)) { /* very short window, no timeline: one line, the rest behind ? */
         static const Help H_SHORT[] = {{"?", "SHORTCUTS"}, {"Q", "QUIT"}};
@@ -864,6 +884,7 @@ static void draw(const Ed *e, Canvas *cv) {
         canvas_text(cv, ux, uy, e->playing ? "AS IN THE ROOM  PLAYING" : "AS IN THE ROOM", RGB(110, 110, 130));
         for (int k = 1; k <= 2; k++) draw_preview(cv, e, now, ux + (k - 1) * (e->w + 6), uy + 9, k, pad);
         shown = 1;
+    } else if (g_panel_folded) { /* (folded: no room by the ribbon) */
     } else if (rx + (e->w * 2 > lw ? e->w * 2 : lw) + 2 <= cv->w) { /* a wide window: in the column right of the panel, 1x over 2x */
         int ry = L.ty;
         canvas_text(cv, rx, ry, "AS IN THE ROOM", RGB(110, 110, 130));
@@ -997,7 +1018,11 @@ int editor_run(const char *dir, const char *name) {
                         if (r && (r->kind == R_STRIP || r->kind == R_FRAME || r->kind == R_FADD)) g_tl_first += (b & 3) == 0 || (b & 3) == 2 ? -1 : 1;
                         continue;
                     }
-                    if (g_div_drag) { if (release) g_div_drag = 0; else if (motion) g_tl_user = rows * 2 - py; continue; } /* (dragging the divider) */
+                    if (g_div_drag) { /* (dragging the divider: below two thirds of the smallest timeline it folds to its top line) */
+                        if (release) g_div_drag = 0;
+                        else if (motion) { int h = rows * 2 - py; g_tl_user = h < tl_full(&e, 1) * 2 / 3 ? -1 : h; }
+                        continue;
+                    }
                     g_div_hover = r && r->kind == R_DIV;
                     if (r && r->kind == R_DIV && btn == 0 && !motion && !release) { /* the divider: drag it; a double-click: back to automatic */
                         static double last_click;
@@ -1069,6 +1094,7 @@ int editor_run(const char *dir, const char *name) {
                         else if (r->kind == R_PLAY) { e.playing = !e.playing; e.play_t0 = wall_now(); }
                         else if (r->kind == R_SPEED) e.speed = e.speed < 0.75 ? 1 : e.speed < 1.5 ? 2 : 0.5;
                         else if (r->kind == R_ONION) e.onion = !e.onion;
+                        else if (r->kind == R_FOLD) g_panel_folded = !g_panel_folded;
                         else if (r->kind == R_ADD && e.pk == 2) { char ch = letter_for(&e, e.prgb); for (int q = 0; q < e.f.npal; q++) if (e.f.pal_ch[q] == ch) { e.pk = 1; e.pi = q; } save(&e); }
                         else if (r->kind == R_FILE) { e.pk = 1; e.pi = r->i; e.picking = 0; }
                         else if (r->kind == R_NEW) { /* a colour already in the file is that one; else a new colour */
@@ -1129,6 +1155,7 @@ int editor_run(const char *dir, const char *name) {
             }
             if (ch == ' ') { e.playing = !e.playing; e.play_t0 = wall_now(); continue; }
             if (ch == 'o' || ch == 'O') { e.onion = !e.onion; continue; }
+            if (ch == 'p' || ch == 'P') { g_panel_folded = !g_panel_folded; continue; } /* (the colour panel folds / unfolds) */
             if (ch == 'b' || ch == 'B') { e.filling = (e.filling + 1) % 3; e.picking = 0; continue; }
             if (ch == 0x1A) ch = 'u'; /* Ctrl+Z: undo; Ctrl+Y: redo (U / R too) */
             else if (ch == 0x19) ch = 'r';
