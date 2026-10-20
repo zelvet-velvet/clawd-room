@@ -1025,7 +1025,7 @@ int editor_list(const char *dir) {
         }
         int alone = ni - nanim; /* (sprites on their own; an animation's frames count as the animation) */
         char head[160], dash[160];
-        int hl = snprintf(head, sizeof head, "[ %s ] | %d sprite%s | %d animation%s (name + frames) |", FILES[f], alone, alone == 1 ? "" : "s", nanim, nanim == 1 ? "" : "s");
+        int hl = snprintf(head, sizeof head, "[ %s ] %d sprite%s | %d animation%s (name + frames) |", FILES[f], alone, alone == 1 ? "" : "s", nanim, nanim == 1 ? "" : "s");
         memset(dash, '-', (size_t)hl); dash[hl] = 0; /* (a line of dashes above and below, as long as the heading) */
         printf("%s\n%s\n%s\n", dash, head, dash);
         int cellw = namew + (numw ? 1 + numw : 0), colw = cellw + 4; /* a name, a space, its count (right-aligned), a gap */
