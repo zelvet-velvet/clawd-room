@@ -49,7 +49,7 @@ install_hooks.py    prints / applies / removes the hook in ~/.claude/settings.js
 clawd-room.sh       the launcher the profile calls: builds c/ when needed, then runs c/clawd-room
 c/                  the room, in C: canvas (+ font_data.h, the 3x5 pixel font), sprites, clawd (poses), persp (the perspective), theme (the rooms, workspaces, gates, signs), draw (layout, frame, camera view, debug overlay), scene (items on layers, overlap measuring), place (the placer), anim (eased values), editor (the pixel editor), gallery (--check / --gallery), room (state machine, visits, moves), camera, rng, tail (events), link (windows), win (window helpers: PowerShell on WSL, osascript on macOS iTerm2; scripts in ps_scripts.h / mac_scripts.h), ui (bottom bar, menus, sizes), app (main loop), fixture (test scenes), art (sprite files, PNG, GIF)
 c/tests/expected/   snapshots the tests compare with (from the C program since style A, 2026-10-18)
-sprites/            editable Clawd frames, items and props (text grids; reloaded while the room runs; edit with --edit NAME)
+sprites/            editable Clawd frames, items and props (text grids; reloaded while the room runs; edit with --edit NAME); ui.txt: the editor's own icons
 rooms/              wall plans per room (what the placer puts on the walls; reloaded while the room runs)
 gallery/            not in git: contact sheets (make -C c gallery) and gallery/mock/ (scratch mockup programs, a test worktree wt/)
 tools/              test.sh (snapshots), fixtures/ + scenarios/ (test scenes), pty_smoke.py, link_smoke.py, move_smoke.py, split_smoke.py, win_smoke.py, place_windows.py (test helper for your own windows), demo_events.py + try_room.sh (--try)

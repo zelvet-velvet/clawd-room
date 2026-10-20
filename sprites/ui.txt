@@ -1,0 +1,84 @@
+# The pixel editor's own icons: the tools and the colour panel's fold button (./clawd-room.sh --edit fold-open, or Tab to this file).
+# Edit them like any sprite; the editor reads this file again when it changes. A sprite left out: the built-in drawing.
+# The fold button is drawn dim; the editor brightens it under the pointer.
+: k = 16,16,22
+: w = 236,236,244
+: y = 240,196,90
+: Y = 214,160,60
+: m = 180,184,196
+: L = 60,60,70
+: p = 240,150,170
+: P = 200,110,130
+: r = 230,90,80
+: b = 110,170,250
+: d = 76,76,96
+: f = 46,46,60
+
+@ tool-paint | tool-paint
+......kk.
+.....kppk
+....kyykk
+...kyyyk.
+..kyyyk..
+.kwyyk...
+.kwwk....
+kLkk.....
+k........
+
+@ tool-erase | tool-erase
+.........
+....kkkk.
+...kwwwwk
+..kwwwwk.
+.kppppk..
+kppppk...
+kPPPk....
+.kkk.....
+.........
+
+@ tool-pick | tool-pick
+......rr.
+.....rrrr
+....mrrr.
+...kmm...
+..kwwk...
+.kwbk....
+.kbk.....
+b........
+.........
+
+@ tool-fill | tool-fill
+..kkk....
+.k...k...
+k.....k..
+kmmmmmkb.
+kwwwwwkb.
+.kwbbk.b.
+.kwwwk.bb
+..kkk..bb
+.........
+
+@ tool-fill-all | tool-fill-all
+..kkk..y.
+.k...kyyy
+k.....ky.
+kmmmmmkb.
+kwwwwwkb.
+.kwbbk.b.
+.kwwwk.bb
+..kkk..bb
+.........
+
+@ fold-open | fold-open
+.ddddddd.
+d....dffd
+d....dffd
+d....dffd
+.ddddddd.
+
+@ fold-closed | fold-closed
+.ddddddd.
+d....d..d
+d....d..d
+d....d..d
+.ddddddd.

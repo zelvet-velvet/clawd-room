@@ -20,6 +20,7 @@
 #include <sys/time.h>
 #include "actions.h"
 #include "canvas.h"
+#include "sprites.h"
 #include "term.h"
 
 #define MAXW 64
@@ -27,8 +28,8 @@
 #define MAX_LINES 4000
 #define MAX_UNDO 64
 
-static const char *const FILES[] = {"props.txt", "items.txt", "clawd.txt"};
-#define NFILES 3
+static const char *const FILES[] = {"props.txt", "items.txt", "clawd.txt", "ui.txt"}; /* (ui.txt: the editor's own icons) */
+#define NFILES 4
 static const char FREE_CHARS[] = "abcdefghijklmnopqrstuvwxyzACDEFGHIJLMNOPQRSTUVXYZ0123456789";
 
 typedef struct {
@@ -520,12 +521,38 @@ static Rgb tool_colour(char ch) {
     }
     return RGB(255, 0, 255);
 }
+/* the editor's own icons from sprites/ui.txt (read again when it changes; one left out: the built-in drawing) */
+#include <sys/stat.h>
+static SpriteFile g_ui;
+static time_t g_ui_mtime;
+static void ui_watch(const char *dir) {
+    char path[700];
+    struct stat st;
+    snprintf(path, sizeof path, "%s/ui.txt", dir);
+    if (stat(path, &st) != 0) { if (g_ui.n) sprites_free(&g_ui); g_ui_mtime = 0; return; }
+    if (st.st_mtime == g_ui_mtime && g_ui.n) return;
+    sprites_free(&g_ui); g_ui = sprites_load(path); g_ui_mtime = st.st_mtime;
+}
+/* a ui.txt sprite at (x, y), its colours brightened by `lift` (0 none, 1 white); 0 if the file has no such sprite */
+static int ui_icon(Canvas *cv, const char *name, int x, int y, double lift) {
+    const Sprite *sp = g_ui.n ? sprites_by_name(&g_ui, name) : NULL;
+    if (!sp) return 0;
+    for (int dy = 0; dy < sp->h; dy++) for (int dx = 0; dx < sp->w; dx++) {
+        SpritePx p = sp->px[dy * sp->w + dx];
+        if (p.kind != PX_RGB) continue;
+        Rgb c = p.c;
+        canvas_px(cv, x + dx, y + dy, RGB((int)(c.r + (255 - c.r) * lift), (int)(c.g + (255 - c.g) * lift), (int)(c.b + (255 - c.b) * lift)));
+    }
+    return 1;
+}
 static void tool_button(Canvas *cv, int x, int y, int which, int on) {
     int w = 13, h = 13, dy = on ? 1 : 0;
     canvas_rect(cv, x + 1, y + 1, w - 2, h, RGB(14, 14, 20)); canvas_rect(cv, x, y + 2, w, h - 2, RGB(14, 14, 20)); /* (its shadow) */
     Rgb cap = on ? RGB(70, 72, 100) : RGB(52, 54, 70);
     canvas_rect(cv, x + 1, y + dy, w - 2, h - dy, cap); canvas_rect(cv, x, y + dy + 1, w, h - dy - 2, cap);    /* (rounded corners) */
     canvas_rect(cv, x + 2, y + dy, w - 4, 1, on ? RGB(110, 112, 145) : RGB(86, 88, 110));                   /* (light on its top) */
+    static const char *const UI_NAME[5] = {"tool-paint", "tool-erase", "tool-pick", "tool-fill", "tool-fill-all"};
+    if (!ui_icon(cv, UI_NAME[which], x + 2, y + 2 + dy, 0))
     for (int yy = 0; yy < 9; yy++) for (int xx = 0; xx < 9 && TOOL_ICON[which][yy][xx]; xx++)
         if (TOOL_ICON[which][yy][xx] != '.') canvas_px(cv, x + 2 + xx, y + 2 + dy + yy, tool_colour(TOOL_ICON[which][yy][xx]));
     if (on) canvas_rect(cv, x + 2, y + h + 1, w - 4, 1, C_YELLOW);
@@ -716,12 +743,14 @@ static void draw(const Ed *e, Canvas *cv) {
     { /* the fold button, top right: a small window in dim lines, its right part (the panel) shaded while it is open;
          brighter under the pointer */
         int fx = cv->w - 4 - 9, fy = 3;
+        if (ui_icon(cv, g_panel_folded ? "fold-closed" : "fold-open", fx, fy, g_fold_hover ? 0.4 : 0)) { region(R_FOLD, 0, fx - 1, fy - 1, 11, 8, RGB(0, 0, 0)); goto folded_icon; }
         Rgb k = g_fold_hover ? RGB(150, 150, 175) : RGB(76, 76, 96), fill = g_fold_hover ? RGB(90, 90, 112) : RGB(46, 46, 60);
         canvas_rect(cv, fx + 1, fy, 7, 1, k); canvas_rect(cv, fx + 1, fy + 4, 7, 1, k);       /* (its outline without the corner */
         canvas_rect(cv, fx, fy + 1, 1, 3, k); canvas_rect(cv, fx + 8, fy + 1, 1, 3, k);       /*  pixels: softly rounded) */
         if (!g_panel_folded) canvas_rect(cv, fx + 6, fy + 1, 2, 3, fill);
         canvas_rect(cv, fx + 5, fy + 1, 1, 3, k);
         region(R_FOLD, 0, fx - 1, fy - 1, 11, 8, RGB(0, 0, 0));
+        folded_icon:;
     }
     Layout L = layout(e, cv->w, cv->h);
     /* onion skin: where this frame is see-through, the frame before shows faintly red, the one after blue (both: purple) */
@@ -985,6 +1014,7 @@ int editor_run(const char *dir, const char *name) {
         int c = 120, r = 40;
         if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == 0 && ws.ws_col) { c = ws.ws_col; r = ws.ws_row; }
         if (c != cols || r != rows) { cols = c; rows = r; cells_free(&prev); prev.c = NULL; put("\x1b[H"); }
+        ui_watch(dir); /* (the editor's own icons, sprites/ui.txt: edited, they change at once) */
         Canvas cv = canvas_new(cols, rows * 2, RGB(18, 18, 24));
         draw(&e, &cv);
         Cells cur = cells_from_canvas(&cv, NULL);
