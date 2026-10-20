@@ -407,7 +407,7 @@ static void help(Canvas *cv, int y, int W) { /* the help from row y, wrapped at 
 
 static int grid_zoom(const Ed *e, int room_w, int room_h) {
     int z = e->zoom;
-    if (z <= 0) { z = 2; while (z + 2 <= 16 && e->w * (z + 2) <= room_w && e->h * (z + 2) <= room_h) z += 2; }
+    if (z <= 0) { z = 2; while (z + 1 <= 16 && e->w * (z + 1) <= room_w && e->h * (z + 1) <= room_h) z++; } /* (as big as it fits: the canvas first) */
     return z;
 }
 /* The grid top left, the colour panel on its right, the help along the bottom. When the window is too short for the help
@@ -436,7 +436,7 @@ static Layout layout(const Ed *e, int W, int H) {
     L.hy = H - help_rows(W) * 8 - 1;
     if (L.hy < L.gy + rest + 44 + 2) { L.hw = 0; L.hy = th ? H - 1 : H - 9; } /* (short: "? SHORTCUTS  Q QUIT" goes in the timeline's top line) */
     g_field_h = L.hy - 3 - L.gy - rest; g_field_h = g_field_h < 16 ? 16 : g_field_h > 44 ? 44 : g_field_h;
-    L.z = grid_zoom(e, W - 120, L.hy - L.gy - 14);
+    L.z = grid_zoom(e, W - 118, L.hy - L.gy - 14); /* (the panel keeps what it needs: 100 pixels, its widest row of colours) */
     L.px = L.gx + e->w * L.z + 10;
     return L;
 }
