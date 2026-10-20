@@ -5,6 +5,7 @@
  *   keys:  u undo, r redo, < > (or [ ]) the sprite before / after, Tab the next file, + - zoom, w n wider / narrower,
  *          t s taller / shorter, q quit */
 #include <errno.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -21,9 +22,6 @@
 
 static const char *const FILES[] = {"props.txt", "items.txt", "clawd.txt"};
 #define NFILES 3
-/* colours to add (a 16-colour pixel-art set): painting with one gives it a letter in the file's palette */
-static const Rgb EXTRA[16] = {{0, 0, 0}, {29, 43, 83}, {126, 37, 83}, {0, 135, 81}, {171, 82, 54}, {95, 87, 79}, {194, 195, 199}, {255, 241, 232},
-                              {255, 0, 77}, {255, 163, 0}, {255, 236, 39}, {0, 228, 54}, {41, 173, 255}, {131, 118, 156}, {255, 119, 168}, {255, 204, 170}};
 static const char FREE_CHARS[] = "abcdefghijklmnopqrstuvwxyzACDEFGHIJLMNOPQRSTUVXYZ0123456789";
 
 typedef struct {
@@ -41,12 +39,16 @@ typedef struct {
     char undo[MAX_UNDO][MAXH][MAXW + 1]; int uw[MAX_UNDO], uh[MAX_UNDO], nundo, nredo;
     int pk, pi; Rgb prgb;                    /* the colour to paint: pk 0 erase, 1 the file's colour pi, 2 a new colour prgb */
     int hx, hy;                              /* the sprite pixel under the pointer (-1: none) */
-    int slider;                              /* a colour slider being dragged (0..2), or -1 */
+    int drag;                                /* dragging in the colour field (0) or the hue bar (1), or -1 */
+    double hue;                              /* the colour field's hue (kept while the colour is grey) */
+    int picking;                             /* PICK: the next click on the grid takes its colour */
+    int last_pk, last_pi; Rgb last_prgb;     /* the colour before ERASE, for PAINT */
     int typing; char tbuf[8];                /* typing a colour: 0 none, 1 the hex code, 2..4 red / green / blue (0..255) */
     int zoom, dirty_file;
     char msg[96];
     char *orig[NFILES]; int changed[NFILES]; /* each file as it was when first opened, to put back on discard */
     int asking;                               /* q with changes: keep or discard? */
+    int show_help;                            /* ?: the shortcuts in a box (when the window is too short to list them) */
 } Ed;
 
 static char *slurp(const char *path) {
@@ -250,19 +252,19 @@ static void swap_undo(Ed *e, int at) {
 
 /* ---- the screen: canvas pixels; one terminal cell is 1 pixel wide and 2 high ---------------------------------------- */
 /* what is where, filled while drawing, so a click finds what it is on */
-enum { R_GRID, R_ERASE, R_FILE, R_NEW, R_SLIDER, R_HEX, R_NUM };
+enum { R_GRID, R_TOOL, R_FILE, R_NEW, R_FIELD, R_HUE, R_HEX, R_NUM, R_ADD };
 typedef struct { int kind, i, x0, y0, x1, y1; Rgb c; } Region;
 static Region g_reg[160];
 static int g_nreg;
 static void region(int kind, int i, int x, int y, int w, int h, Rgb c) { if (g_nreg < 160) g_reg[g_nreg++] = (Region){kind, i, x, y, x + w, y + h, c}; }
 static const Region *hit(int x, int y) { for (int k = g_nreg - 1; k >= 0; k--) if (x >= g_reg[k].x0 && x < g_reg[k].x1 && y >= g_reg[k].y0 - 1 && y < g_reg[k].y1 + 1) return &g_reg[k]; return NULL; }
 
-typedef struct { int gx, gy, z, px; } Layout; /* the grid's origin and zoom; the panel's left edge */
+typedef struct { int gx, gy, z, px, hy, hw; } Layout; /* the grid's origin and zoom; the panel's left edge; the help's top and width */
 
 /* the help: what each key and button does, as key caps (bright) and what they do (dim), in three groups */
 typedef struct { const char *key, *what; } Help;
 static const Help H_MOUSE[] = {{"LEFT", "PAINT"}, {"RIGHT", "ERASE"}, {"ALT+LEFT", "PICK A COLOUR"}};
-static const Help H_EDIT[] = {{"U", "UNDO"}, {"R", "REDO"}, {"< >", "OTHER SPRITE"}, {"TAB", "OTHER FILE"}, {"+ -", "ZOOM"}, {"#", "TYPE A COLOUR"}, {"F", "NEW FRAME"}};
+static const Help H_EDIT[] = {{"CTRL+Z", "UNDO"}, {"CTRL+Y", "REDO"}, {"< >", "OTHER SPRITE"}, {"TAB", "OTHER FILE"}, {"+ -", "ZOOM"}, {"#", "TYPE A COLOUR"}, {"F", "NEW FRAME"}};
 static const Help H_SIZE[] = {{"W", "WIDER"}, {"N", "NARROWER"}, {"T", "TALLER"}, {"S", "SHORTER"}, {"Q", "QUIT (S SAVE / D DISCARD)"}};
 static int help_row(Canvas *cv, int y, const char *title, const Help *h, int n, int W) { /* returns the rows it took */
     int x = 4, rows = 1;
@@ -281,23 +283,30 @@ static int help_row(Canvas *cv, int y, const char *title, const Help *h, int n, 
     }
     return rows;
 }
-static int help(Canvas *cv, int W, int H) { /* the rows the help takes (drawn at the bottom when cv is given) */
-    int r = help_row(NULL, 0, "", H_MOUSE, 3, W) + help_row(NULL, 0, "", H_EDIT, 7, W) + help_row(NULL, 0, "", H_SIZE, 5, W);
-    if (cv) {
-        int y = H - r * 8 - 1;
-        y += 8 * help_row(cv, y, "MOUSE", H_MOUSE, 3, W);
-        y += 8 * help_row(cv, y, "EDIT", H_EDIT, 7, W);
-        help_row(cv, y, "SIZE", H_SIZE, 5, W);
-    }
-    return r;
+#define FIELD_W 96 /* the colour field (saturation across, brightness down) and the hue bar under it */
+#define FIELD_H 44
+/* the colour panel's height down to the end of SHADES (the real-size view below it fits itself in) */
+static int panel_h(const Ed *e) { return 13 + FIELD_H + 3 + 8 + 11 + 7 + ((e->f.npal + 9) / 10) * 10 + 3 + 7 + 10; }
+static int help_rows(int W) { return help_row(NULL, 0, "", H_MOUSE, 3, W) + help_row(NULL, 0, "", H_EDIT, 7, W) + help_row(NULL, 0, "", H_SIZE, 5, W); }
+static void help(Canvas *cv, int y, int W) { /* the help from row y, wrapped at W */
+    y += 8 * help_row(cv, y, "MOUSE", H_MOUSE, 3, W);
+    y += 8 * help_row(cv, y, "EDIT", H_EDIT, 7, W);
+    help_row(cv, y, "SIZE", H_SIZE, 5, W);
 }
 
+static int grid_zoom(const Ed *e, int room_w, int room_h) {
+    int z = e->zoom;
+    if (z <= 0) { z = 2; while (z + 2 <= 16 && e->w * (z + 2) <= room_w && e->h * (z + 2) <= room_h) z += 2; }
+    return z;
+}
+/* The grid top left, the colour panel on its right, the help along the bottom. When the window is too short for the help
+   under the panel, only a line "? SHORTCUTS  Q QUIT" is shown and ? opens the help in a box (hw = 0). */
 static Layout layout(const Ed *e, int W, int H) {
     Layout L;
-    L.gx = 4; L.gy = 12;
-    int room_w = W - 120, room_h = H - L.gy - 8 * help(NULL, W, H) - 14;
-    L.z = e->zoom;
-    if (L.z <= 0) { L.z = 2; while (L.z + 2 <= 16 && e->w * (L.z + 2) <= room_w && e->h * (L.z + 2) <= room_h) L.z += 2; }
+    L.gx = 4; L.gy = 12; L.hw = W;
+    L.hy = H - help_rows(W) * 8 - 1;
+    if (L.hy < L.gy + panel_h(e) + 2) { L.hw = 0; L.hy = H - 9; }
+    L.z = grid_zoom(e, W - 120, L.hy - L.gy - 14);
     L.px = L.gx + e->w * L.z + 10;
     return L;
 }
@@ -309,6 +318,28 @@ static Rgb shade(Rgb c, int k) { /* k < 0 darker, k > 0 lighter */
     double f = k < 0 ? 1 + 0.17 * k : 0.17 * k;
     if (k < 0) return RGB((int)(c.r * f), (int)(c.g * f), (int)(c.b * f));
     return RGB((int)(c.r + (255 - c.r) * f), (int)(c.g + (255 - c.g) * f), (int)(c.b + (255 - c.b) * f));
+}
+
+static Rgb hsv_rgb(double h, double s, double v) {
+    double c = v * s, x = c * (1 - fabs(fmod(h / 60, 2) - 1)), m = v - c, r = 0, g = 0, b = 0;
+    if (h < 60) { r = c; g = x; } else if (h < 120) { r = x; g = c; } else if (h < 180) { g = c; b = x; }
+    else if (h < 240) { g = x; b = c; } else if (h < 300) { r = x; b = c; } else { r = c; b = x; }
+    return RGB((int)lround((r + m) * 255), (int)lround((g + m) * 255), (int)lround((b + m) * 255));
+}
+static void rgb_hsv(Rgb c, double keep_h, double *h, double *s, double *v) { /* a grey keeps the hue it had */
+    double r = c.r / 255.0, g = c.g / 255.0, b = c.b / 255.0, mx = fmax(r, fmax(g, b)), mn = fmin(r, fmin(g, b)), d = mx - mn;
+    *v = mx; *s = mx > 0 ? d / mx : 0;
+    if (d <= 0) *h = keep_h;
+    else if (mx == r) *h = fmod(60 * ((g - b) / d) + 360, 360);
+    else if (mx == g) *h = 60 * ((b - r) / d) + 120;
+    else *h = 60 * ((r - g) / d) + 240;
+}
+static void button(Canvas *cv, int x, int y, const char *t, int on, int kind, int i) {
+    int w = text_width(t) + 6;
+    canvas_rect(cv, x, y, w, 9, on ? RGB(90, 90, 120) : RGB(34, 34, 44));
+    if (on) frame(cv, x, y, w, 9, C_YELLOW);
+    canvas_text(cv, x + 3, y + 2, t, on ? C_WHITE : C_GREY);
+    region(kind, i, x, y, w, 9, RGB(0, 0, 0));
 }
 
 static void draw(const Ed *e, Canvas *cv) {
@@ -339,60 +370,52 @@ static void draw(const Ed *e, Canvas *cv) {
         else snprintf(t, sizeof t, "X %d  Y %d  %d %d %d", e->hx, e->hy, c.r, c.g, c.b);
         canvas_text(cv, L.gx, L.gy + e->h * L.z + 4, t, C_GREY);
     }
-    /* the panel: the colour to paint (with sliders), its shades, the file's colours, more colours, the real-size view */
+    /* the panel (like Figma's colour picker): PAINT / ERASE / PICK, a colour field and a hue bar, the colour's hex and red
+       green blue (click to type), the file's colours (+ ADD puts a new one in), shades, the real-size view */
     int x = L.px, y = L.gy, tr;
     Rgb cur = pick_colour(e, &tr);
-    canvas_text(cv, x, y, "COLOUR", RGB(110, 110, 130));
-    y += 7;
-    if (tr) checker(cv, x, y, 16, 16); else canvas_rect(cv, x, y, 16, 16, cur);
-    frame(cv, x, y, 16, 16, RGB(200, 200, 215));
     int body = e->pk == 1 && e->f.pal_body[e->pi];
-    /* first line: which colour it is, and its hex code (click it, or #, to type one) */
-    snprintf(t, sizeof t, "%s", tr ? "ERASE" : e->pk == 2 ? "NEW" : body ? "BODY" : "");
-    if (e->pk == 1 && !body) snprintf(t, sizeof t, "%c", e->f.pal_ch[e->pi]);
-    canvas_text(cv, x + 20, y + 1, t, C_WHITE);
+    button(cv, x, y, "PAINT", !tr && !e->picking, R_TOOL, 0);
+    button(cv, x + 26, y, "ERASE", tr && !e->picking, R_TOOL, 1);
+    button(cv, x + 52, y, "PICK", e->picking, R_TOOL, 2);
+    y += 13;
+    double h, sat, val;
+    rgb_hsv(cur, e->hue, &h, &sat, &val);
+    for (int dy = 0; dy < FIELD_H; dy++) for (int dx = 0; dx < FIELD_W; dx++)
+        canvas_px(cv, x + dx, y + dy, hsv_rgb(h, (double)dx / (FIELD_W - 1), 1 - (double)dy / (FIELD_H - 1)));
+    if (!tr) frame(cv, x + (int)lround(sat * (FIELD_W - 1)) - 1, y + (int)lround((1 - val) * (FIELD_H - 1)) - 1, 3, 3, C_WHITE);
+    region(R_FIELD, 0, x, y, FIELD_W, FIELD_H, RGB(0, 0, 0));
+    y += FIELD_H + 3;
+    for (int dx = 0; dx < FIELD_W; dx++) canvas_rect(cv, x + dx, y, 1, 4, hsv_rgb(dx * 359.0 / (FIELD_W - 1), 1, 1));
+    canvas_rect(cv, x + (int)lround(h / 359 * (FIELD_W - 1)), y - 1, 1, 6, C_WHITE);
+    region(R_HUE, 0, x, y - 1, FIELD_W, 6, RGB(0, 0, 0));
+    y += 8;
+    if (tr) checker(cv, x, y, 9, 7); else canvas_rect(cv, x, y, 9, 7, cur);
+    frame(cv, x, y, 9, 7, RGB(200, 200, 215));
     char hex[12];
-    if (e->typing == 1) snprintf(hex, sizeof hex, "#%s_", e->tbuf); else if (tr) snprintf(hex, sizeof hex, "#------"); else snprintf(hex, sizeof hex, "#%02X%02X%02X", cur.r, cur.g, cur.b);
-    int hx = x + 44, hw = text_width("#DDDDDD_") + 4;
+    if (e->typing == 1) snprintf(hex, sizeof hex, "#%s_", e->tbuf); else if (tr) snprintf(hex, sizeof hex, "ERASE"); else snprintf(hex, sizeof hex, "#%02X%02X%02X", cur.r, cur.g, cur.b);
+    int hx = x + 12, hw = text_width("#DDDDDD_") + 4;
     canvas_rect(cv, hx, y, hw, 7, e->typing == 1 ? RGB(60, 60, 80) : RGB(34, 34, 44));
     if (e->typing == 1) frame(cv, hx, y, hw, 7, C_YELLOW);
     canvas_text(cv, hx + 2, y + 1, hex, e->typing == 1 ? C_YELLOW : C_WHITE);
     region(R_HEX, 0, hx, y, hw, 7, RGB(0, 0, 0));
-    /* then red, green, blue: a bar to drag and the number (click it to type 0..255) */
-    if (!body) for (int k = 0; k < 3; k++) {
-        static const char *RGBN[3] = {"R", "G", "B"};
-        int v = tr ? 0 : k == 0 ? cur.r : k == 1 ? cur.g : cur.b, ry = y + 8 + k * 7, sx = x + 26;
-        canvas_text(cv, x + 20, ry + 1, RGBN[k], C_GREY);
-        canvas_rect(cv, sx, ry + 2, 64, 3, RGB(40, 40, 50));
-        if (!tr) {
-            canvas_rect(cv, sx, ry + 2, v * 64 / 256, 3, k == 0 ? RGB(220, 70, 70) : k == 1 ? RGB(70, 200, 90) : RGB(80, 130, 240));
-            canvas_rect(cv, sx + v * 64 / 256, ry + 1, 1, 5, C_WHITE);
-        }
-        region(R_SLIDER, k, sx, ry + 1, 64, 5, RGB(0, 0, 0));
+    if (body) canvas_text(cv, hx + hw + 3, y + 1, "BODY", C_GREY);
+    else if (!tr) for (int k = 0, nx = hx + hw + 3; k < 3; k++) { /* red, green, blue: click to type 0..255 */
+        int v = k == 0 ? cur.r : k == 1 ? cur.g : cur.b;
         char num[8];
         if (e->typing == 2 + k) snprintf(num, sizeof num, "%s_", e->tbuf); else snprintf(num, sizeof num, "%d", v);
-        int nx = sx + 68, nw = text_width("255_") + 4;
-        canvas_rect(cv, nx, ry, nw, 7, e->typing == 2 + k ? RGB(60, 60, 80) : RGB(34, 34, 44));
-        if (e->typing == 2 + k) frame(cv, nx, ry, nw, 7, C_YELLOW);
-        canvas_text(cv, nx + 2, ry + 1, num, e->typing == 2 + k ? C_YELLOW : C_WHITE);
-        region(R_NUM, k, nx, ry, nw, 7, RGB(0, 0, 0));
+        int nw = text_width("255") + 2;
+        if (e->typing == 2 + k) { canvas_rect(cv, nx - 1, y, nw + 2, 7, RGB(60, 60, 80)); frame(cv, nx - 1, y, nw + 2, 7, C_YELLOW); }
+        canvas_text(cv, nx, y + 1, num, e->typing == 2 + k ? C_YELLOW : k == 0 ? RGB(230, 120, 120) : k == 1 ? RGB(120, 210, 130) : RGB(130, 160, 240));
+        region(R_NUM, k, nx - 1, y, nw + 2, 7, RGB(0, 0, 0));
+        nx += nw + 3;
     }
-    y += 32;
-    canvas_text(cv, x, y, "SHADES", RGB(110, 110, 130));
-    y += 7;
-    for (int k = -3; k <= 3; k++) { /* darker to lighter */
-        int sx = x + (k + 3) * 10;
-        Rgb c = tr ? RGB(128, 128, 128) : shade(cur, k);
-        if (!tr) { canvas_rect(cv, sx, y, 8, 8, c); region(R_NEW, 0, sx, y, 8, 8, c); }
-        if (k == 0 && !tr) frame(cv, sx, y, 8, 8, RGB(120, 120, 135));
-    }
-    y += 12;
+    y += 11;
     canvas_text(cv, x, y, "IN THIS FILE", RGB(110, 110, 130));
+    if (e->pk == 2) { canvas_text(cv, x + FIELD_W - text_width("+ ADD"), y, "+ ADD", C_GREY); region(R_ADD, 0, x + FIELD_W - text_width("+ ADD") - 1, y - 1, text_width("+ ADD") + 2, 7, RGB(0, 0, 0)); }
     y += 7;
-    checker(cv, x, y, 8, 8); region(R_ERASE, 0, x, y, 8, 8, RGB(0, 0, 0));
-    if (e->pk == 0) frame(cv, x, y, 8, 8, C_WHITE);
     for (int i = 0; i < e->f.npal; i++) {
-        int k = i + 1, sx = x + (k % 8) * 10, sy = y + (k / 8) * 10;
+        int sx = x + (i % 10) * 10, sy = y + (i / 10) * 10;
         canvas_rect(cv, sx, sy, 8, 8, e->f.pal_c[i]);
         region(R_FILE, i, sx, sy, 8, 8, e->f.pal_c[i]);
         int used = 0;
@@ -400,23 +423,38 @@ static void draw(const Ed *e, Canvas *cv) {
         if (used) canvas_rect(cv, sx + 3, sy + 9, 2, 1, RGB(200, 200, 215)); /* (used in this sprite) */
         if (e->pk == 1 && e->pi == i) frame(cv, sx, sy, 8, 8, C_WHITE);
     }
-    y += ((e->f.npal + 1 + 7) / 8) * 10 + 4;
-    canvas_text(cv, x, y, "MORE COLOURS", RGB(110, 110, 130));
+    y += ((e->f.npal + 9) / 10) * 10 + 3;
+    canvas_text(cv, x, y, "SHADES", RGB(110, 110, 130));
     y += 7;
-    for (int i = 0; i < 24; i++) { /* the 16-colour set and a grey ramp */
-        Rgb c = i < 16 ? EXTRA[i] : RGB((i - 16) * 255 / 7, (i - 16) * 255 / 7, (i - 16) * 255 / 7);
-        int sx = x + (i % 8) * 10, sy = y + (i / 8) * 10;
-        canvas_rect(cv, sx, sy, 8, 8, c);
-        region(R_NEW, 0, sx, sy, 8, 8, c);
-        if (e->pk == 2 && rgb_eq(e->prgb, c)) frame(cv, sx, sy, 8, 8, C_WHITE);
+    for (int k = -3; k <= 3; k++) { /* darker to lighter */
+        int sx = x + (k + 3) * 10;
+        Rgb c = shade(cur, k);
+        if (!tr) { canvas_rect(cv, sx, y, 8, 8, c); region(R_NEW, 0, sx, y, 8, 8, c); }
+        if (k == 0 && !tr) frame(cv, sx, y, 8, 8, RGB(120, 120, 135));
     }
-    y += 32;
-    int bottom = cv->h - 8 * help(cv, cv->w, cv->h) - 3, big = y + 8 + e->h * 2 <= bottom && x + e->w * 3 + 6 <= cv->w ? 2 : 1;
+    y += 12;
+    if (L.hw) help(cv, L.hy, L.hw);
+    else { /* short window: one line, the rest behind ? */
+        static const Help H_SHORT[] = {{"?", "SHORTCUTS"}, {"Q", "QUIT"}};
+        help_row(cv, L.hy, "", H_SHORT, 2, cv->w);
+    }
+    int bottom = L.hy - 3, big = y + 8 + e->h * 2 <= bottom && x + e->w * 3 + 6 <= cv->w ? 2 : 1;
     if (y + 8 + e->h <= bottom) canvas_text(cv, x, y, "AS IN THE ROOM", RGB(110, 110, 130)); /* the sprite at its real size (and twice) */
     for (int k = 1; k <= big && y + 8 + e->h <= bottom; k++) {
         int ox = x + (k - 1) * (e->w + 6), oy = y + 8;
         canvas_rect(cv, ox, oy, e->w * k, e->h * k, RGB(196, 204, 218));
         for (int yy = 0; yy < e->h; yy++) for (int xx = 0; xx < e->w; xx++) { int t2; Rgb c = colour_of(&e->f, e->g[yy][xx], &t2); if (!t2) canvas_rect(cv, ox + xx * k, oy + yy * k, k, k, c); }
+    }
+    if (e->show_help && !L.hw) { /* ?: the shortcuts in a box over the editor */
+        int bw = cv->w - 16 < 300 ? cv->w - 16 : 300, rows = help_rows(bw - 4), bh = rows * 8 + 14, bx = (cv->w - bw) / 2, by = (cv->h - bh) / 2;
+        canvas_rect(cv, bx - 1, by - 1, bw + 2, bh + 2, C_GREY);
+        canvas_rect(cv, bx, by, bw, bh, RGB(20, 20, 28));
+        canvas_text(cv, bx + 4, by + 3, "SHORTCUTS  (? CLOSES)", C_YELLOW);
+        /* the rows are laid out from x = 4: draw them on a canvas shifted into the box */
+        Canvas box = canvas_new(bw, bh - 11, RGB(20, 20, 28));
+        help(&box, 0, bw - 4);
+        for (int yy = 0; yy < box.h; yy++) for (int xx = 0; xx < box.w; xx++) canvas_px(cv, bx + xx, by + 11 + yy, box.p[yy * box.w + xx]);
+        canvas_free(&box);
     }
     if (e->asking) { /* q with changes */
         const char *a = "SAVE THE CHANGES?", *b = "S SAVE    D DISCARD    ESC BACK";
@@ -435,7 +473,7 @@ static void apply_colour(Ed *e, Rgb c) {
     else { e->pk = 2; e->prgb = c; for (int q = 0; q < e->f.npal; q++) if (!e->f.pal_body[q] && rgb_eq(e->f.pal_c[q], c)) { e->pk = 1; e->pi = q; } }
 }
 
-/* a file colour changed by a slider: its palette line too (every pixel using it changes, in every sprite of the file) */
+/* a file colour changed (the colour field, the hue bar, typing): its palette line too (every pixel using it changes, in every sprite of the file) */
 static void set_file_colour(Ed *e, int i, Rgb c) {
     File *f = &e->f;
     f->pal_c[i] = c;
@@ -456,7 +494,7 @@ static void put(const char *s) { size_t n = strlen(s); while (n) { ssize_t k = w
 static void tty_on(void) {
     struct termios t;
     tcgetattr(STDIN_FILENO, &g_old);
-    t = g_old; t.c_lflag &= ~(tcflag_t)(ICANON | ECHO); t.c_cc[VMIN] = 0; t.c_cc[VTIME] = 0;
+    t = g_old; t.c_lflag &= ~(tcflag_t)(ICANON | ECHO | ISIG | IEXTEN); t.c_cc[VMIN] = 0; t.c_cc[VTIME] = 0; /* (no signal keys: Ctrl+Z / Ctrl+Y are undo / redo, Ctrl+C asks like q) */
     tcsetattr(STDIN_FILENO, TCSAFLUSH, &t);
     put("\x1b[?1049h\x1b[?25l\x1b[?7l\x1b[?1000h\x1b[?1003h\x1b[?1006h\x1b]0;Clawd Room pixel editor\x07"); /* alt screen, mouse (SGR) */
 }
@@ -465,7 +503,7 @@ static void tty_off(void) { put("\x1b[?1006l\x1b[?1003l\x1b[?1000l\x1b[0m\x1b[?7
 int editor_run(const char *dir, const char *name) {
     static Ed e;
     memset(&e, 0, sizeof e);
-    e.pk = 1; e.pi = 0; e.hx = e.hy = -1; e.slider = -1;
+    e.pk = 1; e.pi = 0; e.hx = e.hy = -1; e.drag = -1; e.last_pk = 1;
     int which = 0, found = 0;
     for (int f = 0; f < NFILES && name && !found; f++) { /* the file that has NAME (props first) */
         File tf;
@@ -524,24 +562,31 @@ int editor_run(const char *dir, const char *name) {
                     const Region *r = hit(px, py);
                     e.hx = e.hy = -1;
                     if (r && r->kind == R_GRID) { e.hx = (px - L.gx) / L.z; e.hy = (py - L.gy) / L.z; }
-                    if (release) { if (painting || e.slider >= 0) save(&e); painting = 0; e.slider = -1; continue; }
+                    if (release) { if (painting || e.drag >= 0) save(&e); painting = 0; e.drag = -1; continue; }
                     if (motion && btn == 3) continue; /* (just moving: the pointer's pixel is shown) */
-                    if (e.slider >= 0 || (r && r->kind == R_SLIDER && !motion)) { /* a colour slider: the colour to paint, or a file colour (every pixel using it) */
-                        int k = e.slider >= 0 ? e.slider : r->i, sx0 = 0;
-                        for (int q = 0; q < g_nreg; q++) if (g_reg[q].kind == R_SLIDER && g_reg[q].i == k) sx0 = g_reg[q].x0;
-                        int v = (px - sx0) * 256 / 64;
-                        v = v < 0 ? 0 : v > 255 ? 255 : v;
-                        if (e.slider < 0) { push_undo(&e); e.slider = k; }
+                    if (e.drag >= 0 || (r && (r->kind == R_FIELD || r->kind == R_HUE) && !motion && btn == 0)) { /* the colour field or the hue bar */
+                        int k = e.drag >= 0 ? e.drag : r->kind == R_HUE, x0 = 0, y0 = 0;
+                        for (int q = 0; q < g_nreg; q++) if (g_reg[q].kind == (k ? R_HUE : R_FIELD)) { x0 = g_reg[q].x0; y0 = g_reg[q].y0; }
                         int t0;
-                        Rgb c = pick_colour(&e, &t0);
-                        if (k == 0) c.r = (uint8_t)v; else if (k == 1) c.g = (uint8_t)v; else c.b = (uint8_t)v;
+                        Rgb was = pick_colour(&e, &t0);
+                        double h, sat, val;
+                        rgb_hsv(was, e.hue, &h, &sat, &val);
+                        if (t0) { sat = 1; val = 1; } /* (from ERASE: a full colour) */
+                        double fx = (double)(px - x0) / (FIELD_W - 1), fy = (double)(py - y0) / (FIELD_H - 1);
+                        fx = fx < 0 ? 0 : fx > 1 ? 1 : fx; fy = fy < 0 ? 0 : fy > 1 ? 1 : fy;
+                        if (k) h = fx * 359; else { sat = fx; val = 1 - fy; }
+                        e.hue = h;
+                        if (e.drag < 0) { e.drag = k; if (e.pk == 1 && !e.f.pal_body[e.pi]) push_undo(&e); else { e.pk = 2; e.prgb = was; } } /* (a file colour changes in the file; erase or the body: a new colour) */
+                        Rgb c = hsv_rgb(h, sat, val);
                         if (e.pk == 1) set_file_colour(&e, e.pi, c); else e.prgb = c;
+                        e.picking = 0;
                         continue;
                     }
-                    if (r && r->kind == R_GRID && alt) { /* pick the colour under the pointer */
+                    if (r && r->kind == R_GRID && (alt || (e.picking && btn == 0))) { /* pick the colour under the pointer */
                         char ch = e.g[e.hy][e.hx];
                         e.pk = 0;
                         for (int q = 0; q < e.f.npal; q++) if (e.f.pal_ch[q] == ch) { e.pk = 1; e.pi = q; }
+                        e.picking = 0;
                         continue;
                     }
                     if (r && r->kind == R_GRID && (btn == 0 || btn == 2)) {
@@ -558,8 +603,11 @@ int editor_run(const char *dir, const char *name) {
                     if (r && !motion && (r->kind == R_HEX || r->kind == R_NUM)) { e.typing = r->kind == R_HEX ? 1 : 2 + r->i; e.tbuf[0] = 0; continue; } /* type a colour */
                     if (!motion && e.typing) e.typing = 0; /* (a click elsewhere: never mind) */
                     if (r && !motion) {
-                        if (r->kind == R_ERASE) e.pk = 0;
-                        else if (r->kind == R_FILE) { e.pk = 1; e.pi = r->i; }
+                        if (r->kind == R_TOOL && r->i == 0) { e.picking = 0; if (e.pk == 0) { e.pk = e.last_pk ? e.last_pk : 1; e.pi = e.last_pi; e.prgb = e.last_prgb; } }
+                        else if (r->kind == R_TOOL && r->i == 1) { e.picking = 0; if (e.pk) { e.last_pk = e.pk; e.last_pi = e.pi; e.last_prgb = e.prgb; } e.pk = 0; }
+                        else if (r->kind == R_TOOL && r->i == 2) e.picking = !e.picking;
+                        else if (r->kind == R_ADD && e.pk == 2) { char ch = letter_for(&e, e.prgb); for (int q = 0; q < e.f.npal; q++) if (e.f.pal_ch[q] == ch) { e.pk = 1; e.pi = q; } save(&e); }
+                        else if (r->kind == R_FILE) { e.pk = 1; e.pi = r->i; e.picking = 0; }
                         else if (r->kind == R_NEW) { /* a colour already in the file is that one; else a new colour */
                             e.pk = 2; e.prgb = r->c;
                             for (int q = 0; q < e.f.npal; q++) if (!e.f.pal_body[q] && rgb_eq(e.f.pal_c[q], r->c)) { e.pk = 1; e.pi = q; }
@@ -600,7 +648,11 @@ int editor_run(const char *dir, const char *name) {
                 continue;
             }
             if (ch == '#') { e.typing = 1; e.tbuf[0] = 0; continue; }
+            if (ch == '?') { e.show_help = !e.show_help; continue; }
             if (ch == 'f' || ch == 'F') { new_frame(&e); e.zoom = 0; continue; } /* a new frame (props with frames are animated in the room) */
+            if (ch == 0x1A) ch = 'u'; /* Ctrl+Z: undo; Ctrl+Y: redo (U / R too) */
+            else if (ch == 0x19) ch = 'r';
+            else if (ch == 0x03) ch = 'q'; /* Ctrl+C: quit, asking about changes */
             if (ch == 'q') { int any = 0; for (int f = 0; f < NFILES; f++) any |= e.changed[f]; if (any) e.asking = 1; else quit = 1; }
             else if (ch == 'u' && e.nundo) { e.nundo--; swap_undo(&e, e.nundo); e.nredo++; save(&e); }
             else if (ch == 'r' && e.nredo) { swap_undo(&e, e.nundo); e.nundo++; e.nredo--; save(&e); }

@@ -4,8 +4,11 @@
 
     python3 tools/try_wsl.py BIN TRY_DIR EVENTS [--desktop N]
 
---desktop N puts the windows on virtual desktop N (1 = the first) without switching to it: each opens minimized (so it never
-takes the focus), is moved there, then shown without activating. That uses Explorer's undocumented virtual desktop interfaces
+The four open minimized one after another, then are placed and shown together (their visible frames on the quarters, like a
+snap layout). On your own desktop they are then made a snap group (one taskbar entry) as a person would: the first room snapped
+with the keyboard (hold Win, tap two arrows, only while it has the focus), the others picked in Snap Assist. That takes the focus
+for a few seconds (CLAWD_TRY_SNAP=0: not done). --desktop N puts the windows
+on virtual desktop N (1 = the first) without switching to it: each is moved there while minimized, then shown without activating. That uses Explorer's undocumented virtual desktop interfaces
 (Windows 11 24H2 and later); it is for testing while you keep working on another desktop.
 """
 import os
@@ -47,6 +50,10 @@ public static class T {
   static System.Collections.Generic.HashSet<IntPtr> seen = new System.Collections.Generic.HashSet<IntPtr>();
   /* Windows Terminal's windows; Fresh() gives one that was not there at the last call (the room sets its own title later) */
   public static void Mark() { EnumWindows((h, l) => { var s = new StringBuilder(64); GetClassName(h, s, 64); if (s.ToString() == "CASCADIA_HOSTING_WINDOW_CLASS") seen.Add(h); return true; }, IntPtr.Zero); }
+  /* the room in it has started (it sets the title "clawd-room NAME-PID"): Windows Terminal is done opening the window, which
+     would otherwise minimize it again after it was shown */
+  public static string Title(IntPtr h) { var s = new StringBuilder(256); GetWindowText(h, s, 256); return s.ToString(); }
+  public static bool Started(IntPtr h) { var s = new StringBuilder(256); GetWindowText(h, s, 256); return s.ToString().StartsWith("clawd-room "); }
   public static IntPtr Fresh() { IntPtr r = IntPtr.Zero; EnumWindows((h, l) => { var s = new StringBuilder(64); GetClassName(h, s, 64); if (s.ToString() == "CASCADIA_HOSTING_WINDOW_CLASS" && !seen.Contains(h)) { r = h; return false; } return true; }, IntPtr.Zero); if (r != IntPtr.Zero) seen.Add(r); return r; }
   static IServiceProvider10 Shell() { return (IServiceProvider10)Activator.CreateInstance(Type.GetTypeFromCLSID(new Guid("C2F03A33-21F5-47FA-B4BB-156362A2F239"))); }
   static IVirtualDesktopManagerInternal Mgr() { Guid c = new Guid("C5E0CDCA-7B6E-41B2-9FC4-D93975CC467B"), i = typeof(IVirtualDesktopManagerInternal).GUID; return (IVirtualDesktopManagerInternal)Shell().QueryService(ref c, ref i); }
@@ -57,13 +64,56 @@ public static class T {
   public static void ToDesktop(IntPtr h, int n) { /* a new window has no view for a moment: try again for up to 5 s */
     for (int k = 0; ; k++) { try { IApplicationView v; Views().GetViewForHwnd(h, out v); Mgr().MoveViewToDesktop(v, At(n)); return; }
       catch (COMException) { if (k >= 250) throw; System.Threading.Thread.Sleep(20); } } }
-  public static void Show(IntPtr h, int[] r) { ShowWindow(h, 4); SetWindowPos(h, IntPtr.Zero, r[0], r[1], r[2], r[3], 0x0014); } /* SW_SHOWNOACTIVATE; no z-order, no activate */
+  [DllImport("user32.dll")] static extern bool GetWindowRect(IntPtr h, int[] r);
+  [DllImport("dwmapi.dll")] static extern int DwmGetWindowAttribute(IntPtr h, int a, int[] r, int n);
+  /* SW_SHOWNOACTIVATE, then the visible frame onto r (x, y, w, h) like Windows' snap layout: the window rectangle includes an
+     invisible resize border, so it is grown by that border (DWMWA_EXTENDED_FRAME_BOUNDS is the visible part); no z-order, no activate */
+  [DllImport("user32.dll")] static extern bool SetForegroundWindow(IntPtr h);
+  [DllImport("user32.dll")] static extern IntPtr GetForegroundWindow();
+  [DllImport("user32.dll")] static extern void keybd_event(byte k, byte s, uint f, UIntPtr e);
+  /* the focus to h (a tap of Alt lets a background process set it); true only if h really has it */
+  public static bool Focus(IntPtr h) { keybd_event(0x12, 0, 0, UIntPtr.Zero); keybd_event(0x12, 0, 2, UIntPtr.Zero); SetForegroundWindow(h); for (int i = 0; i < 25 && GetForegroundWindow() != h; i++) System.Threading.Thread.Sleep(10); return GetForegroundWindow() == h; }
+  static void Tap(byte k) { keybd_event(k, 0, 1, UIntPtr.Zero); keybd_event(k, 0, 3, UIntPtr.Zero); System.Threading.Thread.Sleep(60); }
+  /* snap h into a quarter with the keyboard as a person would: hold Win, tap left / right then up / down, let go of Win;
+     windows snapped this way become a snap group (one taskbar entry). Keys go only to h while it has the focus; no Esc (it
+     quits a room). False if h could not be focused. */
+  public static bool Snap(IntPtr h, byte side, byte half) {
+    if (!Focus(h)) return false;
+    keybd_event(0x5B, 0, 0, UIntPtr.Zero); Tap(side); System.Threading.Thread.Sleep(120); Tap(half); keybd_event(0x5B, 0, 2, UIntPtr.Zero);  // (the second arrow only once the first snap is done, or it stays a half)
+    return true;
+  }
+  public static void Show(IntPtr h, int[] r) {
+    ShowWindow(h, 4); SetWindowPos(h, IntPtr.Zero, r[0], r[1], r[2], r[3], 0x0014);
+    int[] w = new int[4], f = new int[4];
+    if (GetWindowRect(h, w) && DwmGetWindowAttribute(h, 9, f, 16) == 0)
+      SetWindowPos(h, IntPtr.Zero, r[0] - (f[0] - w[0]), r[1] - (f[1] - w[1]), r[2] + (f[0] - w[0]) + (w[2] - f[2]), r[3] + (f[1] - w[1]) + (w[3] - f[3]), 0x0014);
+  }
 }}
 '''
 
 
 def ps_quote(s):
     return "'" + s.replace("'", "''") + "'"
+
+
+def run_ps(script, name):
+    """Run a PowerShell script through a file in Windows' temp folder (with the PATHs it is too long for -EncodedCommand)."""
+    tmp = subprocess.run(["cmd.exe", "/d", "/c", "echo %TEMP%"], capture_output=True, text=True, cwd="/mnt/c").stdout.strip()
+    path = os.path.join(subprocess.run(["wslpath", "-u", tmp], capture_output=True, text=True).stdout.strip(), name)
+    with open(path, "w", encoding="utf-8-sig") as f:
+        f.write(script)
+    try:
+        return subprocess.run(["powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", tmp + "\\" + name],
+                              capture_output=True, text=True)
+    finally:
+        os.remove(path)
+
+
+def ps_error(p):
+    """The first error PowerShell reported, readable."""
+    err = re.findall(r'<S S="Error">(.*?)</S>', p.stderr) or [l for l in p.stderr.replace("\r", "").splitlines() if l.strip()]
+    err = [re.sub(r"_x000[DA]_", "", e).strip() for e in err]
+    return err[0] if err else "powershell failed"
 
 
 def main():
@@ -73,41 +123,66 @@ def main():
         i = args.index("--desktop")
         desk = int(args[i + 1])
         del args[i:i + 2]
-    binp, tr, ev = args
+    check_only = args == ["--check"]  # (only the desktop checks: run before a running --try is ended)
+    binp, tr, ev = ("", "", "") if check_only else args
     distro = os.environ.get("WSL_DISTRO_NAME", "Ubuntu")
     lines = ["$ErrorActionPreference = 'Stop'", "Add-Type -TypeDefinition " + ps_quote(VD_CS),
-             "[ClawdTry.T]::Mark(); $wa = [ClawdTry.T]::WorkArea(); $w = [int](($wa[2] - $wa[0]) / 2); $h = [int](($wa[3] - $wa[1]) / 2)"]
+             "$clk = [Diagnostics.Stopwatch]::StartNew(); $all = @(); [ClawdTry.T]::Mark(); $wa = [ClawdTry.T]::WorkArea(); $w = [int](($wa[2] - $wa[0]) / 2); $h = [int](($wa[3] - $wa[1]) / 2)"]
     if desk:
         lines += ["if ([ClawdTry.T]::Desktops() -lt %d) { throw 'there is no desktop %d' }" % (desk, desk),
                   "if ([ClawdTry.T]::OnCurrent(%d)) { throw 'desktop %d is the one you are on' }" % (desk - 1, desk)]
-    for name, theme, qx, qy in ROOMS:  # (PATH: wt.exe started from WSL passes on a PATH without Windows' folders, so no powershell.exe)
+    for name, theme, qx, qy in [] if check_only else ROOMS:  # (PATH: wt.exe started from WSL passes on a PATH without Windows' folders, so no powershell.exe)
         cmd = ["wsl.exe", "-d", distro, "-e", "env", "CLAWD_HERE=1", "PATH=" + os.environ.get("PATH", ""), "CLAWD_LINK_DIR=%s/link" % tr, "CLAWD_SIZE_LOG=%s/log-%s" % (tr, name),
                "sh", os.path.join(ROOT, "tools", "try_room.sh"), binp, tr + "/stop", "--room", name, "--theme", theme,
                "--scale", "1", "--size", "off", "--profile-font", "5", "--events", ev]  # (a fixed scale and the window's own size: the quarter)
         wt = ["-w", "new", "-p", "Clawd Room"] + cmd
         wt = ['"%s"' % a if " " in a else a for a in wt]  # (Start-Process joins the arguments with spaces)
-        style = "Minimized" if desk else "Normal"
-        lines += ["$r = [int[]]@(($wa[0] + %d * $w), ($wa[1] + %d * $h), $w, $h)" % (qx, qy),  # (the comma binds before + and *)
-                  "Start-Process wt.exe -WindowStyle %s -ArgumentList @(%s)" % (style, ", ".join(ps_quote(a) for a in wt)),
-                  "$hw = [IntPtr]::Zero; $t = [Diagnostics.Stopwatch]::StartNew()",
-                  "while ($hw -eq [IntPtr]::Zero -and $t.ElapsedMilliseconds -lt 15000) { Start-Sleep -Milliseconds 20; $hw = [ClawdTry.T]::Fresh() }",
-                  "if ($hw -eq [IntPtr]::Zero) { throw 'the %s window did not open' }" % name]
-        if desk:
-            lines.append("[ClawdTry.T]::ToDesktop($hw, %d)" % (desk - 1))
-        lines.append("[ClawdTry.T]::Show($hw, $r)")
-    script = "\n".join(lines)
-    # through a file in Windows' temp folder (with the PATHs the script is too long for -EncodedCommand)
-    tmp = subprocess.run(["cmd.exe", "/d", "/c", "echo %TEMP%"], capture_output=True, text=True, cwd="/mnt/c").stdout.strip()
-    path = os.path.join(subprocess.run(["wslpath", "-u", tmp], capture_output=True, text=True).stdout.strip(), "clawd-room-try.ps1")
-    with open(path, "w", encoding="utf-8-sig") as f:
-        f.write(script)
-    p = subprocess.run(["powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", tmp + "\\clawd-room-try.ps1"],
-                       capture_output=True, text=True)
-    os.remove(path)
+        lines.append("Start-Process wt.exe -WindowStyle Minimized -ArgumentList @(%s)" % ", ".join(ps_quote(a) for a in wt))
+    # all four start at once; their windows are collected as they appear (each moved to its desktop while still minimized),
+    # then, once each room has started and named its window, put in order by that name
+    if not check_only:
+        lines += ["$new = @(); $t = [Diagnostics.Stopwatch]::StartNew()",
+                  "while ($new.Count -lt %d -and $t.ElapsedMilliseconds -lt 15000) { $hw = [ClawdTry.T]::Fresh(); if ($hw -eq [IntPtr]::Zero) { Start-Sleep -Milliseconds 10; continue }; %s$new += $hw }"
+                  % (len(ROOMS), "[ClawdTry.T]::ToDesktop($hw, %d); " % (desk - 1) if desk else ""),
+                  "if ($new.Count -lt %d) { throw 'only ' + $new.Count + ' of the %d windows opened' }" % (len(ROOMS), len(ROOMS)),
+                  "'opened all ' + $clk.ElapsedMilliseconds"]
+        for name, theme, qx, qy in ROOMS:
+            lines.append("$all += ,@([IntPtr]::Zero, [int[]]@(($wa[0] + %d * $w), ($wa[1] + %d * $h), $w, $h), 'clawd-room %s-')" % (qx, qy, name))  # (the comma binds before + and *)
+    lines += [] if check_only else [
+        "$t = [Diagnostics.Stopwatch]::StartNew(); while (@($new | ? { -not [ClawdTry.T]::Started($_) }).Count -gt 0 -and $t.ElapsedMilliseconds -lt 15000) { Start-Sleep -Milliseconds 20 }",
+        "foreach ($a in $all) { $a[0] = @($new | ? { [ClawdTry.T]::Title($_).StartsWith($a[2]) })[0]; if (-not $a[0]) { throw ('no window for ' + $a[2]) } }",
+        "'started all ' + $clk.ElapsedMilliseconds",
+        "foreach ($a in $all) { [ClawdTry.T]::Show($a[0], $a[1]) }", "'shown all ' + $clk.ElapsedMilliseconds"]
+    if not desk and not check_only and os.environ.get("CLAWD_TRY_SNAP") != "0":
+        # on your own desktop make them a snap group (one taskbar entry), as a person would: snap the first room into the top-left
+        # quarter with the keyboard, then pick the other three in Snap Assist (found by their titles with UI Automation; it
+        # fills the next quarter each time). A room Snap Assist does not show within 3 s is snapped with its own keys instead.
+        # Takes the focus for a few seconds; CLAWD_TRY_SNAP=0: not done.
+        keys = [("0x25", "0x26"), ("0x27", "0x26"), ("0x25", "0x28"), ("0x27", "0x28")]  # left/right, then up/down
+        lines += [
+            "Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes",
+            "$A = [System.Windows.Automation.AutomationElement]; $explorer = @(Get-Process explorer | % { $_.Id })",
+            "$li = New-Object System.Windows.Automation.PropertyCondition($A::ControlTypeProperty, [System.Windows.Automation.ControlType]::ListItem)",
+            "function Assist($title) { $t = [Diagnostics.Stopwatch]::StartNew(); while ($t.ElapsedMilliseconds -lt 3000) {"
+            " $e = $A::RootElement.FindAll([System.Windows.Automation.TreeScope]::Children, [System.Windows.Automation.Condition]::TrueCondition) | ? { $explorer -contains $_.Current.ProcessId } |"
+            " % { $_.FindAll([System.Windows.Automation.TreeScope]::Descendants, $li) } | ? { $_.Current.ClassName -eq 'ListViewItem' -and"
+            " ((@($_.Current.Name) + @($_.FindAll([System.Windows.Automation.TreeScope]::Descendants, [System.Windows.Automation.Condition]::TrueCondition) | % { $_.Current.Name })) -contains $title) } | select -First 1;"
+            " $p = $null; if ($e -and $e.TryGetCurrentPattern([System.Windows.Automation.InvokePattern]::Pattern, [ref]$p)) { $p.Invoke(); Start-Sleep -Milliseconds 100; return $true };"
+            " Start-Sleep -Milliseconds 25 }; return $false }",  # (Snap Assist is Explorer's; only a thumbnail with exactly our title is picked)
+            "$assist = [ClawdTry.T]::Snap($all[0][0], %s, %s); if (-not $assist) { 'not snapped: %s' } else { '%s: snapped with keys ' + $clk.ElapsedMilliseconds }" % (keys[0][0], keys[0][1], ROOMS[0][0], ROOMS[0][0]),
+        ]
+        for i in range(1, 4):
+            lines.append("if ($assist -and (Assist ([ClawdTry.T]::Title($all[%d][0])))) { '%s: picked in Snap Assist ' + $clk.ElapsedMilliseconds } else { $assist = $false; "
+                         "if ([ClawdTry.T]::Snap($all[%d][0], %s, %s)) { '%s: snapped with keys' } else { 'not snapped: %s' } }"
+                         % (i, ROOMS[i][0], i, keys[i][0], keys[i][1], ROOMS[i][0], ROOMS[i][0]))
+        lines += ["'snapped ' + $clk.ElapsedMilliseconds", "[void][ClawdTry.T]::Focus($all[0][0])"]
+    p = run_ps("\n".join(lines), "clawd-room-try.ps1")
+    with open(os.path.join(tr or "/tmp", "snap.log"), "w") as f:  # (how long each step took, in ms, and how the rooms were snapped)
+        f.write(p.stdout.replace("\r", "") + p.stderr.replace("\r", "")[:2000])
+    if os.environ.get("CLAWD_TRY_TIMING"):
+        sys.stderr.write(p.stdout.replace("\r", ""))
     if p.returncode != 0:
-        err = re.findall(r'<S S="Error">(.*?)</S>', p.stderr) or [l for l in p.stderr.replace("\r", "").splitlines() if l.strip()]
-        err = [re.sub(r"_x000[DA]_", "", e).strip() for e in err]
-        sys.stderr.write("clawd-room: --try: %s\n" % (err[0] if err else "powershell failed"))
+        sys.stderr.write("clawd-room: --try: %s\n" % ps_error(p))
         return 1
     return 0
 

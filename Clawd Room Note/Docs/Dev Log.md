@@ -7,8 +7,6 @@ tags:
   - clawd-room
 sticker: lucide//book-open
 ---
-# 📝 clawd-room Dev Log
-
 What changed and when, in short. How things work now is in the topic notes:
 
 | Note | About |
@@ -20,7 +18,7 @@ What changed and when, in short. How things work now is in the topic notes:
 | [[Test Checklist]] | what is still to check by eye |
 | [[Animations]] | every Clawd frame |
 
-Pictures are in `Screenshots/`, one folder per subject (office, coffee shop, park, gates, interaction, engine and tools, platforms, style and mockups, the old look). Details of every change: `git log`.
+Pictures are in `Snapshots/`, one folder per subject; browse them from [[Gallery index]] (in `Gallery/`). Details of every change: `git log`.
 
 > [!info] Where the work is (branches)
 > Since 2026-10-19 (William joined) every change is a branch and a pull request into `main`, merged by Zaviel ([[Collaboration]]). Before that `main` was kept equal to `feat/style-a`.
@@ -48,11 +46,37 @@ gitGraph
 
 ## 2026-10-19
 
+### 📷 Snapshots and a gallery to browse them (Zaviel)
+- The picture folder is now **`Snapshots/`** (it was `Screenshots/`), the **source**: the picture files, one folder per subject. A new folder **`Gallery/`** has a note per subject (e.g. [[Park gallery]]) showing its pictures newest first, each with its caption and the [[Dev Log]] entry or note it is in, and [[Gallery index]] (subjects, counts, the newest picture).
+- Each picture is marked **✅ current**, **♻️ replaced** (with the picture that replaced it) or **❌ not picked** in [[Snapshot status]] (all 91 marked: 21 current, 60 replaced, 10 not picked); current ones show open, the others folded.
+- `python3 tools/vault_gallery.py` writes them from the files, the status table and the log; CMD_SYNC runs it.
+- Notes have no `# Title` heading any more (Obsidian shows the file name); the notes in `Notes/` and `Gallery/` have a lucide sticker instead. Notes named like their folder stay make.md's folder notes. The Interaction folder became "Interaction (keys, moving)".
+
+### 🎨 The pixel editor: a colour picker like Figma's (Zaviel)
+> [!info] Branch `test/wsl-queue`
+- Picked from three mockups (A Office colour menu, **B Figma**, C Photoshop swatches): **Paint / Erase / Pick** buttons, a **colour field** (saturation × brightness) and a **hue bar** to click or drag, then the colour's hex and red / green / blue on one line (click to type), the file's colours with **+ Add** for a new one, and shades. The four sliders and the 16-colour set are gone.
+- Changing a file colour still recolours its pixels everywhere; starting from the body colour or Erase makes a new colour.
+- Fixed: in a short window the shortcut list ran over the colours. Now it is one line (`? SHORTCUTS  Q QUIT`) and **`?`** shows them in a box.
+
+![[2026-10-19 editor palette mockup A, office.png|250]] ![[2026-10-19 editor palette mockup B, figma (picked).png|250]] ![[2026-10-19 editor palette mockup C, photoshop.png|250]]
+![[2026-10-19 pixel editor, colour field palette.png|300]] ![[2026-10-19 pixel editor, a new colour added and painted.png|300]] ![[2026-10-19 pixel editor, shortcuts box in a short window.png|300]]
+
+### 🎨 The pixel editor opens in its own window on WSL (Zaviel)
+> [!info] Branch `test/wsl-queue`
+- `./clawd-room.sh --edit NAME` opens the editor in its own **Clawd Room** window in the middle of the screen (70 x 78 %), as on the Mac; the window you typed in stays. `--here` runs it in the current window.
+- The test queue is grouped (`Group A · …`), each test with an ID (**T1** … **T17**, questions **Q1**) to refer to, a `✅ date (who)` line for results and a folded *how to run* per group.
+
+### 🪟 `--try` on WSL opens as one layout (Zaviel)
+> [!info] Branch `test/wsl-queue`
+- The four rooms open minimized, wait until each room has started, then **show together**, their visible frames edge to edge on the quarters like a snap layout (Windows 11's invisible window border is taken into account).
+- Fixed: starting a `--try` closed the new rooms when an old one quit late (a WSL room takes a second to quit); `--desktop` is checked before anything is closed.
+- They then form a **snap group** (one "Group" entry in the taskbar, minimise and bring back all four at once): Windows has no API for that, but doing what a person does works: the first room is snapped into the top-left quarter with **Win + ← + ↑**, then the other three are **picked in Snap Assist** (found by their titles). Each goes straight into its quarter. It takes the focus for a few seconds, only on your own desktop (not with `--desktop N`); `CLAWD_TRY_SNAP=0` skips it. (Tried step by step on Zaviel's screen; on the way a window snapped twice jumped to the other monitor.)
+
 ### 🗂️ Screenshots in folders (Zaviel)
-- `Screenshots/` is sorted into one folder per subject: Office, Coffee shop, Park, Gates (stairs, doors, wells), Interaction, Engine and tools, Platforms, Style and mockups, Old look. Every picture in the notes still shows (Obsidian finds them by name).
+- `Screenshots/` is sorted into one folder per subject: Office, Coffee shop, Park, Gates (stairs, doors, wells), Interaction (keys, moving), Engine and tools, Platforms, Style and mockups, Old look. Every picture in the notes still shows (Obsidian finds them by name).
 
 ### 🧪 A test queue (Zaviel)
-- The [[Test Checklist]] starts with a **test queue**: what to test next, one big callout per group with a box per test and its checks as sub-boxes, and a foldable **How to test** with the steps. Five WSL tests are queued (the profile at 5 pt, the rooms and the bar, sending and moving, desks staying, the pixel editor).
+- The [[Test Checklist]] starts with a **test queue**: what to test next, one big callout per group with a bold title per test and its checks as boxes under it, and a foldable **How to test** with the steps. Five WSL tests are queued (the profile at 5 pt, the rooms and the bar, sending and moving, desks staying, the pixel editor).
 - Done tests move down into their subject; the old WSL list and the 8 pt checks it replaced are gone.
 
 ### 🤝 A collaborator: William (Zaviel)

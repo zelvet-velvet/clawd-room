@@ -3,9 +3,8 @@ title: Platforms and Windows
 tags:
   - clawd-room
   - platforms
+sticker: lucide//app-window
 ---
-# 🪟 Platforms and Windows
-
 > [!abstract] In short
 > The room runs in **Windows Terminal (WSL)** and in **iTerm2 (macOS)**. A small helper the room starts (PowerShell or osascript) tells it where the clawd-room windows are; linked rooms talk through files. Nothing goes over the network.
 
@@ -60,6 +59,8 @@ sequenceDiagram
 
 - A small `powershell.exe` started by the room reports the windows (rectangles, DPI); it stops with the room.
 - On open the room sets the window to **110x32 cells** and the font to **8 pt** (`--size`, `--font`; `off` leaves them). `setup_profile.py` makes the "Clawd Room" profile; `--apply-global` edits `settings.json` with a backup.
+- `--try` (`tools/try_wsl.py`): four Clawd Room windows open minimized, are placed on the quarters (visible frames edge to edge, as a snap layout would) and shown together once each room has started; `--desktop N` puts them on virtual desktop N without switching (Explorer's undocumented virtual desktop interfaces). On your own desktop they then become a **snap group** (one taskbar entry; Windows has no API for groups): the first room is snapped into the top-left quarter with Win + ← + ↑ (keys only while it has the focus), the other three are picked in **Snap Assist** by their titles (UI Automation, Explorer's list only); a room it does not show in 3 s is snapped with its own keys. `CLAWD_TRY_SNAP=0` skips it.
+- `--edit NAME` opens the pixel editor in its own Clawd Room window in the middle of the screen (`tools/wsl_open.py`: opened minimized, placed once the editor has named its window, then shown with the focus); `--here` keeps the current window.
 - Font keys are sent only to a window that already has the focus. Focus mode is not used (it dropped the window in tests).
 
 > [!todo] Not yet

@@ -3,16 +3,15 @@ title: Test Checklist
 tags:
   - clawd-room
   - tests
+sticker: lucide//list-checks
 ---
-# ✅ Test Checklist
-
 > [!info] How to use this
 > Things only a person can check by looking. **Ticked = a person confirmed it**, with their name and the date: `(William, 2026-10-21)`; looks and art are ticked by Zaviel. Assistants never tick. Automatic tests are in [[Engine and Tests]]. Checks for things that were replaced are removed.
 
 ---
 ## 🧪 Test queue
 
-What to test next, one big callout per group: a box per test with its checks as sub-boxes; tick them as you check (with your name and the date), open **How to test** for the steps. A test whose boxes are all ticked moves down into its subject below.
+What to test next, one `[!example] Group X · …` callout per group. Each test is a box with an ID (**T1**, **T2** … counting on across groups, so an ID always means the same test; open questions are **Q1**, **Q2** …): what to do → what should happen. Tick as you check, then a `✅ date: … (who)` line says what was seen. The steps are in the folded **how to run** under each group. A group that is all ticked moves down into its subject below (keeping its IDs).
 
 > [!info]- Box legend ([[Checkbox Style]])
 > - [ ] to test
@@ -27,40 +26,75 @@ What to test next, one big callout per group: a box per test with its checks as 
 > [!tip] Setting up a test
 > `./clawd-room.sh --try` opens **four linked rooms**, one in each quarter of the screen (office, coffee shop / park, office), with **made-up Clawds** in them, so every gate shows at once. Quit any one to close all four, or `./clawd-room.sh --try close`. `--try real` shows only your real sessions. On WSL `--try --desktop N` opens them on virtual desktop N without switching to it (switch there yourself to look).
 
-> [!todo]+ WSL2 + Windows Terminal (since 2026-10-19)
-> - [ ] **1. The Clawd Room profile at 5 pt**
->     - [i] Needs `python3 setup_profile.py --update` once (Zaviel ran it on 2026-10-19)
->     - [ ] From Windows Terminal's dropdown the room starts and its window moves to the quarter of the screen it is in
->     - [ ] Room pixels are square and about as many as on the Mac (the whole room fits, the park shows the swing set and the building's plaque)
->     - [ ] `q` closes the room and the window; nothing is left behind
-> - [ ] **2. The rooms and the bottom bar**
->     - [?] Once all four `--try` rooms closed together after about 15 s (cause unknown). If it happens: `cat ~/.clawd-room/try/stop` says which room ended it; note it here
->     - [ ] Office, coffee shop and park look as on the Mac (style A, the park plaza and its buildings)
->     - [ ] The bottom bar's text is readable at 5 pt (`?` shows the help)
->     - [ ] Hold `g` or `m`: the yellow hint shows only while the key is held and goes right after letting go
-> - [ ] **3. Sending and moving Clawds between rooms**
->     - [ ] `g` + an arrow: a Clawd walks to that gate (door, stairs, well), goes through and comes out in the room next to it
->     - [ ] `m` + an arrow: the picked Clawd packs its desk into a box (poof), carries it out and unpacks at a new desk in the other room
->     - [ ] The room it left does not blink; `m` + arrow while it carries the box sends it straight to the new gate
->     - [ ] `b` calls your Clawds back
-> - [ ] **4. Desks stay in their room**
->     - [ ] Opening the rooms one by one, a desk never jumps to another room
->     - [ ] Closing one room: only its Clawds show up elsewhere
-> - [ ] **5. The pixel editor with the mouse**
->     - [ ] `./clawd-room.sh --edit window`: left click paints, right click erases, the palette picks a colour
->     - [ ] A running room shows the change as you draw
->     - [ ] `q` asks save (S) or discard (D); D puts the picture back, in the room too
+> [!example] Group A · WSL: the Clawd Room profile at 5 pt (needs `python3 setup_profile.py --update` once)
+> - [x] **T1** Clawd Room from Windows Terminal's dropdown → the room starts, its window moves to the quarter of the screen it is in.
+> - [x] **T2** Room pixels are square and about as many as on the Mac (the whole room fits; the park shows the swing set and the building's plaque).
+> - [x] **T3** `q` → the room and its window close; nothing is left behind.
+> - [x] **T4** `./clawd-room.sh --try real` → all four rooms appear together, snapped into the quarters, one **Group** in the taskbar.
 >
-> > [!example]- How to test
-> > **1.** Windows Terminal → the ⌄ next to the tabs → **Clawd Room** → pick a scene → the window jumps once into its quarter; compare with ![[2026-10-19 wsl try, four rooms at 5 pt.png|300]]; press `q`.
-> >
-> > **2.** In a WSL shell in the repo: `./clawd-room.sh --try` → look at the four rooms for a minute → click into one, `?` to read the help, `?` again → hold `g` two seconds and let go, then the same with `m` → `./clawd-room.sh --try close`.
-> >
-> > **3.** `./clawd-room.sh --try`, wait for the gates (about 10 s) → in the top-left room hold `g` and press → (coffee shop), then ↓ (park) → `Tab` until a Clawd at a desk is picked, `m` + →, watch both rooms → pick a Clawd carrying a box, `m` + ↓ → `b`.
-> >
-> > **4.** With at least one real Claude Code session running: open **Clawd Room** (office), note the desks → open a second and a third (coffee shop, park) next to it → the first room's desks stay → quit the coffee shop: only its Clawds move.
-> >
-> > **5.** Start a room (`--try` or the profile; the office has the window) → in a second window `./clawd-room.sh --edit window` → paint a few pixels and watch the room's window → `q`, then `D`: the window is back as before.
+> ✅ 2026-10-19: T1–T4 (Zaviel). T4 took several rounds: the rooms now open at once and become a snap group through Snap Assist (about 2.3 s).
+>
+> > [!tip]- T1–T4 · how to run them
+> > 1. Windows Terminal → the ⌄ next to the tabs → **Clawd Room** → pick a scene: the window jumps once into its quarter. Compare with ![[2026-10-19 wsl try, four rooms at 5 pt.png|300]]
+> > 2. `q`.
+> > 3. In a WSL shell in the repo: `./clawd-room.sh --try real`, hands off for about 3 s; hover over Windows Terminal in the taskbar. `~/.clawd-room/try/snap.log` says how each room was snapped.
+
+> [!example] Group B · WSL: the rooms and the bottom bar
+> - [x] **T5** Office, coffee shop and park look as on the Mac (style A, the park plaza and its buildings).
+> - [x] **T6** The bottom bar's text is readable at 5 pt (`?` shows the help).
+> - [x] **T7** Hold `g` or `m` → the yellow hint shows only while the key is held and goes right after letting go.
+> - [x] **Q1** Once all four `--try` rooms closed together after about 15 s. Why?
+>
+> ✅ 2026-10-19: T5–T7 (Zaviel). Q1: an old `--try` quitting late wrote the stop file and closed the new rooms; fixed (a new `--try` waits until the old rooms are gone). `cat ~/.clawd-room/try/stop` says which room ended a `--try`.
+>
+> > [!tip]- T5–T7 · how to run them
+> > 1. `./clawd-room.sh --try`, look at the four rooms for a minute.
+> > 2. Click into one, `?` to read the help, `?` again.
+> > 3. Hold `g` for two seconds and let go; the same with `m`.
+> > 4. `./clawd-room.sh --try close`.
+
+> [!example] Group C · WSL: sending and moving Clawds between rooms
+> - [x] **T8** `g` + an arrow → a Clawd walks to that gate (door, stairs, well), goes through and comes out in the room next to it.
+> - [x] **T9** `m` + an arrow → the picked Clawd packs its desk into a box (poof), carries it out and unpacks at a new desk in the other room.
+> - [x] **T10** The room it left does not blink; `m` + arrow while it carries the box → straight to the new gate.
+> - [x] **T11** `b` → your Clawds come back.
+>
+> ✅ 2026-10-19: T8–T11 (Zaviel).
+>
+> > [!tip]- T8–T11 · how to run them
+> > 1. `./clawd-room.sh --try`, wait for the gates (about 5 s).
+> > 2. In the top-left room hold `g` and press → (coffee shop), then ↓ (park).
+> > 3. `Tab` until a Clawd at a desk is picked, `m` + →, watch both rooms; pick a Clawd carrying a box, `m` + ↓.
+> > 4. `b`.
+
+> [!example] Group D · WSL: desks stay in their room
+> - [x] **T12** Opening the rooms one by one → a desk never jumps to another room.
+> - [x] **T13** Closing one room → only its Clawds show up elsewhere.
+>
+> ✅ 2026-10-19: T12, T13 (Zaviel).
+>
+> > [!tip]- T12–T13 · how to run them
+> > 1. With at least one real Claude Code session running: open **Clawd Room** (office), note the desks.
+> > 2. Open a second and a third (coffee shop, park) next to it: the first room's desks stay.
+> > 3. Quit the coffee shop: only its Clawds move.
+
+> [!example] Group E · WSL: the pixel editor with the mouse (T18–T22: the new colour panel)
+> - [ ] **T14** `./clawd-room.sh --edit window` → the editor opens in its own Clawd Room window in the middle of the screen; the window you typed in stays.
+> - [ ] **T15** Left click paints, right click erases, the palette picks a colour.
+> - [ ] **T16** A running room shows the change as you draw.
+> - [ ] **T17** `q` → asks save (S) or discard (D); D puts the picture back, in the room too.
+> - [ ] **T18** Colour field and hue bar: click or drag → the colour changes; on a file colour every pixel using it changes with it.
+> - [ ] **T19** From the body colour or ERASE, a click in the field → a new colour; **+ ADD** → it joins IN THIS FILE; painting with it works.
+> - [ ] **T20** ERASE → left click erases; PICK → the next click on the grid takes that pixel's colour; PAINT → back to the colour before.
+> - [ ] **T21** Click the hex code or a red / green / blue number → type a value, Enter.
+> - [ ] **T22** A short editor window → one line `? SHORTCUTS  Q QUIT`, nothing runs over the colours; `?` opens and closes the shortcuts box.
+>
+> > [!tip]- T14–T22 · how to run them
+> > 1. Start a room (`--try` or the profile; the office has the window).
+> > 2. In a WSL shell: `./clawd-room.sh --edit window`.
+> > 3. Paint a few pixels, erase some, pick another colour; watch the room's window.
+> > 4. `q`, then `D`: the window is back as before.
+> > 5. T18–T22: the new colour panel (like Figma). Compare with ![[2026-10-19 pixel editor, colour field palette.png|300]]
 
 ## Rooms and art ([[Rooms and Art]])
 - [ ] Each room (office, coffee shop, park) looks like the mockups at your window size

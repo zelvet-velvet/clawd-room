@@ -43,7 +43,11 @@ try_setup() {
   try="$HOME/.clawd-room/try"
   mkdir -p "$try"
   if [ "${2:-}" = close ]; then touch "$try/stop"; exit 0; fi
-  touch "$try/stop"; sleep 0.8; rm -f "$try/stop" "$try/events.jsonl"; rm -rf "$try/link" # (end a --try still running)
+  # end a --try still running: wait until its rooms are gone (a room takes a moment to quit; one quitting after the new
+  # rooms started would write the stop file again and close them)
+  touch "$try/stop"; i=0
+  while pgrep -f "try_room.sh .* $try/stop" >/dev/null 2>&1 && [ $i -lt 50 ]; do sleep 0.2; i=$((i+1)); done
+  rm -f "$try/stop" "$try/events.jsonl"; rm -rf "$try/link"
   if [ "${2:-}" = real ]; then ev="$HOME/.clawd-room/events.jsonl"
   else
     ev="$try/events.jsonl"
@@ -57,12 +61,20 @@ try_setup() {
 # WSL + Windows Terminal: --try opens the four windows with wt.exe (tools/try_wsl.py; --try --desktop N: on virtual desktop N,
 # without switching to it)
 if [ "${1:-}" = --try ] && [ -n "${WSL_DISTRO_NAME:-}" ] && command -v wt.exe >/dev/null 2>&1; then
-  try_setup "$@"
   desk=""
   for a in "$@"; do [ "$prev" = --desktop ] && desk="--desktop $a"; prev=$a; done
+  [ -n "$desk" ] && { python3 "$here/tools/try_wsl.py" --check $desk || exit 1; } # (before a running --try is ended)
+  try_setup "$@"
+  [ -z "$desk" ] && echo "clawd-room: opening 4 rooms and snapping them into a group: hands off the keyboard for a few seconds" >&2
   python3 "$here/tools/try_wsl.py" "$bin" "$try" "$ev" $desk || { touch "$try/stop"; exit 1; }
   echo "clawd-room: --try opened 4 rooms (quit one to close all, or ./clawd-room.sh --try close)" >&2
   exit 0
+fi
+# WSL + Windows Terminal: the pixel editor opens in its own Clawd Room window in the middle of the screen (like iTerm2);
+# the window you typed in stays. --here (or CLAWD_HERE=1) runs it in the current window.
+if [ "$editing" = 1 ] && [ "$here_only" = 0 ] && [ "${CLAWD_HERE:-0}" = 0 ] && [ -n "${WSL_DISTRO_NAME:-}" ] && [ -x "$bin" ] && command -v wt.exe >/dev/null 2>&1; then
+  python3 "$here/tools/wsl_open.py" "Clawd Room pixel editor" 70 78 "$bin" "$@" && { echo "clawd-room: the editor opened in its own window" >&2; exit 0; }
+  echo "clawd-room: could not open a window for the editor, running here" >&2
 fi
 if [ "$(uname -s)" = Darwin ] && [ "$TERM_PROGRAM" = iTerm.app ] && [ -z "$TMUX" ]; then
   dyn="$HOME/Library/Application Support/iTerm2/DynamicProfiles"

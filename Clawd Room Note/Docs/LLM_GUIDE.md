@@ -7,8 +7,6 @@ tags:
   - clawd-room
 sticker: lucide//bot
 ---
-# 🤖 LLM Guide
-
 Read this first if you are an AI assistant (Claude Code or similar) working on this repo. It is a short map; the details live in the notes it links to.
 
 ---
@@ -58,7 +56,7 @@ wt_settings.py      print-only: Windows Terminal settings that hide the tab bar 
 setup_profile.py    prints / writes (--apply) / removes (--remove) a "Clawd Room" Windows Terminal profile fragment (scroll bar hidden, generated pixel Clawd-in-a-room `.ico`; the 512 px picture is `clawd-room-512px.png` as tab icon); `--apply-global` edits settings.json (tab bar off, with backup)
 Clawd Room Note/    this Obsidian vault (open this folder in Obsidian; plugin code is not in git):
                       Docs/Dev Log.md (short dated entries) and this guide, Notes/ (one note per subject),
-                      Screenshots/ (pictures linked from the log, in subject folders), Animations/ (frames)
+                      Snapshots/ (the source pictures, in subject folders), Gallery/ (notes to browse them, written by tools/vault_gallery.py; not the repo's scratch gallery/), Animations/ (frames)
 CLAUDE.md           points here
 ```
 
@@ -75,7 +73,7 @@ Test hooks (environment): `CLAWD_EVENTS` (events file), `CLAWD_LINK_DIR` (link f
 - **Leave `room.py` alone** (reference only). Keep the state machine and its timings unless asked: 90 s sleep, 30 min stale, 2.5 s cheer, 0.8 s hold-working.
 - **Terminal hygiene.** Alternate screen, hidden cursor, one string written per frame, diff updates; restore the terminal on exit, Ctrl-C and exceptions.
 - **Windows are never moved to attach them** (the user decided). Gates sit on the room's walls, ceiling and floor (style A), so the two ends need not line up on screen. Do not add window snapping or following again.
-- **Window helpers (WSL: PowerShell; macOS: osascript + iTerm2, panes count as windows).** Only look at windows / panes whose title starts with `clawd-room `. Be DPI aware (real pixels). Send the font-size keys only to a window that already has the focus, and never type into another window. Windows Terminal's focus mode (command palette) dropped the window in tests: do not use it.
+- **Window helpers (WSL: PowerShell; macOS: osascript + iTerm2, panes count as windows).** Only look at windows / panes whose title starts with `clawd-room `. Be DPI aware (real pixels). Send the font-size keys only to a window that already has the focus, and never type into another window. The one exception (Zaviel, 2026-10-19): WSL `--try` snaps its first room window with Win + ← + ↑ (checking it has the focus) and picks the other three in Snap Assist, to make them a snap group; never Esc (it quits a room). Win + ← on a window already snapped left moves it to the other monitor. Windows Terminal's focus mode (command palette) dropped the window in tests: do not use it.
 - **The Clawd looks official**: flat `#CD6E58`, 14x8 sprite (8-wide torso, 2x2 arms, four 1-pixel legs), 1x1 eyes, no mouth.
 - **The look is style A** (one-point perspective, see [[Rooms and Art]]). **Visual changes start with rendered mockups** (a scratch program drawing with the room's own canvas code) that Zaviel picks from; send them as pictures, then build.
 - **Constants with a reason** (change only on request): attach gap 30 px (stays until 45), gates wait 1 s for still windows, a door needs 14 room pixels of shared floor, a hatch 21 room pixels of overlap, workspaces 24-40 px wide in rows 15 px apart, minimum terminal 44x20, 16 FPS; the rest are listed in [[Rooms and Art]] and [[Interaction]].
@@ -136,9 +134,9 @@ When the user sends **`CMD_SYNC`**, update the notes for every feature or change
 
 1. Find what changed: `git status`, `git log` since the previous `docs(vault): sync` commit, and the conversation so far.
 2. **[[Dev Log]]** (`Docs/Dev Log.md`): one short entry per change under its date (newest first): a title with the author's name in brackets, two to four plain bullets of what changed for the user, the branch if not merged, a link to the topic note. No code details, no rounds of back and forth; superseded attempts get one line.
-3. **Pictures:** put screenshots (the user's, renders from the real program, chosen mockups) in the subject folder under `Screenshots/` (`Office/`, `Coffee shop/`, `Park/`, `Gates (stairs, doors, wells)/`, `Interaction/`, `Engine and tools/`, `Platforms/`, `Style and mockups/`, `Old look/`; a new folder only if none fits) named `YYYY-MM-DD subject.png`; names stay unique across folders, so `![[name.png]]` finds them (a person's own: `... (Zaviel).png` / `... (William).png`, scaled to 1400 px) and embed them in the Dev Log entry (`![[name.png|250]]`).
+3. **Pictures:** put screenshots (the user's, renders from the real program, and **every mockup shown to Zaviel**, the picked one marked `(picked)` in its name) in the subject folder under `Snapshots/` (`Office/`, `Coffee shop/`, `Park/`, `Gates (stairs, doors, wells)/`, `Interaction (keys, moving)/`, `Engine and tools/`, `Platforms/`, `Style and mockups/`, `Old look/`; a new folder only if none fits) named `YYYY-MM-DD subject.png`; names stay unique across folders, so `![[name.png]]` finds them; then `python3 tools/vault_gallery.py` rewrites the browsing notes in `Gallery/` (one per subject and `Gallery index`; each picture's status, current / replaced (by which picture) / not picked, is a row in `_Meta/Snapshot status.md`: add one for a new picture and mark what it replaces; never edit them by hand, and never write a note named like its folder: those are make.md's folder notes) (a person's own: `... (Zaviel).png` / `... (William).png`, scaled to 1400 px) and embed them in the Dev Log entry (`![[name.png|250]]`).
 4. **Topic notes** (`Notes/`): update the note(s) the change belongs to so they describe how things work *now* (rewrite, do not append history; use mermaid diagrams (flowcharts with `%%{init: {"flowchart": {"defaultRenderer": "elk"}}}%%`, state and sequence diagrams) and callouts where they explain better than text): [[Rooms and Art]], [[Interaction]], [[Platforms and Windows]], [[Engine and Tests]]. Constants go in the tables there.
-5. **[[Test Checklist]]:** add what still has to be checked by eye to the **test queue** at the top: one big `> [!todo]+ Group` callout per group (e.g. a platform), a box per test with its checks as indented sub-boxes, and at its end a foldable `> > [!example]- How to test` with the steps for each test; boxes use the legend in [[Checkbox Style]] (`[/]` partly, `[!]` fails, `[?]` unsure, `[-]` dropped, `[>]` later, `[i]` a note); drop checks for things that were replaced. Do not tick anything; only a person does that. Fully ticked tests move down under their subject.
+5. **[[Test Checklist]]:** add what still has to be checked by eye to the **test queue** at the top: one `> [!example] Group X · subject` callout per group; each test a box with the next free ID, `> - [ ] **T18** what to do → what should happen.` (IDs count on across the whole note and never change; open questions `**Q2**`); after checking, a `> ✅ date: what was seen (who).` line; the steps in a folded `> > [!tip]- T18–T20 · how to run them` with numbered steps; boxes use the legend in [[Checkbox Style]] (`[/]` partly, `[!]` fails, `[?]` unsure, `[-]` dropped, `[>]` later, `[i]` a note); drop checks for things that were replaced. Do not tick anything; only a person does that. Fully ticked tests move down under their subject.
 6. Update `README.md` if commands, flags or keys changed, and this guide if a rule changed.
 7. Commit and push as `docs(vault): sync` on its own branch, open a pull request, then finish with a short list of what was added.
 
@@ -146,6 +144,7 @@ When the user sends **`CMD_SYNC`**, update the notes for every feature or change
 ## 🗣️ Conventions
 
 - Call the user by name (**Zaviel** or **William**, from `git config user.name`). Reply in the language they write in; the notes stay English.
+- **Notes:** no `# Title` heading inside a note (Obsidian shows the file name as its title); each note in `Notes/` and `Gallery/` has a make.md `sticker:` in its frontmatter (a lucide icon, `lucide//palette`). Never write a note named like its folder (make.md's folder notes).
 - Pixel text is upper case only (the 3x5 font has no lower case); keep UI strings short.
 - Times in the events file are epoch seconds; `--at TS` pretends "now" is TS.
 - Terminal sizes are `COLSxROWS`; a cell is 1 room pixel wide and 2 high, so room pixels are square on screen.

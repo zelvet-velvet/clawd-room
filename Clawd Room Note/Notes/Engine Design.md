@@ -4,8 +4,9 @@ tags:
   - clawd-room
   - engine
   - plan
+sticker: lucide//drafting-compass
 ---
-# 🧱 Engine Design (agreed 2026-10-18; all four steps built)
+*Agreed 2026-10-18; all four steps built.*
 
 > [!abstract] In short
 > Everything on screen becomes an **item** in one list, drawn in **seven layers**, placed by a **placer** that keeps items apart. Rooms are described as **data**, small props are **sprite files** you edit in a **pixel editor inside the room**, and one **animator** moves doors, gates and props. An **overlap check**, a **debug overlay** and a **gallery** come with it. Today's drawing is in [[Engine and Tests]]; the look in [[Rooms and Art]].
