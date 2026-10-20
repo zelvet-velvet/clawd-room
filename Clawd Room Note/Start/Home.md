@@ -19,7 +19,7 @@ sticker: lucide//house
 | `Start/` | this page, [[LLM Guide]], [[Collaboration]] | people |
 | `Review/` | [[Dev Status]] (today, ongoing, ideas, done), [[Dev Log]] (the index of days), `Log/<year>/<month>/<week>/` (one note per day; *Open today's daily note* makes today's), [[Test Checklist]] (the test queue T1, T2 …) | people |
 | `Design/` | how things work **now**: [[Rooms and Art]], [[Interaction]], [[Platforms and Windows]], [[Engine and Tests]], [[Engine Design]], [[Animations]] | people |
-| `Gallery/` | pictures and animations to browse: [[Gallery index]] | `tools/vault_gallery.py` (never by hand) |
+| `Gallery/` | pictures and animations to browse: [[Index\|Gallery index]] | `tools/vault_gallery.py` (never by hand) |
 | `Assets/` | the files only: `Snapshots/<subject>/` pictures, `Animations/` GIFs and sheets | people (pictures), `--build-art` (animations) |
 | `_Meta/` | vault helpers: [[Checkbox Style]], [[Snapshot status]] | people |
 
@@ -27,7 +27,7 @@ sticker: lucide//house
 
 - **What changed:** the day's note in `Review/Log/` (linked from the [[Dev Log]]): short entries, a picture for anything visual, the branch.
 - **Does it work:** the [[Test Checklist]]: tests by ID (`T14`), ticked with a name and date.
-- **How does it look:** the [[Gallery index]]: every picture marked ✅ current, ♻️ replaced or ❌ not picked.
+- **How does it look:** the [[Index|Gallery index]]: every picture marked ✅ current, ♻️ replaced or ❌ not picked.
 - **The details:** the pull request on GitHub and `git log`.
 
 ## ✍️ Writing here

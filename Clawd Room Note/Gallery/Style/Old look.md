@@ -3,7 +3,7 @@ title: Gallery · Old look
 tags:
   - clawd-room
   - screenshots
-up: "[[Gallery index]]"
+up: "[[Index]]"
 sticker: lucide//history
 ---
 Pictures of how it looked before style A, newest first: ✅ current (open), ♻️ replaced and ❌ not picked (folded; the status is in [[Snapshot status]]). The files are the source in `Assets/Snapshots/Old look/`; this note is written by `tools/vault_gallery.py` (do not edit it by hand: add a picture, then run the tool).

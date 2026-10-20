@@ -8,7 +8,12 @@ sticker: lucide//activity
 > [!important] For AI assistants
 > Read [[LLM Guide]] before any `CMD_` or status update. This note is kept by `CMD_SYNC` / `CMD_ROLLOVER` / `CMD_NOTES_SYNC`; the day notes in `Review/Log/` by `CMD_JOURNAL`.
 
-## 🚀 Today's Progress (2026-10-19)
+## 🚀 Today's Progress (2026-10-20)
+- **WSL Test Queue Done**: T16 – T23 pass, so all of [[Test Checklist]]'s queue (T1 – T23) passes on WSL.
+- **Pull Requests**: #6 (WSL work) and #7 (vault layout) merged, their branches deleted.
+- **Designs Picked** (mockups, [[2026-10-20]]): the picked Clawd's corners and spotlight; the bar below the room with tags on the gates; a settings file and panel; gates appearing as a construct of real parts (or simple); a railed stair well; no tree behind the park's building.
+
+## 📅 Yesterday's Progress (2026-10-19)
 - **WSL Up to Date**: All tests pass on WSL; the build uses fused multiply-add on both platforms, so the Mac snapshots match.
 - **`--try` on WSL**: Four linked rooms open at once and become a Windows snap group (first room snapped with Win+←+↑, the others picked in Snap Assist, about 2.3 s); `--try --desktop N` for another virtual desktop; a `--try` that closed itself (an old one quitting late) fixed.
 - **5 pt Profile**: The Clawd Room profile is 5 pt and a room opens as its screen quarter, like iTerm2 (`setup_profile.py --update`).
@@ -18,25 +23,22 @@ sticker: lucide//activity
 - **Pull Requests**: #1 – #4 merged (collaboration docs, `--try` stop reason, test queue, screenshot folders); `feat/style-a` and `feat/camera-gates` deleted.
 - **Vault**: Reorganised (Start, Review, Design, Gallery, Assets); one Dev Log note per day in year / month / week folders with a Day note template; snapshots marked current / replaced / not picked; this status note and the `CMD_` set.
 
-## 📅 Yesterday's Progress (2026-10-18)
-- **Style A**: The three rooms in one-point perspective, with stairs to a half floor, a stair well, doors, and the park as a city plaza with buildings.
-- **Engine**: Scene and layers, the placer (overlaps 107 → 0), props and rooms as text files with a pixel editor, an animator for gates and doors.
-- **`--try` on iTerm2**: Four linked rooms in one command with made-up Clawds.
-- **Gates Stay Put**: Gates no longer come and go between linked rooms; `g` + an arrow picks where to send a Clawd.
-- **iTerm2 Profile**: A fixed 4x4 pt room pixel; the profile starts the room in a screen quarter.
-
 ---
 
 ## ⏳ Ongoing
 
 ### 🎨 Rooms and art
+- [ ] **Railed Stair Well**: Build design A (a bigger opening, steps right to left, a guard rail); no big tree in the park when it has a way up ([[2026-10-20]]).
+- [ ] **Gates Appear**: A setting: simple (the parts in turn, nothing popping in at the end) or construct (real parts fly into a blue outline, 1.4 s).
 - [ ] **README Look**: `README.md` still describes the old flat look in places (banner, gates at the window edge).
 
 ### 🎮 Interaction
+- [ ] **Picked Clawd**: Yellow corners and a spotlight (60 in 100) that fade in and out on Tab.
+- [ ] **Bar Below the Room, Gate Tags**: The room above a one-line bar; while `g` / `m` is held a tag centred over each gate (arrow style still to pick).
+- [ ] **Settings**: `~/.clawd-room/settings.conf` and a panel beside the room on `.`.
 - [ ] **Moving, Step 3**: Drag a Clawd with the mouse onto a door, the stairs or the well. (Settled: `--try real` stays split; uneven shares are fine.)
 
 ### 🖥️ Platforms
-- [>] **WSL Test Queue**: Group E, the pixel editor: T16 – T23 left (T14, T15 pass) in [[Test Checklist]].
 - [ ] **Mac Check**: Run `make -C c test` on the Mac after the fused multiply-add change (it should still match).
 - [ ] **Blocked Writes**: The room can block writing when the terminal stops reading (seen with iTerm2 in full screen).
 - [ ] **Windows Terminal Panes**: Split panes are not seen separately yet.
@@ -46,7 +48,7 @@ sticker: lucide//activity
 - [ ] **Less CPU**: Skip frames when nothing moves; stop drawing (FPS 0) when the window is covered, minimised or on another desktop; later dirty rects. (The terminal output is already diffed and written once per frame.)
 
 ### 🗂️ Repo and vault
-- [>] **Pull Requests**: #5 (PR icon), #6 (WSL work), #7 (vault layout, after #6) waiting for Zaviel.
+- [>] **Pull Requests**: #5 (PR icon) and #9 (today's mockups in the vault, gallery by category, `tools/mock`) waiting for Zaviel; #6 and #7 merged.
 - [ ] **William's Setup**: Accept the invite, clone, Templater settings ([[Collaboration]]).
 
 ## 💡 Ideas
@@ -69,6 +71,7 @@ sticker: lucide//activity
 - **Bottom Bar**: Status and the `g` / `m` hint in the room's pixel font.
 
 ### 🖥️ Platforms
+- **WSL Tests**: Every check in the WSL test queue passes (T1 – T23): profile, rooms, bar, sending and moving, desks, the pixel editor.
 - **C Room**: The terminal room in C11 (a tenth of Python's CPU and memory).
 - **macOS + iTerm2**: Builds and runs; window helper with osascript; fixed pixel size profile; `--try`.
 
