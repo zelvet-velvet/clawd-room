@@ -370,7 +370,7 @@ typedef struct { int gx, gy, z, px, hy, hw; } Layout; /* the grid's origin and z
 typedef struct { const char *key, *what; } Help;
 static const Help H_MOUSE[] = {{"LEFT", "PAINT"}, {"RIGHT", "ERASE"}, {"ALT+LEFT", "PICK A COLOUR"}};
 static const Help H_EDIT[] = {{"CTRL+Z", "UNDO"}, {"CTRL+Y", "REDO"}, {"[ ]", "OTHER SPRITE"}, {"TAB", "OTHER FILE"}, {"B", "FILL"}, {"+ -", "ZOOM"}, {"#", "TYPE A COLOUR"}};
-static const Help H_ANIM[] = {{"< >", "FRAME"}, {"SPACE", "PLAY"}, {"O", "ONION SKIN"}, {"F", "NEW FRAME"}, {"X X", "DELETE FRAME"}};
+static const Help H_ANIM[] = {{"LEFT RIGHT", "FRAME"}, {"SPACE", "PLAY"}, {"O", "ONION SKIN"}, {"F", "NEW FRAME"}, {"X X", "DELETE FRAME"}};
 #define NH(a) ((int)(sizeof a / sizeof a[0]))
 static const Help H_SIZE[] = {{"W", "WIDER"}, {"N", "NARROWER"}, {"T", "TALLER"}, {"S", "SHORTER"}, {"Q", "QUIT (S SAVE / D DISCARD)"}};
 static int help_row(Canvas *cv, int y, const char *title, const Help *h, int n, int W) { /* returns the rows it took */
@@ -554,7 +554,7 @@ static void draw_timeline(Canvas *cv, const Ed *e, double now, int preview) {
     const char *sp = e->speed < 0.75 ? "0.5X" : e->speed > 1.5 ? "2X" : "1X";
     button(cv, bx, y, sp, 0, R_SPEED, 0); bx += text_width(sp) + 9;
     button(cv, bx, y, "ONION", e->onion, R_ONION, 0); bx += text_width("ONION") + 9;
-    const char *hint = props ? "< > FRAME  F NEW  X X DELETE" : "< > FRAME";
+    const char *hint = props ? "ARROWS FRAME  F NEW  X X DELETE" : "ARROWS FRAME";
     if (bx + text_width(hint) + 4 <= cv->w) canvas_text(cv, bx + 2, y + 2, hint, RGB(150, 150, 170));
     if (th < 15 + e->h) return; /* (short window: the buttons only) */
     int px = cv->w; /* while it plays and the panel has no room for the real-size view: it is here, at the right end */
@@ -612,9 +612,16 @@ static void draw(const Ed *e, Canvas *cv) {
         grid_of(&e->f, ofr[(at + on - 1) % on], og[0], &ow[0], &oh[0]);
         if (on > 2) grid_of(&e->f, ofr[(at + 1) % on], og[1], &ow[1], &oh[1]);
     }
+    static char gg[MAXH][MAXW + 1]; /* what the grid shows: the open frame, or while PLAY is on the frame playing */
+    memcpy(gg, e->g, sizeof gg);
+    if (e->playing) {
+        Pose pp; int ip, pw, ph, psp = play_frame(e, now, &pp, &ip);
+        if (psp >= 0) { grid_now(e, psp, gg, &pw, &ph); if (pw != e->w || ph != e->h) memcpy(gg, e->g, sizeof gg); }
+        oh[0] = oh[1] = 0; /* (no onion skin while it plays) */
+    }
     for (int y = 0; y < e->h; y++) for (int x = 0; x < e->w; x++) { /* the grid, see-through as a checker */
         int tr, tp = 1, tn = 1;
-        Rgb c = colour_of(&e->f, e->g[y][x], &tr);
+        Rgb c = colour_of(&e->f, gg[y][x], &tr);
         if (tr && y < oh[0] && x < ow[0]) colour_of(&e->f, og[0][y][x], &tp);
         if (tr && y < oh[1] && x < ow[1]) colour_of(&e->f, og[1][y][x], &tn);
         Rgb tint = !tp && !tn ? RGB(170, 120, 200) : !tp ? RGB(230, 90, 90) : RGB(90, 150, 240);
@@ -868,6 +875,7 @@ int editor_run(const char *dir, const char *name) {
                         e.picking = 0;
                         continue;
                     }
+                    if (r && r->kind == R_GRID && e.playing && !motion && btn != 3) e.playing = 0; /* (a click on the grid stops PLAY: you draw on the open frame) */
                     if (r && r->kind == R_GRID && e.filling && (btn == 0 || btn == 2)) { /* FILL: one click, not a drag */
                         if (motion) continue;
                         char ch = '.';
@@ -912,7 +920,12 @@ int editor_run(const char *dir, const char *name) {
                     }
                     continue;
                 }
-                if (in[i + 1] == '[' && i + 2 < nin) { i += 3; continue; } /* (arrows and the like: not used) */
+                if (in[i + 1] == '[' && i + 2 < nin && (in[i + 2] == 'C' || in[i + 2] == 'D')) { /* right / left arrow: the frame after / before */
+                    int fr[128], n = anim_frames(&e.f, e.sp, fr, 128), at = frame_index(fr, n, e.sp);
+                    sprite_open(&e, fr[(at + (in[i + 2] == 'C' ? 1 : n - 1)) % n]); e.msg[0] = 0;
+                    i += 3; continue;
+                }
+                if (in[i + 1] == '[' && i + 2 < nin) { i += 3; continue; } /* (up / down and the like: not used) */
                 i += 1; continue;
             }
             char ch = in[i++];
