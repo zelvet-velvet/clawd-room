@@ -49,7 +49,7 @@ install_hooks.py    prints / applies / removes the hook in ~/.claude/settings.js
 clawd-room.sh       the launcher the profile calls: builds c/ when needed, then runs c/clawd-room
 c/                  the room, in C: canvas (+ font_data.h, the 3x5 pixel font), sprites, clawd (poses), persp (the perspective), theme (the rooms, workspaces, gates, signs), draw (layout, frame, camera view, debug overlay), scene (items on layers, overlap measuring), place (the placer), anim (eased values), editor (the pixel editor), gallery (--check / --gallery), room (state machine, visits, moves), camera, rng, tail (events), link (windows), win (window helpers: PowerShell on WSL, osascript on macOS iTerm2; scripts in ps_scripts.h / mac_scripts.h), ui (bottom bar, menus, sizes), app (main loop), fixture (test scenes), art (sprite files, PNG, GIF)
 c/tests/expected/   snapshots the tests compare with (from the C program since style A, 2026-10-18)
-sprites/            editable Clawd frames, items and props (text grids; reloaded while the room runs; edit with --edit NAME)
+sprites/            the default Clawd frames, items and props (text grids; reloaded while the room runs; edit with --edit); ui.txt: the editor's own icons. A person's own edits go to ~/.clawd-room/sprites/ (only what differs), shown over these; MAKE DEFAULT in the picker writes them here
 rooms/              wall plans per room (what the placer puts on the walls; reloaded while the room runs)
 gallery/            not in git: contact sheets (make -C c gallery) and gallery/mock/ (scratch mockup programs, a test worktree wt/)
 tools/              test.sh (snapshots), fixtures/ + scenarios/ (test scenes), pty_smoke.py, link_smoke.py, move_smoke.py, split_smoke.py, win_smoke.py, place_windows.py (test helper for your own windows), demo_events.py + try_room.sh (--try)
@@ -67,12 +67,13 @@ Clawd Room Note/    this Obsidian vault (open this folder in Obsidian; plugin co
 CLAUDE.md           points here
 ```
 
-Test hooks (environment): `CLAWD_EVENTS` (events file), `CLAWD_LINK_DIR` (link folder), `CLAWD_SIZE_LOG` (logs terminal size, gate positions and who the camera follows), `CLAWD_STATUS_LOG` (the bottom bar's text: it is pixels, so the pty tests read it here), `CLAWD_SHOWN_LOG` (which sessions a linked room shows).
+Test hooks (environment): `CLAWD_EVENTS` (events file), `CLAWD_MY_SPRITES` (your own sprites' folder; the tests use none), `CLAWD_LINK_DIR` (link folder), `CLAWD_SIZE_LOG` (logs terminal size, gate positions and who the camera follows), `CLAWD_STATUS_LOG` (the bottom bar's text: it is pixels, so the pty tests read it here), `CLAWD_SHOWN_LOG` (which sessions a linked room shows).
 
 ---
 ## ⚠️ Rules that prevent breakage
 
 - **Privacy of the events file.** Keep `{"t","sid","ev","cwd","tool"}`. No prompts, tool input/output or full paths, anywhere (hook, link messages, logs). Link messages carry a type and small values only.
+- **Nothing private in the repo, notes or pictures** (it is to become public, notes included). No real folder or project names from anyone's sessions (test data uses made-up ones: `web-shop`, `api-server`), no work details, no screenshots showing a real desktop, other apps or real session names, no secrets or personal paths in code. Before adding a screenshot of your own, look at what it shows.
 - **No dependencies.** The room is C11 and libc/libm only; the Python tools use the standard library only. No pip installs. Only `room.py` uses pygame (in `.venv`).
 - **No network, no background daemons.** Writes go only to the project folder and `~/.clawd-room/`; the one exception is `setup_profile.py --apply`, which the user runs by hand and which writes a single fragment file under Windows Terminal's `Fragments\clawd-room\` (`settings.json` only via the explicit `--apply-global`, with a `.clawd-room.bak` backup). The `powershell.exe` children belong to the room and must be stopped when it exits.
 - **Do not edit `~/.claude/settings.json` yourself.** Tell the user to run `python3 install_hooks.py` (prints the change); `--apply` only if they say so. The installed hook calls `hook.py` by its full path, so the repo must not move: on Zaviel's WSL machine it calls `python3 ~/clawd-room/hook.py`, so the **symlink `~/clawd-room` -> the Desktop folder must stay**.

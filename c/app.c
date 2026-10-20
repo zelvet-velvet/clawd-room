@@ -37,7 +37,7 @@ static const char *RATIO_CHOICES[] = {"auto", "3:1", "2:1", "16:9", "4:3", "1:1"
 typedef struct {
     char events[512];
     int has_at; double at;
-    const char *room, *theme, *edit; /* (edit: --edit NAME, the pixel editor) */
+    const char *room, *theme, *edit, *edit_check; /* (edit: --edit NAME, the pixel editor; edit_check: is there such a NAME) */
     char ratio[8];
     int scale, zoom, room_size, no_auto, no_detect, no_split;
     const char *dump;
@@ -170,16 +170,20 @@ static int in_ids(char ids[][40], int n, const char *id) { for (int i = 0; i < n
 
 int editor_run(const char *dir, const char *name); /* editor.c */
 int editor_list(const char *dir);                   /* ... the names it can open */
+int editor_find(const char *dir, const char *name, int *which); /* ... is there such a sprite or animation (else: the error, the closest names) */
 
 /* ---- the sprite files, reloaded when they change ------------------------------------------------------------------ */
-static struct { char dir[512]; SpriteFile *f[3]; time_t mt[3]; double next; } g_sw;
+static struct { char dir[512]; SpriteFile *f[3]; time_t mt[3], mmt[3]; double next; } g_sw; /* (mmt: your own file's) */
 static const char *const SW_NAME[3] = {"clawd.txt", "items.txt", "props.txt"};
 static time_t mtime_of(const char *path) { struct stat st; return stat(path, &st) == 0 ? st.st_mtime : 0; }
 void sprites_watch(const char *dir, SpriteFile *frames, SpriteFile *items, SpriteFile *props) {
     snprintf(g_sw.dir, sizeof g_sw.dir, "%s", dir);
     g_sw.f[0] = frames; g_sw.f[1] = items; g_sw.f[2] = props;
     char path[700];
-    for (int i = 0; i < 3; i++) { snprintf(path, sizeof path, "%s/%s", dir, SW_NAME[i]); g_sw.mt[i] = mtime_of(path); }
+    for (int i = 0; i < 3; i++) {
+        snprintf(path, sizeof path, "%s/%s", dir, SW_NAME[i]); g_sw.mt[i] = mtime_of(path);
+        snprintf(path, sizeof path, "%s/%s", sprites_mine_dir(), SW_NAME[i]); g_sw.mmt[i] = mtime_of(path);
+    }
 }
 int sprites_reload_changed(void) {
     if (!g_sw.dir[0] || wall() < g_sw.next) return 0;
@@ -187,12 +191,14 @@ int sprites_reload_changed(void) {
     int any = 0;
     char path[700];
     for (int i = 0; i < 3; i++) {
+        char mine[700];
         snprintf(path, sizeof path, "%s/%s", g_sw.dir, SW_NAME[i]);
-        time_t m = mtime_of(path);
-        if (m == g_sw.mt[i]) continue;
-        g_sw.mt[i] = m;
+        snprintf(mine, sizeof mine, "%s/%s", sprites_mine_dir(), SW_NAME[i]);
+        time_t m = mtime_of(path), mm = mtime_of(mine);
+        if (m == g_sw.mt[i] && mm == g_sw.mmt[i]) continue;
+        g_sw.mt[i] = m; g_sw.mmt[i] = mm;
         sprites_free(g_sw.f[i]);
-        *g_sw.f[i] = sprites_load(path); /* (same struct: the drawing code keeps its pointer) */
+        *g_sw.f[i] = sprites_load_layered(path, mine); /* (same struct: the drawing code keeps its pointer; your own over the defaults) */
         any = 1;
     }
     return any;
@@ -851,7 +857,7 @@ int app_main(int argc, char **argv) {
         {"up", 1, 0, 'U'}, {"down", 1, 0, 'D'}, {"no-split", 0, 0, 'S'}, {"ratio", 1, 0, 'x'}, {"size", 1, 0, 'z'}, {"font", 1, 0, 'f'},
         {"profile-font", 1, 0, 'p'}, {"scale", 1, 0, 'c'}, {"no-auto", 0, 0, 'A'}, {"no-detect", 0, 0, 'N'}, {"near", 1, 0, 'n'},
         {"dump", 1, 0, 'd'}, {"build-art", 0, 0, 'B'}, {"export-sprites", 0, 0, 'X'}, {"force", 0, 0, 'F'}, {"add", 0, 0, 'P'},
-        {"list-windows", 0, 0, 'W'}, {"zoom", 1, 0, 'Z'}, {"room-size", 1, 0, 'Y'}, {"help", 0, 0, 'h'}, {"edit", 1, 0, 'E'}, {0, 0, 0, 0}};
+        {"list-windows", 0, 0, 'W'}, {"zoom", 1, 0, 'Z'}, {"room-size", 1, 0, 'Y'}, {"help", 0, 0, 'h'}, {"edit", 1, 0, 'E'}, {"edit-check", 1, 0, 'K'}, {0, 0, 0, 0}};
     int o, font_given = 0;
     while ((o = getopt_long(argc, argv, "h", opts, NULL)) != -1) {
         switch (o) {
@@ -868,6 +874,7 @@ int app_main(int argc, char **argv) {
         case 'c': a.scale = atoi(optarg); break;
         case 'Z': a.zoom = atoi(optarg); break;
         case 'E': a.edit = optarg; break;
+        case 'K': a.edit_check = optarg; break;
         case 'Y': a.room_size = -1; for (int i = 0; i < N_SIZES; i++) if (!strcmp(optarg, SIZE_KEY[i])) a.room_size = i; break;
         case 'A': a.no_auto = 1; break;
         case 'N': a.no_detect = 1; break;
@@ -897,15 +904,17 @@ int app_main(int argc, char **argv) {
         if (n > 0) { dirbuf[n] = 0; char *s = strrchr(dirbuf, '/'); if (s) { *s = 0; s = strrchr(dirbuf, '/'); if (s) { strcpy(s, "/sprites"); dir = dirbuf; } } }
         if (!dir) dir = "../sprites";
     }
-    snprintf(path, sizeof path, "%s/clawd.txt", dir);
-    SpriteFile frames = sprites_load(path), items;
-    snprintf(path, sizeof path, "%s/items.txt", dir);
-    items = sprites_load(path);
+    char mine[700]; /* (your own sprites over the defaults: ~/.clawd-room/sprites) */
+    snprintf(path, sizeof path, "%s/clawd.txt", dir); snprintf(mine, sizeof mine, "%s/clawd.txt", sprites_mine_dir());
+    SpriteFile frames = sprites_load_layered(path, mine), items;
+    snprintf(path, sizeof path, "%s/items.txt", dir); snprintf(mine, sizeof mine, "%s/items.txt", sprites_mine_dir());
+    items = sprites_load_layered(path, mine);
     static SpriteFile props;
-    snprintf(path, sizeof path, "%s/props.txt", dir);
-    props = sprites_load(path);
+    snprintf(path, sizeof path, "%s/props.txt", dir); snprintf(mine, sizeof mine, "%s/props.txt", sprites_mine_dir());
+    props = sprites_load_layered(path, mine);
     theme_set_props(&props);
     sprites_watch(dir, &frames, &items, &props);
+    if (a.edit_check) { int which; int er = editor_find(dir, a.edit_check, &which); sprites_free(&frames); sprites_free(&items); sprites_free(&props); return er; } /* (clawd-room.sh, before it opens a window) */
     if (a.edit && !strcmp(a.edit, "list")) { int er = editor_list(dir); sprites_free(&frames); sprites_free(&items); sprites_free(&props); return er; } /* what --edit can open */
     if (a.edit) { int er = editor_run(dir, strcmp(a.edit, "-") ? a.edit : NULL); sprites_free(&frames); sprites_free(&items); sprites_free(&props); return er; } /* the pixel editor */
     { char rd[600]; snprintf(rd, sizeof rd, "%s", dir); char *sl = strrchr(rd, '/'); if (sl) strcpy(sl, "/rooms"); else strcpy(rd, "../rooms"); theme_set_rooms_dir(rd); } /* (rooms/ next to sprites/) */
