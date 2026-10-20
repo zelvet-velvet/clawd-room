@@ -11,6 +11,7 @@ sticker: lucide//activity
 ## 🚀 Today's Progress (2026-10-20)
 - **WSL Test Queue Done**: T16 – T23 pass, so all of [[Test Checklist]]'s queue (T1 – T23) passes on WSL.
 - **Pull Requests**: #6 (WSL work) and #7 (vault layout) merged, their branches deleted.
+- **Made-Up Test Names**: The simulator and its test data used real work folder names; now made up (`web-shop`, `api-server` …). Rule added: nothing private in the repo, notes or pictures.
 - **Designs Picked** (mockups, [[2026-10-20]]): the picked Clawd's corners and spotlight; the bar below the room with tags on the gates; a settings file and panel; gates appearing as a construct of real parts (or simple); a railed stair well; no tree behind the park's building.
 
 ## 📅 Yesterday's Progress (2026-10-19)
@@ -49,6 +50,7 @@ sticker: lucide//activity
 
 ### 🗂️ Repo and vault
 - [>] **Pull Requests**: #5 (PR icon) and #9 (today's mockups in the vault, gallery by category, `tools/mock`) waiting for Zaviel; #6 and #7 merged.
+- [ ] **Go Public** (decided 2026-10-20: code and notes public together): at a quiet moment with no open PRs, look at the six `(Zaviel)` screenshots; rewrite the old fixture names out of the history (`git filter-repo`; everyone re-clones once); add a `LICENSE` (MIT) and an unofficial-fan-project line to the README (Clawd is Anthropic's character); make the repo public; then **restrict merging**: protect `main` (no direct pushes, changes only through a pull request, Zaviel's approval to merge).
 - [ ] **William's Setup**: Accept the invite, clone, Templater settings ([[Collaboration]]).
 
 ## 💡 Ideas
