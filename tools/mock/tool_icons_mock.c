@@ -21,14 +21,37 @@ static Rgb icol(char ch) {
 static void icon(Canvas *c, int x, int y, int which, int z) {
     for (int yy = 0; yy < 9; yy++) for (int xx = 0; xx < 9; xx++) if (ICON[which][yy][xx] != '.') canvas_rect(c, x + xx * z, y + yy * z, z, z, icol(ICON[which][yy][xx]));
 }
-/* a square button with an icon; on: lighter and framed in yellow */
+/* the tile behind an icon: 0 flat (framed in yellow when on), 1 a rounded key cap with light on top and a shadow under
+ * it (pressed in when on), 2 a soft tint of the tool's own colour (bright when on, a yellow bar under it), 3 a rounded
+ * tile, on: a yellow ring with a soft glow */
+static int g_bg;
+static Rgb tint(int which) { static const Rgb T[5] = {{240, 196, 90}, {240, 150, 170}, {230, 90, 80}, {110, 170, 250}, {110, 170, 250}}; return T[which]; }
+static void round_rect(Canvas *c, int x, int y, int w, int h, Rgb k) { canvas_rect(c, x + 1, y, w - 2, h, k); canvas_rect(c, x, y + 1, w, h - 2, k); }
+static void tile(Canvas *c, int x, int y, int w, int h, int which, int on) {
+    if (g_bg == 0) { canvas_rect(c, x, y, w, h, on ? RGB(90, 90, 120) : RGB(34, 34, 44)); if (on) frame(c, x, y, w, h, C_YELLOW); return; }
+    if (g_bg == 1) {
+        int dy = on ? 1 : 0;
+        round_rect(c, x, y + 1, w, h, RGB(14, 14, 20));                                   /* (its shadow) */
+        round_rect(c, x, y + dy, w, h - dy, on ? RGB(70, 72, 100) : RGB(52, 54, 70));
+        canvas_rect(c, x + 2, y + dy, w - 4, 1, on ? RGB(110, 112, 145) : RGB(86, 88, 110)); /* (light on its top edge) */
+        if (on) { canvas_rect(c, x + 2, y + h, w - 4, 1, C_YELLOW); }
+        return;
+    }
+    if (g_bg == 2) {
+        Rgb t = tint(which), k = on ? RGB((t.r + 2 * 40) / 3, (t.g + 2 * 40) / 3, (t.b + 2 * 52) / 3) : RGB((t.r + 6 * 30) / 7, (t.g + 6 * 30) / 7, (t.b + 6 * 40) / 7);
+        round_rect(c, x, y, w, h, k);
+        if (on) canvas_rect(c, x + 2, y + h + 1, w - 4, 1, C_YELLOW);
+        return;
+    }
+    if (on) { round_rect(c, x - 2, y - 2, w + 4, h + 4, RGB(60, 54, 30)); round_rect(c, x - 1, y - 1, w + 2, h + 2, C_YELLOW); } /* (a soft glow, a ring) */
+    round_rect(c, x, y, w, h, on ? RGB(64, 64, 88) : RGB(40, 40, 54));
+}
 static int ibutton(Canvas *c, int x, int y, int which, int on, const char *label, const char *key) {
     int w = 13, h = 13;
-    canvas_rect(c, x, y, w, h, on ? RGB(90, 90, 120) : RGB(34, 34, 44));
-    if (on) frame(c, x, y, w, h, C_YELLOW);
+    tile(c, x, y, w, h, which, on);
     icon(c, x + 2, y + 2, which, 1);
     if (key) { canvas_rect(c, x + w - 5, y + h - 6, 5, 6, RGB(200, 200, 215)); canvas_text(c, x + w - 4, y + h - 6, key, RGB(20, 20, 28)); }
-    if (label) canvas_text(c, x + (w - text_width(label)) / 2, y + h + 2, label, on ? C_WHITE : C_GREY);
+    if (label) canvas_text(c, x + (w - text_width(label)) / 2, y + h + 3, label, on ? C_WHITE : C_GREY);
     return w + (label ? 7 : 3);
 }
 static Ed E;
@@ -64,6 +87,23 @@ int main(int argc, char **argv) {
     const char *o = argc > 1 ? argv[1] : "out/11-tool-icons", *dir = argc > 2 ? argv[2] : "sprites";
     int W = 300, H = 140;
     static const char *T[3] = {"A  ICONS ONLY (NAME UNDER THE GRID ON HOVER)", "B  ICONS WITH NAMES", "C  ICONS WITH THEIR KEY"};
+    if (argc > 3) { /* the backgrounds for B, picked: four tiles */
+        static const char *BG[4] = {"B0  FLAT (AS BEFORE)", "B1  KEY CAPS", "B2  THE TOOL'S OWN TINT", "B3  ROUNDED, A GLOWING RING"};
+        Canvas sheet = canvas_new(2 * (130 + 8) + 8, 2 * 52 + 8, RGB(24, 24, 30));
+        for (int b = 0; b < 4; b++) {
+            g_bg = b;
+            Canvas cv = editor_with(dir, 1, 0, W, H);
+            Layout L = layout(&E, W, H);
+            int sx = 8 + (b % 2) * 138, sy = 6 + (b / 2) * 52;
+            char t[48]; snprintf(t, sizeof t, "%s", BG[b]); for (char *q = t; *q; q++) if (*q == 39) *q = ' ';
+            canvas_text(&sheet, sx, sy, t, RGB(220, 220, 235));
+            for (int yy = 0; yy < 32; yy++) for (int xx = 0; xx < 128; xx++) canvas_px(&sheet, sx + xx, sy + 9 + yy, cv.p[(L.gy - 3 + yy) * W + L.px - 3 + xx]);
+            canvas_free(&cv);
+        }
+        char p[400]; snprintf(p, sizeof p, "%s/tool-icons-b-backgrounds.png", o);
+        png_write(p, &sheet, 5); fprintf(stderr, "wrote %s\n", p);
+        return 0;
+    }
     Canvas sheet = canvas_new(W + 12, 3 * (H + 12) + 70, RGB(24, 24, 30));
     for (int st = 0; st < 3; st++) {
         Canvas cv = editor_with(dir, st, 0, W, H);
