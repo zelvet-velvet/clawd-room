@@ -423,6 +423,7 @@ static int tl_full(const Ed *e, int z) { return 15 + e->h * z + 9 + 3; }
 /* The divider above the timeline can be dragged (g_tl_user: the height asked for, -1 folded to its top line; 0 the automatic
  * one, double-click it to go back): the frames and the sprite on the left grow with it, the canvas above gives up the room, never all of it. */
 static int g_tl_user, g_div_drag, g_div_hover;
+static int g_fold_hover; /* (the pointer is on the fold button) */
 static int g_panel_folded; /* p or the fold button: the colour panel folded to a ribbon of the tools and the colour (like Obsidian's sidebar) */
 #define RIBBON 13      /* the ribbon's width: a key cap */
 #define TOP_LEAST 64 /* a dragged timeline leaves the canvas and the panel at least this: the tools, the colour field, the hex line */
@@ -712,13 +713,14 @@ static void draw(const Ed *e, Canvas *cv) {
     canvas_text(cv, 4, 3, t, C_YELLOW);
     int msg_top = e->msg[0] && 4 + text_width(t) + 12 + text_width(e->msg) + 4 + 16 <= cv->w; /* (a message that does not fit by the title goes under the grid) */
     if (msg_top) canvas_text(cv, cv->w - 16 - text_width(e->msg) - 4, 3, e->msg, C_GREY);
-    { /* the fold button, top right: a window with its right part (the panel) filled while it is open */
-        int fx = cv->w - 4 - 11, fy = 2;
-        Rgb k = RGB(150, 150, 170);
-        frame(cv, fx + 1, fy + 1, 9, 5, k);
-        canvas_rect(cv, fx + 7, fy + 1, 1, 5, k);
-        if (!g_panel_folded) canvas_rect(cv, fx + 8, fy + 1, 2, 5, k);
-        region(R_FOLD, 0, fx - 1, fy - 1, 13, 9, RGB(0, 0, 0));
+    { /* the fold button, top right: a small window in dim lines, its right part (the panel) shaded while it is open;
+         brighter under the pointer */
+        int fx = cv->w - 4 - 9, fy = 3;
+        Rgb k = g_fold_hover ? RGB(150, 150, 175) : RGB(76, 76, 96), fill = g_fold_hover ? RGB(90, 90, 112) : RGB(46, 46, 60);
+        frame(cv, fx + 1, fy + 1, 7, 3, k);
+        if (!g_panel_folded) canvas_rect(cv, fx + 6, fy + 1, 2, 3, fill);
+        canvas_rect(cv, fx + 5, fy + 1, 1, 3, k);
+        region(R_FOLD, 0, fx - 1, fy - 1, 11, 8, RGB(0, 0, 0));
     }
     Layout L = layout(e, cv->w, cv->h);
     /* onion skin: where this frame is see-through, the frame before shows faintly red, the one after blue (both: purple) */
@@ -1024,6 +1026,7 @@ int editor_run(const char *dir, const char *name) {
                         continue;
                     }
                     g_div_hover = r && r->kind == R_DIV;
+                    g_fold_hover = r && r->kind == R_FOLD;
                     if (r && r->kind == R_DIV && btn == 0 && !motion && !release) { /* the divider: drag it; a double-click: back to automatic */
                         static double last_click;
                         double now2 = wall_now();
