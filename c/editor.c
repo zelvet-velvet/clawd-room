@@ -1010,24 +1010,13 @@ static void tty_on(void) {
 }
 static void tty_off(void) { put("\x1b[?1006l\x1b[?1003l\x1b[?1000l\x1b[0m\x1b[?7h\x1b[?25h\x1b[?1049l"); tcsetattr(STDIN_FILENO, TCSADRAIN, &g_old); }
 #include <sys/ioctl.h>
+int editor_find(const char *dir, const char *name, int *which);
 int editor_run(const char *dir, const char *name) {
     static Ed e;
     memset(&e, 0, sizeof e);
     e.pk = 1; e.pi = 0; e.hx = e.hy = -1; e.drag = -1; e.last_pk = 1; e.speed = 1; e.onion = 1; e.del_ask = -1;
-    int which = 0, found = 0;
-    for (int pass = 0; pass < 2 && name && !found; pass++) /* the file that has a sprite called NAME (props first), else an animation */
-        for (int f = 0; f < NFILES && !found; f++) {
-            static File tf;
-            memset(&tf, 0, sizeof tf);
-            char path[700], n2[64];
-            snprintf(path, sizeof path, "%s/%s", dir, FILES[f]);
-            if (file_load(&tf, path) == 0) for (int i = 0; i < tf.nsprite && !found; i++) {
-                sprite_name(&tf, i, n2, sizeof n2);
-                if (pass == 0 ? !strcmp(n2, name) : find_sprite(&tf, name) >= 0) { which = f; found = 1; }
-            }
-            file_free(&tf);
-        }
-    if (name && !found) { fprintf(stderr, "clawd-room --edit: no sprite called %s in %s/{props,items,clawd}.txt\n", name, dir); return 1; }
+    int which = 0; /* the file that has a sprite called NAME (props first), else an animation */
+    if (name && editor_find(dir, name, &which)) return 1;
     file_open(&e, dir, which, name);
     if (!isatty(STDIN_FILENO) || !isatty(STDOUT_FILENO)) { fprintf(stderr, "clawd-room --edit needs a terminal\n"); return 1; }
     tty_on();
@@ -1259,6 +1248,55 @@ int editor_run(const char *dir, const char *name) {
     file_free(&e.f);
     for (int f = 0; f < NFILES; f++) free(e.orig[f]);
     return 0;
+}
+
+/* --edit NAME when nothing is called NAME: the error, and the names closest to it (by edit distance, or containing it) */
+static int edit_distance(const char *a, const char *b) {
+    int la = (int)strlen(a), lb = (int)strlen(b), d[65][65];
+    if (la > 64) la = 64;
+    if (lb > 64) lb = 64;
+    for (int i = 0; i <= la; i++) d[i][0] = i;
+    for (int j = 0; j <= lb; j++) d[0][j] = j;
+    for (int i = 1; i <= la; i++) for (int j = 1; j <= lb; j++) {
+        int c = d[i - 1][j - 1] + (a[i - 1] != b[j - 1]), u = d[i - 1][j] + 1, l = d[i][j - 1] + 1;
+        d[i][j] = c < u ? (c < l ? c : l) : (u < l ? u : l);
+    }
+    return d[la][lb];
+}
+/* 0 if the sprites have a sprite or an animation called NAME (the file it is in in *which); else the error is printed */
+int editor_find(const char *dir, const char *name, int *which) {
+    char best[3][64] = {"", "", ""}, n2[64], b2[64];
+    int bd[3] = {99, 99, 99}, num;
+    for (int pass = 0; pass < 2; pass++)
+        for (int f = 0; f < NFILES; f++) {
+            static File tf;
+            memset(&tf, 0, sizeof tf);
+            char path[700];
+            snprintf(path, sizeof path, "%s/%s", dir, FILES[f]);
+            if (file_load(&tf, path)) continue;
+            int found = 0;
+            for (int i = 0; i < tf.nsprite && !found; i++) {
+                sprite_name(&tf, i, n2, sizeof n2);
+                if (pass == 0 ? !strcmp(n2, name) : find_sprite(&tf, name) >= 0) found = 1;
+                if (pass == 1) { /* (the closest names, for the error) */
+                    const char *cand = split_name(n2, b2, sizeof b2, &num) ? b2 : n2;
+                    int dist = strstr(cand, name) || strstr(name, cand) ? 1 : edit_distance(cand, name), dup = 0;
+                    for (int k = 0; k < 3; k++) if (!strcmp(best[k], cand)) dup = 1;
+                    for (int k = 0; k < 3 && !dup; k++) if (dist < bd[k]) {
+                        for (int m = 2; m > k; m--) { bd[m] = bd[m - 1]; snprintf(best[m], 64, "%s", best[m - 1]); }
+                        bd[k] = dist; snprintf(best[k], 64, "%s", cand); break;
+                    }
+                }
+            }
+            file_free(&tf);
+            if (found) { if (which) *which = f; return 0; }
+        }
+    fprintf(stderr, "clawd-room --edit: nothing called %s in %s ({props,items,clawd,ui}.txt)\n", name, dir);
+    int limit = (int)strlen(name) / 2 > 2 ? (int)strlen(name) / 2 : 2, any = 0;
+    for (int k = 0; k < 3; k++) if (best[k][0] && bd[k] <= limit) { fprintf(stderr, any ? ", %s" : "  did you mean: %s", best[k]); any = 1; }
+    if (any) fprintf(stderr, "\n");
+    fprintf(stderr, "  ./clawd-room.sh --edit list   shows what there is\n");
+    return 1;
 }
 
 /* --edit list: what can be opened, by file: each animation once with how many frames it has, in columns that fit the

@@ -27,9 +27,10 @@ fi
 # escape code that would switch an open window's profile, so run from another window this opens the room's window in the
 # quarter of the screen that window is in and closes the window it was typed in (when that has no other tabs or panes; --keep leaves it).
 # --here (or CLAWD_HERE=1) runs the room in the current window; so does a run that only prints.
-here_only=0 keep=0 editing=0
+here_only=0 keep=0 editing=0 edit_name=""
 prev=""
 for a in "$@"; do
+  [ "$prev" = --edit ] && edit_name=$a
   case "$a" in --here) here_only=1 ;; --keep) keep=1 ;; --dump*|--build-art*|-h|--help|--version) here_only=1 ;; --edit) keep=1 editing=1 ;; esac # (the editor: your window stays)
   [ "$prev" = --edit ] && [ "$a" = list ] && here_only=1 # (--edit list just prints)
   prev=$a
@@ -69,6 +70,10 @@ if [ "${1:-}" = --try ] && [ -n "${WSL_DISTRO_NAME:-}" ] && command -v wt.exe >/
   python3 "$here/tools/try_wsl.py" "$bin" "$try" "$ev" $desk || { touch "$try/stop"; exit 1; }
   echo "clawd-room: --try opened 4 rooms (quit one to close all, or ./clawd-room.sh --try close)" >&2
   exit 0
+fi
+# --edit NAME: a name that is not there says so here (with the closest names), before any window opens
+if [ "$editing" = 1 ] && [ -n "$edit_name" ] && [ "$edit_name" != list ] && [ "$edit_name" != - ] && [ -x "$bin" ]; then
+  "$bin" --edit-check "$edit_name" || exit 1
 fi
 # WSL + Windows Terminal: the pixel editor opens in its own Clawd Room window in the middle of the screen (like iTerm2);
 # the window you typed in stays. --here (or CLAWD_HERE=1) runs it in the current window.
