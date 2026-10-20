@@ -4,8 +4,8 @@
  *   mouse: left paints, right erases, Alt + click picks the colour under it; a swatch picks a colour; FILL fills the
  *          touching pixels of one colour (click FILL again: FILL ALL, every pixel of that colour)
  *   keys:  u undo, r redo, < > the frame before / after in the animation, [ ] the sprite before / after, Tab the next file,
- *          Space play, o onion skin, b fill, f new frame / x delete frame (props), + - zoom, w n wider / narrower,
- *          t s taller / shorter, q quit
+ *          Space play, o onion skin, b fill, f new frame / x delete frame (props), + - zoom, p fold the colours,
+ *          w / n held + an arrow: grow / shrink on that side, q quit
  * An animation is the sprites named NAME-1, NAME-2 ... (Clawd frames, items) or NAME, NAME~2 ... (props); the timeline
  * along the bottom shows its frames. PLAY runs it at the room's speed: Clawd frames through the room's own poses
  * (actions.c), props every 0.3 s, items three times a second. */
@@ -61,6 +61,7 @@ typedef struct {
     int onion;                                /* o: the frames before and after show faintly under the grid */
     int filling;                              /* FILL: 0 off, 1 the touching pixels of one colour, 2 every pixel of it */
     int del_ask;                              /* x once: the frame to delete if x comes again (-1 none) */
+    int sizing; double sizing_until;          /* w or n held ('w' / 'n'): an arrow grows / shrinks the sprite on that side */
 } Ed;
 
 static char *slurp(const char *path) {
@@ -374,7 +375,7 @@ static const Help H_MOUSE[] = {{"LEFT", "PAINT"}, {"RIGHT", "ERASE"}, {"ALT+LEFT
 static const Help H_EDIT[] = {{"CTRL+Z", "UNDO"}, {"CTRL+Y", "REDO"}, {"[ ]", "OTHER SPRITE"}, {"TAB", "OTHER FILE"}, {"B", "FILL"}, {"P", "FOLD THE COLOURS"}, {"+ -", "ZOOM"}, {"#", "TYPE A COLOUR"}};
 static const Help H_ANIM[] = {{"LEFT RIGHT", "FRAME"}, {"SPACE", "PLAY"}, {"O", "ONION SKIN"}, {"F", "NEW FRAME"}, {"X X", "DELETE FRAME"}};
 #define NH(a) ((int)(sizeof a / sizeof a[0]))
-static const Help H_SIZE[] = {{"W", "WIDER"}, {"N", "NARROWER"}, {"T", "TALLER"}, {"S", "SHORTER"}, {"Q", "QUIT (S SAVE / D DISCARD)"}};
+static const Help H_SIZE[] = {{"W + ARROW", "GROW ON THAT SIDE"}, {"N + ARROW", "SHRINK ON THAT SIDE"}, {"Q", "QUIT (S SAVE / D DISCARD)"}};
 static int help_row(Canvas *cv, int y, const char *title, const Help *h, int n, int W) { /* returns the rows it took */
     int x = 4, rows = 1;
     if (cv) canvas_text(cv, x, y + 1, title, RGB(110, 110, 130));
@@ -565,6 +566,30 @@ static void section(Canvas *cv, int x, int y, const char *title) {
 }
 
 static double wall_now(void) { struct timeval tv; gettimeofday(&tv, NULL); return tv.tv_sec + tv.tv_usec / 1e6; }
+
+/* w / n + an arrow: a column or a row more (grow) or less (shrink) on that side; on the left or the top the drawing moves
+ * over by one, so nothing is cut but what is taken away. arrow: 'A' up, 'B' down, 'C' right, 'D' left */
+static void resize_side(Ed *e, int grow, char arrow) {
+    int cols = arrow == 'C' || arrow == 'D', first = arrow == 'D' || arrow == 'A';
+    if (cols ? (grow ? e->w >= MAXW : e->w <= 1) : (grow ? e->h >= MAXH : e->h <= 1)) return;
+    push_undo(e);
+    if (cols) {
+        for (int y = 0; y < e->h; y++) {
+            if (grow && first) { memmove(&e->g[y][1], &e->g[y][0], (size_t)e->w); e->g[y][0] = '.'; }
+            else if (grow) e->g[y][e->w] = '.';
+            else if (first) memmove(&e->g[y][0], &e->g[y][1], (size_t)e->w - 1);
+        }
+        e->w += grow ? 1 : -1;
+    } else {
+        if (grow && first) { memmove(e->g[1], e->g[0], sizeof e->g[0] * (size_t)e->h); memset(e->g[0], '.', MAXW); }
+        else if (grow) memset(e->g[e->h], '.', MAXW);
+        else if (first) memmove(e->g[0], e->g[1], sizeof e->g[0] * (size_t)(e->h - 1));
+        e->h += grow ? 1 : -1;
+    }
+    save(e);
+    static const char *SIDE[4] = {"TOP", "BOTTOM", "RIGHT", "LEFT"};
+    snprintf(e->msg, sizeof e->msg, "%s: %dX%d", SIDE[arrow - 'A'], e->w, e->h);
+}
 
 /* the frame PLAY shows now (a sprite number; -1: a Clawd pose the file has no frame for, drawn by the code like the room
  * does); *p the Clawd's pose (for its bob, and the drawing by code) when the animation is one of the room's actions */
@@ -1015,6 +1040,7 @@ int editor_run(const char *dir, const char *name) {
         if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == 0 && ws.ws_col) { c = ws.ws_col; r = ws.ws_row; }
         if (c != cols || r != rows) { cols = c; rows = r; cells_free(&prev); prev.c = NULL; put("\x1b[H"); }
         ui_watch(dir); /* (the editor's own icons, sprites/ui.txt: edited, they change at once) */
+        if (e.sizing && wall_now() > e.sizing_until) { e.sizing = 0; if (strstr(e.msg, "ARROW")) e.msg[0] = 0; } /* (w / n let go) */
         Canvas cv = canvas_new(cols, rows * 2, RGB(18, 18, 24));
         draw(&e, &cv);
         Cells cur = cells_from_canvas(&cv, NULL);
@@ -1138,6 +1164,11 @@ int editor_run(const char *dir, const char *name) {
                     }
                     continue;
                 }
+                if (in[i + 1] == '[' && i + 2 < nin && in[i + 2] >= 'A' && in[i + 2] <= 'D' && e.sizing && wall_now() < e.sizing_until) { /* w / n held: an arrow grows / shrinks on that side */
+                    resize_side(&e, e.sizing == 'w', in[i + 2]);
+                    e.sizing_until = wall_now() + 1.0;
+                    i += 3; continue;
+                }
                 if (in[i + 1] == '[' && i + 2 < nin && (in[i + 2] == 'C' || in[i + 2] == 'D')) { /* right / left arrow: the frame after / before */
                     int fr[128], n = anim_frames(&e.f, e.sp, fr, 128), at = frame_index(fr, n, e.sp);
                     sprite_open(&e, fr[(at + (in[i + 2] == 'C' ? 1 : n - 1)) % n]); e.msg[0] = 0;
@@ -1190,6 +1221,12 @@ int editor_run(const char *dir, const char *name) {
             if (ch == ' ') { e.playing = !e.playing; e.play_t0 = wall_now(); continue; }
             if (ch == 'o' || ch == 'O') { e.onion = !e.onion; continue; }
             if (ch == 'p' || ch == 'P') { g_panel_folded = !g_panel_folded; continue; } /* (the colour panel folds / unfolds) */
+            if (ch == 'w' || ch == 'W' || ch == 'n' || ch == 'N') { /* held (its repeats keep it), an arrow picks the side */
+                e.sizing = ch == 'w' || ch == 'W' ? 'w' : 'n';
+                e.sizing_until = wall_now() + 1.0;
+                snprintf(e.msg, sizeof e.msg, "%s + ARROW: %s ON THAT SIDE", e.sizing == 'w' ? "W" : "N", e.sizing == 'w' ? "GROW" : "SHRINK");
+                continue;
+            }
             if (ch == 'b' || ch == 'B') { e.filling = (e.filling + 1) % 3; e.picking = 0; continue; }
             if (ch == 0x1A) ch = 'u'; /* Ctrl+Z: undo; Ctrl+Y: redo (U / R too) */
             else if (ch == 0x19) ch = 'r';
@@ -1214,8 +1251,6 @@ int editor_run(const char *dir, const char *name) {
             else if (ch == '\t') { file_open(&e, dir, e.file + 1, NULL); e.zoom = 0; e.pk = 1; e.pi = 0; e.msg[0] = 0; }
             else if (ch == '+' || ch == '=') e.zoom = (L.z + 2 > 16 ? 16 : L.z + 2);
             else if (ch == '-') e.zoom = (L.z - 2 < 2 ? 2 : L.z - 2);
-            else if (((ch == 'w' || ch == 'W') && e.w < MAXW) || ((ch == 'n' || ch == 'N') && e.w > 1)) { push_undo(&e); if (ch == 'w' || ch == 'W') { for (int y = 0; y < e.h; y++) e.g[y][e.w] = '.'; e.w++; } else e.w--; save(&e); }
-            else if (((ch == 't' || ch == 'T') && e.h < MAXH) || ((ch == 's' || ch == 'S') && e.h > 1)) { push_undo(&e); if (ch == 't' || ch == 'T') { memset(e.g[e.h], '.', MAXW); e.h++; } else e.h--; save(&e); }
         }
         memmove(in, in + i, (size_t)(nin - i)); nin -= i;
     }

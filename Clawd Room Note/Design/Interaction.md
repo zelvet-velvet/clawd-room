@@ -69,7 +69,7 @@ sticker: lucide//gamepad-2
 | `p` | fold / unfold the colour panel (the button at the top right does the same) |
 | `f` / `x` `x` | a new frame / delete this one (props) |
 | `+` `-` | zoom |
-| `w` `n` / `t` `s` | wider / narrower, taller / shorter |
+| hold `w` / `n` + an arrow | grow / shrink the sprite on that side (← left, → right, ↑ top, ↓ bottom); on the left or the top the drawing moves over by one. While `w` or `n` is held a hint says so; let go, the arrows step through frames again |
 | `?` | the shortcuts in a box (a short window shows only `? SHORTCUTS  Q QUIT`; a very short one has no timeline) |
 | `q` | quit: with changes it asks **S** save, **D** discard (the files go back to how they were when you opened them), **Esc** back to editing |
 
