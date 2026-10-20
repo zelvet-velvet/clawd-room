@@ -10,6 +10,7 @@ sticker: lucide//activity
 
 ## 🚀 Today's Progress (2026-10-20)
 - **WSL Test Queue Done**: T16 – T23 pass, so all of [[Test Checklist]]'s queue (T1 – T23) passes on WSL.
+- **Pull Requests**: #6 (WSL work) and #7 (vault layout) merged, their branches deleted.
 - **Designs Picked** (mockups, [[2026-10-20]]): the picked Clawd's corners and spotlight; the bar below the room with tags on the gates; a settings file and panel; gates appearing as a construct of real parts (or simple); a railed stair well; no tree behind the park's building.
 
 ## 📅 Yesterday's Progress (2026-10-19)
@@ -47,7 +48,7 @@ sticker: lucide//activity
 - [ ] **Less CPU**: Skip frames when nothing moves; stop drawing (FPS 0) when the window is covered, minimised or on another desktop; later dirty rects. (The terminal output is already diffed and written once per frame.)
 
 ### 🗂️ Repo and vault
-- [>] **Pull Requests**: #5 (PR icon), #6 (WSL work), #7 (vault layout, after #6) and the mockups branch waiting for Zaviel.
+- [>] **Pull Requests**: #5 (PR icon) and #9 (today's mockups in the vault, gallery by category, `tools/mock`) waiting for Zaviel; #6 and #7 merged.
 - [ ] **William's Setup**: Accept the invite, clone, Templater settings ([[Collaboration]]).
 
 ## 💡 Ideas
