@@ -807,11 +807,18 @@ static void picker_sprite(Canvas *cv, const PickItem *it, int k, int x, int y, i
     while (z > 1 && (sw * z > w || sh * z > h)) z--;
     draw_grid_at(cv, &(Ed){.f = g_pf[it->file]}, g, sw, sh, x + (w - sw * z) / 2, y + (h - sh * z) / 2, z, 0);
 }
-static void picker_view_button(Canvas *cv, int x, int y, int which, int on) { /* a grid of squares, or lines */
-    Rgb k = on ? RGB(220, 220, 235) : RGB(90, 90, 110);
+/* the view buttons, each a small picture of its page (9 x 7): the cards a grid of them; the list a column of names, a big
+ * picture and its frames under it. From sprites/ui.txt (view-cards, view-list), else these; brighter when on */
+static const char *const VIEW_ICON[2][7] = {
+    {"####.####", "####.####", "####.####", ".........", "####.####", "####.####", "####.####"},
+    {"###.#####", "....#####", "###.#####", "....#####", "###......", "....##.##", "###.##.##"},
+};
+static void picker_view_button(Canvas *cv, int x, int y, int which, int on) {
     canvas_rect(cv, x - 2, y - 2, 13, 11, on ? RGB(52, 54, 70) : RGB(28, 28, 36));
-    if (which == 0) for (int a = 0; a < 2; a++) for (int b = 0; b < 2; b++) canvas_rect(cv, x + a * 5, y + b * 4, 4, 3, k);
-    else for (int r = 0; r < 3; r++) { canvas_rect(cv, x, y + r * 3, 2, 1, k); canvas_rect(cv, x + 3, y + r * 3, 6, 1, k); }
+    if (!ui_icon(cv, which ? "view-list" : "view-cards", x, y, on ? 0.6 : 0)) {
+        Rgb k = on ? RGB(220, 220, 235) : RGB(90, 90, 110);
+        for (int yy = 0; yy < 7; yy++) for (int xx = 0; xx < 9; xx++) if (VIEW_ICON[which][yy][xx] == '#') canvas_px(cv, x + xx, y + yy, k);
+    }
     region(R_PVIEW, which, x - 2, y - 2, 13, 11, RGB(0, 0, 0));
 }
 static void picker_search(Canvas *cv, int x, int y, int w, const char *typed) {
@@ -822,7 +829,7 @@ static void picker_search(Canvas *cv, int x, int y, int w, const char *typed) {
 static void draw_picker(const Ed *e, Canvas *cv, double now) {
     int W = cv->w, H = cv->h, sh[512], n = picker_shown(e, sh), k = (int)(now / 0.3); /* (k: the picked one plays) */
     canvas_text(cv, 4, 3, "OPEN A SPRITE", C_YELLOW);
-    picker_view_button(cv, W - 4 - 22, 3, 0, e->pview == 0);
+    picker_view_button(cv, W - 4 - 24, 3, 0, e->pview == 0);
     picker_view_button(cv, W - 4 - 9, 3, 1, e->pview == 1);
     static const char *TABS[NFILES] = {"PROPS", "ITEMS", "CLAWD", "UI"};
     if (e->pview == 0) { /* cards: a tab per file, the search box, the cards */

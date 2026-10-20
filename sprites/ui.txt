@@ -82,3 +82,21 @@ d....d..d
 d....d..d
 d....d..d
 .ddddddd.
+
+@ view-cards | view-cards
+dddd.dddd
+dddd.dddd
+dddd.dddd
+.........
+dddd.dddd
+dddd.dddd
+dddd.dddd
+
+@ view-list | view-list
+ddd.ddddd
+....ddddd
+ddd.ddddd
+....ddddd
+ddd......
+....dd.dd
+ddd.dd.dd
