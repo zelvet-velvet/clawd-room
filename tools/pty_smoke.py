@@ -144,7 +144,7 @@ with tempfile.TemporaryDirectory() as tmp:
     click = lambda c, r: [b"\x1b[<0;%d;%dM" % (c, r), b"\x1b[<0;%d;%dm" % (c, r)]  # (a left click on a cell, 1-based)
     # (FILL clicks down the canvas's left column, wherever the canvas sits: every pixel there is outside the Clawd)
     clicks = [k for row in range(7, 31) for k in click(6, row)]
-    keys = [(0.8, b"#"), (1.0, b"FF0000\r"), (1.3, b"b")] + [(1.6 + i * 0.02, k) for i, k in enumerate(clicks)] + [(3.0, b"q"), (3.3, b"s")]
+    keys = [(0.7, b"p"), (0.8, b"#"), (1.0, b"FF0000\r"), (1.3, b"b")] + [(1.6 + i * 0.02, k) for i, k in enumerate(clicks)] + [(3.0, b"q"), (3.3, b"s")]  # (p: the colour panel unfolded, the canvas at the left)
     out, st = run(["--edit", "walk-1"], keys, env, cols=150, rows=50)
     walk = read("clawd.txt").split("@ walk-1")[1].split("@")[0]
     check("editor: FILL fills the touching see-through pixels, not the closed ones", st == 0 and walk.count("a") > 40 and ".." in walk and read("clawd.txt") != clawd0)

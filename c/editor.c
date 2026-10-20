@@ -426,7 +426,7 @@ static int tl_full(const Ed *e, int z) { return 15 + e->h * z + 9 + 3; }
  * one, double-click it to go back): the frames and the sprite on the left grow with it, the canvas above gives up the room, never all of it. */
 static int g_tl_user, g_div_drag, g_div_hover;
 static int g_fold_hover; /* (the pointer is on the fold button) */
-static int g_panel_folded; /* p or the fold button: the colour panel folded to a ribbon of the tools and the colour (like Obsidian's sidebar) */
+static int g_panel_folded = 1; /* (folded when the editor opens) */ /* p or the fold button: the colour panel folded to a ribbon of the tools and the colour (like Obsidian's sidebar) */
 #define RIBBON 13      /* the ribbon's width: a key cap */
 #define TOP_LEAST 64 /* a dragged timeline leaves the canvas and the panel at least this: the tools, the colour field, the hex line */
 static int tl_most(const Ed *e, int H) { (void)e; return H - 12 - TOP_LEAST; }
