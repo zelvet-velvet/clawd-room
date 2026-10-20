@@ -588,52 +588,50 @@ static void draw_timeline(Canvas *cv, const Ed *e, double now, int preview, int 
     canvas_rect(cv, 0, y0, cv->w, 1, RGB(44, 44, 56));
     if (n > 1) snprintf(t, sizeof t, "%s  FRAME %d OF %d", base, at + 1, n); else snprintf(t, sizeof t, "%s  ONE FRAME", base);
     for (char *q = t; *q; q++) if (*q >= 'a' && *q <= 'z') *q -= 32;
+    /* the top line: the name and frame, PLAY, the speed, ONION against the right edge; the short help at the left */
     const char *play = e->playing ? "STOP" : "PLAY", *sp = e->speed < 0.75 ? "0.5X" : e->speed > 1.5 ? "2X" : "1X";
-    int hw = text_width(t) + 8 + text_width(play) + 9 + text_width(sp) + 9 + text_width("ONION") + 6; /* (the line: name, buttons) */
-    /* the left side: the short help, the frame playing */
-    const char *sh = "? SHORTCUTS  Q QUIT";
-    int z2 = thumb_zoom(e), pad = is_action(e) ? 2 : 0, lw = 0;
-    if (short_help) { if (cv->w - 8 - hw - text_width(sh) < 10) sh = "? HELP  Q QUIT"; lw = text_width(sh); }
-    if (preview && full && e->w * z2 > lw) lw = e->w * z2;
-    (void)pad;
-    if (lw) lw += 14;
-    /* the frames: twice their size if they fit, else at their size */
-    int z = thumb_zoom(e), playing = -1, ty = y + 12;
-    if (e->playing) { Pose p; int ip; playing = play_frame(e, now, &p, &ip); }
-    static char g[MAXH][MAXW + 1];
-    int fw = 0, room = cv->w - 4 - 4 - lw;
-    for (int pass = 0; pass < 2; pass++) {
-        fw = props ? 14 : 0;
-        for (int i = 0; i < n; i++) { int w, h; grid_of(&e->f, fr[i], g, &w, &h); fw += w * z + 6; }
-        if (fw <= room || z == 1) break;
-        z = 1;
+    int hw = text_width(t) + 8 + text_width(play) + 9 + text_width(sp) + 9 + text_width("ONION") + 6, hx = cv->w - 4 - hw;
+    if (hx < 4) hx = 4;
+    if (short_help) {
+        const char *sh = hx - 4 >= text_width("? SHORTCUTS  Q QUIT") + 10 ? "? SHORTCUTS  Q QUIT" : "? HELP  Q QUIT";
+        if (hx - 4 >= text_width(sh) + 10) canvas_text(cv, 4, y + 2, sh, RGB(150, 150, 170));
     }
-    /* the right side: as wide as the line or the frames, against the right edge (not over the left side) */
-    int gw = full && fw > hw ? fw : hw, gx = cv->w - 4 - (gw < room ? gw : room);
-    if (gx < 4 + lw) gx = 4 + lw;
-    if (short_help && 4 + text_width(sh) + 6 <= gx) canvas_text(cv, 4, y + 2, sh, RGB(150, 150, 170));
-    canvas_text(cv, gx, y + 2, t, C_YELLOW);
-    int bx = gx + text_width(t) + 8;
+    canvas_text(cv, hx, y + 2, t, C_YELLOW);
+    int bx = hx + text_width(t) + 8;
     button(cv, bx, y, play, e->playing, R_PLAY, 0); bx += text_width(play) + 9;
     button(cv, bx, y, sp, 0, R_SPEED, 0); bx += text_width(sp) + 9;
-    button(cv, bx, y, "ONION", e->onion, R_ONION, 0); bx += text_width("ONION") + 9;
-    const char *hint = props ? "ARROWS FRAME  F NEW  X X DELETE" : "ARROWS FRAME";
-    if (bx + text_width(hint) + 4 <= cv->w) canvas_text(cv, bx + 2, y + 2, hint, RGB(150, 150, 170));
+    button(cv, bx, y, "ONION", e->onion, R_ONION, 0);
     if (!full) return; /* (short window: the line only) */
-    if (preview) draw_preview(cv, e, now, 4, ty, z2, 0); /* (the sprite as in the room, level with the frames; playing, the frame playing) */
-    /* a long animation scrolls to keep the open frame in view */
-    int first = 0, x = gx, end = cv->w - 4;
-    for (;;) {
+    /* the second line: the sprite as in the room at the left, the frames against the right edge, all at one size: twice
+     * if everything fits so (the gaps between frames narrowing 6, 4, 3), else once; then a long animation scrolls */
+    static char g[MAXH][MAXW + 1];
+    int z = thumb_zoom(e), gap = 6, fw = 0, lw = 0, room = 0, ty = y + 12;
+    for (int pass = 0; ; pass++) {
+        lw = preview ? e->w * z + 10 : 0;
+        room = cv->w - 8 - lw;
+        fw = props ? 14 : 0;
+        for (int i = 0; i < n; i++) { int w, h; grid_of(&e->f, fr[i], g, &w, &h); fw += w * z + gap; }
+        if (fw - gap <= room) break;
+        if (gap > 3) { gap = gap == 6 ? 4 : 3; continue; } /* (narrower gaps first: the frames stay big if that is enough) */
+        if (z == 2) { z = 1; gap = 6; continue; }
+        break;
+    }
+    if (preview) draw_preview(cv, e, now, 4, ty, z, 0); /* (playing: the frame playing) */
+    int playing = -1;
+    if (e->playing) { Pose p; int ip; playing = play_frame(e, now, &p, &ip); }
+    int x = cv->w - 4 - (fw - gap), end = cv->w - 4, first = 0;
+    if (x < 4 + lw) x = 4 + lw;
+    for (;;) { /* (a long animation: the first frame shown, so the open one fits) */
         int w2 = 0;
-        for (int i = first; i <= at; i++) { int w, h; grid_of(&e->f, fr[i], g, &w, &h); w2 += w * z + 6; }
-        if (x + w2 + 20 <= end || first >= at) break;
+        for (int i = first; i <= at; i++) { int w, h; grid_of(&e->f, fr[i], g, &w, &h); w2 += w * z + gap; }
+        if (x + w2 + 12 <= end || first >= at) break;
         first++;
     }
     if (first > 0) { canvas_text(cv, x, ty + 4, "<", C_GREY); x += 6; }
     for (int i = first; i < n; i++) {
         int w, h;
         grid_now(e, fr[i], g, &w, &h);
-        if (x + w * z + (i < n - 1 ? 8 : 0) > end) { canvas_text(cv, x, ty + 4, ">", C_GREY); break; }
+        if (x + w * z + (i < n - 1 ? 8 : 0) > end) { canvas_text(cv, end - 3, ty + 4, ">", C_GREY); break; }
         canvas_rect(cv, x - 1, ty - 1, w * z + 2, h * z + 2, i == at ? RGB(70, 70, 92) : RGB(34, 34, 44));
         draw_grid_at(cv, e, g, w, h, x, ty, z, 1);
         if (i == at) frame(cv, x - 1, ty - 1, w * z + 2, h * z + 2, C_YELLOW);
@@ -642,7 +640,7 @@ static void draw_timeline(Canvas *cv, const Ed *e, double now, int preview, int 
         snprintf(nb, sizeof nb, "%d", i + 1);
         canvas_text(cv, x + (w * z - text_width(nb)) / 2, ty + h * z + 2, nb, i == at ? C_YELLOW : C_GREY);
         if (fr[i] == playing) canvas_rect(cv, x, ty + h * z + 1, w * z, 1, C_WHITE); /* (playing now) */
-        x += w * z + 6;
+        x += w * z + gap;
     }
     if (props && x + 12 <= end) { canvas_rect(cv, x, ty, 12, e->h * z, RGB(34, 34, 44)); canvas_text(cv, x + 4, ty + e->h * z / 2 - 2, "+", C_GREY); region(R_FADD, 0, x, ty, 12, e->h * z, RGB(0, 0, 0)); }
 }
