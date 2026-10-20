@@ -1023,9 +1023,8 @@ int editor_list(const char *dir) {
             if ((int)strlen(item[ni]) > namew) namew = (int)strlen(item[ni]);
             ni++;
         }
-        printf("[ %s ]   %d sprite%s", FILES[f], tf.nsprite, tf.nsprite == 1 ? "" : "s");
-        if (nanim) printf(", %d animation%s (name and frames)", nanim, nanim == 1 ? "" : "s");
-        printf("\n");
+        int alone = ni - nanim; /* (sprites on their own; an animation's frames count as the animation) */
+        printf("[ %s ] | %2d sprite%s | %2d animation%s (name + frames)\n", FILES[f], alone, alone == 1 ? " " : "s", nanim, nanim == 1 ? "" : "s");
         int cellw = namew + (numw ? 1 + numw : 0), colw = cellw + 4; /* a name, a space, its count (right-aligned), a gap */
         int cols = (width - 2 + 4) / colw > 0 ? (width - 2 + 4) / colw : 1;
         for (int i = 0; i < ni; i++) {
