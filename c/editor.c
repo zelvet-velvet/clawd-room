@@ -1321,15 +1321,16 @@ static void draw(const Ed *e, Canvas *cv) {
         if (tr) checker(cv, x, ry + 2, 13, 9); else canvas_rect(cv, x, ry + 2, 13, 9, cur);
         frame(cv, x, ry + 2, 13, 9, RGB(150, 150, 170));
     } else {
-    int roww = -7; /* (the row centred over the colour field) */
-    for (int i = 0; i < 4; i++) roww += (text_width(TOOL[i]) > 13 ? text_width(TOOL[i]) : 13) + 7;
-    for (int i = 0, tx = x + (FIELD_W - roww) / 2; i < 4; i++) {
+    int roww = 0; /* (the row spread over the colour field: the first at its left edge, the last at its right, even gaps) */
+    for (int i = 0; i < 4; i++) roww += text_width(TOOL[i]) > 13 ? text_width(TOOL[i]) : 13;
+    for (int i = 0, used = 0; i < 4; i++) {
         const char *nm = i == 3 && e->filling == 2 ? "ALL" : TOOL[i];
         int cw = text_width(TOOL[i]) > 13 ? text_width(TOOL[i]) : 13;
+        int tx = x + used + (FIELD_W - roww) * i / 3;
+        used += cw;
         tool_button(cv, tx + (cw - 13) / 2, y, i == 3 && e->filling == 2 ? 4 : i, lit[i]);
         canvas_text(cv, tx + (cw - text_width(nm)) / 2, y + 16, nm, lit[i] ? C_WHITE : C_GREY);
         region(R_TOOL, i, tx, y, cw, 21, RGB(0, 0, 0));
-        tx += cw + 7;
     }
     y += TOOL_ROW;
     double h, sat, val;
