@@ -413,13 +413,13 @@ static int grid_zoom(const Ed *e, int room_w, int room_h) {
 /* The grid top left, the colour panel on its right, the help along the bottom. When the window is too short for the help
    under the panel, only a line "? SHORTCUTS  Q QUIT" is shown and ? opens the help in a box (hw = 0). */
 /* the timeline along the bottom: a line (the name and frame, the buttons), the frames, their numbers, a scroll bar. The
- * frames have one size for the window, as big as its height allows (3x, 2x, 1x; at most a third of it), whatever their
+ * frames have one size for the window, as big as its height allows (2x or 1x; the timeline at most a quarter of it), whatever their
  * number: more than fit scroll sideways. A short window gets only the line, a very short one no timeline. */
 static int panel_h(const Ed *e);
 static int tl_full(const Ed *e, int z) { return 15 + e->h * z + 9 + 3; }
 static int thumb_zoom(const Ed *e, int H) {
     int rest = panel_h(e) - FIELD_H + 16; /* (the panel with its smallest colour field) */
-    for (int z = 3; z > 1; z--) if (H - 12 - tl_full(e, z) >= rest && tl_full(e, z) <= H / 3) return z;
+    if (H - 12 - tl_full(e, 2) >= rest && tl_full(e, 2) <= H / 4) return 2;
     return 1;
 }
 static int timeline_h(const Ed *e, int H) {
