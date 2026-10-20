@@ -444,6 +444,9 @@ static Layout layout(const Ed *e, int W, int H) {
     g_field_h = f < 16 ? 16 : f > most ? most : f;
     int ph = rest + g_field_h - 2;
     L.ah = gh > ph ? gh : ph;
+    int gap = ((L.hy - 1) - 9 - L.ah) / 2; /* (the canvas and the panel in the middle between the title and the timeline; the
+                                            pointer's line goes in the gap under them, if it fits there) */
+    if (gap >= 10) L.ty = 9 + gap;
     L.gy = L.ty + (L.ah - gh) / 2;
     L.px = L.gx + e->w * L.z + 10;
     return L;
