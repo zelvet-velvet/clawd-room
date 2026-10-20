@@ -55,6 +55,7 @@ typedef struct {
     int zoom, dirty_file;
     char msg[96];
     char *orig[NFILES]; int changed[NFILES]; /* each file as it was when first opened, to put back on discard */
+    char *visit[NFILES]; int vchanged[NFILES]; /* ... and as it was when this sprite was opened (q: keep or discard this visit's changes) */
     int asking;                               /* q with changes: keep or discard? */
     int show_help;                            /* ?: the shortcuts in a box (when the window is too short to list them) */
     int playing; double play_t0, speed;       /* Space: the animation plays in the real-size view (speed 0.5, 1 or 2) */
@@ -243,7 +244,7 @@ static int save(Ed *e) {
     e->sp = sp; e->w = w; e->h = h; memcpy(e->g, keep, sizeof keep); e->nundo = nu; e->nredo = nr;
     (void)name;
     snprintf(e->msg, sizeof e->msg, "SAVED %s", FILES[e->file]);
-    e->changed[e->file] = 1;
+    e->changed[e->file] = e->vchanged[e->file] = 1;
     return 0;
 }
 
@@ -281,7 +282,7 @@ static int new_frame(Ed *e) {
     char path[700];
     snprintf(path, sizeof path, "%s", f->path);
     file_load(f, path);
-    e->changed[e->file] = 1;
+    e->changed[e->file] = e->vchanged[e->file] = 1;
     for (int i = 0; i < f->nsprite; i++) if (f->sprite_line[i] == at + 1) { sprite_open(e, i); break; }
     snprintf(e->msg, sizeof e->msg, "NEW FRAME %s~%d", base, k);
     return 0;
@@ -316,7 +317,7 @@ static int delete_frame(Ed *e) {
     char path[700];
     snprintf(path, sizeof path, "%s", f->path);
     file_load(f, path);
-    e->changed[e->file] = 1;
+    e->changed[e->file] = e->vchanged[e->file] = 1;
     char prev[80]; /* the frame before it: NAME, or NAME~K (frame K, at index K - 1) */
     if (k == 1) snprintf(prev, sizeof prev, "%s", base); else snprintf(prev, sizeof prev, "%s~%d", base, k);
     int sp = find_sprite(f, prev);
@@ -378,7 +379,7 @@ static const Help H_MOUSE[] = {{"LEFT", "PAINT"}, {"RIGHT", "ERASE"}, {"ALT+LEFT
 static const Help H_EDIT[] = {{"CTRL+Z", "UNDO"}, {"CTRL+Y", "REDO"}, {"L", "PICK A SPRITE"}, {"[ ]", "OTHER SPRITE"}, {"TAB", "OTHER FILE"}, {"B", "FILL"}, {"P", "FOLD THE COLOURS"}, {"+ -", "ZOOM"}, {"#", "TYPE A COLOUR"}};
 static const Help H_ANIM[] = {{"LEFT RIGHT", "FRAME"}, {"SPACE", "PLAY"}, {"O", "ONION SKIN"}, {"F", "NEW FRAME"}, {"X X", "DELETE FRAME"}};
 #define NH(a) ((int)(sizeof a / sizeof a[0]))
-static const Help H_SIZE[] = {{"W + ARROW", "GROW ON THAT SIDE"}, {"N + ARROW", "SHRINK ON THAT SIDE"}, {"Q", "BACK TO THE SPRITES (ESC THERE: QUIT)"}};
+static const Help H_SIZE[] = {{"W + ARROW", "GROW ON THAT SIDE"}, {"N + ARROW", "SHRINK ON THAT SIDE"}, {"Q", "BACK TO THE SPRITES (Q THERE: QUIT)"}};
 static int help_row(Canvas *cv, int y, const char *title, const Help *h, int n, int W) { /* returns the rows it took */
     int x = 4, rows = 1;
     if (cv) canvas_text(cv, x, y + 1, title, RGB(110, 110, 130));
@@ -921,7 +922,7 @@ static void draw_picker(const Ed *e, Canvas *cv, double now) {
     }
     if (!n) { char t[64]; snprintf(t, sizeof t, "NOTHING CALLED %s", e->find); canvas_text(cv, (W - text_width(t)) / 2, H / 2, t, C_GREY); }
     canvas_rect(cv, 0, H - 10, W, 1, RGB(40, 40, 52));
-    canvas_text(cv, 4, H - 7, e->pview == 0 ? "ARROWS PICK  ENTER OPEN  TAB FILE  \\ LIST  ESC QUIT" : "UP DOWN PICK  ENTER OPEN  \\ CARDS  ESC QUIT", RGB(150, 150, 170));
+    canvas_text(cv, 4, H - 7, e->pview == 0 ? "ARROWS PICK  ENTER OPEN  TAB FILE  \\ LIST  Q QUIT" : "UP DOWN PICK  ENTER OPEN  \\ CARDS  Q QUIT", RGB(150, 150, 170));
 }
 /* the picker opens: the items again, the open sprite's animation picked */
 static void picker_open(Ed *e, const char *dir, int from_edit) {
@@ -953,6 +954,23 @@ static void picker_move(Ed *e, int d) { /* the picked one d places on (the cards
     at = at < 0 ? 0 : at >= n ? n - 1 : at;
     e->psel = sh[at];
 }
+/* a sprite is opened: the files as they are now, to put back if its changes are discarded when leaving it */
+static void visit_start(Ed *e, const char *dir) {
+    for (int f = 0; f < NFILES; f++) {
+        char path[700];
+        snprintf(path, sizeof path, "%s/%s", dir, FILES[f]);
+        free(e->visit[f]); e->visit[f] = slurp(path); e->vchanged[f] = 0;
+    }
+}
+static void visit_discard(Ed *e, const char *dir) { /* (D when leaving a sprite: its files back as they were when it was opened) */
+    for (int f = 0; f < NFILES; f++) if (e->vchanged[f] && e->visit[f]) {
+        char path[700];
+        snprintf(path, sizeof path, "%s/%s", dir, FILES[f]);
+        FILE *o = fopen(path, "wb");
+        if (o) { fputs(e->visit[f], o); fclose(o); }
+        e->vchanged[f] = 0;
+    }
+}
 /* the picked one opens in the editor */
 static void picker_pick(Ed *e, const char *dir) {
     if (e->psel < 0 || e->psel >= g_npi) return;
@@ -960,11 +978,15 @@ static void picker_pick(Ed *e, const char *dir) {
     sprite_name(&g_pf[g_pi[e->psel].file], g_pi[e->psel].sp, nm, sizeof nm);
     file_open(e, dir, g_pi[e->psel].file, nm);
     e->page = 0; e->zoom = 0; e->msg[0] = 0; e->playing = 0;
+    visit_start(e, dir);
 }
 
 /* quitting with changes: keep (save) or discard */
-static void draw_asking(Canvas *cv) {
-    const char *a = "SAVE THE CHANGES?", *b = "S SAVE    D DISCARD    ESC BACK";
+static void draw_asking(Canvas *cv, const Ed *e) {
+    char a[96];
+    const char *b = "S SAVE    D DISCARD    ESC BACK";
+    if (e->asking == 2) { snprintf(a, sizeof a, "SAVE THE CHANGES TO %s?", e->name); for (char *q = a; *q; q++) if (*q >= 'a' && *q <= 'z') *q -= 32; }
+    else snprintf(a, sizeof a, "SAVE THE CHANGES?");
     int w = (text_width(b) > text_width(a) ? text_width(b) : text_width(a)) + 12, h = 24, bx = (cv->w - w) / 2, by = (cv->h - h) / 2;
     canvas_rect(cv, bx - 1, by - 1, w + 2, h + 2, C_GREY);
     canvas_rect(cv, bx, by, w, h, RGB(20, 20, 28));
@@ -974,7 +996,7 @@ static void draw_asking(Canvas *cv) {
 static void draw(const Ed *e, Canvas *cv) {
     g_nreg = 0;
     double now = wall_now();
-    if (e->page) { canvas_rect(cv, 0, 0, cv->w, cv->h, RGB(18, 18, 24)); draw_picker(e, cv, now); if (e->asking) draw_asking(cv); return; }
+    if (e->page) { canvas_rect(cv, 0, 0, cv->w, cv->h, RGB(18, 18, 24)); draw_picker(e, cv, now); if (e->asking) draw_asking(cv, e); return; }
     canvas_rect(cv, 0, 0, cv->w, cv->h, RGB(18, 18, 24));
     char t[160];
     snprintf(t, sizeof t, "EDIT %s  %s  %dX%d", e->name, FILES[e->file], e->w, e->h);
@@ -1183,7 +1205,7 @@ static void draw(const Ed *e, Canvas *cv) {
         for (int yy = 0; yy < box.h; yy++) for (int xx = 0; xx < box.w; xx++) canvas_px(cv, bx + xx, by + 11 + yy, box.p[yy * box.w + xx]);
         canvas_free(&box);
     }
-    if (e->asking) draw_asking(cv);
+    if (e->asking) draw_asking(cv, e);
 }
 
 static void set_file_colour(Ed *e, int i, Rgb c);
@@ -1229,6 +1251,7 @@ int editor_run(const char *dir, const char *name) {
     if (name && editor_find(dir, name, &which)) return 1;
     file_open(&e, dir, which, name);
     if (!name) picker_open(&e, dir, 0); /* (no name: the picker first) */
+    else visit_start(&e, dir);
     if (!isatty(STDIN_FILENO) || !isatty(STDOUT_FILENO)) { fprintf(stderr, "clawd-room --edit needs a terminal\n"); return 1; }
     tty_on();
     Cells prev = {0, 0, NULL};
@@ -1258,7 +1281,7 @@ int editor_run(const char *dir, const char *name) {
                 nin = 0;
                 if (e.asking) e.asking = 0;
                 else if (e.typing) e.typing = 0;
-                else if (e.page) { int any = 0; for (int f = 0; f < NFILES; f++) any |= e.changed[f]; if (any) e.asking = 1; else quit = 1; } /* (the picker: Esc quits) */
+                else if (e.page) { if (e.find[0]) { e.find[0] = 0; picker_refind(&e); } else quit = 1; } /* (the picker: Esc clears the search, else quits) */
             }
             continue;
         }
@@ -1270,9 +1293,9 @@ int editor_run(const char *dir, const char *name) {
             if (in[i] == 0x1b) {
                 if (i + 1 >= nin) break; /* (more to come) */
                 if (e.asking && in[i + 1] != '[') { e.asking = 0; i++; continue; } /* (Esc: back to editing) */
-                if (e.page && !e.asking && in[i + 1] != '[') { /* the picker, Esc: quit the editor (asking about changes) */
+                if (e.page && !e.asking && in[i + 1] != '[') { /* the picker, Esc: clears the search, else quits */
                     i++;
-                    { int any = 0; for (int f = 0; f < NFILES; f++) any |= e.changed[f]; if (any) e.asking = 1; else quit = 1; }
+                    if (e.find[0]) { e.find[0] = 0; picker_refind(&e); } else quit = 1;
                     continue;
                 }
                 if (e.page && in[i + 1] == '[' && i + 2 < nin && in[i + 2] >= 'A' && in[i + 2] <= 'D') { /* the picker's arrows */
@@ -1409,11 +1432,16 @@ int editor_run(const char *dir, const char *name) {
                 if (ch == '\r' || ch == '\n') picker_pick(&e, dir);
                 else if (ch == '\t') { e.ptab = (e.ptab + 1) % NFILES; e.pscroll = 0; int sh[512]; if (picker_shown(&e, sh)) e.psel = sh[0]; }
                 else if (ch == '\\') { e.pview = !e.pview; e.pscroll = 0; } /* (\: the other view; Ctrl+V is Windows Terminal's paste) */
-                else if (ch == 0x03) { int any = 0; for (int f = 0; f < NFILES; f++) any |= e.changed[f]; if (any) e.asking = 1; else quit = 1; }
+                else if (ch == 0x03 || ((ch == 'q' || ch == 'Q') && !fl)) quit = 1; /* (q, the search empty, or Ctrl+C: quit) */
                 else if ((ch == 127 || ch == 8) && fl) { e.find[fl - 1] = 0; picker_refind(&e); }
                 else if (((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') || ch == '-' || ch == '~') && fl < sizeof e.find - 1) {
                     e.find[fl] = (char)(ch >= 'a' && ch <= 'z' ? ch - 32 : ch); e.find[fl + 1] = 0; picker_refind(&e);
                 }
+                continue;
+            }
+            if (e.asking == 2) { /* leaving a sprite (q): keep or discard its changes, then the picker */
+                if (ch == 's' || ch == 'S' || ch == 'y' || ch == 'Y') { e.asking = 0; picker_open(&e, dir, 1); }
+                else if (ch == 'd' || ch == 'D' || ch == 'n' || ch == 'N') { e.asking = 0; visit_discard(&e, dir); file_open(&e, dir, e.file, e.name); picker_open(&e, dir, 1); }
                 continue;
             }
             if (e.asking) { /* keep or discard */
@@ -1459,7 +1487,7 @@ int editor_run(const char *dir, const char *name) {
             if (ch == ' ') { e.playing = !e.playing; e.play_t0 = wall_now(); continue; }
             if (ch == 'o' || ch == 'O') { e.onion = !e.onion; continue; }
             if (ch == 'p' || ch == 'P') { g_panel_folded = !g_panel_folded; continue; } /* (the colour panel folds / unfolds) */
-            if (ch == 'l' || ch == 'L') { e.playing = 0; picker_open(&e, dir, 1); continue; } /* (the sprite picker) */
+            if (ch == 'l' || ch == 'L') ch = 'q'; /* (l: the same as q) */
             if (ch == 'w' || ch == 'W' || ch == 'n' || ch == 'N') { /* held (its repeats keep it), an arrow picks the side */
                 e.sizing = ch == 'w' || ch == 'W' ? 'w' : 'n';
                 e.sizing_until = wall_now() + 1.0;
@@ -1470,7 +1498,11 @@ int editor_run(const char *dir, const char *name) {
             if (ch == 0x1A) ch = 'u'; /* Ctrl+Z: undo; Ctrl+Y: redo (U / R too) */
             else if (ch == 0x19) ch = 'r';
             else if (ch == 0x03) { { int any = 0; for (int f = 0; f < NFILES; f++) any |= e.changed[f]; if (any) e.asking = 1; else quit = 1; } continue; } /* Ctrl+C: quit, asking about changes */
-            if (ch == 'q') { e.playing = 0; picker_open(&e, dir, 1); } /* (q: back to the sprite picker; Esc there quits) */
+            if (ch == 'q') { /* q: back to the sprite picker; changed: keep or discard first */
+                e.playing = 0;
+                int any = 0; for (int f = 0; f < NFILES; f++) any |= e.vchanged[f];
+                if (any) e.asking = 2; else picker_open(&e, dir, 1);
+            }
             else if (ch == 'u' && e.nundo) { e.nundo--; swap_undo(&e, e.nundo); e.nredo++; save(&e); }
             else if (ch == 'r' && e.nredo) { swap_undo(&e, e.nundo); e.nundo++; e.nredo--; save(&e); }
             else if (ch == '>' || ch == '<' || ch == '.' || ch == ',') { /* the frame after / before in the animation (wrapping) */

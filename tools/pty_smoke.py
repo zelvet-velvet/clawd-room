@@ -144,17 +144,17 @@ with tempfile.TemporaryDirectory() as tmp:
     click = lambda c, r: [b"\x1b[<0;%d;%dM" % (c, r), b"\x1b[<0;%d;%dm" % (c, r)]  # (a left click on a cell, 1-based)
     # (FILL clicks down the canvas's left column, wherever the canvas sits: every pixel there is outside the Clawd)
     clicks = [k for row in range(7, 31) for k in click(6, row)]
-    keys = [(0.7, b"p"), (0.8, b"#"), (1.0, b"FF0000\r"), (1.3, b"b")] + [(1.6 + i * 0.02, k) for i, k in enumerate(clicks)] + [(3.0, b"q"), (3.3, b"\x1b"), (3.9, b"s")]  # (p: the colour panel unfolded, the canvas at the left; q: to the picker, Esc: quit, s: save)
+    keys = [(0.7, b"p"), (0.8, b"#"), (1.0, b"FF0000\r"), (1.3, b"b")] + [(1.6 + i * 0.02, k) for i, k in enumerate(clicks)] + [(3.0, b"q"), (3.3, b"s"), (3.7, b"q")]  # (p: the colour panel unfolded, the canvas at the left; q: keep or discard, s: keep; q in the picker: quit)
     out, st = run(["--edit", "walk-1"], keys, env, cols=150, rows=50)
     walk = read("clawd.txt").split("@ walk-1")[1].split("@")[0]
     check("editor: FILL fills the touching see-through pixels, not the closed ones", st == 0 and walk.count("a") > 40 and ".." in walk and read("clawd.txt") != clawd0)
-    out, st = run(["--edit", "window"], [(0.8, b"f"), (1.0, b"f"), (1.2, b"<"), (1.4, b"x"), (1.6, b"x"), (1.9, b"q"), (2.2, b"\x1b"), (2.8, b"s")], env, cols=150, rows=50)
+    out, st = run(["--edit", "window"], [(0.8, b"f"), (1.0, b"f"), (1.2, b"<"), (1.4, b"x"), (1.6, b"x"), (1.9, b"q"), (2.2, b"s"), (2.6, b"q")], env, cols=150, rows=50)
     heads = [l for l in read("props.txt").splitlines() if l.startswith("@ window")]
-    check("editor: f adds prop frames, x x deletes one and the next is numbered on", st == 0 and heads == ["@ window | window", "@ window~2 | window~2"])
-    out, st = run(["--edit", "walk"], [(0.8, b" "), (1.6, b">"), (1.9, b"o"), (2.2, b" "), (2.5, b"f"), (2.8, b"q"), (3.1, b"\x1b")], env, cols=150, rows=50)
+    check("editor: f adds prop frames, x x deletes one and the next is numbered on (q asks, s keeps)", st == 0 and heads == ["@ window | window", "@ window~2 | window~2"])
+    out, st = run(["--edit", "walk"], [(0.8, b" "), (1.6, b">"), (1.9, b"o"), (2.2, b" "), (2.5, b"f"), (2.8, b"q"), (3.1, b"q")], env, cols=150, rows=50)
     check("editor: opens an animation by its name, plays, steps frames; f leaves Clawd frames alone", st == 0 and b"Clawd Room pixel editor" in out and read("clawd.txt").count("@ walk-") == clawd0.count("@ walk-"))
     out, st = run(["--edit", "-"], [(0.8, b"W"), (0.9, b"A"), (1.0, b"L"), (1.3, b"\r"), (1.7, b"q"), (2.1, b"\x1b")], env, cols=150, rows=50)
-    check("editor: the sprite picker opens with no name, finds by typing, Enter opens, q goes back to it, a lone Esc there quits", st == 0 and b"Clawd Room pixel editor" in out)
+    check("editor: the sprite picker opens with no name, finds by typing, Enter opens, q goes back to it, a lone Esc there quits (the search empty)", st == 0 and b"Clawd Room pixel editor" in out)
     r = subprocess.run(CMD + ["--edit", "list"], capture_output=True, text=True, env=dict(os.environ, **env))
     import re
     check("--edit list shows animations with their frame counts", r.returncode == 0 and re.search(r"walk +4\b", r.stdout) and re.search(r"think +9\b", r.stdout) and "window" in r.stdout)
