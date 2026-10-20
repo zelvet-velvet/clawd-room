@@ -230,8 +230,12 @@ static int write_mine(File *f) {
     int any = 0;
     o += (size_t)snprintf(out + o, cap - o, "# Your own sprites over the defaults in the repo (the pixel editor writes this; RESET in its picker takes them away).\n");
     for (int i = 0; i < f->nline; i++) if (f->line[i][0] == ':') {
-        int same = 0;
-        for (int k = 0; k < d.nline; k++) if (d.line[k][0] == ':' && !strcmp(d.line[k], f->line[i])) same = 1;
+        int same = 0, theirs = 0, used = 0;
+        char ch = pal_letter(f->line[i]);
+        for (int k = 0; k < d.nline; k++) if (d.line[k][0] == ':') { if (!strcmp(d.line[k], f->line[i])) same = 1; if (pal_letter(d.line[k]) == ch) theirs = 1; }
+        for (int k = 0; k < f->nline && !used; k++) /* (is it in any sprite's rows) */
+            if (f->line[k][0] && f->line[k][0] != ':' && f->line[k][0] != '@' && f->line[k][0] != '#' && strchr(f->line[k], ch)) used = 1;
+        if (!theirs && !used) continue; /* (a colour you added that nothing uses any more: it goes) */
         if (!same) { o += (size_t)snprintf(out + o, cap - o, "%s\n", f->line[i]); any = 1; }
     }
     static char g1[MAXH][MAXW + 1], g2[MAXH][MAXW + 1];
@@ -355,7 +359,14 @@ static int save_mine(Ed *e) {
     int sp = e->sp, w = e->w, h = e->h, nu = e->nundo, nr = e->nredo;
     static char keep[MAXH][MAXW + 1];
     memcpy(keep, e->g, sizeof keep);
+    char held = e->pk == 1 ? e->f.pal_ch[e->pi] : 0; /* (the colour in hand: its swatch may go if nothing uses it now) */
+    Rgb held_c = e->pk == 1 ? e->f.pal_c[e->pi] : RGB(0, 0, 0);
     file_load_merged(f, path, mpath);
+    if (held) { /* (still in the file: the same swatch; gone: kept in hand as a new colour, painting brings it back) */
+        int found = -1;
+        for (int q = 0; q < f->npal; q++) if (f->pal_ch[q] == held) found = q;
+        if (found >= 0) e->pi = found; else { e->pk = 2; e->prgb = held_c; }
+    }
     e->sp = sp < f->nsprite ? sp : 0; e->w = w; e->h = h; memcpy(e->g, keep, sizeof keep); e->nundo = nu; e->nredo = nr;
     e->changed[e->file] = e->vchanged[e->file] = 1;
     return 0;
@@ -1580,6 +1591,7 @@ int editor_run(const char *dir, const char *name) {
                         char ch = '.';
                         if (btn == 0 && e.pk == 1) ch = e.f.pal_ch[e.pi];
                         else if (btn == 0 && e.pk == 2) { ch = letter_for(&e, e.prgb); for (int q = 0; q < e.f.npal; q++) if (e.f.pal_ch[q] == ch) { e.pk = 1; e.pi = q; } }
+                        if (e.g[e.hy][e.hx] == ch) continue; /* (already that colour: nothing to fill, no undo step) */
                         static unsigned char m[MAXH][MAXW];
                         fill_area(&e, e.hx, e.hy, m);
                         push_undo(&e);
