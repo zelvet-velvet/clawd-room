@@ -152,7 +152,8 @@ with tempfile.TemporaryDirectory() as tmp:
     out, st = run(["--edit", "walk"], [(0.8, b" "), (1.6, b">"), (1.9, b"o"), (2.2, b" "), (2.5, b"f"), (2.8, b"q")], env, cols=150, rows=50)
     check("editor: opens an animation by its name, plays, steps frames; f leaves Clawd frames alone", st == 0 and b"Clawd Room pixel editor" in out and read("clawd.txt").count("@ walk-") == clawd0.count("@ walk-"))
     r = subprocess.run(CMD + ["--edit", "list"], capture_output=True, text=True, env=dict(os.environ, **env))
-    check("--edit list shows animations with their frame counts", r.returncode == 0 and "walk 4" in r.stdout and "think 9" in r.stdout and "window" in r.stdout)
+    import re
+    check("--edit list shows animations with their frame counts", r.returncode == 0 and re.search(r"walk +4\b", r.stdout) and re.search(r"think +9\b", r.stdout) and "window" in r.stdout)
     shutil.rmtree(spr, ignore_errors=True)
 print("%d failed" % len(fails) if fails else "all passed")
 sys.exit(1 if fails else 0)

@@ -995,7 +995,8 @@ int editor_run(const char *dir, const char *name) {
 }
 
 /* --edit list: what can be opened, by file: each animation once with how many frames it has, in columns that fit the
- * terminal (a name is never cut across two lines) */
+ * terminal (a name is never cut across two lines); in each column the names line up on the left, the frame counts on
+ * the right */
 int editor_list(const char *dir) {
     struct winsize ws;
     int width = isatty(STDOUT_FILENO) && ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == 0 && ws.ws_col ? ws.ws_col : 80;
@@ -1005,8 +1006,8 @@ int editor_list(const char *dir) {
         char path[700];
         snprintf(path, sizeof path, "%s/%s", dir, FILES[f]);
         if (file_load(&tf, path)) continue;
-        static char item[512][80];
-        int ni = 0, nanim = 0, colw = 0;
+        static char item[512][64];
+        int cnt[512], ni = 0, nanim = 0, namew = 0, numw = 0; /* (cnt 0: a sprite on its own, no count) */
         static unsigned char seen[512];
         memset(seen, 0, sizeof seen);
         for (int i = 0; i < tf.nsprite && ni < 512; i++) {
@@ -1016,23 +1017,27 @@ int editor_list(const char *dir) {
             char name[64], base[64];
             sprite_name(&tf, fr[0], name, sizeof name);
             int numbered = split_name(name, base, sizeof base, &num) == 1; /* (NAME-1 alone is an animation of one frame) */
-            if (n > 1 || numbered) { snprintf(item[ni], sizeof item[ni], "%s %d", base, n); nanim++; } else snprintf(item[ni], sizeof item[ni], "%s", name);
-            if ((int)strlen(item[ni]) > colw) colw = (int)strlen(item[ni]);
+            cnt[ni] = n > 1 || numbered ? n : 0;
+            snprintf(item[ni], sizeof item[ni], "%s", cnt[ni] ? base : name);
+            if (cnt[ni]) { nanim++; char d[12]; int dl = snprintf(d, sizeof d, "%d", n); if (dl > numw) numw = dl; }
+            if ((int)strlen(item[ni]) > namew) namew = (int)strlen(item[ni]);
             ni++;
         }
         printf("%s   %d sprite%s", FILES[f], tf.nsprite, tf.nsprite == 1 ? "" : "s");
         if (nanim) printf(", %d animation%s (name and frames)", nanim, nanim == 1 ? "" : "s");
         printf("\n");
-        colw += 3;
-        int cols = (width - 2) / colw > 0 ? (width - 2) / colw : 1;
+        int cellw = namew + (numw ? 1 + numw : 0), colw = cellw + 4; /* a name, a space, its count (right-aligned), a gap */
+        int cols = (width - 2 + 4) / colw > 0 ? (width - 2 + 4) / colw : 1;
         for (int i = 0; i < ni; i++) {
+            int last = i % cols == cols - 1 || i == ni - 1;
             if (i % cols == 0) printf("  ");
-            printf("%-*s", i % cols == cols - 1 || i == ni - 1 ? 0 : colw, item[i]);
-            if (i % cols == cols - 1 || i == ni - 1) printf("\n");
+            if (cnt[i]) printf("%-*s %*d", namew, item[i], numw, cnt[i]);
+            else printf("%-*s", last ? 0 : cellw, item[i]);
+            if (last) printf("\n"); else printf("    ");
         }
         printf("\n");
         file_free(&tf);
     }
-    printf("open one: ./clawd-room.sh --edit NAME     (an animation by its name opens its first frame: --edit walk)\n");
+    printf("open one: ./clawd-room.sh --edit NAME\n");
     return 0;
 }
