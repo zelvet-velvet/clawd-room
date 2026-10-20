@@ -10,6 +10,11 @@ Pictures of the debug overlay, the placer, the pixel editor, the gallery, newest
 
 ## 2026-10-20
 
+> [!quote]- ♻️ replaced · Editor your sprites mockup, A B C (B picked)
+> ![[2026-10-20 editor your sprites mockup, A B C (B picked).png|420]]
+> Replaced by: [[2026-10-20 editor picker with yours marked, reset buttons.png]]
+> Shown in: not in a note yet
+
 > [!quote]- ♻️ replaced · Editor tool icons, key caps bigger · picked
 > ![[2026-10-20 editor tool icons, key caps bigger (picked).png|420]]
 > Replaced by: [[2026-10-20 editor timeline, onion skin and fill.png]]
@@ -58,6 +63,10 @@ Pictures of the debug overlay, the placer, the pixel editor, the gallery, newest
 > [!success]+ ✅ current · Editor playing a Clawd at the room's speed
 > ![[2026-10-20 editor playing a Clawd at the room's speed.png|420]]
 > Shown in: [[Interaction|Interaction]], [[Test Checklist|Test Checklist]], [[2026-10-20#🎞️ The pixel editor edits animations; a fill tool (Zaviel)|2026-10-20 · 🎞️ The pixel editor edits animations; a fill tool (Zaviel)]]
+
+> [!success]+ ✅ current · Editor picker with yours marked, reset buttons
+> ![[2026-10-20 editor picker with yours marked, reset buttons.png|420]]
+> Shown in: not in a note yet
 
 > [!success]+ ✅ current · Editor panel and timeline folded
 > ![[2026-10-20 editor panel and timeline folded.png|420]]

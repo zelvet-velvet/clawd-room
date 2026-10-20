@@ -33,7 +33,8 @@ static const char *const FILES[] = {"props.txt", "items.txt", "clawd.txt", "ui.t
 static const char FREE_CHARS[] = "abcdefghijklmnopqrstuvwxyzACDEFGHIJLMNOPQRSTUVXYZ0123456789";
 
 typedef struct {
-    char path[700];
+    char path[700], mpath[700];             /* the default file (in the repo) and yours (~/.clawd-room/sprites; "" none) */
+    unsigned char mine[512];                 /* the sprites of yours (in your file) */
     char *line[MAX_LINES]; int nline;
     char pal_ch[96]; Rgb pal_c[96]; int pal_body[96]; int npal; int last_pal_line;
     int sprite_line[512]; int nsprite;      /* the "@ name | key" line of each sprite */
@@ -83,32 +84,37 @@ static char *slurp(const char *path) {
 
 static void file_free(File *f) { for (int i = 0; i < f->nline; i++) free(f->line[i]); f->nline = 0; }
 
+/* a line more at the end of the file's lines (a colour, a sprite's head or a row) */
+static void file_add_line(File *f, const char *buf) {
+    if (f->nline >= MAX_LINES) return;
+    f->line[f->nline] = strdup(buf);
+    if (buf[0] == ':' && f->npal < 96) { /* ": K = 20,20,30" or ": B = body" */
+        const char *p = buf + 1;
+        while (*p == ' ') p++;
+        char ch = *p++;
+        while (*p == ' ' || *p == '=') p++;
+        f->pal_ch[f->npal] = ch;
+        f->pal_body[f->npal] = !strncmp(p, "body", 4);
+        int r = 0, g = 0, b = 0;
+        if (!f->pal_body[f->npal]) sscanf(p, "%d,%d,%d", &r, &g, &b);
+        f->pal_c[f->npal] = f->pal_body[f->npal] ? C_CLAWD : RGB(r, g, b);
+        f->npal++;
+        f->last_pal_line = f->nline;
+    } else if (buf[0] == '@' && f->nsprite < 512) f->sprite_line[f->nsprite++] = f->nline;
+    f->nline++;
+}
 static int file_load(File *f, const char *path) {
     file_free(f);
     memset(f, 0, sizeof *f);
     snprintf(f->path, sizeof f->path, "%s", path);
+    f->last_pal_line = -1;
     FILE *fp = fopen(path, "r");
     if (!fp) return -1;
     char buf[1024];
-    f->last_pal_line = -1;
     while (fgets(buf, sizeof buf, fp) && f->nline < MAX_LINES) {
         size_t n = strlen(buf);
         while (n && (buf[n - 1] == '\n' || buf[n - 1] == '\r')) buf[--n] = 0;
-        f->line[f->nline] = strdup(buf);
-        if (buf[0] == ':' && f->npal < 96) { /* ": K = 20,20,30" or ": B = body" */
-            const char *p = buf + 1;
-            while (*p == ' ') p++;
-            char ch = *p++;
-            while (*p == ' ' || *p == '=') p++;
-            f->pal_ch[f->npal] = ch;
-            f->pal_body[f->npal] = !strncmp(p, "body", 4);
-            int r = 0, g = 0, b = 0;
-            if (!f->pal_body[f->npal]) sscanf(p, "%d,%d,%d", &r, &g, &b);
-            f->pal_c[f->npal] = f->pal_body[f->npal] ? C_CLAWD : RGB(r, g, b);
-            f->npal++;
-            f->last_pal_line = f->nline;
-        } else if (buf[0] == '@' && f->nsprite < 512) f->sprite_line[f->nsprite++] = f->nline;
-        f->nline++;
+        file_add_line(f, buf);
     }
     fclose(fp);
     return 0;
@@ -148,6 +154,118 @@ static void grid_of(const File *f, int sp, char g[MAXH][MAXW + 1], int *w, int *
         (*h)++;
     }
     for (int y = 0; y < MAXH; y++) g[y][MAXW] = 0;
+}
+
+/* ---- your own sprites over the defaults: the repo's file is the default, ~/.clawd-room/sprites/FILE holds only what you
+ * changed (colours you added or changed, sprites that differ, frames you added). The editor shows them merged and writes
+ * only yours; the room shows yours over the defaults; RESET in the picker takes yours away. ------------------------------ */
+static int sprite_find(const File *f, const char *name) {
+    char n2[64];
+    for (int i = 0; i < f->nsprite; i++) { sprite_name(f, i, n2, sizeof n2); if (!strcmp(n2, name)) return i; }
+    return -1;
+}
+static char pal_letter(const char *line) { const char *p = line + 1; while (*p == ' ') p++; return *p; }
+static int block_end(const File *f, int head) { /* the line after a sprite's rows */
+    int i = head + 1;
+    while (i < f->nline && f->line[i][0] && f->line[i][0] != '@' && f->line[i][0] != '#' && f->line[i][0] != ':') i++;
+    return i;
+}
+/* the default file with yours laid over it: your colours in place of the default's (or added after its last colour), your
+ * sprites in place of the default ones of the same name, the ones only you have at the end */
+static int file_load_merged(File *f, const char *dpath, const char *mpath) {
+    static File d, m;
+    int rc = file_load(&d, dpath);
+    if (file_load(&m, mpath) != 0) m.nline = m.nsprite = m.npal = 0;
+    file_free(f);
+    memset(f, 0, sizeof *f);
+    f->last_pal_line = -1;
+    if (rc && !m.nline) { snprintf(f->path, sizeof f->path, "%s", dpath); return rc; }
+    for (int i = 0; i < d.nline; i++) {
+        const char *l = d.line[i];
+        if (l[0] == ':') {
+            int theirs = 0;
+            for (int k = 0; k < m.nline; k++) if (m.line[k][0] == ':' && pal_letter(m.line[k]) == pal_letter(l)) theirs = 1;
+            if (!theirs) file_add_line(f, l);
+            if (i == d.last_pal_line) for (int k = 0; k < m.nline; k++) if (m.line[k][0] == ':') file_add_line(f, m.line[k]);
+            continue;
+        }
+        if (l[0] == '@') {
+            char nm[64];
+            int di = -1;
+            for (int k = 0; k < d.nsprite; k++) if (d.sprite_line[k] == i) di = k;
+            sprite_name(&d, di, nm, sizeof nm);
+            int mi = sprite_find(&m, nm);
+            if (mi >= 0) { /* yours instead: its head and rows */
+                int e2 = block_end(&m, m.sprite_line[mi]);
+                for (int k = m.sprite_line[mi]; k < e2; k++) file_add_line(f, m.line[k]);
+                f->mine[f->nsprite - 1] = 1;
+                i = block_end(&d, i) - 1;
+                continue;
+            }
+        }
+        file_add_line(f, l);
+    }
+    if (d.last_pal_line < 0) for (int k = 0; k < m.nline; k++) if (m.line[k][0] == ':') file_add_line(f, m.line[k]);
+    for (int k = 0; k < m.nsprite; k++) { /* the sprites only you have */
+        char nm[64];
+        sprite_name(&m, k, nm, sizeof nm);
+        if (sprite_find(&d, nm) >= 0) continue;
+        file_add_line(f, "");
+        int e2 = block_end(&m, m.sprite_line[k]);
+        for (int j = m.sprite_line[k]; j < e2; j++) file_add_line(f, m.line[j]);
+        f->mine[f->nsprite - 1] = 1;
+    }
+    snprintf(f->path, sizeof f->path, "%s", dpath);
+    snprintf(f->mpath, sizeof f->mpath, "%s", mpath);
+    return 0;
+}
+static void mine_path(char *out, size_t n, int file) { snprintf(out, n, "%s/%s", sprites_mine_dir(), FILES[file]); }
+/* yours, from the merged lines: the colours that are new or differ from the default's, the sprites that differ or that the
+ * default has not; nothing of yours: your file goes */
+static int write_mine(File *f) {
+    static File d;
+    if (file_load(&d, f->path) != 0) d.nline = d.nsprite = d.npal = 0;
+    char *out = malloc(1 << 20);
+    size_t o = 0, cap = 1 << 20;
+    int any = 0;
+    o += (size_t)snprintf(out + o, cap - o, "# Your own sprites over the defaults in the repo (the pixel editor writes this; RESET in its picker takes them away).\n");
+    for (int i = 0; i < f->nline; i++) if (f->line[i][0] == ':') {
+        int same = 0;
+        for (int k = 0; k < d.nline; k++) if (d.line[k][0] == ':' && !strcmp(d.line[k], f->line[i])) same = 1;
+        if (!same) { o += (size_t)snprintf(out + o, cap - o, "%s\n", f->line[i]); any = 1; }
+    }
+    static char g1[MAXH][MAXW + 1], g2[MAXH][MAXW + 1];
+    for (int s = 0; s < f->nsprite; s++) {
+        char nm[64];
+        int w1, h1, w2, h2;
+        sprite_name(f, s, nm, sizeof nm);
+        grid_of(f, s, g1, &w1, &h1);
+        int di = sprite_find(&d, nm), same = 0;
+        if (di >= 0) {
+            grid_of(&d, di, g2, &w2, &h2);
+            same = w1 == w2 && h1 == h2 && !strcmp(f->line[f->sprite_line[s]], d.line[d.sprite_line[di]]);
+            for (int y = 0; y < h1 && same; y++) if (memcmp(g1[y], g2[y], (size_t)w1)) same = 0;
+        }
+        if (same) continue;
+        o += (size_t)snprintf(out + o, cap - o, "\n%s\n", f->line[f->sprite_line[s]]);
+        for (int y = 0; y < h1 && o + MAXW + 2 < cap; y++) o += (size_t)snprintf(out + o, cap - o, "%.*s\n", w1, g1[y]);
+        any = 1;
+    }
+    int rc = 0;
+    if (!any) remove(f->mpath); /* (nothing of yours left: the defaults) */
+    else {
+        char dir[700], tmp[720];
+        snprintf(dir, sizeof dir, "%s", f->mpath);
+        char *sl = strrchr(dir, '/');
+        if (sl) { *sl = 0; char mk[760]; snprintf(mk, sizeof mk, "mkdir -p '%s'", dir); if (system(mk)) {} }
+        snprintf(tmp, sizeof tmp, "%s.edit", f->mpath);
+        FILE *fp = fopen(tmp, "w");
+        if (!fp || fwrite(out, 1, o, fp) != o) rc = -1;
+        if (fp) fclose(fp);
+        if (!rc && rename(tmp, f->mpath)) rc = -1;
+    }
+    free(out);
+    return rc;
 }
 
 static void sprite_open(Ed *e, int sp) {
@@ -208,43 +326,53 @@ static int find_sprite(const File *f, const char *name) {
 static void file_open(Ed *e, const char *dir, int which, const char *name) {
     char path[700];
     e->file = (which + NFILES) % NFILES;
+    char mpath[700];
     snprintf(path, sizeof path, "%s/%s", dir, FILES[e->file]);
-    if (file_load(&e->f, path)) snprintf(e->msg, sizeof e->msg, "CANNOT READ %s", FILES[e->file]);
-    if (!e->orig[e->file]) e->orig[e->file] = slurp(path); /* (kept for a discard) */
+    mine_path(mpath, sizeof mpath, e->file);
+    if (file_load_merged(&e->f, path, mpath)) snprintf(e->msg, sizeof e->msg, "CANNOT READ %s", FILES[e->file]);
     int sp = name ? find_sprite(&e->f, name) : 0;
     sprite_open(e, sp < 0 ? 0 : sp);
 }
 
-/* writes the grid back into the file's lines (a new palette letter goes after the last palette line), then the file */
-static int save(Ed *e) {
+/* the merged lines again from their text (after lines were put in or taken out) */
+static void file_reparse(File *f) {
+    static File t;
+    file_free(&t);
+    memset(&t, 0, sizeof t);
+    t.last_pal_line = -1;
+    for (int i = 0; i < f->nline; i++) file_add_line(&t, f->line[i]);
+    snprintf(t.path, sizeof t.path, "%s", f->path); snprintf(t.mpath, sizeof t.mpath, "%s", f->mpath);
+    file_free(f);
+    memcpy(f, &t, sizeof t);
+    memset(&t, 0, sizeof t); /* (its lines are f's now) */
+}
+/* yours written (write_mine), then the merged lines read again (line numbers moved); the open sprite stays */
+static int save_mine(Ed *e) {
     File *f = &e->f;
-    int at = f->sprite_line[e->sp], end = at + 1;
-    while (end < f->nline && f->line[end][0] && f->line[end][0] != '@' && f->line[end][0] != '#' && f->line[end][0] != ':') end++;
-    char tmp[720];
-    snprintf(tmp, sizeof tmp, "%s.edit", f->path);
-    FILE *out = fopen(tmp, "w");
-    if (!out) { snprintf(e->msg, sizeof e->msg, "CANNOT SAVE: %s", strerror(errno)); return -1; }
-    for (int i = 0; i <= at; i++) fprintf(out, "%s\n", f->line[i]);
-    for (int y = 0; y < e->h; y++) { char row[MAXW + 1]; memcpy(row, e->g[y], (size_t)e->w); row[e->w] = 0; fprintf(out, "%s\n", row); }
-    for (int i = end; i < f->nline; i++) fprintf(out, "%s\n", f->line[i]);
-    fclose(out);
-    if (rename(tmp, f->path)) { snprintf(e->msg, sizeof e->msg, "CANNOT SAVE"); return -1; }
-    char name[64];
-    snprintf(name, sizeof name, "%s", e->name);
-    char dir[700];
-    snprintf(dir, sizeof dir, "%s", f->path);
-    char *sl = strrchr(dir, '/');
-    if (sl) *sl = 0;
+    if (write_mine(f)) { snprintf(e->msg, sizeof e->msg, "CANNOT SAVE: %s", strerror(errno)); return -1; }
+    char path[700], mpath[700];
+    snprintf(path, sizeof path, "%s", f->path); snprintf(mpath, sizeof mpath, "%s", f->mpath);
     int sp = e->sp, w = e->w, h = e->h, nu = e->nundo, nr = e->nredo;
     static char keep[MAXH][MAXW + 1];
     memcpy(keep, e->g, sizeof keep);
-    char again[700];
-    snprintf(again, sizeof again, "%s", f->path); /* (file_load clears the File, path and all) */
-    file_load(&e->f, again); /* (line numbers moved) */
-    e->sp = sp; e->w = w; e->h = h; memcpy(e->g, keep, sizeof keep); e->nundo = nu; e->nredo = nr;
-    (void)name;
-    snprintf(e->msg, sizeof e->msg, "SAVED %s", FILES[e->file]);
+    file_load_merged(f, path, mpath);
+    e->sp = sp < f->nsprite ? sp : 0; e->w = w; e->h = h; memcpy(e->g, keep, sizeof keep); e->nundo = nu; e->nredo = nr;
     e->changed[e->file] = e->vchanged[e->file] = 1;
+    return 0;
+}
+/* the grid into the open sprite's rows, then yours written: only what differs from the default */
+static int save(Ed *e) {
+    File *f = &e->f;
+    int at = f->sprite_line[e->sp], end = block_end(f, at);
+    int keep = f->nline - end, add = e->h - (end - at - 1);
+    if (f->nline + add >= MAX_LINES) return -1;
+    for (int i = at + 1; i < end; i++) free(f->line[i]);
+    memmove(&f->line[at + 1 + e->h], &f->line[end], sizeof(char *) * (size_t)keep);
+    for (int y = 0; y < e->h; y++) { char row[MAXW + 1]; memcpy(row, e->g[y], (size_t)e->w); row[e->w] = 0; f->line[at + 1 + y] = strdup(row); }
+    f->nline += add;
+    file_reparse(f);
+    if (save_mine(e)) return -1;
+    snprintf(e->msg, sizeof e->msg, "SAVED %s", e->f.mine[e->sp] ? "AS YOURS" : "(AS THE DEFAULT)");
     return 0;
 }
 
@@ -275,15 +403,12 @@ static int new_frame(Ed *e) {
     f->line[at + 1] = strdup(head);
     for (int y = 0; y < e->h; y++) { char row[MAXW + 1]; memcpy(row, e->g[y], (size_t)e->w); row[e->w] = 0; f->line[at + 2 + y] = strdup(row); }
     f->nline += add;
-    FILE *out = fopen(f->path, "w");
-    if (!out) return -1;
-    for (int i = 0; i < f->nline; i++) fprintf(out, "%s\n", f->line[i]);
-    fclose(out);
-    char path[700];
-    snprintf(path, sizeof path, "%s", f->path);
-    file_load(f, path);
-    e->changed[e->file] = e->vchanged[e->file] = 1;
-    for (int i = 0; i < f->nsprite; i++) if (f->sprite_line[i] == at + 1) { sprite_open(e, i); break; }
+    file_reparse(f);
+    if (save_mine(e)) return -1; /* (a frame only you have: in your file) */
+    char nf[80];
+    snprintf(nf, sizeof nf, "%s~%d", base, k);
+    int sp = sprite_find(f, nf);
+    if (sp >= 0) sprite_open(e, sp);
     snprintf(e->msg, sizeof e->msg, "NEW FRAME %s~%d", base, k);
     return 0;
 }
@@ -294,6 +419,13 @@ static int delete_frame(Ed *e) {
     File *f = &e->f;
     int fr[128], n = anim_frames(f, e->sp, fr, 128), k = frame_index(fr, n, e->sp);
     if (k == 0) return -1;
+    { /* (the defaults stay as they are: only a frame you added, the last one, goes) */
+        static File d;
+        char nm0[64];
+        sprite_name(f, e->sp, nm0, sizeof nm0);
+        if (file_load(&d, f->path) != 0) d.nsprite = 0;
+        if (sprite_find(&d, nm0) >= 0 || k != n - 1) { snprintf(e->msg, sizeof e->msg, "ONLY YOUR LAST ADDED FRAME CAN GO"); return -1; }
+    }
     char base[64], name[64];
     int num;
     sprite_name(f, e->sp, name, sizeof name);
@@ -310,14 +442,8 @@ static int delete_frame(Ed *e) {
         snprintf(head, sizeof head, "@ %s~%d | %s~%d", base, j, base, j);
         free(f->line[ln]); f->line[ln] = strdup(head);
     }
-    FILE *out = fopen(f->path, "w");
-    if (!out) return -1;
-    for (int i = 0; i < f->nline; i++) fprintf(out, "%s\n", f->line[i]);
-    fclose(out);
-    char path[700];
-    snprintf(path, sizeof path, "%s", f->path);
-    file_load(f, path);
-    e->changed[e->file] = e->vchanged[e->file] = 1;
+    file_reparse(f);
+    if (save_mine(e)) return -1;
     char prev[80]; /* the frame before it: NAME, or NAME~K (frame K, at index K - 1) */
     if (k == 1) snprintf(prev, sizeof prev, "%s", base); else snprintf(prev, sizeof prev, "%s~%d", base, k);
     int sp = find_sprite(f, prev);
@@ -363,7 +489,8 @@ static void swap_undo(Ed *e, int at) {
 
 /* ---- the screen: canvas pixels; one terminal cell is 1 pixel wide and 2 high ---------------------------------------- */
 /* what is where, filled while drawing, so a click finds what it is on */
-enum { R_GRID, R_TOOL, R_FILE, R_NEW, R_FIELD, R_HUE, R_HEX, R_NUM, R_ADD, R_FRAME, R_FADD, R_PLAY, R_SPEED, R_ONION, R_STRIP, R_DIV, R_FOLD, R_PITEM, R_PTAB, R_PVIEW };
+enum { R_GRID, R_TOOL, R_FILE, R_NEW, R_FIELD, R_HUE, R_HEX, R_NUM, R_ADD, R_FRAME, R_FADD, R_PLAY, R_SPEED, R_ONION, R_STRIP, R_DIV, R_FOLD, R_PITEM, R_PTAB, R_PVIEW,
+       R_PRESET, R_PRESETALL, R_PMAKEDEF };
 typedef struct { int kind, i, x0, y0, x1, y1; Rgb c; } Region;
 static Region g_reg[320];
 static int g_nreg;
@@ -535,8 +662,12 @@ static void ui_watch(const char *dir) {
     struct stat st;
     snprintf(path, sizeof path, "%s/ui.txt", dir);
     if (stat(path, &st) != 0) { if (g_ui.n) sprites_free(&g_ui); g_ui_mtime = 0; return; }
-    if (st.st_mtime == g_ui_mtime && g_ui.n) return;
-    sprites_free(&g_ui); g_ui = sprites_load(path); g_ui_mtime = st.st_mtime;
+    char mp[700];
+    struct stat ms;
+    snprintf(mp, sizeof mp, "%s/ui.txt", sprites_mine_dir());
+    time_t when = st.st_mtime + (stat(mp, &ms) == 0 ? ms.st_mtime * 2 + 1 : 0); /* (the default's or yours changed) */
+    if (when == g_ui_mtime && g_ui.n) return;
+    sprites_free(&g_ui); g_ui = sprites_load_layered(path, mp); g_ui_mtime = when; /* (yours over the defaults) */
 }
 /* a ui.txt sprite at (x, y), its colours brightened by `lift` (0 none, 1 white); 0 if the file has no such sprite */
 static int ui_icon(Canvas *cv, const char *name, int x, int y, double lift) {
@@ -762,7 +893,7 @@ static void draw_timeline(Canvas *cv, const Ed *e, double now, int preview, int 
 
 /* ---- the sprite picker: every sprite and animation as a card with its picture (or as a list with the picked one big), by
  * file; type to find; Enter or a click opens it in the editor; l there brings the picker back --------------------------- */
-typedef struct { int file, sp, n; char name[64]; } PickItem;
+typedef struct { int file, sp, n, mine; char name[64]; } PickItem; /* (mine: one of its frames is yours) */
 static File g_pf[NFILES];
 static PickItem g_pi[512];
 static int g_npi, g_pick_cols = 1;
@@ -770,10 +901,10 @@ static void picker_gather(const char *dir) {
     g_npi = 0;
     for (int f = 0; f < NFILES; f++) {
         char path[700];
+        char mp[700];
         snprintf(path, sizeof path, "%s/%s", dir, FILES[f]);
-        file_free(&g_pf[f]);
-        memset(&g_pf[f], 0, sizeof g_pf[f]);
-        if (file_load(&g_pf[f], path)) continue;
+        mine_path(mp, sizeof mp, f);
+        if (file_load_merged(&g_pf[f], path, mp)) continue;
         static unsigned char seen[512];
         memset(seen, 0, sizeof seen);
         for (int i = 0; i < g_pf[f].nsprite && i < 512 && g_npi < 512; i++) {
@@ -783,7 +914,8 @@ static void picker_gather(const char *dir) {
             char name[64], base[64];
             sprite_name(&g_pf[f], fr[0], name, sizeof name);
             int numbered = split_name(name, base, sizeof base, &num) == 1;
-            g_pi[g_npi] = (PickItem){f, fr[0], n, ""};
+            g_pi[g_npi] = (PickItem){f, fr[0], n, 0, ""};
+            for (int k = 0; k < n; k++) if (g_pf[f].mine[fr[k]]) g_pi[g_npi].mine = 1;
             snprintf(g_pi[g_npi].name, sizeof g_pi[g_npi].name, "%s", n > 1 || numbered ? base : name);
             for (char *q = g_pi[g_npi].name; *q; q++) if (*q >= 'a' && *q <= 'z') *q -= 32;
             g_npi++;
@@ -846,7 +978,7 @@ static void draw_picker(const Ed *e, Canvas *cv, double now) {
         int sw = W - 4 - tx - 6 < 90 ? W - 4 - tx - 6 : 90;
         if (sw > 40) picker_search(cv, W - 4 - sw, ty, sw, e->find);
         int gap = 4, cols = (W - 8 + gap) / (46 + gap) > 0 ? (W - 8 + gap) / (46 + gap) : 1, cw = (W - 8 + gap) / cols - gap, chh = 42, y0 = ty + 16;
-        int vis = (H - 12 - y0 + gap) / (chh + gap) > 0 ? (H - 12 - y0 + gap) / (chh + gap) : 1;
+        int vis = (H - 24 - y0 + gap) / (chh + gap) > 0 ? (H - 24 - y0 + gap) / (chh + gap) : 1;
         g_pick_cols = cols;
         int at = 0; for (int j = 0; j < n; j++) if (sh[j] == e->psel) at = j;
         int first = e->pscroll; /* (the rows shown keep the picked one in view) */
@@ -863,15 +995,16 @@ static void draw_picker(const Ed *e, Canvas *cv, double now) {
             char nm[24]; snprintf(nm, sizeof nm, "%.*s", (cw - 4) / 4, it->name);
             canvas_text(cv, cx + 3, cy + 32, nm, on ? C_WHITE : RGB(190, 190, 205));
             if (it->n > 1) { char fn[8]; snprintf(fn, sizeof fn, "%d", it->n); canvas_rect(cv, cx + cw - text_width(fn) - 6, cy + 4, text_width(fn) + 4, 7, RGB(18, 18, 24)); canvas_text(cv, cx + cw - text_width(fn) - 4, cy + 5, fn, C_YELLOW); }
+            if (it->mine) { canvas_rect(cv, cx + 4, cy + 4, 4, 4, RGB(18, 18, 24)); canvas_rect(cv, cx + 5, cy + 5, 2, 2, RGB(120, 200, 255)); } /* (yours) */
             if (on) frame(cv, cx, cy, cw, chh, C_YELLOW);
             region(R_PITEM, sh[j], cx, cy, cw, chh, RGB(0, 0, 0));
         }
         if (first > 0) canvas_text(cv, W / 2 - 1, y0 - 6, "^", C_GREY);
-        if ((first + vis) * cols < n) canvas_text(cv, W / 2 - 1, H - 17, "V", C_GREY);
+        if ((first + vis) * cols < n) canvas_text(cv, W / 2 - 1, H - 29, "V", C_GREY);
     } else { /* a list by file, the picked one big on the right with its file, size and frames */
         int lw = W / 3 < 92 ? 92 : W / 3, y = 26;
         picker_search(cv, 4, 14, lw - 4, e->find);
-        int rows = (H - 14 - y) / 7, at = 0, line = 0;
+        int rows = (H - 26 - y) / 7, at = 0, line = 0;
         for (int j = 0; j < n; j++) { if (sh[j] == e->psel) at = j; }
         (void)rows;
         int first = e->pscroll; /* (in items; scrolled so the picked one is in view, the files' titles counted) */
@@ -879,8 +1012,8 @@ static void draw_picker(const Ed *e, Canvas *cv, double now) {
         for (;;) { /* the last item that fits from `first` on, as drawn below */
             int yy = y, lf = -1, last = first - 1;
             for (int j = first; j < n; j++) {
-                if (g_pi[sh[j]].file != lf) { if (lf >= 0) yy += 3; if (yy + 17 > H - 12) break; yy += 10; lf = g_pi[sh[j]].file; }
-                if (yy + 7 > H - 12) break;
+                if (g_pi[sh[j]].file != lf) { if (lf >= 0) yy += 3; if (yy + 17 > H - 24) break; yy += 10; lf = g_pi[sh[j]].file; }
+                if (yy + 7 > H - 24) break;
                 last = j; yy += 7;
             }
             if (at <= last || first >= at) break;
@@ -893,21 +1026,22 @@ static void draw_picker(const Ed *e, Canvas *cv, double now) {
             const PickItem *it = &g_pi[sh[j]];
             if (it->file != lastf) { /* a file's title (a gap before it, after the names of the file before) */
                 if (lastf >= 0) y += 3;
-                if (y + 17 > H - 12) break;
+                if (y + 17 > H - 24) break;
                 canvas_text(cv, 4, y, TABS[it->file], RGB(84, 84, 104)); canvas_rect(cv, 4, y + 7, lw - 4, 1, RGB(40, 40, 52)); y += 10; line++; lastf = it->file;
             }
-            if (y + 7 > H - 12) break; /* (no line half under the hint) */
+            if (y + 7 > H - 24) break; /* (no line half under the hint) */
             int on = sh[j] == e->psel;
             if (on) canvas_rect(cv, 2, y - 1, lw, 7, RGB(44, 44, 60));
+            if (it->mine) canvas_rect(cv, 3, y + 2, 2, 2, RGB(120, 200, 255)); /* (yours) */
             canvas_text(cv, 7, y, it->name, on ? C_WHITE : RGB(190, 190, 205));
             if (it->n > 1) { char fn[8]; snprintf(fn, sizeof fn, "%d", it->n); canvas_text(cv, lw - text_width(fn) - 4, y, fn, on ? C_YELLOW : RGB(110, 110, 130)); }
             region(R_PITEM, sh[j], 2, y - 1, lw, 7, RGB(0, 0, 0));
             y += 7; line++;
         }
-        canvas_rect(cv, lw + 4, 14, 1, H - 26, RGB(40, 40, 52));
+        canvas_rect(cv, lw + 4, 14, 1, H - 38, RGB(40, 40, 52));
         if (n && e->psel >= 0) {
             const PickItem *it = &g_pi[e->psel];
-            int px = lw + 12, pw = W - px - 6, ph = H - 14 - 14 - 36;
+            int px = lw + 12, pw = W - px - 6, ph = H - 14 - 26 - 36;
             if (ph < 20) ph = 20;
             checker(cv, px, 14, pw, ph);
             picker_sprite(cv, it, k, px, 14, pw, ph, 8);
@@ -921,6 +1055,25 @@ static void draw_picker(const Ed *e, Canvas *cv, double now) {
         }
     }
     if (!n) { char t[64]; snprintf(t, sizeof t, "NOTHING CALLED %s", e->find); canvas_text(cv, (W - text_width(t)) / 2, H / 2, t, C_GREY); }
+    { /* the bar above the hints: how many are yours (left); RESET, RESET ALL, MAKE DEFAULT (right; dim when they would do nothing) */
+        int by = H - 21, yours = 0, file_mine = 0, picked_mine = e->psel >= 0 && e->psel < g_npi && g_pi[e->psel].mine;
+        for (int i = 0; i < g_npi; i++) { yours += g_pi[i].mine; if (e->psel >= 0 && e->psel < g_npi && g_pi[i].file == g_pi[e->psel].file && g_pi[i].mine) file_mine = 1; }
+        canvas_rect(cv, 0, by - 2, W, 1, RGB(40, 40, 52));
+        char yt[24];
+        snprintf(yt, sizeof yt, "YOURS: %d", yours);
+        canvas_rect(cv, 5, by + 3, 2, 2, RGB(120, 200, 255));
+        canvas_text(cv, 10, by + 2, yt, RGB(150, 150, 170));
+        static const char *BT[3] = {"RESET", "RESET ALL", "MAKE DEFAULT"};
+        int live[3] = {picked_mine, yours > 0, file_mine}, bx = W - 4;
+        for (int k = 2; k >= 0; k--) {
+            int bw = text_width(BT[k]) + 6;
+            bx -= bw;
+            canvas_rect(cv, bx, by, bw, 9, live[k] ? RGB(52, 54, 70) : RGB(28, 28, 36));
+            canvas_text(cv, bx + 3, by + 2, BT[k], live[k] ? C_WHITE : RGB(70, 70, 86));
+            if (live[k]) region(R_PRESET + k, 0, bx, by, bw, 9, RGB(0, 0, 0));
+            bx -= 3;
+        }
+    }
     canvas_rect(cv, 0, H - 10, W, 1, RGB(40, 40, 52));
     canvas_text(cv, 4, H - 7, e->pview == 0 ? "ARROWS PICK  ENTER OPEN  TAB FILE  \\ LIST  Q QUIT" : "UP DOWN PICK  ENTER OPEN  \\ CARDS  Q QUIT", RGB(150, 150, 170));
 }
@@ -955,21 +1108,69 @@ static void picker_move(Ed *e, int d) { /* the picked one d places on (the cards
     e->psel = sh[at];
 }
 /* a sprite is opened: the files as they are now, to put back if its changes are discarded when leaving it */
+/* (your files as they were: put back as they were, or taken away if there was none) */
+static void put_back(int f, const char *was) {
+    char path[700];
+    mine_path(path, sizeof path, f);
+    if (!was) { remove(path); return; }
+    FILE *o = fopen(path, "wb");
+    if (o) { fputs(was, o); fclose(o); }
+}
 static void visit_start(Ed *e, const char *dir) {
+    (void)dir;
     for (int f = 0; f < NFILES; f++) {
         char path[700];
-        snprintf(path, sizeof path, "%s/%s", dir, FILES[f]);
+        mine_path(path, sizeof path, f);
         free(e->visit[f]); e->visit[f] = slurp(path); e->vchanged[f] = 0;
     }
 }
-static void visit_discard(Ed *e, const char *dir) { /* (D when leaving a sprite: its files back as they were when it was opened) */
-    for (int f = 0; f < NFILES; f++) if (e->vchanged[f] && e->visit[f]) {
-        char path[700];
-        snprintf(path, sizeof path, "%s/%s", dir, FILES[f]);
-        FILE *o = fopen(path, "wb");
-        if (o) { fputs(e->visit[f], o); fclose(o); }
-        e->vchanged[f] = 0;
+static void visit_discard(Ed *e, const char *dir) { /* (D when leaving a sprite: your files back as they were when it was opened) */
+    (void)dir;
+    for (int f = 0; f < NFILES; f++) if (e->vchanged[f]) { put_back(f, e->visit[f]); e->vchanged[f] = 0; }
+}
+/* RESET: the picked one back to the default (its frames that only you have go) */
+static void picker_reset(Ed *e, const char *dir) {
+    if (e->psel < 0 || e->psel >= g_npi) return;
+    const PickItem *it = &g_pi[e->psel];
+    File *f = &g_pf[it->file];
+    static File d;
+    if (file_load(&d, f->path) != 0) d.nsprite = 0;
+    int fr[128], n = anim_frames(f, it->sp, fr, 128);
+    for (int k = n - 1; k >= 0; k--) { /* (from the last line up: the earlier line numbers stay) */
+        int sp = fr[k], at = f->sprite_line[sp], end = block_end(f, at);
+        char nm[64];
+        sprite_name(f, sp, nm, sizeof nm);
+        int di = sprite_find(&d, nm), from = di >= 0 ? at : at > 0 && !f->line[at - 1][0] ? at - 1 : at;
+        int dat = di >= 0 ? d.sprite_line[di] : 0, dend = di >= 0 ? block_end(&d, dat) : 0, put = di >= 0 ? dend - dat : 0;
+        for (int i = from; i < end; i++) free(f->line[i]);
+        memmove(&f->line[from + put], &f->line[end], sizeof(char *) * (size_t)(f->nline - end));
+        for (int i = 0; i < put; i++) f->line[from + i] = strdup(d.line[dat + i]);
+        f->nline += put - (end - from);
     }
+    file_reparse(f);
+    write_mine(f);
+    picker_gather(dir);
+    snprintf(e->msg, sizeof e->msg, "RESET");
+}
+static void picker_reset_all(Ed *e, const char *dir) { /* RESET ALL: every file of yours goes */
+    for (int f = 0; f < NFILES; f++) put_back(f, NULL);
+    picker_gather(dir);
+    (void)e;
+}
+/* MAKE DEFAULT: yours in the picked one's file become the default (written into the repo's file; your file goes) */
+static void picker_make_default(Ed *e, const char *dir) {
+    if (e->psel < 0 || e->psel >= g_npi) return;
+    int fi = g_pi[e->psel].file;
+    File *f = &g_pf[fi];
+    char tmp[720];
+    snprintf(tmp, sizeof tmp, "%s.edit", f->path);
+    FILE *o = fopen(tmp, "w");
+    if (!o) return;
+    for (int i = 0; i < f->nline; i++) fprintf(o, "%s\n", f->line[i]);
+    fclose(o);
+    if (rename(tmp, f->path)) return;
+    put_back(fi, NULL);
+    picker_gather(dir);
 }
 /* the picked one opens in the editor */
 static void picker_pick(Ed *e, const char *dir) {
@@ -985,7 +1186,9 @@ static void picker_pick(Ed *e, const char *dir) {
 static void draw_asking(Canvas *cv, const Ed *e) {
     char a[96];
     const char *b = "S SAVE    D DISCARD    ESC BACK";
-    if (e->asking == 2) { snprintf(a, sizeof a, "SAVE THE CHANGES TO %s?", e->name); for (char *q = a; *q; q++) if (*q >= 'a' && *q <= 'z') *q -= 32; }
+    if (e->asking == 3) { int n = 0; for (int i = 0; i < g_npi; i++) n += g_pi[i].mine; snprintf(a, sizeof a, "RESET %d SPRITE%s TO THE DEFAULT?", n, n == 1 ? "" : "S"); b = "Y RESET    N KEEP THEM"; }
+    else if (e->asking == 4) { snprintf(a, sizeof a, "MAKE YOURS IN %s THE DEFAULT?", e->psel >= 0 && e->psel < g_npi ? FILES[g_pi[e->psel].file] : ""); for (char *q = a; *q; q++) if (*q >= 'a' && *q <= 'z') *q -= 32; b = "Y MAKE IT THE DEFAULT    N NOT NOW"; }
+    else if (e->asking == 2) { snprintf(a, sizeof a, "SAVE THE CHANGES TO %s?", e->name); for (char *q = a; *q; q++) if (*q >= 'a' && *q <= 'z') *q -= 32; }
     else snprintf(a, sizeof a, "SAVE THE CHANGES?");
     int w = (text_width(b) > text_width(a) ? text_width(b) : text_width(a)) + 12, h = 24, bx = (cv->w - w) / 2, by = (cv->h - h) / 2;
     canvas_rect(cv, bx - 1, by - 1, w + 2, h + 2, C_GREY);
@@ -1247,6 +1450,7 @@ int editor_run(const char *dir, const char *name) {
     static Ed e;
     memset(&e, 0, sizeof e);
     e.pk = 1; e.pi = 0; e.hx = e.hy = -1; e.drag = -1; e.last_pk = 1; e.speed = 1; e.onion = 1; e.del_ask = -1;
+    for (int f = 0; f < NFILES; f++) { char mp[700]; mine_path(mp, sizeof mp, f); e.orig[f] = slurp(mp); } /* (your files as they are: for a discard) */
     int which = 0; /* the file that has a sprite called NAME (props first), else an animation */
     if (name && editor_find(dir, name, &which)) return 1;
     file_open(&e, dir, which, name);
@@ -1318,6 +1522,9 @@ int editor_run(const char *dir, const char *name) {
                         if (r->kind == R_PITEM) { if (r->i == e.psel) picker_pick(&e, dir); else e.psel = r->i; }
                         else if (r->kind == R_PTAB) { e.ptab = r->i; e.pscroll = 0; int sh[512]; if (picker_shown(&e, sh)) e.psel = sh[0]; }
                         else if (r->kind == R_PVIEW) { e.pview = r->i; e.pscroll = 0; }
+                        else if (r->kind == R_PRESET) picker_reset(&e, dir);
+                        else if (r->kind == R_PRESETALL) e.asking = 3; /* (asks first) */
+                        else if (r->kind == R_PMAKEDEF) e.asking = 4;
                         continue;
                     }
                     e.hx = e.hy = -1;
@@ -1439,6 +1646,11 @@ int editor_run(const char *dir, const char *name) {
                 }
                 continue;
             }
+            if (e.asking == 3 || e.asking == 4) { /* RESET ALL / MAKE DEFAULT: Y does it, N (or Esc) not */
+                if (ch == 'y' || ch == 'Y') { if (e.asking == 3) picker_reset_all(&e, dir); else picker_make_default(&e, dir); e.asking = 0; }
+                else if (ch == 'n' || ch == 'N') e.asking = 0;
+                continue;
+            }
             if (e.asking == 2) { /* leaving a sprite (q): keep or discard its changes, then the picker */
                 if (ch == 's' || ch == 'S' || ch == 'y' || ch == 'Y') { e.asking = 0; picker_open(&e, dir, 1); }
                 else if (ch == 'd' || ch == 'D' || ch == 'n' || ch == 'N') { e.asking = 0; visit_discard(&e, dir); file_open(&e, dir, e.file, e.name); picker_open(&e, dir, 1); }
@@ -1446,13 +1658,8 @@ int editor_run(const char *dir, const char *name) {
             }
             if (e.asking) { /* keep or discard */
                 if (ch == 's' || ch == 'S' || ch == 'y' || ch == 'Y') quit = 1; /* (save: they are in the file already) */
-                else if (ch == 'd' || ch == 'D' || ch == 'n' || ch == 'N') { /* discard: put every changed file back as it was */
-                    for (int f = 0; f < NFILES; f++) if (e.changed[f] && e.orig[f]) {
-                        char path[700];
-                        snprintf(path, sizeof path, "%s/%s", dir, FILES[f]);
-                        FILE *o = fopen(path, "wb");
-                        if (o) { fputs(e.orig[f], o); fclose(o); }
-                    }
+                else if (ch == 'd' || ch == 'D' || ch == 'n' || ch == 'N') { /* discard: your files back as they were when the editor opened */
+                    for (int f = 0; f < NFILES; f++) if (e.changed[f]) put_back(f, e.orig[f]);
                     quit = 1;
                 }
                 continue;
@@ -1555,7 +1762,7 @@ int editor_find(const char *dir, const char *name, int *which) {
             memset(&tf, 0, sizeof tf);
             char path[700];
             snprintf(path, sizeof path, "%s/%s", dir, FILES[f]);
-            if (file_load(&tf, path)) continue;
+            { char mp[700]; mine_path(mp, sizeof mp, f); if (file_load_merged(&tf, path, mp)) continue; }
             int found = 0;
             for (int i = 0; i < tf.nsprite && !found; i++) {
                 sprite_name(&tf, i, n2, sizeof n2);
@@ -1592,7 +1799,7 @@ int editor_list(const char *dir) {
         memset(&tf, 0, sizeof tf);
         char path[700];
         snprintf(path, sizeof path, "%s/%s", dir, FILES[f]);
-        if (file_load(&tf, path)) continue;
+        { char mp[700]; mine_path(mp, sizeof mp, f); if (file_load_merged(&tf, path, mp)) continue; }
         static char item[512][64];
         int cnt[512], ni = 0, nanim = 0, namew = 0, numw = 0; /* (cnt 0: a sprite on its own, no count) */
         static unsigned char seen[512];

@@ -40,7 +40,8 @@ applaud when a friend finishes, and do little solo acts (stretch, dance, jump, w
 
     ./clawd-room.sh --room park               # window 1
     ./clawd-room.sh --room coffee             # window 2
-    ./clawd-room.sh --edit                    # the pixel editor on its sprite picker: cards with pictures (or a list), type to find
+    ./clawd-room.sh --edit                    # the pixel editor on its sprite picker: cards with pictures (or a list), type to find;
+                                              # your edits go to ~/.clawd-room/sprites (shown over the defaults; RESET in the picker)
     ./clawd-room.sh --edit list               # what the pixel editor can open: props, items, Clawd animations and their frames
     ./clawd-room.sh --edit window             # the pixel editor (its own window): draw a prop with the mouse, colours in a
                                               # Figma-like picker; rooms show it at once; Ctrl+Z / Ctrl+Y undo / redo;
