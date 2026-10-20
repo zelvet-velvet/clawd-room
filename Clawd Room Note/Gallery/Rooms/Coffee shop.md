@@ -18,7 +18,7 @@ Pictures of the coffee shop, newest first: ✅ current (open), ♻️ replaced a
 > [!quote]- ♻️ replaced · Style A built coffee
 > ![[2026-10-18 style A built coffee.png|420]]
 > Replaced by: [[2026-10-18 placer coffee all gates 181x53.png]]
-> Shown in: [[Rooms and Art|Rooms and Art]], [[2026-10-18#🏛️ The rooms in perspective are built|2026-10-18 · 🏛️ The rooms in perspective are built]]
+> Shown in: [[2026-10-18#🏛️ The rooms in perspective are built|2026-10-18 · 🏛️ The rooms in perspective are built]], [[Rooms and Art|Rooms and Art]]
 
 > [!quote]- ♻️ replaced · Coffee well steps run right to left
 > ![[2026-10-18 coffee well steps run right to left.png|420]]
@@ -42,7 +42,7 @@ Pictures of the coffee shop, newest first: ✅ current (open), ♻️ replaced a
 > [!quote]- ♻️ replaced · Coffee stairs well and doors
 > ![[2026-10-18 coffee stairs well and doors.png|420]]
 > Replaced by: [[2026-10-18 coffee taller doors well on the floor.png]]
-> Shown in: [[Rooms and Art|Rooms and Art]], [[2026-10-18#🪜 Way up at the platform's right end, stair well at the back right|2026-10-18 · 🪜 Way up at the platform's right end, stair well at the back right]]
+> Shown in: [[2026-10-18#🪜 Way up at the platform's right end, stair well at the back right|2026-10-18 · 🪜 Way up at the platform's right end, stair well at the back right]], [[Rooms and Art|Rooms and Art]]
 
 > [!quote]- ♻️ replaced · Coffee real steps, lamps moved
 > ![[2026-10-18 coffee real steps, lamps moved.png|420]]

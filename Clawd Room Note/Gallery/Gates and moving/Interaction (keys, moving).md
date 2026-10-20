@@ -12,11 +12,11 @@ Pictures of keys, hints, sending and moving Clawds, newest first: ✅ current (o
 
 > [!success]+ ✅ current · Settings panel A and B (B picked)
 > ![[2026-10-20 settings panel A and B (B picked).png|420]]
-> Shown in: [[Interaction|Interaction]], [[2026-10-20#🔦 The picked Clawd stands out; a settings panel: mockups (Zaviel)|2026-10-20 · 🔦 The picked Clawd stands out; a settings panel: mockups (Zaviel)]]
+> Shown in: [[2026-10-20#🔦 The picked Clawd stands out; a settings panel: mockups (Zaviel)|2026-10-20 · 🔦 The picked Clawd stands out; a settings panel: mockups (Zaviel)]], [[Interaction|Interaction]]
 
 > [!success]+ ✅ current · Picked Clawd, corners and spotlight fading · picked
 > ![[2026-10-20 picked Clawd, corners and spotlight fading (picked).gif|420]]
-> Shown in: [[Interaction|Interaction]], [[2026-10-20#🔦 The picked Clawd stands out; a settings panel: mockups (Zaviel)|2026-10-20 · 🔦 The picked Clawd stands out; a settings panel: mockups (Zaviel)]]
+> Shown in: [[2026-10-20#🔦 The picked Clawd stands out; a settings panel: mockups (Zaviel)|2026-10-20 · 🔦 The picked Clawd stands out; a settings panel: mockups (Zaviel)]], [[Interaction|Interaction]]
 
 > [!failure]- ❌ not picked · Picked Clawd spotlight strengths
 > ![[2026-10-20 picked Clawd spotlight strengths.png|420]]
@@ -44,7 +44,7 @@ Pictures of keys, hints, sending and moving Clawds, newest first: ✅ current (o
 
 > [!success]+ ✅ current · Gate tags A, centred · picked
 > ![[2026-10-20 gate tags A, centred (picked).png|420]]
-> Shown in: [[Interaction|Interaction]], [[2026-10-20#🏷️ The bottom bar no longer covers the room; the g / m hint on the gates: mockups (Zaviel)|2026-10-20 · 🏷️ The bottom bar no longer covers the room; the g / m hint on the gates: mockups (Zaviel)]]
+> Shown in: [[2026-10-20#🏷️ The bottom bar no longer covers the room; the g / m hint on the gates: mockups (Zaviel)|2026-10-20 · 🏷️ The bottom bar no longer covers the room; the g / m hint on the gates: mockups (Zaviel)]], [[Interaction|Interaction]]
 
 > [!success]+ ✅ current · Gate tag arrows with a shaft
 > ![[2026-10-20 gate tag arrows with a shaft.png|420]]

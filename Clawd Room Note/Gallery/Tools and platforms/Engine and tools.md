@@ -45,7 +45,7 @@ Pictures of the debug overlay, the placer, the pixel editor, the gallery, newest
 > [!quote]- ♻️ replaced · Pixel editor with rooms
 > ![[2026-10-18 pixel editor with rooms.png|420]]
 > Replaced by: [[2026-10-18 pixel editor, new palette and help.png]]
-> Shown in: [[Engine Design|Engine Design]], [[2026-10-18#🎨 Engine step 3: props as sprites, rooms as text files, the pixel editor|2026-10-18 · 🎨 Engine step 3: props as sprites, rooms as text files, the pixel editor]]
+> Shown in: [[2026-10-18#🎨 Engine step 3: props as sprites, rooms as text files, the pixel editor|2026-10-18 · 🎨 Engine step 3: props as sprites, rooms as text files, the pixel editor]], [[Engine Design|Engine Design]]
 
 > [!quote]- ♻️ replaced · Gallery coffee (part)
 > ![[2026-10-18 gallery coffee (part).png|420]]
@@ -55,7 +55,7 @@ Pictures of the debug overlay, the placer, the pixel editor, the gallery, newest
 > [!quote]- ♻️ replaced · Debug overlay
 > ![[2026-10-18 debug overlay.png|420]]
 > Replaced by: [[2026-10-18 debug overlay with labels.png]]
-> Shown in: [[Engine Design|Engine Design]], [[2026-10-18#🧱 Engine step 1: the scene, the overlap check, the gallery, the overlay|2026-10-18 · 🧱 Engine step 1: the scene, the overlap check, the gallery, the overlay]]
+> Shown in: [[2026-10-18#🧱 Engine step 1: the scene, the overlap check, the gallery, the overlay|2026-10-18 · 🧱 Engine step 1: the scene, the overlap check, the gallery, the overlay]], [[Engine Design|Engine Design]]
 
 > [!success]+ ✅ current · Debug overlay with labels
 > ![[2026-10-18 debug overlay with labels.png|420]]

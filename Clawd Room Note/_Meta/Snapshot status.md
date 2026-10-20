@@ -121,6 +121,7 @@ Whether each picture in `Assets/Snapshots/` still shows how things are. `tools/v
 | 2026-10-20 construct v2 real parts, office stairs (picked).png | current |  |
 | 2026-10-20 construct v2 real parts, park stoop (picked).gif | current |  |
 | 2026-10-20 construct v2 real parts, park stoop (picked).png | current |  |
+| 2026-10-20 gate editor, part keyframes, A dope sheet and B one track.png | current |  |
 | 2026-10-20 gate tag arrows as triangles.png | current |  |
 | 2026-10-20 gate tag arrows with a shaft.png | current |  |
 | 2026-10-20 gate tags A, centred (picked).png | current |  |
