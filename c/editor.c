@@ -390,7 +390,8 @@ static int help_row(Canvas *cv, int y, const char *title, const Help *h, int n, 
     }
     return rows;
 }
-#define FIELD_W 96 /* the colour field (saturation across, brightness down) and the hue bar under it */
+static int g_field_w = 96; /* the colour field (saturation across, brightness down) and the hue bar under it: 96 to 160 wide, */
+#define FIELD_W g_field_w   /* as wide as the window leaves (set by draw) */
 #define FIELD_H 44
 /* the colour panel's height down to the end of SHADES (the real-size view below it fits itself in) */
 #define TOOL_ROW 25 /* the tools: a key cap (15), a gap, its name */
@@ -633,7 +634,8 @@ static void draw(const Ed *e, Canvas *cv) {
     snprintf(t, sizeof t, "EDIT %s  %s  %dX%d", e->name, FILES[e->file], e->w, e->h);
     for (char *p = t; *p; p++) if (*p >= 'a' && *p <= 'z') *p -= 32;
     canvas_text(cv, 4, 3, t, C_YELLOW);
-    if (e->msg[0]) canvas_text(cv, cv->w - text_width(e->msg) - 4, 3, e->msg, C_GREY);
+    int msg_top = e->msg[0] && 4 + text_width(t) + 12 + text_width(e->msg) + 4 <= cv->w; /* (a message that does not fit by the title goes under the grid) */
+    if (msg_top) canvas_text(cv, cv->w - text_width(e->msg) - 4, 3, e->msg, C_GREY);
     Layout L = layout(e, cv->w, cv->h);
     /* onion skin: where this frame is see-through, the frame before shows faintly red, the one after blue (both: purple) */
     static char og[2][MAXH][MAXW + 1];
@@ -685,10 +687,25 @@ static void draw(const Ed *e, Canvas *cv) {
         if (tr) snprintf(t, sizeof t, "X %d  Y %d  SEE-THROUGH", e->hx, e->hy);
         else snprintf(t, sizeof t, "X %d  Y %d  %d %d %d", e->hx, e->hy, c.r, c.g, c.b);
         canvas_text(cv, L.gx, L.gy + e->h * L.z + 4, t, C_GREY);
+    } else if (e->msg[0] && !msg_top) { /* the message, wrapped to the grid's width */
+        int mw = L.px - L.gx - 8, ly = L.gy + e->h * L.z + 4, lx = 0;
+        char word[64];
+        for (const char *p = e->msg; *p; ) {
+            int n = 0;
+            while (p[n] && p[n] != ' ' && n < 63) n++;
+            snprintf(word, sizeof word, "%.*s", n, p);
+            int ww = text_width(word);
+            if (lx && lx + 4 + ww > mw) { lx = 0; ly += 7; }
+            canvas_text(cv, L.gx + lx + (lx ? 4 : 0), ly, word, C_YELLOW);
+            lx += (lx ? 4 : 0) + ww;
+            p += n;
+            while (*p == ' ') p++;
+        }
     }
     /* the panel (like Figma's colour picker): PAINT / ERASE / PICK, a colour field and a hue bar, the colour's hex and red
        green blue (click to type), the file's colours (+ ADD puts a new one in), shades, the real-size view */
     int x = L.px, y = L.gy, tr;
+    g_field_w = cv->w - x - 4 < 96 ? 96 : cv->w - x - 4 > 160 ? 160 : cv->w - x - 4;
     Rgb cur = pick_colour(e, &tr);
     int body = e->pk == 1 && e->f.pal_body[e->pi];
     static const char *TOOL[4] = {"PAINT", "ERASE", "PICK", "FILL"};
@@ -762,12 +779,20 @@ static void draw(const Ed *e, Canvas *cv) {
         help_row(cv, L.hy, "", H_SHORT, 2, cv->w);
     }
     /* the sprite at its real size (and twice); while PLAY is on, the animation as the room shows it */
-    int bottom = L.hy - 3, big = y + 8 + e->h * 2 + 4 <= bottom && x + e->w * 3 + 6 <= cv->w ? 2 : 1;
-    if (y + 8 + e->h <= bottom) canvas_text(cv, x, y, e->playing ? "AS IN THE ROOM  PLAYING" : "AS IN THE ROOM", RGB(110, 110, 130));
-    int pad = e->playing && is_action(e) ? 4 : 0; /* (room above for a Clawd's bounce, up to 4 pixels, as much as there is) */
-    if (pad && y + 8 + e->h + pad > bottom) pad = bottom - (y + 8 + e->h) > 0 ? bottom - (y + 8 + e->h) : 0;
-    int shown = 0;
-    for (int k = 1; k <= big && y + 8 + e->h + pad <= bottom; k++) { draw_preview(cv, e, now, x + (k - 1) * (e->w + 6), y + 8, k, pad); shown = 1; }
+    int bottom = L.hy - 3, pad = e->playing && is_action(e) ? 4 : 0, shown = 0; /* (pad: room above for a Clawd's bounce) */
+    int rx = x + FIELD_W + 12, lw = text_width("AS IN THE ROOM");
+    if (rx + (e->w * 2 > lw ? e->w * 2 : lw) + 2 <= cv->w) { /* a wide window: in the column right of the panel, 1x over 2x */
+        int ry = L.gy;
+        canvas_text(cv, rx, ry, "AS IN THE ROOM", RGB(110, 110, 130));
+        if (e->playing) canvas_text(cv, rx, ry + 7, "PLAYING", C_YELLOW);
+        ry += e->playing ? 16 : 9;
+        for (int k = 1; k <= 2 && ry + (e->h + pad) * k <= bottom; k++) { draw_preview(cv, e, now, rx, ry, k, pad); ry += (e->h + pad) * k + 4; shown = 1; }
+    } else { /* under the shades, 1x beside 2x, as there is room */
+        int big = y + 8 + e->h * 2 + 4 <= bottom && x + e->w * 3 + 6 <= cv->w ? 2 : 1;
+        if (y + 8 + e->h <= bottom) canvas_text(cv, x, y, e->playing ? "AS IN THE ROOM  PLAYING" : "AS IN THE ROOM", RGB(110, 110, 130));
+        if (pad && y + 8 + e->h + pad > bottom) pad = bottom - (y + 8 + e->h) > 0 ? bottom - (y + 8 + e->h) : 0;
+        for (int k = 1; k <= big && y + 8 + e->h + pad <= bottom; k++) { draw_preview(cv, e, now, x + (k - 1) * (e->w + 6), y + 8, k, pad); shown = 1; }
+    }
     draw_timeline(cv, e, now, !shown && e->playing);
     if (e->show_help && !L.hw) { /* ?: the shortcuts in a box over the editor */
         int bw = cv->w - 16 < 300 ? cv->w - 16 : 300, rows = help_rows(bw - 4), bh = rows * 8 + 14, bx = (cv->w - bw) / 2, by = (cv->h - bh) / 2;
@@ -999,7 +1024,7 @@ int editor_run(const char *dir, const char *name) {
             int was_del = e.del_ask; e.del_ask = -1;
             if (ch == 'f' || ch == 'F' || ch == 'x' || ch == 'X') { /* a new frame / delete this one: props only (the room animates NAME~2, ~3 ...; the code picks the other frames) */
                 int fr[128], n = anim_frames(&e.f, e.sp, fr, 128), at = frame_index(fr, n, e.sp);
-                if (strcmp(FILES[e.file], "props.txt")) snprintf(e.msg, sizeof e.msg, "PROPS ONLY: THE ROOM CODE PICKS THESE FRAMES");
+                if (strcmp(FILES[e.file], "props.txt")) snprintf(e.msg, sizeof e.msg, "NEW FRAMES ARE FOR PROPS ONLY");
                 else if (ch == 'f' || ch == 'F') { new_frame(&e); e.zoom = 0; }
                 else if (at == 0) snprintf(e.msg, sizeof e.msg, "THE FIRST FRAME IS THE PROP: NOT DELETED");
                 else if (was_del == e.sp) delete_frame(&e);
