@@ -44,7 +44,7 @@ for n in $NAMES; do
         pick_gate_mock) bin/$n; bin/$n construct; bin/$n construct2; bin/$n pickd ;;
         tag_mock) bin/$n; bin/$n 1; bin/$n 2 ;;
         palette_mock) bin/$n out/palette ;;
-        editor_mock) bin/$n out/09-editor-animation "$ROOT/sprites" ;;
+        editor_mock) bin/$n out/09-editor-animation "$ROOT/sprites" ;; # (your sprites as they are, uncommitted edits included)
         tool_icons_mock) bin/$n out/11-tool-icons "$ROOT/sprites"; bin/$n out/11-tool-icons "$ROOT/sprites" b; bin/$n out/11-tool-icons "$ROOT/sprites" b1 ;;
         *) bin/$n ;;
     esac

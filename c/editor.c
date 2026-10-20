@@ -393,7 +393,8 @@ static int help_row(Canvas *cv, int y, const char *title, const Help *h, int n, 
 #define FIELD_W 96 /* the colour field (saturation across, brightness down) and the hue bar under it */
 #define FIELD_H 44
 /* the colour panel's height down to the end of SHADES (the real-size view below it fits itself in) */
-static int panel_h(const Ed *e) { return 13 + FIELD_H + 3 + 8 + 11 + 7 + ((e->f.npal + 9) / 10) * 10 + 3 + 7 + 10; }
+#define TOOL_ROW 25 /* the tools: a key cap (15), a gap, its name */
+static int panel_h(const Ed *e) { return TOOL_ROW + FIELD_H + 3 + 8 + 11 + 7 + ((e->f.npal + 9) / 10) * 10 + 3 + 7 + 10; }
 static int help_rows(int W) { return help_row(NULL, 0, "", H_MOUSE, NH(H_MOUSE), W) + help_row(NULL, 0, "", H_EDIT, NH(H_EDIT), W) + help_row(NULL, 0, "", H_ANIM, NH(H_ANIM), W) + help_row(NULL, 0, "", H_SIZE, NH(H_SIZE), W); }
 static void help(Canvas *cv, int y, int W) { /* the help from row y, wrapped at W */
     y += 8 * help_row(cv, y, "MOUSE", H_MOUSE, NH(H_MOUSE), W);
@@ -457,6 +458,36 @@ static void button(Canvas *cv, int x, int y, const char *t, int on, int kind, in
     if (on) frame(cv, x, y, w, 9, C_YELLOW);
     canvas_text(cv, x + 3, y + 2, t, on ? C_WHITE : C_GREY);
     region(kind, i, x, y, w, 9, RGB(0, 0, 0));
+}
+
+/* the tools as key caps with a pixel icon (11 x 11): a pencil, an eraser, an eyedropper, a paint bucket, and the bucket
+ * with a sparkle for FILL ALL; the one in use is pressed in, with a yellow line under it.
+ * k outline, w light, y / Y pencil, m metal, L lead, p / P eraser, r bulb, b blue paint */
+static const char *const TOOL_ICON[5][11] = {
+    {".........kk", "........kppk", ".......kmmpk", "......kyymk.", ".....kyYyk..", "....kyYyk...", "...kyYyk....", "..kwwyk.....", "..kwwk......", ".kLwk.......", ".kk........."},
+    {"...........", "......kkkk.", ".....kwwwwk", "....kwwwwbk", "...kwwwwbk.", "..kpppppk..", ".kpppppk...", "kpppppk....", "kPPPPk.....", ".kkkk......", "..........."},
+    {"........rr.", ".......rrrr", "......rrrrr", ".....mrrrr.", "....kmmrr..", "...kwwk....", "..kwwk.....", ".kwbk......", ".kbk.......", "b..........", "b.........."},
+    {"...kkkkk...", "..k.....k..", ".k.......k.", "kmmmmmmmmmk", "kwwwwwwwwwkb", ".kwwwwwwwk.b", ".kwbbbbbwk.b", "..kwwwwwk..bb", "..kwwwwwk..bb", "...kkkkk....", "..........."},
+    {"...kkkkk..y", "..k.....kyyy", ".k.......ky.", "kmmmmmmmmmk", "kwwwwwwwwwkb", ".kwwwwwwwk.b", ".kwbbbbbwk.b", "..kwwwwwk..bb", "..kwwwwwk..bb", "...kkkkk....", "..........."},
+};
+static Rgb tool_colour(char ch) {
+    switch (ch) {
+        case 'k': return RGB(16, 16, 22);   case 'w': return RGB(236, 236, 244); case 'y': return RGB(240, 196, 90);
+        case 'Y': return RGB(214, 160, 60); case 'm': return RGB(180, 184, 196); case 'L': return RGB(60, 60, 70);
+        case 'p': return RGB(240, 150, 170); case 'P': return RGB(200, 110, 130); case 'r': return RGB(230, 90, 80);
+        case 'b': return RGB(110, 170, 250);
+    }
+    return RGB(255, 0, 255);
+}
+static void tool_button(Canvas *cv, int x, int y, int which, int on) {
+    int w = 15, h = 15, dy = on ? 1 : 0;
+    canvas_rect(cv, x + 1, y + 1, w - 2, h, RGB(14, 14, 20)); canvas_rect(cv, x, y + 2, w, h - 2, RGB(14, 14, 20)); /* (its shadow) */
+    Rgb cap = on ? RGB(70, 72, 100) : RGB(52, 54, 70);
+    canvas_rect(cv, x + 1, y + dy, w - 2, h - dy, cap); canvas_rect(cv, x, y + dy + 1, w, h - dy - 2, cap);    /* (rounded corners) */
+    canvas_rect(cv, x + 2, y + dy, w - 4, 1, on ? RGB(110, 112, 145) : RGB(86, 88, 110));                   /* (light on its top) */
+    for (int yy = 0; yy < 11; yy++) for (int xx = 0; xx < 12 && TOOL_ICON[which][yy][xx]; xx++)
+        if (TOOL_ICON[which][yy][xx] != '.') canvas_px(cv, x + 2 + xx, y + 2 + dy + yy, tool_colour(TOOL_ICON[which][yy][xx]));
+    if (on) canvas_rect(cv, x + 2, y + h + 1, w - 4, 1, C_YELLOW);
 }
 
 static double wall_now(void) { struct timeval tv; gettimeofday(&tv, NULL); return tv.tv_sec + tv.tv_usec / 1e6; }
@@ -660,11 +691,17 @@ static void draw(const Ed *e, Canvas *cv) {
     int x = L.px, y = L.gy, tr;
     Rgb cur = pick_colour(e, &tr);
     int body = e->pk == 1 && e->f.pal_body[e->pi];
-    button(cv, x, y, "PAINT", !tr && !e->picking, R_TOOL, 0);
-    button(cv, x + 26, y, "ERASE", tr && !e->picking, R_TOOL, 1);
-    button(cv, x + 52, y, "PICK", e->picking, R_TOOL, 2);
-    button(cv, x + 76, y, e->filling == 2 ? "FILL ALL" : "FILL", e->filling > 0, R_TOOL, 3);
-    y += 13;
+    static const char *TOOL[4] = {"PAINT", "ERASE", "PICK", "FILL"};
+    int lit[4] = {!tr && !e->picking, tr && !e->picking, e->picking, e->filling > 0};
+    for (int i = 0, tx = x; i < 4; i++) {
+        const char *nm = i == 3 && e->filling == 2 ? "ALL" : TOOL[i];
+        int cw = text_width(TOOL[i]) > 15 ? text_width(TOOL[i]) : 15;
+        tool_button(cv, tx + (cw - 15) / 2, y, i == 3 && e->filling == 2 ? 4 : i, lit[i]);
+        canvas_text(cv, tx + (cw - text_width(nm)) / 2, y + 18, nm, lit[i] ? C_WHITE : C_GREY);
+        region(R_TOOL, i, tx, y, cw, 23, RGB(0, 0, 0));
+        tx += cw + 7;
+    }
+    y += TOOL_ROW;
     double h, sat, val;
     rgb_hsv(cur, e->hue, &h, &sat, &val);
     for (int dy = 0; dy < FIELD_H; dy++) for (int dx = 0; dx < FIELD_W; dx++)

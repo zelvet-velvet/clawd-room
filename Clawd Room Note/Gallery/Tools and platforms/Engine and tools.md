@@ -10,13 +10,28 @@ Pictures of the debug overlay, the placer, the pixel editor, the gallery, newest
 
 ## 2026-10-20
 
+> [!quote]- ♻️ replaced · Editor tool icons, key caps bigger · picked
+> ![[2026-10-20 editor tool icons, key caps bigger (picked).png|420]]
+> Replaced by: [[2026-10-20 editor timeline, onion skin and fill.png]]
+> Shown in: not in a note yet
+
+> [!quote]- ♻️ replaced · Editor tool icons, four tiles (B1 picked)
+> ![[2026-10-20 editor tool icons, four tiles (B1 picked).png|420]]
+> Replaced by: [[2026-10-20 editor timeline, onion skin and fill.png]]
+> Shown in: not in a note yet
+
+> [!quote]- ♻️ replaced · Editor tool icons, A B C (B picked)
+> ![[2026-10-20 editor tool icons, A B C (B picked).png|420]]
+> Replaced by: [[2026-10-20 editor timeline, onion skin and fill.png]]
+> Shown in: not in a note yet
+
 > [!success]+ ✅ current · Editor timeline, onion skin and fill
 > ![[2026-10-20 editor timeline, onion skin and fill.png|420]]
 > Shown in: [[Interaction|Interaction]], [[Test Checklist|Test Checklist]], [[2026-10-20#🎞️ The pixel editor edits animations; a fill tool (Zaviel)|2026-10-20 · 🎞️ The pixel editor edits animations; a fill tool (Zaviel)]]
 
 > [!success]+ ✅ current · Editor playing a Clawd at the room's speed
 > ![[2026-10-20 editor playing a Clawd at the room's speed.png|420]]
-> Shown in: [[Interaction|Interaction]], [[2026-10-20#🎞️ The pixel editor edits animations; a fill tool (Zaviel)|2026-10-20 · 🎞️ The pixel editor edits animations; a fill tool (Zaviel)]]
+> Shown in: [[Interaction|Interaction]], [[Test Checklist|Test Checklist]], [[2026-10-20#🎞️ The pixel editor edits animations; a fill tool (Zaviel)|2026-10-20 · 🎞️ The pixel editor edits animations; a fill tool (Zaviel)]]
 
 > [!success]+ ✅ current · Editor nine frames in the timeline
 > ![[2026-10-20 editor nine frames in the timeline.png|420]]
