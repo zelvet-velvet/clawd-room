@@ -153,6 +153,8 @@ with tempfile.TemporaryDirectory() as tmp:
     check("editor: f adds prop frames, x x deletes one and the next is numbered on", st == 0 and heads == ["@ window | window", "@ window~2 | window~2"])
     out, st = run(["--edit", "walk"], [(0.8, b" "), (1.6, b">"), (1.9, b"o"), (2.2, b" "), (2.5, b"f"), (2.8, b"q")], env, cols=150, rows=50)
     check("editor: opens an animation by its name, plays, steps frames; f leaves Clawd frames alone", st == 0 and b"Clawd Room pixel editor" in out and read("clawd.txt").count("@ walk-") == clawd0.count("@ walk-"))
+    out, st = run(["--edit", "-"], [(0.8, b"W"), (0.9, b"A"), (1.0, b"L"), (1.3, b"\r"), (1.7, b"l"), (2.0, b"\x1b"), (2.6, b"q")], env, cols=150, rows=50)
+    check("editor: the sprite picker opens with no name, finds by typing, Enter opens, l and a lone Esc go back", st == 0 and b"Clawd Room pixel editor" in out)
     r = subprocess.run(CMD + ["--edit", "list"], capture_output=True, text=True, env=dict(os.environ, **env))
     import re
     check("--edit list shows animations with their frame counts", r.returncode == 0 and re.search(r"walk +4\b", r.stdout) and re.search(r"think +9\b", r.stdout) and "window" in r.stdout)

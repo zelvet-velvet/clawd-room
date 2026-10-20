@@ -128,6 +128,9 @@ Whether each picture in `Assets/Snapshots/` still shows how things are. `tools/v
 | 2026-10-20 editor nine frames in the timeline.png | current |  |
 | 2026-10-20 editor panel and timeline folded.png | current |  |
 | 2026-10-20 editor playing a Clawd at the room's speed.png | current |  |
+| 2026-10-20 editor sprite picker mockup, cards and list (both, a view switch).png | replaced | [[2026-10-20 editor sprite picker, cards.png]] |
+| 2026-10-20 editor sprite picker, cards.png | current |  |
+| 2026-10-20 editor sprite picker, list.png | current |  |
 | 2026-10-20 editor timeline before the divider, a prop's frames hidden.png | replaced | [[2026-10-20 editor timeline divider dragged up a little.png]] |
 | 2026-10-20 editor timeline divider dragged up a little.png | current |  |
 | 2026-10-20 editor timeline divider dragged up a lot.png | current |  |

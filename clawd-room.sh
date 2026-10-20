@@ -36,6 +36,7 @@ for a in "$@"; do
   prev=$a
 done
 for a in "$@"; do shift; case "$a" in --here|--keep) ;; *) set -- "$@" "$a" ;; esac; done
+[ "$prev" = --edit ] && set -- "$@" - # (--edit with no name: the editor opens on its sprite picker)
 # --try: four Clawd Room windows, one in each quarter of the screen (office, coffee shop / park, office), so left/right
 # and up/down gates all show at once; made-up sessions in them (--try real: only your real sessions); quitting one
 # closes all (--try close closes them from anywhere). They use their own link folder, apart from rooms you run.

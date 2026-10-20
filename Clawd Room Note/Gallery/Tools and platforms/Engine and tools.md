@@ -42,6 +42,19 @@ Pictures of the debug overlay, the placer, the pixel editor, the gallery, newest
 > Replaced by: [[2026-10-20 editor timeline divider dragged up a little.png]]
 > Shown in: not in a note yet
 
+> [!success]+ ✅ current · Editor sprite picker, list
+> ![[2026-10-20 editor sprite picker, list.png|420]]
+> Shown in: not in a note yet
+
+> [!success]+ ✅ current · Editor sprite picker, cards
+> ![[2026-10-20 editor sprite picker, cards.png|420]]
+> Shown in: not in a note yet
+
+> [!quote]- ♻️ replaced · Editor sprite picker mockup, cards and list (both, a view switch)
+> ![[2026-10-20 editor sprite picker mockup, cards and list (both, a view switch).png|420]]
+> Replaced by: [[2026-10-20 editor sprite picker, cards.png]]
+> Shown in: not in a note yet
+
 > [!success]+ ✅ current · Editor playing a Clawd at the room's speed
 > ![[2026-10-20 editor playing a Clawd at the room's speed.png|420]]
 > Shown in: [[Interaction|Interaction]], [[Test Checklist|Test Checklist]], [[2026-10-20#🎞️ The pixel editor edits animations; a fill tool (Zaviel)|2026-10-20 · 🎞️ The pixel editor edits animations; a fill tool (Zaviel)]]

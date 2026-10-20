@@ -62,6 +62,9 @@ typedef struct {
     int filling;                              /* FILL: 0 off, 1 the touching pixels of one colour, 2 every pixel of it */
     int del_ask;                              /* x once: the frame to delete if x comes again (-1 none) */
     int sizing; double sizing_until;          /* w or n held ('w' / 'n'): an arrow grows / shrinks the sprite on that side */
+    int page;                                 /* 0 editing, 1 the sprite picker (--edit with no name, or l) */
+    char find[32]; int psel, ptab, pview, pscroll, came_from_edit; /* the picker: what is typed, the one picked, the file tab,
+                                                 the view (0 cards, 1 a list), how far it scrolled, opened from editing */
 } Ed;
 
 static char *slurp(const char *path) {
@@ -359,7 +362,7 @@ static void swap_undo(Ed *e, int at) {
 
 /* ---- the screen: canvas pixels; one terminal cell is 1 pixel wide and 2 high ---------------------------------------- */
 /* what is where, filled while drawing, so a click finds what it is on */
-enum { R_GRID, R_TOOL, R_FILE, R_NEW, R_FIELD, R_HUE, R_HEX, R_NUM, R_ADD, R_FRAME, R_FADD, R_PLAY, R_SPEED, R_ONION, R_STRIP, R_DIV, R_FOLD };
+enum { R_GRID, R_TOOL, R_FILE, R_NEW, R_FIELD, R_HUE, R_HEX, R_NUM, R_ADD, R_FRAME, R_FADD, R_PLAY, R_SPEED, R_ONION, R_STRIP, R_DIV, R_FOLD, R_PITEM, R_PTAB, R_PVIEW };
 typedef struct { int kind, i, x0, y0, x1, y1; Rgb c; } Region;
 static Region g_reg[320];
 static int g_nreg;
@@ -372,7 +375,7 @@ typedef struct { int gx, gy, z, px, hy, hw, ty, ah; } Layout; /* the grid's orig
 /* the help: what each key and button does, as key caps (bright) and what they do (dim), in three groups */
 typedef struct { const char *key, *what; } Help;
 static const Help H_MOUSE[] = {{"LEFT", "PAINT"}, {"RIGHT", "ERASE"}, {"ALT+LEFT", "PICK A COLOUR"}};
-static const Help H_EDIT[] = {{"CTRL+Z", "UNDO"}, {"CTRL+Y", "REDO"}, {"[ ]", "OTHER SPRITE"}, {"TAB", "OTHER FILE"}, {"B", "FILL"}, {"P", "FOLD THE COLOURS"}, {"+ -", "ZOOM"}, {"#", "TYPE A COLOUR"}};
+static const Help H_EDIT[] = {{"CTRL+Z", "UNDO"}, {"CTRL+Y", "REDO"}, {"L", "PICK A SPRITE"}, {"[ ]", "OTHER SPRITE"}, {"TAB", "OTHER FILE"}, {"B", "FILL"}, {"P", "FOLD THE COLOURS"}, {"+ -", "ZOOM"}, {"#", "TYPE A COLOUR"}};
 static const Help H_ANIM[] = {{"LEFT RIGHT", "FRAME"}, {"SPACE", "PLAY"}, {"O", "ONION SKIN"}, {"F", "NEW FRAME"}, {"X X", "DELETE FRAME"}};
 #define NH(a) ((int)(sizeof a / sizeof a[0]))
 static const Help H_SIZE[] = {{"W + ARROW", "GROW ON THAT SIDE"}, {"N + ARROW", "SHRINK ON THAT SIDE"}, {"Q", "QUIT (S SAVE / D DISCARD)"}};
@@ -755,9 +758,207 @@ static void draw_timeline(Canvas *cv, const Ed *e, double now, int preview, int 
     }
 }
 
+
+/* ---- the sprite picker: every sprite and animation as a card with its picture (or as a list with the picked one big), by
+ * file; type to find; Enter or a click opens it in the editor; l there brings the picker back --------------------------- */
+typedef struct { int file, sp, n; char name[64]; } PickItem;
+static File g_pf[NFILES];
+static PickItem g_pi[512];
+static int g_npi, g_pick_cols = 1;
+static void picker_gather(const char *dir) {
+    g_npi = 0;
+    for (int f = 0; f < NFILES; f++) {
+        char path[700];
+        snprintf(path, sizeof path, "%s/%s", dir, FILES[f]);
+        file_free(&g_pf[f]);
+        memset(&g_pf[f], 0, sizeof g_pf[f]);
+        if (file_load(&g_pf[f], path)) continue;
+        static unsigned char seen[512];
+        memset(seen, 0, sizeof seen);
+        for (int i = 0; i < g_pf[f].nsprite && i < 512 && g_npi < 512; i++) {
+            if (seen[i]) continue;
+            int fr[128], n = anim_frames(&g_pf[f], i, fr, 128), num;
+            for (int k = 0; k < n; k++) if (fr[k] < 512) seen[fr[k]] = 1;
+            char name[64], base[64];
+            sprite_name(&g_pf[f], fr[0], name, sizeof name);
+            int numbered = split_name(name, base, sizeof base, &num) == 1;
+            g_pi[g_npi] = (PickItem){f, fr[0], n, ""};
+            snprintf(g_pi[g_npi].name, sizeof g_pi[g_npi].name, "%s", n > 1 || numbered ? base : name);
+            for (char *q = g_pi[g_npi].name; *q; q++) if (*q >= 'a' && *q <= 'z') *q -= 32;
+            g_npi++;
+        }
+    }
+}
+/* the items the picker shows, in order: matching what is typed; the cards only the file of their tab */
+static int picker_shown(const Ed *e, int *out) {
+    int n = 0;
+    for (int i = 0; i < g_npi; i++) {
+        if (e->pview == 0 && g_pi[i].file != e->ptab) continue;
+        if (e->find[0] && !strstr(g_pi[i].name, e->find)) continue;
+        out[n++] = i;
+    }
+    return n;
+}
+/* a sprite of the picker's files, fitted into w x h (z at most), centred; frame k of its animation (playing: the picked one) */
+static void picker_sprite(Canvas *cv, const PickItem *it, int k, int x, int y, int w, int h, int z) {
+    int fr[128], n = anim_frames(&g_pf[it->file], it->sp, fr, 128), sw, sh;
+    static char g[MAXH][MAXW + 1];
+    grid_of(&g_pf[it->file], fr[k % n], g, &sw, &sh);
+    while (z > 1 && (sw * z > w || sh * z > h)) z--;
+    draw_grid_at(cv, &(Ed){.f = g_pf[it->file]}, g, sw, sh, x + (w - sw * z) / 2, y + (h - sh * z) / 2, z, 0);
+}
+static void picker_view_button(Canvas *cv, int x, int y, int which, int on) { /* a grid of squares, or lines */
+    Rgb k = on ? RGB(220, 220, 235) : RGB(90, 90, 110);
+    canvas_rect(cv, x - 2, y - 2, 13, 11, on ? RGB(52, 54, 70) : RGB(28, 28, 36));
+    if (which == 0) for (int a = 0; a < 2; a++) for (int b = 0; b < 2; b++) canvas_rect(cv, x + a * 5, y + b * 4, 4, 3, k);
+    else for (int r = 0; r < 3; r++) { canvas_rect(cv, x, y + r * 3, 2, 1, k); canvas_rect(cv, x + 3, y + r * 3, 6, 1, k); }
+    region(R_PVIEW, which, x - 2, y - 2, 13, 11, RGB(0, 0, 0));
+}
+static void picker_search(Canvas *cv, int x, int y, int w, const char *typed) {
+    canvas_rect(cv, x, y, w, 9, RGB(30, 30, 40));
+    canvas_text(cv, x + 3, y + 2, typed[0] ? typed : "TYPE TO FIND", typed[0] ? C_WHITE : RGB(90, 90, 110));
+    if (typed[0]) canvas_rect(cv, x + 3 + text_width(typed) + 1, y + 2, 3, 5, C_YELLOW);
+}
+static void draw_picker(const Ed *e, Canvas *cv, double now) {
+    int W = cv->w, H = cv->h, sh[512], n = picker_shown(e, sh), k = (int)(now / 0.3); /* (k: the picked one plays) */
+    canvas_text(cv, 4, 3, "OPEN A SPRITE", C_YELLOW);
+    picker_view_button(cv, W - 4 - 22, 3, 0, e->pview == 0);
+    picker_view_button(cv, W - 4 - 9, 3, 1, e->pview == 1);
+    static const char *TABS[NFILES] = {"PROPS", "ITEMS", "CLAWD", "UI"};
+    if (e->pview == 0) { /* cards: a tab per file, the search box, the cards */
+        int tx = 4, ty = 14;
+        for (int f = 0; f < NFILES; f++) {
+            int tw = text_width(TABS[f]) + 8;
+            canvas_rect(cv, tx, ty, tw, 10, f == e->ptab ? RGB(52, 54, 70) : RGB(28, 28, 36));
+            if (f == e->ptab) canvas_rect(cv, tx + 2, ty + 9, tw - 4, 1, C_YELLOW);
+            canvas_text(cv, tx + 4, ty + 3, TABS[f], f == e->ptab ? C_WHITE : C_GREY);
+            region(R_PTAB, f, tx, ty, tw, 10, RGB(0, 0, 0));
+            tx += tw + 2;
+        }
+        int sw = W - 4 - tx - 6 < 90 ? W - 4 - tx - 6 : 90;
+        if (sw > 40) picker_search(cv, W - 4 - sw, ty, sw, e->find);
+        int gap = 4, cols = (W - 8 + gap) / (46 + gap) > 0 ? (W - 8 + gap) / (46 + gap) : 1, cw = (W - 8 + gap) / cols - gap, chh = 42, y0 = ty + 16;
+        int vis = (H - 12 - y0 + gap) / (chh + gap) > 0 ? (H - 12 - y0 + gap) / (chh + gap) : 1;
+        g_pick_cols = cols;
+        int at = 0; for (int j = 0; j < n; j++) if (sh[j] == e->psel) at = j;
+        int first = e->pscroll; /* (the rows shown keep the picked one in view) */
+        if (at / cols < first) first = at / cols;
+        if (at / cols >= first + vis) first = at / cols - vis + 1;
+        if (first < 0) first = 0;
+        ((Ed *)e)->pscroll = first;
+        for (int j = first * cols; j < n && j < (first + vis) * cols; j++) {
+            const PickItem *it = &g_pi[sh[j]];
+            int cx = 4 + (j % cols) * (cw + gap), cy = y0 + (j / cols - first) * (chh + gap), on = sh[j] == e->psel;
+            canvas_rect(cv, cx, cy, cw, chh, on ? RGB(44, 44, 60) : RGB(28, 28, 36));
+            checker(cv, cx + 3, cy + 3, cw - 6, 26);
+            picker_sprite(cv, it, on ? k : 0, cx + 3, cy + 3, cw - 6, 26, 3);
+            char nm[24]; snprintf(nm, sizeof nm, "%.*s", (cw - 4) / 4, it->name);
+            canvas_text(cv, cx + 3, cy + 32, nm, on ? C_WHITE : RGB(190, 190, 205));
+            if (it->n > 1) { char fn[8]; snprintf(fn, sizeof fn, "%d", it->n); canvas_rect(cv, cx + cw - text_width(fn) - 6, cy + 4, text_width(fn) + 4, 7, RGB(18, 18, 24)); canvas_text(cv, cx + cw - text_width(fn) - 4, cy + 5, fn, C_YELLOW); }
+            if (on) frame(cv, cx, cy, cw, chh, C_YELLOW);
+            region(R_PITEM, sh[j], cx, cy, cw, chh, RGB(0, 0, 0));
+        }
+        if (first > 0) canvas_text(cv, W / 2 - 1, y0 - 6, "^", C_GREY);
+        if ((first + vis) * cols < n) canvas_text(cv, W / 2 - 1, H - 17, "V", C_GREY);
+    } else { /* a list by file, the picked one big on the right with its file, size and frames */
+        int lw = W / 3 < 92 ? 92 : W / 3, y = 26;
+        picker_search(cv, 4, 14, lw - 4, e->find);
+        int rows = (H - 14 - y) / 7, at = 0, line = 0;
+        for (int j = 0; j < n; j++) { if (sh[j] == e->psel) at = j; }
+        (void)rows;
+        int first = e->pscroll; /* (in items; scrolled so the picked one is in view, the files' titles counted) */
+        if (at < first) first = at;
+        for (;;) { /* the last item that fits from `first` on, as drawn below */
+            int yy = y, lf = -1, last = first - 1;
+            for (int j = first; j < n; j++) {
+                if (g_pi[sh[j]].file != lf) { if (lf >= 0) yy += 3; if (yy + 17 > H - 12) break; yy += 10; lf = g_pi[sh[j]].file; }
+                if (yy + 7 > H - 12) break;
+                last = j; yy += 7;
+            }
+            if (at <= last || first >= at) break;
+            first++;
+        }
+        if (first < 0) first = 0;
+        ((Ed *)e)->pscroll = first;
+        int lastf = -1;
+        for (int j = first; j < n && line < rows; j++) {
+            const PickItem *it = &g_pi[sh[j]];
+            if (it->file != lastf) { /* a file's title (a gap before it, after the names of the file before) */
+                if (lastf >= 0) y += 3;
+                if (y + 17 > H - 12) break;
+                canvas_text(cv, 4, y, TABS[it->file], RGB(84, 84, 104)); canvas_rect(cv, 4, y + 7, lw - 4, 1, RGB(40, 40, 52)); y += 10; line++; lastf = it->file;
+            }
+            if (y + 7 > H - 12) break; /* (no line half under the hint) */
+            int on = sh[j] == e->psel;
+            if (on) canvas_rect(cv, 2, y - 1, lw, 7, RGB(44, 44, 60));
+            canvas_text(cv, 7, y, it->name, on ? C_WHITE : RGB(190, 190, 205));
+            if (it->n > 1) { char fn[8]; snprintf(fn, sizeof fn, "%d", it->n); canvas_text(cv, lw - text_width(fn) - 4, y, fn, on ? C_YELLOW : RGB(110, 110, 130)); }
+            region(R_PITEM, sh[j], 2, y - 1, lw, 7, RGB(0, 0, 0));
+            y += 7; line++;
+        }
+        canvas_rect(cv, lw + 4, 14, 1, H - 26, RGB(40, 40, 52));
+        if (n && e->psel >= 0) {
+            const PickItem *it = &g_pi[e->psel];
+            int px = lw + 12, pw = W - px - 6, ph = H - 14 - 14 - 36;
+            if (ph < 20) ph = 20;
+            checker(cv, px, 14, pw, ph);
+            picker_sprite(cv, it, k, px, 14, pw, ph, 8);
+            static char g[MAXH][MAXW + 1]; int w, h;
+            grid_of(&g_pf[it->file], it->sp, g, &w, &h);
+            char info[96];
+            snprintf(info, sizeof info, "%s   %s   %dX%d   %d FRAME%s", it->name, FILES[it->file], w, h, it->n, it->n == 1 ? "" : "S");
+            for (char *q = info; *q; q++) if (*q >= 'a' && *q <= 'z') *q -= 32;
+            canvas_text(cv, px, 14 + ph + 4, info, C_YELLOW);
+            for (int f = 0, fx = px; f < it->n && fx + 32 <= W - 4; f++, fx += 35) { checker(cv, fx, 14 + ph + 13, 32, 22); picker_sprite(cv, it, f, fx, 14 + ph + 13, 32, 22, 2); }
+        }
+    }
+    if (!n) { char t[64]; snprintf(t, sizeof t, "NOTHING CALLED %s", e->find); canvas_text(cv, (W - text_width(t)) / 2, H / 2, t, C_GREY); }
+    canvas_rect(cv, 0, H - 10, W, 1, RGB(40, 40, 52));
+    canvas_text(cv, 4, H - 7, e->pview == 0 ? "ARROWS PICK  ENTER OPEN  TAB FILE  CTRL+V LIST  ESC BACK" : "UP DOWN PICK  ENTER OPEN  CTRL+V CARDS  ESC BACK", RGB(150, 150, 170));
+}
+/* the picker opens: the items again, the open sprite's animation picked */
+static void picker_open(Ed *e, const char *dir, int from_edit) {
+    picker_gather(dir);
+    e->page = 1; e->came_from_edit = from_edit; e->find[0] = 0; e->pscroll = 0; e->ptab = e->file; e->psel = -1;
+    char nm[64], base[64], b2[64]; int num;
+    snprintf(nm, sizeof nm, "%s", e->name);
+    split_name(nm, base, sizeof base, &num);
+    for (int i = 0; i < g_npi; i++) if (g_pi[i].file == e->file) {
+        snprintf(b2, sizeof b2, "%s", g_pi[i].name);
+        for (char *q = b2; *q; q++) if (*q >= 'A' && *q <= 'Z') *q += 32;
+        if (!strcmp(b2, base) || !strcmp(b2, nm)) e->psel = i;
+    }
+    if (e->psel < 0) { int sh[512]; e->psel = picker_shown(e, sh) ? sh[0] : 0; }
+}
+/* what is typed changed: the first match picked (the cards: on the first tab that has one) */
+static void picker_refind(Ed *e) {
+    int sh[512];
+    if (e->pview == 0 && !picker_shown(e, sh)) for (int f = 0; f < NFILES; f++) { e->ptab = f; if (picker_shown(e, sh)) break; }
+    int n = picker_shown(e, sh);
+    if (n) e->psel = sh[0];
+    e->pscroll = 0;
+}
+static void picker_move(Ed *e, int d) { /* the picked one d places on (the cards: a row is g_pick_cols) */
+    int sh[512], n = picker_shown(e, sh), at = 0;
+    if (!n) return;
+    for (int j = 0; j < n; j++) if (sh[j] == e->psel) at = j;
+    at += d;
+    at = at < 0 ? 0 : at >= n ? n - 1 : at;
+    e->psel = sh[at];
+}
+/* the picked one opens in the editor */
+static void picker_pick(Ed *e, const char *dir) {
+    if (e->psel < 0 || e->psel >= g_npi) return;
+    char nm[64];
+    sprite_name(&g_pf[g_pi[e->psel].file], g_pi[e->psel].sp, nm, sizeof nm);
+    file_open(e, dir, g_pi[e->psel].file, nm);
+    e->page = 0; e->zoom = 0; e->msg[0] = 0; e->playing = 0;
+}
+
 static void draw(const Ed *e, Canvas *cv) {
     g_nreg = 0;
     double now = wall_now();
+    if (e->page) { canvas_rect(cv, 0, 0, cv->w, cv->h, RGB(18, 18, 24)); draw_picker(e, cv, now); return; }
     canvas_rect(cv, 0, 0, cv->w, cv->h, RGB(18, 18, 24));
     char t[160];
     snprintf(t, sizeof t, "EDIT %s  %s  %dX%d", e->name, FILES[e->file], e->w, e->h);
@@ -1018,6 +1219,7 @@ int editor_run(const char *dir, const char *name) {
     int which = 0; /* the file that has a sprite called NAME (props first), else an animation */
     if (name && editor_find(dir, name, &which)) return 1;
     file_open(&e, dir, which, name);
+    if (!name) picker_open(&e, dir, 0); /* (no name: the picker first) */
     if (!isatty(STDIN_FILENO) || !isatty(STDOUT_FILENO)) { fprintf(stderr, "clawd-room --edit needs a terminal\n"); return 1; }
     tty_on();
     Cells prev = {0, 0, NULL};
@@ -1041,8 +1243,16 @@ int editor_run(const char *dir, const char *name) {
         Layout L = layout(&e, cv.w, cv.h);
         canvas_free(&cv);
         fd_set fs; FD_ZERO(&fs); FD_SET(STDIN_FILENO, &fs);
-        struct timeval tv = {0, e.playing ? 62500 : 200000}; /* (16 frames a second while it plays) */
-        if (select(STDIN_FILENO + 1, &fs, NULL, NULL, &tv) <= 0) continue;
+        struct timeval tv = {0, e.playing ? 62500 : e.page ? 100000 : 200000}; /* (16 frames a second while it plays; the picker's picked one plays too) */
+        if (select(STDIN_FILENO + 1, &fs, NULL, NULL, &tv) <= 0) { /* nothing came; an Esc with nothing after it is Esc itself */
+            if (nin == 1 && in[0] == 0x1b) {
+                nin = 0;
+                if (e.asking) e.asking = 0;
+                else if (e.typing) e.typing = 0;
+                else if (e.page) { if (e.came_from_edit) e.page = 0; else { int any = 0; for (int f = 0; f < NFILES; f++) any |= e.changed[f]; if (any) { e.page = 0; e.asking = 1; } else quit = 1; } }
+            }
+            continue;
+        }
         ssize_t k = read(STDIN_FILENO, in + nin, sizeof in - 1 - (size_t)nin);
         if (k <= 0) continue;
         nin += (int)k; in[nin] = 0;
@@ -1051,6 +1261,16 @@ int editor_run(const char *dir, const char *name) {
             if (in[i] == 0x1b) {
                 if (i + 1 >= nin) break; /* (more to come) */
                 if (e.asking && in[i + 1] != '[') { e.asking = 0; i++; continue; } /* (Esc: back to editing) */
+                if (e.page && in[i + 1] != '[') { /* the picker, Esc: back to the sprite it was opened from (or quit, if none) */
+                    i++;
+                    if (e.came_from_edit) e.page = 0; else { int any = 0; for (int f = 0; f < NFILES; f++) any |= e.changed[f]; if (any) { e.page = 0; e.asking = 1; } else quit = 1; }
+                    continue;
+                }
+                if (e.page && in[i + 1] == '[' && i + 2 < nin && in[i + 2] >= 'A' && in[i + 2] <= 'D') { /* the picker's arrows */
+                    char a = in[i + 2];
+                    picker_move(&e, a == 'C' ? 1 : a == 'D' ? -1 : (e.pview == 0 ? g_pick_cols : 1) * (a == 'B' ? 1 : -1));
+                    i += 3; continue;
+                }
                 if (e.typing && in[i + 1] != '[') { e.typing = 0; i++; continue; } /* (Esc: stop typing) */
                 if (in[i + 1] == '[' && i + 2 < nin && in[i + 2] == '<') { /* SGR mouse: ESC [ < b ; x ; y (M | m) */
                     int b, x, y, used = 0;
@@ -1060,6 +1280,14 @@ int editor_run(const char *dir, const char *name) {
                     if (e.asking) continue;
                     int px = x - 1, py = (y - 1) * 2, btn = b & 3, alt = b & 8, motion = b & 32, release = fin == 'm';
                     const Region *r = hit(px, py);
+                    if (e.page) { /* the picker: a click picks (on the picked one: opens it); a tab, a view; the wheel moves */
+                        if (b & 64) { picker_move(&e, ((b & 3) == 0 ? -1 : 1) * (e.pview == 0 ? g_pick_cols : 1)); continue; }
+                        if (motion || release || btn != 0 || !r) continue;
+                        if (r->kind == R_PITEM) { if (r->i == e.psel) picker_pick(&e, dir); else e.psel = r->i; }
+                        else if (r->kind == R_PTAB) { e.ptab = r->i; e.pscroll = 0; int sh[512]; if (picker_shown(&e, sh)) e.psel = sh[0]; }
+                        else if (r->kind == R_PVIEW) { e.pview = r->i; e.pscroll = 0; }
+                        continue;
+                    }
                     e.hx = e.hy = -1;
                     if (r && r->kind == R_GRID) { e.hx = (px - L.gx) / L.z; e.hy = (py - L.gy) / L.z; }
                     if (b & 64) { /* the mouse wheel: over the frames it scrolls them (up / left back, down / right on); elsewhere nothing */
@@ -1167,6 +1395,18 @@ int editor_run(const char *dir, const char *name) {
                 i += 1; continue;
             }
             char ch = in[i++];
+            if (e.page && !e.asking) { /* the picker: type to find, Backspace, Enter opens, Tab the next file, Ctrl+V the view */
+                size_t fl = strlen(e.find);
+                if (ch == '\r' || ch == '\n') picker_pick(&e, dir);
+                else if (ch == '\t') { e.ptab = (e.ptab + 1) % NFILES; e.pscroll = 0; int sh[512]; if (picker_shown(&e, sh)) e.psel = sh[0]; }
+                else if (ch == 0x16) { e.pview = !e.pview; e.pscroll = 0; }
+                else if (ch == 0x03) { int any = 0; for (int f = 0; f < NFILES; f++) any |= e.changed[f]; if (any) { e.page = 0; e.asking = 1; } else quit = 1; }
+                else if ((ch == 127 || ch == 8) && fl) { e.find[fl - 1] = 0; picker_refind(&e); }
+                else if (((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') || ch == '-' || ch == '~') && fl < sizeof e.find - 1) {
+                    e.find[fl] = (char)(ch >= 'a' && ch <= 'z' ? ch - 32 : ch); e.find[fl + 1] = 0; picker_refind(&e);
+                }
+                continue;
+            }
             if (e.asking) { /* keep or discard */
                 if (ch == 's' || ch == 'S' || ch == 'y' || ch == 'Y') quit = 1; /* (save: they are in the file already) */
                 else if (ch == 'd' || ch == 'D' || ch == 'n' || ch == 'N') { /* discard: put every changed file back as it was */
@@ -1210,6 +1450,7 @@ int editor_run(const char *dir, const char *name) {
             if (ch == ' ') { e.playing = !e.playing; e.play_t0 = wall_now(); continue; }
             if (ch == 'o' || ch == 'O') { e.onion = !e.onion; continue; }
             if (ch == 'p' || ch == 'P') { g_panel_folded = !g_panel_folded; continue; } /* (the colour panel folds / unfolds) */
+            if (ch == 'l' || ch == 'L') { e.playing = 0; picker_open(&e, dir, 1); continue; } /* (the sprite picker) */
             if (ch == 'w' || ch == 'W' || ch == 'n' || ch == 'N') { /* held (its repeats keep it), an arrow picks the side */
                 e.sizing = ch == 'w' || ch == 'W' ? 'w' : 'n';
                 e.sizing_until = wall_now() + 1.0;
