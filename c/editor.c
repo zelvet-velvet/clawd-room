@@ -357,7 +357,7 @@ static void swap_undo(Ed *e, int at) {
 
 /* ---- the screen: canvas pixels; one terminal cell is 1 pixel wide and 2 high ---------------------------------------- */
 /* what is where, filled while drawing, so a click finds what it is on */
-enum { R_GRID, R_TOOL, R_FILE, R_NEW, R_FIELD, R_HUE, R_HEX, R_NUM, R_ADD, R_FRAME, R_FADD, R_PLAY, R_SPEED, R_ONION };
+enum { R_GRID, R_TOOL, R_FILE, R_NEW, R_FIELD, R_HUE, R_HEX, R_NUM, R_ADD, R_FRAME, R_FADD, R_PLAY, R_SPEED, R_ONION, R_STRIP };
 typedef struct { int kind, i, x0, y0, x1, y1; Rgb c; } Region;
 static Region g_reg[320];
 static int g_nreg;
@@ -412,14 +412,21 @@ static int grid_zoom(const Ed *e, int room_w, int room_h) {
 }
 /* The grid top left, the colour panel on its right, the help along the bottom. When the window is too short for the help
    under the panel, only a line "? SHORTCUTS  Q QUIT" is shown and ? opens the help in a box (hw = 0). */
-/* the timeline along the bottom: a line of buttons, the frames (twice their size if they are small), their numbers */
-static int thumb_zoom(const Ed *e) { return e->h * 2 <= 24 ? 2 : 1; }
-/* (the line, the buttons, the frames, their numbers; a short window gets only the line of buttons, a very short one none) */
+/* the timeline along the bottom: a line (the name and frame, the buttons), the frames, their numbers, a scroll bar. The
+ * frames have one size for the window, as big as its height allows (3x, 2x, 1x; at most a third of it), whatever their
+ * number: more than fit scroll sideways. A short window gets only the line, a very short one no timeline. */
 static int panel_h(const Ed *e);
+static int tl_full(const Ed *e, int z) { return 15 + e->h * z + 9 + 3; }
+static int thumb_zoom(const Ed *e, int H) {
+    int rest = panel_h(e) - FIELD_H + 16; /* (the panel with its smallest colour field) */
+    for (int z = 3; z > 1; z--) if (H - 12 - tl_full(e, z) >= rest && tl_full(e, z) <= H / 3) return z;
+    return 1;
+}
 static int timeline_h(const Ed *e, int H) {
-    int full = 15 + e->h * thumb_zoom(e) + 9, rest = panel_h(e) - FIELD_H + 16; /* (the panel with its smallest colour field) */
+    int full = tl_full(e, thumb_zoom(e, H)), rest = panel_h(e) - FIELD_H + 16;
     return H - 12 - full >= rest ? full : H - 12 - 14 >= rest ? 14 : 0;
 }
+static int g_tl_first, g_tl_seen = -1; /* the first frame the strip shows (scrolled), and the frame it last kept in view */
 /* (the colour field's height follows: what the panel leaves of the room above the help, 16 to 44) */
 static Layout layout(const Ed *e, int W, int H) {
     int th = timeline_h(e, H), rest = panel_h(e) - FIELD_H;
@@ -580,7 +587,7 @@ static int fill_area(const Ed *e, int x, int y, unsigned char m[MAXH][MAXW]) {
  * no room for the real-size view. */
 static void draw_timeline(Canvas *cv, const Ed *e, double now, int preview, int short_help) {
     int fr[128], n = anim_frames(&e->f, e->sp, fr, 128), at = frame_index(fr, n, e->sp), num, props = !strcmp(FILES[e->file], "props.txt");
-    int th = timeline_h(e, cv->h), y0 = cv->h - th, y = y0 + 3, full = th >= 15 + e->h;
+    int th = timeline_h(e, cv->h), y0 = cv->h - th, y = y0 + 3, full = th >= tl_full(e, 1);
     if (!th) return;
     char name[64], base[64], t[96];
     sprite_name(&e->f, e->sp, name, sizeof name);
@@ -588,50 +595,47 @@ static void draw_timeline(Canvas *cv, const Ed *e, double now, int preview, int 
     canvas_rect(cv, 0, y0, cv->w, 1, RGB(44, 44, 56));
     if (n > 1) snprintf(t, sizeof t, "%s  FRAME %d OF %d", base, at + 1, n); else snprintf(t, sizeof t, "%s  ONE FRAME", base);
     for (char *q = t; *q; q++) if (*q >= 'a' && *q <= 'z') *q -= 32;
-    /* the top line: the name and frame, PLAY, the speed, ONION against the right edge; the short help at the left */
+    /* the left column: the short help, under it the sprite as in the room, as big as the column lets it be */
+    const char *sh = cv->w >= 220 ? "? SHORTCUTS  Q QUIT" : "? HELP  Q QUIT";
+    int lw = text_width(sh) + 12, sx0 = lw, sx1 = cv->w - 4; /* (the block on the right, from sx0 to sx1) */
+    if (short_help) canvas_text(cv, 4, y + 2, sh, RGB(150, 150, 170));
+    /* the block on the right: the name and frame at its left, PLAY / the speed / ONION at its right */
+    canvas_text(cv, sx0, y + 2, t, C_YELLOW);
     const char *play = e->playing ? "STOP" : "PLAY", *sp = e->speed < 0.75 ? "0.5X" : e->speed > 1.5 ? "2X" : "1X";
-    int hw = text_width(t) + 8 + text_width(play) + 9 + text_width(sp) + 9 + text_width("ONION") + 6, hx = cv->w - 4 - hw;
-    if (hx < 4) hx = 4;
-    if (short_help) {
-        const char *sh = hx - 4 >= text_width("? SHORTCUTS  Q QUIT") + 10 ? "? SHORTCUTS  Q QUIT" : "? HELP  Q QUIT";
-        if (hx - 4 >= text_width(sh) + 10) canvas_text(cv, 4, y + 2, sh, RGB(150, 150, 170));
-    }
-    canvas_text(cv, hx, y + 2, t, C_YELLOW);
-    int bx = hx + text_width(t) + 8;
+    int bw = text_width(play) + 9 + text_width(sp) + 9 + text_width("ONION") + 6, bx = sx1 - bw;
+    if (bx < sx0 + text_width(t) + 8) bx = sx0 + text_width(t) + 8;
     button(cv, bx, y, play, e->playing, R_PLAY, 0); bx += text_width(play) + 9;
     button(cv, bx, y, sp, 0, R_SPEED, 0); bx += text_width(sp) + 9;
     button(cv, bx, y, "ONION", e->onion, R_ONION, 0);
     if (!full) return; /* (short window: the line only) */
-    /* the second line: the sprite as in the room at the left, the frames against the right edge, all at one size: twice
-     * if everything fits so (the gaps between frames narrowing 6, 4, 3), else once; then a long animation scrolls */
-    static char g[MAXH][MAXW + 1];
-    int z = thumb_zoom(e), gap = 6, fw = 0, lw = 0, room = 0, ty = y + 12;
-    for (int pass = 0; ; pass++) {
-        lw = preview ? e->w * z + 10 : 0;
-        room = cv->w - 8 - lw;
-        fw = props ? 14 : 0;
-        for (int i = 0; i < n; i++) { int w, h; grid_of(&e->f, fr[i], g, &w, &h); fw += w * z + gap; }
-        if (fw - gap <= room) break;
-        if (gap > 3) { gap = gap == 6 ? 4 : 3; continue; } /* (narrower gaps first: the frames stay big if that is enough) */
-        if (z == 2) { z = 1; gap = 6; continue; }
-        break;
+    int z = thumb_zoom(e, cv->h), gap = 6, ty = y + 12, bottom = cv->h - 2;
+    if (preview) { /* (playing: the frame playing) */
+        int py = short_help ? ty : y, ah = bottom - py, aw = lw - 12, pz = aw / e->w < ah / e->h ? aw / e->w : ah / e->h;
+        if (pz < 1) pz = 1;
+        draw_preview(cv, e, now, 4 + (aw - e->w * pz) / 2, py, pz, 0);
     }
-    if (preview) draw_preview(cv, e, now, 4, ty, z, 0); /* (playing: the frame playing) */
+    /* the strip: the frames from the first one scrolled to; it keeps the open frame in view when that changes */
+    static char g[MAXH][MAXW + 1];
+    int fwid[128];
+    for (int i = 0; i < n; i++) { int w, h; grid_of(&e->f, fr[i], g, &w, &h); fwid[i] = w * z + gap; }
+    int stripw = sx1 - sx0 + gap, maxfirst = n - 1;
+    for (int wsum = 0; maxfirst >= 0 && wsum + fwid[maxfirst] <= stripw; maxfirst--) wsum += fwid[maxfirst];
+    maxfirst++; /* (the first frame from which all the rest fit) */
+    if (e->sp != g_tl_seen) { /* the open frame changed: bring it into view */
+        if (at < g_tl_first) g_tl_first = at;
+        for (;;) { int wsum = 0; for (int i = g_tl_first; i <= at; i++) wsum += fwid[i]; if (wsum <= stripw || g_tl_first >= at) break; g_tl_first++; }
+        g_tl_seen = e->sp;
+    }
+    if (g_tl_first > maxfirst) g_tl_first = maxfirst;
+    if (g_tl_first < 0) g_tl_first = 0;
     int playing = -1;
     if (e->playing) { Pose p; int ip; playing = play_frame(e, now, &p, &ip); }
-    int x = cv->w - 4 - (fw - gap), end = cv->w - 4, first = 0;
-    if (x < 4 + lw) x = 4 + lw;
-    for (;;) { /* (a long animation: the first frame shown, so the open one fits) */
-        int w2 = 0;
-        for (int i = first; i <= at; i++) { int w, h; grid_of(&e->f, fr[i], g, &w, &h); w2 += w * z + gap; }
-        if (x + w2 + 12 <= end || first >= at) break;
-        first++;
-    }
-    if (first > 0) { canvas_text(cv, x, ty + 4, "<", C_GREY); x += 6; }
-    for (int i = first; i < n; i++) {
+    region(R_STRIP, 0, sx0, ty - 1, sx1 - sx0, e->h * z + 12, RGB(0, 0, 0)); /* (the mouse wheel scrolls it; before the frames, so a click finds them) */
+    int x = sx0, shown = 0;
+    for (int i = g_tl_first; i < n; i++) {
         int w, h;
         grid_now(e, fr[i], g, &w, &h);
-        if (x + w * z + (i < n - 1 ? 8 : 0) > end) { canvas_text(cv, end - 3, ty + 4, ">", C_GREY); break; }
+        if (x + w * z > sx1) break;
         canvas_rect(cv, x - 1, ty - 1, w * z + 2, h * z + 2, i == at ? RGB(70, 70, 92) : RGB(34, 34, 44));
         draw_grid_at(cv, e, g, w, h, x, ty, z, 1);
         if (i == at) frame(cv, x - 1, ty - 1, w * z + 2, h * z + 2, C_YELLOW);
@@ -640,9 +644,14 @@ static void draw_timeline(Canvas *cv, const Ed *e, double now, int preview, int 
         snprintf(nb, sizeof nb, "%d", i + 1);
         canvas_text(cv, x + (w * z - text_width(nb)) / 2, ty + h * z + 2, nb, i == at ? C_YELLOW : C_GREY);
         if (fr[i] == playing) canvas_rect(cv, x, ty + h * z + 1, w * z, 1, C_WHITE); /* (playing now) */
-        x += w * z + gap;
+        x += w * z + gap; shown++;
     }
-    if (props && x + 12 <= end) { canvas_rect(cv, x, ty, 12, e->h * z, RGB(34, 34, 44)); canvas_text(cv, x + 4, ty + e->h * z / 2 - 2, "+", C_GREY); region(R_FADD, 0, x, ty, 12, e->h * z, RGB(0, 0, 0)); }
+    if (props && g_tl_first + shown == n && x + 12 <= sx1) { canvas_rect(cv, x, ty, 12, e->h * z, RGB(34, 34, 44)); canvas_text(cv, x + 4, ty + e->h * z / 2 - 2, "+", C_GREY); region(R_FADD, 0, x, ty, 12, e->h * z, RGB(0, 0, 0)); }
+    if (shown < n) { /* a scroll bar: where the frames shown are among all of them */
+        int by = ty + e->h * z + 9, tw = sx1 - sx0, k0 = sx0 + tw * g_tl_first / n, k1 = sx0 + tw * (g_tl_first + shown) / n;
+        canvas_rect(cv, sx0, by, tw, 2, RGB(40, 40, 52));
+        canvas_rect(cv, k0, by, k1 - k0 > 4 ? k1 - k0 : 4, 2, RGB(140, 140, 160));
+    }
 }
 
 static void draw(const Ed *e, Canvas *cv) {
@@ -799,7 +808,7 @@ static void draw(const Ed *e, Canvas *cv) {
     }
     /* the sprite at its real size (and twice); while PLAY is on, the animation as the room shows it */
     int bottom = L.hy - 3, pad = e->playing && is_action(e) ? 4 : 0, shown = 0; /* (pad: room above for a Clawd's bounce) */
-    int tl_frames = timeline_h(e, cv->h) >= 15 + e->h; /* (the timeline shows the frames: the real-size view is there, at its left) */
+    int tl_frames = timeline_h(e, cv->h) >= tl_full(e, 1); /* (the timeline shows the frames: the real-size view is there, at its left) */
     int rx = x + FIELD_W + 12, lw = text_width("AS IN THE ROOM");
     int ux = L.gx, uy = L.gy + e->h * L.z + 18, uw = L.px - L.gx - 10; /* (under the grid, below the pointer's line) */
     if (tl_frames) shown = 1;
@@ -936,6 +945,10 @@ int editor_run(const char *dir, const char *name) {
                     const Region *r = hit(px, py);
                     e.hx = e.hy = -1;
                     if (r && r->kind == R_GRID) { e.hx = (px - L.gx) / L.z; e.hy = (py - L.gy) / L.z; }
+                    if (b & 64) { /* the mouse wheel: over the frames it scrolls them (up / left back, down / right on); elsewhere nothing */
+                        if (r && (r->kind == R_STRIP || r->kind == R_FRAME || r->kind == R_FADD)) g_tl_first += (b & 3) == 0 || (b & 3) == 2 ? -1 : 1;
+                        continue;
+                    }
                     if (release) { if (painting || e.drag >= 0) save(&e); painting = 0; e.drag = -1; continue; }
                     if (motion && btn == 3) continue; /* (just moving: the pointer's pixel is shown) */
                     if (e.drag >= 0 || (r && (r->kind == R_FIELD || r->kind == R_HUE) && !motion && btn == 0)) { /* the colour field or the hue bar */
