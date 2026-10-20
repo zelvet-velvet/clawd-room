@@ -914,7 +914,7 @@ static void draw_picker(const Ed *e, Canvas *cv, double now) {
     }
     if (!n) { char t[64]; snprintf(t, sizeof t, "NOTHING CALLED %s", e->find); canvas_text(cv, (W - text_width(t)) / 2, H / 2, t, C_GREY); }
     canvas_rect(cv, 0, H - 10, W, 1, RGB(40, 40, 52));
-    canvas_text(cv, 4, H - 7, e->pview == 0 ? "ARROWS PICK  ENTER OPEN  TAB FILE  CTRL+V LIST  ESC BACK" : "UP DOWN PICK  ENTER OPEN  CTRL+V CARDS  ESC BACK", RGB(150, 150, 170));
+    canvas_text(cv, 4, H - 7, e->pview == 0 ? "ARROWS PICK  ENTER OPEN  TAB FILE  \\ LIST  ESC BACK" : "UP DOWN PICK  ENTER OPEN  \\ CARDS  ESC BACK", RGB(150, 150, 170));
 }
 /* the picker opens: the items again, the open sprite's animation picked */
 static void picker_open(Ed *e, const char *dir, int from_edit) {
@@ -1395,11 +1395,11 @@ int editor_run(const char *dir, const char *name) {
                 i += 1; continue;
             }
             char ch = in[i++];
-            if (e.page && !e.asking) { /* the picker: type to find, Backspace, Enter opens, Tab the next file, Ctrl+V the view */
+            if (e.page && !e.asking) { /* the picker: type to find, Backspace, Enter opens, Tab the next file, \ the view */
                 size_t fl = strlen(e.find);
                 if (ch == '\r' || ch == '\n') picker_pick(&e, dir);
                 else if (ch == '\t') { e.ptab = (e.ptab + 1) % NFILES; e.pscroll = 0; int sh[512]; if (picker_shown(&e, sh)) e.psel = sh[0]; }
-                else if (ch == 0x16) { e.pview = !e.pview; e.pscroll = 0; }
+                else if (ch == '\\') { e.pview = !e.pview; e.pscroll = 0; } /* (\: the other view; Ctrl+V is Windows Terminal's paste) */
                 else if (ch == 0x03) { int any = 0; for (int f = 0; f < NFILES; f++) any |= e.changed[f]; if (any) { e.page = 0; e.asking = 1; } else quit = 1; }
                 else if ((ch == 127 || ch == 8) && fl) { e.find[fl - 1] = 0; picker_refind(&e); }
                 else if (((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') || ch == '-' || ch == '~') && fl < sizeof e.find - 1) {
