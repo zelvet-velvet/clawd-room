@@ -397,7 +397,9 @@ static int g_field_h = 44; /* ... and 16 to 44 high: shorter when the window is,
 #define FIELD_H g_field_h
 /* the colour panel's height down to the end of SHADES (the real-size view below it fits itself in) */
 #define TOOL_ROW 23 /* the tools: a key cap (13), a gap, its name */
-static int panel_h(const Ed *e) { return TOOL_ROW + FIELD_H + 3 + 8 + 11 + 7 + ((e->f.npal + 9) / 10) * 10 + 3 + 7 + 10; }
+#define SECTION 12 /* a section's title (dim), a gap, a line under it, a gap; then its swatches */
+#define SW_ROW 13  /* rows of the file's colours, so a ring never touches the row above */
+static int panel_h(const Ed *e) { return TOOL_ROW + FIELD_H + 3 + 8 + 11 + SECTION + ((e->f.npal + 9) / 10) * SW_ROW + 2 + SECTION + 10; }
 static int help_rows(int W) { return help_row(NULL, 0, "", H_MOUSE, NH(H_MOUSE), W) + help_row(NULL, 0, "", H_EDIT, NH(H_EDIT), W) + help_row(NULL, 0, "", H_ANIM, NH(H_ANIM), W) + help_row(NULL, 0, "", H_SIZE, NH(H_SIZE), W); }
 static void help(Canvas *cv, int y, int W) { /* the help from row y, wrapped at W */
     y += 8 * help_row(cv, y, "MOUSE", H_MOUSE, NH(H_MOUSE), W);
@@ -511,6 +513,12 @@ static void tool_button(Canvas *cv, int x, int y, int which, int on) {
     for (int yy = 0; yy < 9; yy++) for (int xx = 0; xx < 9 && TOOL_ICON[which][yy][xx]; xx++)
         if (TOOL_ICON[which][yy][xx] != '.') canvas_px(cv, x + 2 + xx, y + 2 + dy + yy, tool_colour(TOOL_ICON[which][yy][xx]));
     if (on) canvas_rect(cv, x + 2, y + h + 1, w - 4, 1, C_YELLOW);
+}
+
+/* a section of the panel: its title, dim, and a line under it as wide as the colour field */
+static void section(Canvas *cv, int x, int y, const char *title) {
+    canvas_text(cv, x, y, title, RGB(84, 84, 104));
+    canvas_rect(cv, x, y + 7, FIELD_W, 1, RGB(40, 40, 52));
 }
 
 static double wall_now(void) { struct timeval tv; gettimeofday(&tv, NULL); return tv.tv_sec + tv.tv_usec / 1e6; }
@@ -799,26 +807,26 @@ static void draw(const Ed *e, Canvas *cv) {
         nx += nw + 3;
     }
     y += 11;
-    canvas_text(cv, x, y, "IN THIS FILE", RGB(110, 110, 130));
+    section(cv, x, y, "IN THIS FILE");
     if (e->pk == 2) { canvas_text(cv, x + FIELD_W - text_width("+ ADD"), y, "+ ADD", C_GREY); region(R_ADD, 0, x + FIELD_W - text_width("+ ADD") - 1, y - 1, text_width("+ ADD") + 2, 7, RGB(0, 0, 0)); }
-    y += 7;
+    y += SECTION;
     for (int i = 0; i < e->f.npal; i++) {
-        int sx = x + (i % 10) * 10, sy = y + (i / 10) * 10;
+        int sx = x + (i % 10) * 10, sy = y + (i / 10) * SW_ROW;
         canvas_rect(cv, sx, sy, 8, 8, e->f.pal_c[i]);
         region(R_FILE, i, sx, sy, 8, 8, e->f.pal_c[i]);
         int used = 0;
         for (int yy = 0; yy < e->h && !used; yy++) for (int xx = 0; xx < e->w; xx++) if (e->g[yy][xx] == e->f.pal_ch[i]) { used = 1; break; }
         if (used) canvas_rect(cv, sx + 3, sy + 9, 2, 1, RGB(200, 200, 215)); /* (used in this sprite) */
-        if (e->pk == 1 && e->pi == i) frame(cv, sx, sy, 8, 8, C_WHITE);
+        if (e->pk == 1 && e->pi == i) frame(cv, sx - 1, sy - 1, 10, 10, RGB(150, 150, 170)); /* (the one painting: a soft ring, a dark gap inside it) */
     }
-    y += ((e->f.npal + 9) / 10) * 10 + 3;
-    canvas_text(cv, x, y, "SHADES", RGB(110, 110, 130));
-    y += 7;
+    y += ((e->f.npal + 9) / 10) * SW_ROW + 2;
+    section(cv, x, y, "SHADES");
+    y += SECTION;
     for (int k = -3; k <= 3; k++) { /* darker to lighter */
         int sx = x + (k + 3) * 10;
         Rgb c = shade(cur, k);
         if (!tr) { canvas_rect(cv, sx, y, 8, 8, c); region(R_NEW, 0, sx, y, 8, 8, c); }
-        if (k == 0 && !tr) frame(cv, sx, y, 8, 8, RGB(120, 120, 135));
+        if (k == 0 && !tr) frame(cv, sx - 1, y - 1, 10, 10, RGB(90, 90, 108)); /* (this colour: a dimmer ring) */
     }
     y += 12;
     if (L.hw) help(cv, L.hy, L.hw);
