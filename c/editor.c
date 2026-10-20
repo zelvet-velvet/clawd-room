@@ -364,7 +364,8 @@ static int g_nreg;
 static void region(int kind, int i, int x, int y, int w, int h, Rgb c) { if (g_nreg < 320) g_reg[g_nreg++] = (Region){kind, i, x, y, x + w, y + h, c}; }
 static const Region *hit(int x, int y) { for (int k = g_nreg - 1; k >= 0; k--) if (x >= g_reg[k].x0 && x < g_reg[k].x1 && y >= g_reg[k].y0 - 1 && y < g_reg[k].y1 + 1) return &g_reg[k]; return NULL; }
 
-typedef struct { int gx, gy, z, px, hy, hw; } Layout; /* the grid's origin and zoom; the panel's left edge; the help's top and width */
+typedef struct { int gx, gy, z, px, hy, hw, ty, ah; } Layout; /* the grid's origin and zoom; the panel's left edge; the help's top and width;
+                                                              the top of the canvas and the panel, and their height (the same) */
 
 /* the help: what each key and button does, as key caps (bright) and what they do (dim), in three groups */
 typedef struct { const char *key, *what; } Help;
@@ -427,16 +428,23 @@ static int timeline_h(const Ed *e, int H) {
     return H - 12 - full >= rest ? full : H - 12 - 14 >= rest ? 14 : 0;
 }
 static int g_tl_first, g_tl_seen = -1; /* the first frame the strip shows (scrolled), and the frame it last kept in view */
-/* (the colour field's height follows: what the panel leaves of the room above the help, 16 to 44) */
+/* The canvas and the colour panel side by side, the same height: the panel's colour field (16 to 44 high) makes it as tall
+ * as the canvas; a canvas shorter than the smallest panel is drawn in a frame as tall as the panel, the sprite in its middle */
 static Layout layout(const Ed *e, int W, int H) {
     int th = timeline_h(e, H), rest = panel_h(e) - FIELD_H;
     H -= th;
     Layout L;
-    L.gx = 4; L.gy = 12; L.hw = W;
+    L.gx = 4; L.ty = 12; L.hw = W;
     L.hy = H - help_rows(W) * 8 - 1;
-    if (L.hy < L.gy + rest + 44 + 2) { L.hw = 0; L.hy = th ? H - 1 : H - 9; } /* (short: "? SHORTCUTS  Q QUIT" goes in the timeline's top line) */
-    g_field_h = L.hy - 3 - L.gy - rest; g_field_h = g_field_h < 16 ? 16 : g_field_h > 44 ? 44 : g_field_h;
-    L.z = grid_zoom(e, W - 118, L.hy - L.gy - 14); /* (the panel keeps what it needs: 100 pixels, its widest row of colours) */
+    if (L.hy < L.ty + rest + 44 + 2) { L.hw = 0; L.hy = th ? H - 1 : H - 9; } /* (short: "? SHORTCUTS  Q QUIT" goes in the timeline's top line) */
+    int most = L.hy - 3 - L.ty - rest; /* (the tallest colour field there is room for) */
+    most = most < 16 ? 16 : most > 44 ? 44 : most;
+    L.z = grid_zoom(e, W - 118, L.hy - L.ty - 14); /* (the panel keeps what it needs: 100 pixels, its widest row of colours) */
+    int gh = e->h * L.z, f = gh + 2 - rest; /* (the panel's last row ends 2 pixels above its height) */
+    g_field_h = f < 16 ? 16 : f > most ? most : f;
+    int ph = rest + g_field_h - 2;
+    L.ah = gh > ph ? gh : ph;
+    L.gy = L.ty + (L.ah - gh) / 2;
     L.px = L.gx + e->w * L.z + 10;
     return L;
 }
@@ -603,6 +611,12 @@ static void draw_timeline(Canvas *cv, const Ed *e, double now, int preview, int 
     canvas_text(cv, sx0, y + 2, t, C_YELLOW);
     const char *play = e->playing ? "STOP" : "PLAY", *sp = e->speed < 0.75 ? "0.5X" : e->speed > 1.5 ? "2X" : "1X";
     int bw = text_width(play) + 9 + text_width(sp) + 9 + text_width("ONION") + 6, bx = sx1 - bw;
+    if (sx0 + text_width(t) + 8 + bw > sx1) { /* (no room: the short way, NAME 2/9) */
+        canvas_rect(cv, sx0, y + 1, text_width(t), 7, RGB(18, 18, 24));
+        if (n > 1) snprintf(t, sizeof t, "%s %d/%d", base, at + 1, n); else snprintf(t, sizeof t, "%s", base);
+        for (char *q = t; *q; q++) if (*q >= 'a' && *q <= 'z') *q -= 32;
+        canvas_text(cv, sx0, y + 2, t, C_YELLOW);
+    }
     if (bx < sx0 + text_width(t) + 8) bx = sx0 + text_width(t) + 8;
     button(cv, bx, y, play, e->playing, R_PLAY, 0); bx += text_width(play) + 9;
     button(cv, bx, y, sp, 0, R_SPEED, 0); bx += text_width(sp) + 9;
@@ -680,6 +694,7 @@ static void draw(const Ed *e, Canvas *cv) {
         if (psp >= 0) { grid_now(e, psp, gg, &pw, &ph); if (pw != e->w || ph != e->h) memcpy(gg, e->g, sizeof gg); }
         oh[0] = oh[1] = 0; /* (no onion skin while it plays) */
     }
+    if (L.ah > e->h * L.z) canvas_rect(cv, L.gx, L.ty, e->w * L.z, L.ah, RGB(26, 26, 34)); /* (the canvas's frame, taller than the sprite) */
     for (int y = 0; y < e->h; y++) for (int x = 0; x < e->w; x++) { /* the grid, see-through as a checker */
         int tr, tp = 1, tn = 1;
         Rgb c = colour_of(&e->f, gg[y][x], &tr);
@@ -692,7 +707,7 @@ static void draw(const Ed *e, Canvas *cv) {
             canvas_px(cv, L.gx + x * L.z + dx, L.gy + y * L.z + dy, k);
         }
     }
-    frame(cv, L.gx, L.gy, e->w * L.z, e->h * L.z, RGB(90, 90, 110));
+    frame(cv, L.gx, L.ty, e->w * L.z, L.ah, RGB(90, 90, 110)); /* (round the canvas, as tall as the panel) */
     if (e->filling && e->hx >= 0 && e->hx < e->w && e->hy < e->h) { /* FILL: what a click would fill, outlined in dashes */
         static unsigned char m[MAXH][MAXW];
         fill_area(e, e->hx, e->hy, m);
@@ -714,9 +729,9 @@ static void draw(const Ed *e, Canvas *cv) {
         Rgb c = colour_of(&e->f, ch, &tr);
         if (tr) snprintf(t, sizeof t, "X %d  Y %d  SEE-THROUGH", e->hx, e->hy);
         else snprintf(t, sizeof t, "X %d  Y %d  %d %d %d", e->hx, e->hy, c.r, c.g, c.b);
-        canvas_text(cv, L.gx, L.gy + e->h * L.z + 4, t, C_GREY);
+        canvas_text(cv, L.gx, L.ty + L.ah + 4, t, C_GREY);
     } else if (e->msg[0] && !msg_top) { /* the message, wrapped to the grid's width */
-        int mw = L.px - L.gx - 8, ly = L.gy + e->h * L.z + 4, lx = 0;
+        int mw = L.px - L.gx - 8, ly = L.ty + L.ah + 4, lx = 0;
         char word[64];
         for (const char *p = e->msg; *p; ) {
             int n = 0;
@@ -732,7 +747,7 @@ static void draw(const Ed *e, Canvas *cv) {
     }
     /* the panel (like Figma's colour picker): PAINT / ERASE / PICK, a colour field and a hue bar, the colour's hex and red
        green blue (click to type), the file's colours (+ ADD puts a new one in), shades, the real-size view */
-    int x = L.px, y = L.gy, tr;
+    int x = L.px, y = L.ty, tr;
     g_field_w = cv->w - x - 4 < 96 ? 96 : cv->w - x - 4 > 128 ? 128 : cv->w - x - 4;
     Rgb cur = pick_colour(e, &tr);
     int body = e->pk == 1 && e->f.pal_body[e->pi];
@@ -810,14 +825,14 @@ static void draw(const Ed *e, Canvas *cv) {
     int bottom = L.hy - 3, pad = e->playing && is_action(e) ? 4 : 0, shown = 0; /* (pad: room above for a Clawd's bounce) */
     int tl_frames = timeline_h(e, cv->h) >= tl_full(e, 1); /* (the timeline shows the frames: the real-size view is there, at its left) */
     int rx = x + FIELD_W + 12, lw = text_width("AS IN THE ROOM");
-    int ux = L.gx, uy = L.gy + e->h * L.z + 18, uw = L.px - L.gx - 10; /* (under the grid, below the pointer's line) */
+    int ux = L.gx, uy = L.ty + L.ah + 18, uw = L.px - L.gx - 10; /* (under the canvas, below the pointer's line) */
     if (tl_frames) shown = 1;
     else if (uy + 9 + (e->h + pad) * 2 <= bottom && e->w * 3 + 6 <= uw && lw <= uw) { /* room under the grid: there, 1x beside 2x */
         canvas_text(cv, ux, uy, e->playing ? "AS IN THE ROOM  PLAYING" : "AS IN THE ROOM", RGB(110, 110, 130));
         for (int k = 1; k <= 2; k++) draw_preview(cv, e, now, ux + (k - 1) * (e->w + 6), uy + 9, k, pad);
         shown = 1;
     } else if (rx + (e->w * 2 > lw ? e->w * 2 : lw) + 2 <= cv->w) { /* a wide window: in the column right of the panel, 1x over 2x */
-        int ry = L.gy;
+        int ry = L.ty;
         canvas_text(cv, rx, ry, "AS IN THE ROOM", RGB(110, 110, 130));
         if (e->playing) canvas_text(cv, rx, ry + 7, "PLAYING", C_YELLOW);
         ry += e->playing ? 16 : 9;
