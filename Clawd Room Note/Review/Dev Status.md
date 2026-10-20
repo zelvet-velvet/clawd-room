@@ -11,6 +11,7 @@ sticker: lucide//activity
 ## 🚀 Today's Progress (2026-10-20)
 - **WSL Test Queue Done**: T16 – T23 pass, so all of [[Test Checklist]]'s queue (T1 – T23) passes on WSL.
 - **Pull Requests**: #6 (WSL work) and #7 (vault layout) merged, their branches deleted.
+- **Pixel Editor Animates**: A timeline of an animation's frames, play at the room's speed, onion skin, a fill tool, `--edit list` by animation (branch `feat/editor-animation`).
 - **Designs Picked** (mockups, [[2026-10-20]]): the picked Clawd's corners and spotlight; the bar below the room with tags on the gates; a settings file and panel; gates appearing as a construct of real parts (or simple); a railed stair well; no tree behind the park's building.
 
 ## 📅 Yesterday's Progress (2026-10-19)
@@ -44,6 +45,7 @@ sticker: lucide//activity
 - [ ] **Windows Terminal Panes**: Split panes are not seen separately yet.
 
 ### ⚙️ Engine and tools
+- [>] **Editor Animations**: Built on `feat/editor-animation` (timeline, play, onion skin, fill); to check by eye: T24 – T30 in [[Test Checklist]].
 - [>] **Animations**: `--build-art` to record room animations (packing, carrying, unpacking, doors, stairs, the well, each room) as GIFs, in category folders, with Gallery notes. Started (GIF colour rounding, category folders), parked in a stash.
 - [ ] **Less CPU**: Skip frames when nothing moves; stop drawing (FPS 0) when the window is covered, minimised or on another desktop; later dirty rects. (The terminal output is already diffed and written once per frame.)
 
