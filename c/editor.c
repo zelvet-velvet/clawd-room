@@ -546,7 +546,8 @@ static int g_field_h = 44; /* ... and 16 to 44 high: shorter when the window is,
 #define TOOL_ROW 23 /* the tools: a key cap (13), a gap, its name */
 #define SECTION 12 /* a section's title (dim), a gap, a line under it, a gap; then its swatches */
 #define SW_ROW 13  /* rows of the file's colours, so a ring never touches the row above */
-static int panel_h(const Ed *e) { return TOOL_ROW + FIELD_H + 3 + 8 + 11 + SECTION + ((e->f.npal + 9) / 10) * SW_ROW + 2 + SECTION + 10; }
+#define SW_COLS ((FIELD_W + 4) / 10) /* swatches in a row: as many as the colour field is wide (a wider window, more) */
+static int panel_h(const Ed *e) { return TOOL_ROW + FIELD_H + 3 + 8 + 11 + SECTION + ((e->f.npal + SW_COLS) / SW_COLS) * SW_ROW + 2 + SECTION + 10; }
 static int help_rows(int W) { return help_row(NULL, 0, "", H_MOUSE, NH(H_MOUSE), W) + help_row(NULL, 0, "", H_EDIT, NH(H_EDIT), W) + help_row(NULL, 0, "", H_ANIM, NH(H_ANIM), W) + help_row(NULL, 0, "", H_SIZE, NH(H_SIZE), W); }
 static void help(Canvas *cv, int y, int W) { /* the help from row y, wrapped at W */
     y += 8 * help_row(cv, y, "MOUSE", H_MOUSE, NH(H_MOUSE), W);
@@ -620,8 +621,8 @@ static Layout layout(const Ed *e, int W, int H) {
 static Rgb pick_colour(const Ed *e, int *tr) { *tr = e->pk == 0; return e->pk == 1 ? e->f.pal_c[e->pi] : e->pk == 2 ? e->prgb : RGB(0, 0, 0); }
 static void frame(Canvas *cv, int x, int y, int w, int h, Rgb c) { canvas_rect(cv, x - 1, y - 1, w + 2, 1, c); canvas_rect(cv, x - 1, y + h, w + 2, 1, c); canvas_rect(cv, x - 1, y - 1, 1, h + 2, c); canvas_rect(cv, x + w, y - 1, 1, h + 2, c); }
 static void checker(Canvas *cv, int x, int y, int w, int h) { for (int dy = 0; dy < h; dy++) for (int dx = 0; dx < w; dx++) canvas_px(cv, x + dx, y + dy, ((dx / 2) + (dy / 2)) % 2 ? RGB(70, 70, 80) : RGB(52, 52, 60)); }
-static Rgb shade(Rgb c, int k) { /* k < 0 darker, k > 0 lighter */
-    double f = k < 0 ? 1 + 0.15 * k : 0.15 * k;
+static Rgb shade(Rgb c, int k, int n) { /* k < 0 darker, k > 0 lighter, of n a side: to 40% dark, to 75% light */
+    double f = k < 0 ? 1 + 0.6 * k / n : 0.75 * k / n;
     if (k < 0) return RGB((int)(c.r * f), (int)(c.g * f), (int)(c.b * f));
     return RGB((int)(c.r + (255 - c.r) * f), (int)(c.g + (255 - c.g) * f), (int)(c.b + (255 - c.b) * f));
 }
@@ -1303,7 +1304,13 @@ static void draw(const Ed *e, Canvas *cv) {
     /* the panel (like Figma's colour picker): PAINT / ERASE / PICK, a colour field and a hue bar, the colour's hex and red
        green blue (click to type), the file's colours (the + slot first: a changed colour goes there, never into a file colour unless double-clicked), shades, the real-size view */
     int x = L.px, y = L.ty, tr;
-    g_field_w = cv->w - x - 4 < 96 ? 96 : cv->w - x - 4 > 128 ? 128 : cv->w - x - 4;
+    { /* the field (and the rows of colours) as wide as the window leaves, beside the real-size view if that goes right of the panel */
+        int tlf = timeline_h(e, cv->h) >= tl_full(e, 1), lw = text_width("AS IN THE ROOM"), uw = L.px - L.gx - 10;
+        int under = tlf || (L.ty + L.ah + 18 + 9 + (e->h + 4) * 2 <= L.hy - 3 && e->w * 3 + 6 <= uw && lw <= uw);
+        int room = cv->w - x - 4 - (under ? 0 : (e->w * 2 > lw ? e->w * 2 : lw) + 14);
+        if (room < 96) room = cv->w - x - 4; /* (no room for that column anyway: it goes under the shades, the panel takes it all) */
+        g_field_w = room < 96 ? 96 : room > 200 ? 200 : room;
+    }
     Rgb cur = pick_colour(e, &tr);
     int body = e->pk == 1 && e->f.pal_body[e->pi];
     static const char *TOOL[4] = {"PAINT", "ERASE", "PICK", "FILL"};
@@ -1366,7 +1373,7 @@ static void draw(const Ed *e, Canvas *cv) {
         region(R_ADD, 0, x, y, 8, 8, RGB(0, 0, 0));
     }
     for (int i = 0; i < e->f.npal; i++) {
-        int sx = x + ((i + 1) % 10) * 10, sy = y + ((i + 1) / 10) * SW_ROW;
+        int sx = x + ((i + 1) % SW_COLS) * 10, sy = y + ((i + 1) / SW_COLS) * SW_ROW;
         if (sy + 8 > pbot) break;
         canvas_rect(cv, sx, sy, 8, 8, e->f.pal_c[i]);
         region(R_FILE, i, sx, sy, 8, 8, e->f.pal_c[i]);
@@ -1375,12 +1382,13 @@ static void draw(const Ed *e, Canvas *cv) {
         if (used) canvas_rect(cv, sx + 3, sy + 9, 2, 1, RGB(200, 200, 215)); /* (used in this sprite) */
         if (e->pk == 1 && e->pi == i) frame(cv, sx - 1, sy - 1, 10, 10, e->recol == i + 1 ? RGB(230, 200, 90) : RGB(150, 150, 170)); /* (the one painting: a soft ring, a dark gap inside it; yellow: being changed in the file) */
     }
-    y += ((e->f.npal + 10) / 10) * SW_ROW + 2;
+    y += ((e->f.npal + SW_COLS) / SW_COLS) * SW_ROW + 2;
     if (y + SECTION + 8 <= pbot) section(cv, x, y, "SHADES");
     y += SECTION;
-    for (int k = -4; k <= 5 && y + 8 <= pbot; k++) { /* darker to lighter, as many as a row of the file's colours */
-        int sx = x + (k + 4) * 10;
-        Rgb c = shade(cur, k);
+    int dark = (SW_COLS - 1) / 2, light = SW_COLS - 1 - dark;
+    for (int k = -dark; k <= light && y + 8 <= pbot; k++) { /* darker to lighter, as many as a row of the file's colours */
+        int sx = x + (k + dark) * 10;
+        Rgb c = shade(cur, k, k < 0 ? dark : light);
         if (!tr) { canvas_rect(cv, sx, y, 8, 8, c); region(R_NEW, 0, sx, y, 8, 8, c); }
         if (k == 0 && !tr) frame(cv, sx - 1, y - 1, 10, 10, RGB(90, 90, 108)); /* (this colour: a dimmer ring) */
     }
