@@ -1023,7 +1023,7 @@ int editor_list(const char *dir) {
             if ((int)strlen(item[ni]) > namew) namew = (int)strlen(item[ni]);
             ni++;
         }
-        printf("%s   %d sprite%s", FILES[f], tf.nsprite, tf.nsprite == 1 ? "" : "s");
+        printf("[ %s ]   %d sprite%s", FILES[f], tf.nsprite, tf.nsprite == 1 ? "" : "s");
         if (nanim) printf(", %d animation%s (name and frames)", nanim, nanim == 1 ? "" : "s");
         printf("\n");
         int cellw = namew + (numw ? 1 + numw : 0), colw = cellw + 4; /* a name, a space, its count (right-aligned), a gap */
