@@ -42,22 +42,33 @@ sticker: lucide//gamepad-2
 ---
 ## 🎨 The pixel editor
 
-`./clawd-room.sh --edit NAME` opens it in its own Clawd Room window in the middle of the screen (in iTerm2); the window you typed in stays, and you are back there when you quit. `./clawd-room.sh --edit list` prints the names it can open. It saves after each stroke, so running rooms show the change; on quitting you choose to keep or discard.
+`./clawd-room.sh --edit NAME` opens it in its own Clawd Room window in the middle of the screen; the window you typed in stays, and you are back there when you quit. NAME is a sprite (`walk-2`, `window`) or an animation (`walk` opens its first frame). `./clawd-room.sh --edit list` prints what it can open, by file: each animation once with how many frames it has, in columns that fit the terminal. It saves after each stroke, so running rooms show the change; on quitting you choose to keep or discard.
+
+**Animations.** An animation is the sprites named `NAME-1`, `NAME-2` … (Clawd frames, items) or `NAME`, `NAME~2`, `NAME~3` … (props). The **timeline** along the bottom shows its frames (twice their size when they fit; a long one scrolls to keep the open frame in view): the open one framed in yellow, the one playing marked under it; click one to open it.
+- **PLAY** (Space) runs the animation **at the room's speed** in the real-size view: Clawd frames through the room's own poses (`pose_for` with the stand-in sessions of `actions.c`, the same as the sprite sheet), so the order, the timing, the bounce and the blinks are the room's; a pose the file has no frame for is drawn by the code, as in the room. Props change every 0.3 s, the thinking dots three times a second. **1X** switches 1x, 2x, 0.5x (not saved). When the panel has no room for the real-size view, it plays at the right end of the timeline.
+- **ONION** (`o`, on at the start): where the open frame is see-through, the frame before shows faintly red and the one after blue (both: purple), to draw the motion in between.
+- **New and deleted frames are for props only** (`f` a copy at the end, `+` in the timeline; `x` twice deletes the open one, never the first: that is the prop; the ones after it are numbered on, since the room stops at the first missing `~N`). Clawd and item frames are picked by the room's code, so a new one would never be shown.
 
 | Input | Does |
 | --- | --- |
 | left click / drag | paint with the chosen colour |
 | right click | erase (see-through) |
-| Alt + click | pick the colour under the pointer |
-| the panel | **COLOUR**: the colour to paint, with red / green / blue sliders (on a file colour they recolour every pixel using it, in the whole file); **SHADES**: darker to lighter; **IN THIS FILE**: erase and the file's colours (a dot: used in this sprite); **MORE COLOURS**: 16 colours and greys (a new one joins the file's palette when you paint with it) |
+| Alt + click, or **PICK** then click | take the colour under the pointer |
+| **FILL** (`b`) | a click fills the touching pixels of the colour under it (right click: erases them); the area it would fill is outlined in dashes under the pointer. Click FILL again for **FILL ALL**: every pixel of that colour in the frame. (Shift + click is kept by Windows Terminal and iTerm2 for selecting text, so it is a mode, not a modifier.) |
+| the panel | **PAINT** / **ERASE**, a **colour field** (saturation across, brightness down) and a **hue bar** like Figma's (on a file colour they recolour every pixel using it, in the whole file); the colour's **hex** and **red / green / blue**; **IN THIS FILE** (a dot: used in this sprite; **+ ADD** puts a new colour in); **SHADES** darker to lighter; the sprite **as in the room** |
 | typing a colour | click the **hex code** (or press `#`) and type `RRGGBB` (or `RGB`), or click a **red / green / blue number** and type 0–255; Enter applies, Backspace deletes, Esc cancels |
 | pointer over the grid | the pixel is outlined; its place and colour show under the grid |
-| `u` / `r` | undo / redo |
-| `<` `>` (or `[` `]`) | the sprite before / after; Tab: the next file (props, items, Clawd) |
+| Ctrl+Z / Ctrl+Y (`u` / `r`) | undo / redo (Ctrl+C asks like `q`) |
+| `<` `>` (`,` `.`) | the frame before / after in the animation (wrapping) |
+| `[` `]` | the sprite before / after (the first frame of the next animation); Tab: the next file (props, items, Clawd) |
+| Space / `o` | play / stop; onion skin on / off |
+| `f` / `x` `x` | a new frame / delete this one (props) |
 | `+` `-` | zoom |
-| `F` | a new frame of this sprite (`NAME~2`, `~3` …, a copy); a prop with frames is animated in the room |
 | `w` `n` / `t` `s` | wider / narrower, taller / shorter |
+| `?` | the shortcuts in a box (a short window shows only `? SHORTCUTS  Q QUIT`; a very short one has no timeline) |
 | `q` | quit: with changes it asks **S** save, **D** discard (the files go back to how they were when you opened them), **Esc** back to editing |
+
+![[2026-10-20 editor timeline, onion skin and fill.png|300]] ![[2026-10-20 editor playing a Clawd at the room's speed.png|300]]
 
 ## 📐 Room size and resizing
 

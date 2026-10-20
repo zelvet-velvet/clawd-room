@@ -121,6 +121,11 @@ Whether each picture in `Assets/Snapshots/` still shows how things are. `tools/v
 | 2026-10-20 construct v2 real parts, office stairs (picked).png | current |  |
 | 2026-10-20 construct v2 real parts, park stoop (picked).gif | current |  |
 | 2026-10-20 construct v2 real parts, park stoop (picked).png | current |  |
+| 2026-10-20 editor FILL ALL on a prop.png | current |  |
+| 2026-10-20 editor animation mockup A and B (A picked).png | replaced | [[2026-10-20 editor timeline, onion skin and fill.png]] |
+| 2026-10-20 editor nine frames in the timeline.png | current |  |
+| 2026-10-20 editor playing a Clawd at the room's speed.png | current |  |
+| 2026-10-20 editor timeline, onion skin and fill.png | current |  |
 | 2026-10-20 gate tag arrows as triangles.png | current |  |
 | 2026-10-20 gate tag arrows with a shaft.png | current |  |
 | 2026-10-20 gate tags A, centred (picked).png | current |  |

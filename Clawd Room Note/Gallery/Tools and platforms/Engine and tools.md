@@ -8,6 +8,29 @@ sticker: lucide//wrench
 ---
 Pictures of the debug overlay, the placer, the pixel editor, the gallery, newest first: ✅ current (open), ♻️ replaced and ❌ not picked (folded; the status is in [[Snapshot status]]). The files are the source in `Assets/Snapshots/Engine and tools/`; this note is written by `tools/vault_gallery.py` (do not edit it by hand: add a picture, then run the tool).
 
+## 2026-10-20
+
+> [!success]+ ✅ current · Editor timeline, onion skin and fill
+> ![[2026-10-20 editor timeline, onion skin and fill.png|420]]
+> Shown in: [[Interaction|Interaction]], [[Test Checklist|Test Checklist]], [[2026-10-20#🎞️ The pixel editor edits animations; a fill tool (Zaviel)|2026-10-20 · 🎞️ The pixel editor edits animations; a fill tool (Zaviel)]]
+
+> [!success]+ ✅ current · Editor playing a Clawd at the room's speed
+> ![[2026-10-20 editor playing a Clawd at the room's speed.png|420]]
+> Shown in: [[Interaction|Interaction]], [[2026-10-20#🎞️ The pixel editor edits animations; a fill tool (Zaviel)|2026-10-20 · 🎞️ The pixel editor edits animations; a fill tool (Zaviel)]]
+
+> [!success]+ ✅ current · Editor nine frames in the timeline
+> ![[2026-10-20 editor nine frames in the timeline.png|420]]
+> Shown in: not in a note yet
+
+> [!quote]- ♻️ replaced · Editor animation mockup A and B (A picked)
+> ![[2026-10-20 editor animation mockup A and B (A picked).png|420]]
+> Replaced by: [[2026-10-20 editor timeline, onion skin and fill.png]]
+> Shown in: [[2026-10-20#🎞️ The pixel editor edits animations; a fill tool (Zaviel)|2026-10-20 · 🎞️ The pixel editor edits animations; a fill tool (Zaviel)]]
+
+> [!success]+ ✅ current · Editor FILL ALL on a prop
+> ![[2026-10-20 editor FILL ALL on a prop.png|420]]
+> Shown in: not in a note yet
+
 ## 2026-10-19
 
 > [!success]+ ✅ current · Pixel editor, shortcuts box in a short window
