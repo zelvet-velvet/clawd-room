@@ -13,6 +13,7 @@
 : b = 110,170,250
 : d = 76,76,96
 : f = 46,46,60
+: e = 120,120,146
 
 @ tool-paint | tool-paint
 ......kk.
@@ -70,18 +71,22 @@ kwwwwwkb.
 .........
 
 @ fold-open | fold-open
-.ddddddd.
-d....dffd
-d....dffd
-d....dffd
-.ddddddd.
+.dddddd.
+d.ee...d
+d.ee...d
+d.ee...d
+d.ee...d
+d.ee...d
+.dddddd.
 
 @ fold-closed | fold-closed
-.ddddddd.
-d....d..d
-d....d..d
-d....d..d
-.ddddddd.
+.dddddd.
+d......d
+d......d
+d......d
+d......d
+d......d
+.dddddd.
 
 @ view-cards | view-cards
 dddd.dddd
