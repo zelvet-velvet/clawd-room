@@ -595,6 +595,7 @@ static void draw_timeline(Canvas *cv, const Ed *e, double now, int preview, int 
     int z2 = thumb_zoom(e), pad = is_action(e) ? 2 : 0, lw = 0;
     if (short_help) { if (cv->w - 8 - hw - text_width(sh) < 10) sh = "? HELP  Q QUIT"; lw = text_width(sh); }
     if (preview && full && e->w * z2 > lw) lw = e->w * z2;
+    (void)pad;
     if (lw) lw += 14;
     /* the frames: twice their size if they fit, else at their size */
     int z = thumb_zoom(e), playing = -1, ty = y + 12;
@@ -619,7 +620,7 @@ static void draw_timeline(Canvas *cv, const Ed *e, double now, int preview, int 
     const char *hint = props ? "ARROWS FRAME  F NEW  X X DELETE" : "ARROWS FRAME";
     if (bx + text_width(hint) + 4 <= cv->w) canvas_text(cv, bx + 2, y + 2, hint, RGB(150, 150, 170));
     if (!full) return; /* (short window: the line only) */
-    if (preview) draw_preview(cv, e, now, 4, ty - pad * z2, z2, pad);
+    if (preview) draw_preview(cv, e, now, 4, ty, z2, 0); /* (the sprite as in the room, level with the frames; playing, the frame playing) */
     /* a long animation scrolls to keep the open frame in view */
     int first = 0, x = gx, end = cv->w - 4;
     for (;;) {
@@ -800,9 +801,11 @@ static void draw(const Ed *e, Canvas *cv) {
     }
     /* the sprite at its real size (and twice); while PLAY is on, the animation as the room shows it */
     int bottom = L.hy - 3, pad = e->playing && is_action(e) ? 4 : 0, shown = 0; /* (pad: room above for a Clawd's bounce) */
+    int tl_frames = timeline_h(e, cv->h) >= 15 + e->h; /* (the timeline shows the frames: the real-size view is there, at its left) */
     int rx = x + FIELD_W + 12, lw = text_width("AS IN THE ROOM");
     int ux = L.gx, uy = L.gy + e->h * L.z + 18, uw = L.px - L.gx - 10; /* (under the grid, below the pointer's line) */
-    if (uy + 9 + (e->h + pad) * 2 <= bottom && e->w * 3 + 6 <= uw && lw <= uw) { /* room under the grid: there, 1x beside 2x */
+    if (tl_frames) shown = 1;
+    else if (uy + 9 + (e->h + pad) * 2 <= bottom && e->w * 3 + 6 <= uw && lw <= uw) { /* room under the grid: there, 1x beside 2x */
         canvas_text(cv, ux, uy, e->playing ? "AS IN THE ROOM  PLAYING" : "AS IN THE ROOM", RGB(110, 110, 130));
         for (int k = 1; k <= 2; k++) draw_preview(cv, e, now, ux + (k - 1) * (e->w + 6), uy + 9, k, pad);
         shown = 1;
@@ -818,7 +821,7 @@ static void draw(const Ed *e, Canvas *cv) {
         if (pad && y + 8 + e->h + pad > bottom) pad = bottom - (y + 8 + e->h) > 0 ? bottom - (y + 8 + e->h) : 0;
         for (int k = 1; k <= big && y + 8 + e->h + pad <= bottom; k++) { draw_preview(cv, e, now, x + (k - 1) * (e->w + 6), y + 8, k, pad); shown = 1; }
     }
-    draw_timeline(cv, e, now, !shown && e->playing, !L.hw);
+    draw_timeline(cv, e, now, tl_frames || (!shown && e->playing), !L.hw);
     if (e->show_help && !L.hw) { /* ?: the shortcuts in a box over the editor */
         int bw = cv->w - 16 < 300 ? cv->w - 16 : 300, rows = help_rows(bw - 4), bh = rows * 8 + 14, bx = (cv->w - bw) / 2, by = (cv->h - bh) / 2;
         canvas_rect(cv, bx - 1, by - 1, bw + 2, bh + 2, C_GREY);
