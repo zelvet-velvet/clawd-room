@@ -13,12 +13,25 @@ static const char *ICON[5][9] = {
     {"..ggg....", ".g...g...", "g.....g..", "ggggggg..", "gwwwwwgb.", ".gwwwg.b.", ".gwwwg.bb", "..ggg..bb", "........."}, /* bucket: handle, pail, paint pouring */
     {"..ggg..y.", ".g...gyyy", "g.....gy.", "ggggggg..", "gwwwwwgb.", ".gwwwg.b.", ".gwwwg.bb", "..ggg..bb", "........."}, /* bucket, all: a sparkle */
 };
+/* 11 x 11, more detail: the pencil's lead tip, wood, yellow body with a stripe, a metal band, the pink eraser end; the
+ * eraser's two colours and its worn edge; the eyedropper's bulb, collar, glass and drop; the bucket's handle, rim, paint */
+static const char *BIG[5][11] = {
+    {".........kk", "........kppk", ".......kmmpk", "......kyymk.", ".....kyYyk..", "....kyYyk...", "...kyYyk....", "..kwwyk.....", "..kwwk......", ".kLwk.......", ".kk........."},
+    {"...........", "......kkkk.", ".....kwwwwk", "....kwwwwbk", "...kwwwwbk.", "..kpppppk..", ".kpppppk...", "kpppppk....", "kPPPPk.....", ".kkkk......", "..........."},
+    {"........rr.", ".......rrrr", "......rrrrr", ".....mrrrr.", "....kmmrr..", "...kwwk....", "..kwwk.....", ".kwbk......", ".kbk.......", "b..........", "b.........."},
+    {"...kkkkk...", "..k.....k..", ".k.......k.", "kmmmmmmmmmk", "kwwwwwwwwwkb", ".kwwwwwwwk.b", ".kwbbbbbwk.b", "..kwwwwwk..bb", "..kwwwwwk..bb", "...kkkkk....", "..........."},
+    {"...kkkkk..y", "..k.....kyyy", ".k.......ky.", "kmmmmmmmmmk", "kwwwwwwwwwkb", ".kwwwwwwwk.b", ".kwbbbbbwk.b", "..kwwwwwk..bb", "..kwwwwwk..bb", "...kkkkk....", "..........."},
+};
+static int g_big, g_dark;
 static Rgb icol(char ch) {
+    if (g_dark && ch == 'k') return RGB(16, 16, 22);
+    if (ch == 'm') return RGB(180, 184, 196); if (ch == 'Y') return RGB(214, 160, 60); if (ch == 'L') return RGB(60, 60, 70); if (ch == 'P') return RGB(200, 110, 130);
     switch (ch) { case 'k': return RGB(70, 72, 88); case 'y': return RGB(240, 196, 90); case 'w': return RGB(236, 236, 244);
         case 'p': return RGB(240, 150, 170); case 'g': return RGB(170, 174, 190); case 'b': return RGB(110, 170, 250); case 'r': return RGB(230, 90, 80); }
     return RGB(0, 0, 0);
 }
 static void icon(Canvas *c, int x, int y, int which, int z) {
+    if (g_big) { for (int yy = 0; yy < 11; yy++) for (int xx = 0; BIG[which][yy][xx] && xx < 12; xx++) if (BIG[which][yy][xx] != '.') canvas_rect(c, x + xx * z, y + yy * z, z, z, icol(BIG[which][yy][xx])); return; }
     for (int yy = 0; yy < 9; yy++) for (int xx = 0; xx < 9; xx++) if (ICON[which][yy][xx] != '.') canvas_rect(c, x + xx * z, y + yy * z, z, z, icol(ICON[which][yy][xx]));
 }
 /* the tile behind an icon: 0 flat (framed in yellow when on), 1 a rounded key cap with light on top and a shadow under
@@ -47,7 +60,7 @@ static void tile(Canvas *c, int x, int y, int w, int h, int which, int on) {
     round_rect(c, x, y, w, h, on ? RGB(64, 64, 88) : RGB(40, 40, 54));
 }
 static int ibutton(Canvas *c, int x, int y, int which, int on, const char *label, const char *key) {
-    int w = 13, h = 13;
+    int w = g_big ? 15 : 13, h = g_big ? 15 : 13;
     tile(c, x, y, w, h, which, on);
     icon(c, x + 2, y + 2, which, 1);
     if (key) { canvas_rect(c, x + w - 5, y + h - 6, 5, 6, RGB(200, 200, 215)); canvas_text(c, x + w - 4, y + h - 6, key, RGB(20, 20, 28)); }
@@ -87,6 +100,24 @@ int main(int argc, char **argv) {
     const char *o = argc > 1 ? argv[1] : "out/11-tool-icons", *dir = argc > 2 ? argv[2] : "sprites";
     int W = 300, H = 140;
     static const char *T[3] = {"A  ICONS ONLY (NAME UNDER THE GRID ON HOVER)", "B  ICONS WITH NAMES", "C  ICONS WITH THEIR KEY"};
+    if (argc > 3 && !strcmp(argv[3], "b1")) { /* B1 improved: dark outlines; and bigger caps with 11 x 11 icons */
+        static const char *V[3] = {"B1  AS BEFORE", "B1  DARK OUTLINES", "B1  BIGGER, MORE DETAIL"};
+        Canvas sheet = canvas_new(3 * (100 + 8) + 8, 52 + 30, RGB(24, 24, 30));
+        for (int v = 0; v < 3; v++) {
+            g_bg = 1; g_dark = v >= 1; g_big = v == 2;
+            Canvas cv = editor_with(dir, 1, 0, W, H);
+            Layout L = layout(&E, W, H);
+            int sx = 8 + v * 108, sy = 6;
+            canvas_text(&sheet, sx, sy, V[v], RGB(220, 220, 235));
+            for (int yy = 0; yy < 34; yy++) for (int xx = 0; xx < 100; xx++) canvas_px(&sheet, sx + xx, sy + 9 + yy, cv.p[(L.gy - 3 + yy) * W + L.px - 3 + xx]);
+            canvas_free(&cv);
+        }
+        g_dark = 1; g_big = 1; /* the new icons, four times bigger */
+        for (int i = 0; i < 5; i++) { canvas_rect(&sheet, 8 + i * 30, 50, 28, 28, RGB(52, 54, 70)); icon(&sheet, 8 + i * 30 + 3, 52, i, 2); }
+        char p[400]; snprintf(p, sizeof p, "%s/tool-icons-b1.png", o);
+        png_write(p, &sheet, 5); fprintf(stderr, "wrote %s\n", p);
+        return 0;
+    }
     if (argc > 3) { /* the backgrounds for B, picked: four tiles */
         static const char *BG[4] = {"B0  FLAT (AS BEFORE)", "B1  KEY CAPS", "B2  THE TOOL'S OWN TINT", "B3  ROUNDED, A GLOWING RING"};
         Canvas sheet = canvas_new(2 * (130 + 8) + 8, 2 * 52 + 8, RGB(24, 24, 30));
