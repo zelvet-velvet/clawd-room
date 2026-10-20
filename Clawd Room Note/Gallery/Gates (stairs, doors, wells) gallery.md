@@ -8,6 +8,130 @@ sticker: lucide//door-open
 ---
 Pictures of the ways between rooms: doors, stairs, the half floor, wells, newest first: ✅ current (open), ♻️ replaced and ❌ not picked (folded; the status is in [[Snapshot status]]). The files are the source in `Assets/Snapshots/Gates (stairs, doors, wells)/`; this note is written by `tools/vault_gallery.py` (do not edit it by hand: add a picture, then run the tool).
 
+## 2026-10-20
+
+> [!success]+ ✅ current · Well redesign options (A picked)
+> ![[2026-10-20 well redesign options (A picked).png|420]]
+> Shown in: [[2026-10-20#🕳️ A new stair well and no tree behind the park's building: mockups (Zaviel)|2026-10-20 · 🕳️ A new stair well and no tree behind the park's building: mockups (Zaviel)]]
+
+> [!failure]- ❌ not picked · Gates appearing, first round, park stoop
+> ![[2026-10-20 gates appearing, first round, park stoop.png|420]]
+> Shown in: not in a note yet
+
+> [!failure]- ❌ not picked · Gates appearing, first round, park door
+> ![[2026-10-20 gates appearing, first round, park door.png|420]]
+> Shown in: not in a note yet
+
+> [!failure]- ❌ not picked · Gates appearing, first round, office stairs
+> ![[2026-10-20 gates appearing, first round, office stairs.png|420]]
+> Shown in: not in a note yet
+
+> [!failure]- ❌ not picked · Gates appearing, first round, office door
+> ![[2026-10-20 gates appearing, first round, office door.png|420]]
+> Shown in: not in a note yet
+
+> [!failure]- ❌ not picked · Gates appearing, first round, office door
+> ![[2026-10-20 gates appearing, first round, office door.gif|420]]
+> Shown in: not in a note yet
+
+> [!failure]- ❌ not picked · Gates appearing, first round, coffee well
+> ![[2026-10-20 gates appearing, first round, coffee well.png|420]]
+> Shown in: not in a note yet
+
+> [!failure]- ❌ not picked · Gates appearing, first round, coffee well
+> ![[2026-10-20 gates appearing, first round, coffee well.gif|420]]
+> Shown in: not in a note yet
+
+> [!success]+ ✅ current · Construct v2 real parts, park stoop · picked
+> ![[2026-10-20 construct v2 real parts, park stoop (picked).png|420]]
+> Shown in: not in a note yet
+
+> [!success]+ ✅ current · Construct v2 real parts, park stoop · picked
+> ![[2026-10-20 construct v2 real parts, park stoop (picked).gif|420]]
+> Shown in: [[2026-10-20#🏗️ Gates appear as a construct: mockups (Zaviel)|2026-10-20 · 🏗️ Gates appear as a construct: mockups (Zaviel)]]
+
+> [!success]+ ✅ current · Construct v2 real parts, office stairs · picked
+> ![[2026-10-20 construct v2 real parts, office stairs (picked).png|420]]
+> Shown in: not in a note yet
+
+> [!success]+ ✅ current · Construct v2 real parts, office stairs · picked
+> ![[2026-10-20 construct v2 real parts, office stairs (picked).gif|420]]
+> Shown in: not in a note yet
+
+> [!success]+ ✅ current · Construct v2 real parts, office door · picked
+> ![[2026-10-20 construct v2 real parts, office door (picked).png|420]]
+> Shown in: not in a note yet
+
+> [!success]+ ✅ current · Construct v2 real parts, office door · picked
+> ![[2026-10-20 construct v2 real parts, office door (picked).gif|420]]
+> Shown in: not in a note yet
+
+> [!success]+ ✅ current · Construct v2 real parts, coffee well · picked
+> ![[2026-10-20 construct v2 real parts, coffee well (picked).png|420]]
+> Shown in: not in a note yet
+
+> [!success]+ ✅ current · Construct v2 real parts, coffee well · picked
+> ![[2026-10-20 construct v2 real parts, coffee well (picked).gif|420]]
+> Shown in: not in a note yet
+
+> [!success]+ ✅ current · Construct v2 real parts, coffee stairs · picked
+> ![[2026-10-20 construct v2 real parts, coffee stairs (picked).png|420]]
+> Shown in: not in a note yet
+
+> [!success]+ ✅ current · Construct v2 real parts, coffee stairs · picked
+> ![[2026-10-20 construct v2 real parts, coffee stairs (picked).gif|420]]
+> Shown in: [[2026-10-20#🏗️ Gates appear as a construct: mockups (Zaviel)|2026-10-20 · 🏗️ Gates appear as a construct: mockups (Zaviel)]]
+
+> [!quote]- ♻️ replaced · Construct v1 glass pieces, park stoop
+> ![[2026-10-20 construct v1 glass pieces, park stoop.png|420]]
+> Replaced by: [[2026-10-20 construct v2 real parts, park stoop (picked).png]]
+> Shown in: not in a note yet
+
+> [!quote]- ♻️ replaced · Construct v1 glass pieces, park stoop
+> ![[2026-10-20 construct v1 glass pieces, park stoop.gif|420]]
+> Replaced by: [[2026-10-20 construct v2 real parts, park stoop (picked).gif]]
+> Shown in: not in a note yet
+
+> [!quote]- ♻️ replaced · Construct v1 glass pieces, office stairs
+> ![[2026-10-20 construct v1 glass pieces, office stairs.png|420]]
+> Replaced by: [[2026-10-20 construct v2 real parts, office stairs (picked).png]]
+> Shown in: not in a note yet
+
+> [!quote]- ♻️ replaced · Construct v1 glass pieces, office stairs
+> ![[2026-10-20 construct v1 glass pieces, office stairs.gif|420]]
+> Replaced by: [[2026-10-20 construct v2 real parts, office stairs (picked).gif]]
+> Shown in: not in a note yet
+
+> [!quote]- ♻️ replaced · Construct v1 glass pieces, office door
+> ![[2026-10-20 construct v1 glass pieces, office door.png|420]]
+> Replaced by: [[2026-10-20 construct v2 real parts, office door (picked).png]]
+> Shown in: not in a note yet
+
+> [!quote]- ♻️ replaced · Construct v1 glass pieces, office door
+> ![[2026-10-20 construct v1 glass pieces, office door.gif|420]]
+> Replaced by: [[2026-10-20 construct v2 real parts, office door (picked).gif]]
+> Shown in: not in a note yet
+
+> [!quote]- ♻️ replaced · Construct v1 glass pieces, coffee well
+> ![[2026-10-20 construct v1 glass pieces, coffee well.png|420]]
+> Replaced by: [[2026-10-20 construct v2 real parts, coffee well (picked).png]]
+> Shown in: not in a note yet
+
+> [!quote]- ♻️ replaced · Construct v1 glass pieces, coffee well
+> ![[2026-10-20 construct v1 glass pieces, coffee well.gif|420]]
+> Replaced by: [[2026-10-20 construct v2 real parts, coffee well (picked).gif]]
+> Shown in: not in a note yet
+
+> [!quote]- ♻️ replaced · Construct v1 glass pieces, coffee stairs
+> ![[2026-10-20 construct v1 glass pieces, coffee stairs.png|420]]
+> Replaced by: [[2026-10-20 construct v2 real parts, coffee stairs (picked).png]]
+> Shown in: not in a note yet
+
+> [!quote]- ♻️ replaced · Construct v1 glass pieces, coffee stairs
+> ![[2026-10-20 construct v1 glass pieces, coffee stairs.gif|420]]
+> Replaced by: [[2026-10-20 construct v2 real parts, coffee stairs (picked).gif]]
+> Shown in: not in a note yet
+
 ## 2026-10-18
 
 > [!success]+ ✅ current · Well close-up right to left
