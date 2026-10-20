@@ -1,9 +1,14 @@
 /* The pixel editor (Engine Design, step 3): clawd-room --edit [NAME] edits one sprite of the sprite files in iTerm2 (or any
  * terminal with mouse reporting), drawn with the room's own pixel canvas. It saves as you draw, so running rooms (which read
  * the files again when they change) show the edit at once.
- *   mouse: left paints, right erases, Alt + click picks the colour under it; a swatch picks a colour
- *   keys:  u undo, r redo, < > (or [ ]) the sprite before / after, Tab the next file, + - zoom, w n wider / narrower,
- *          t s taller / shorter, q quit */
+ *   mouse: left paints, right erases, Alt + click picks the colour under it; a swatch picks a colour; FILL fills the
+ *          touching pixels of one colour (click FILL again: FILL ALL, every pixel of that colour)
+ *   keys:  u undo, r redo, < > the frame before / after in the animation, [ ] the sprite before / after, Tab the next file,
+ *          Space play, o onion skin, b fill, f new frame / x delete frame (props), + - zoom, w n wider / narrower,
+ *          t s taller / shorter, q quit
+ * An animation is the sprites named NAME-1, NAME-2 ... (Clawd frames, items) or NAME, NAME~2 ... (props); the timeline
+ * along the bottom shows its frames. PLAY runs it at the room's speed: Clawd frames through the room's own poses
+ * (actions.c), props every 0.3 s, items three times a second. */
 #include <errno.h>
 #include <math.h>
 #include <stdio.h>
@@ -12,6 +17,8 @@
 #include <sys/select.h>
 #include <termios.h>
 #include <unistd.h>
+#include <sys/time.h>
+#include "actions.h"
 #include "canvas.h"
 #include "term.h"
 
@@ -49,6 +56,10 @@ typedef struct {
     char *orig[NFILES]; int changed[NFILES]; /* each file as it was when first opened, to put back on discard */
     int asking;                               /* q with changes: keep or discard? */
     int show_help;                            /* ?: the shortcuts in a box (when the window is too short to list them) */
+    int playing; double play_t0, speed;       /* Space: the animation plays in the real-size view (speed 0.5, 1 or 2) */
+    int onion;                                /* o: the frames before and after show faintly under the grid */
+    int filling;                              /* FILL: 0 off, 1 the touching pixels of one colour, 2 every pixel of it */
+    int del_ask;                              /* x once: the frame to delete if x comes again (-1 none) */
 } Ed;
 
 static char *slurp(const char *path) {
@@ -103,28 +114,89 @@ static Rgb colour_of(const File *f, char ch, int *transparent) {
     return RGB(255, 0, 255);
 }
 
-static void sprite_open(Ed *e, int sp) {
-    File *f = &e->f;
-    if (f->nsprite == 0) { e->w = e->h = 0; e->name[0] = 0; return; }
-    e->sp = (sp + f->nsprite) % f->nsprite;
-    int at = f->sprite_line[e->sp];
-    const char *nm = f->line[at] + 1;
+/* sprite sp's name and key, as in its line "@ NAME | key" */
+static void sprite_name(const File *f, int sp, char *out, size_t n) {
+    const char *nm = f->line[f->sprite_line[sp]] + 1;
     while (*nm == ' ') nm++;
     const char *bar = strchr(nm, '|');
     size_t nl = bar ? (size_t)(bar - nm) : strlen(nm);
     while (nl && nm[nl - 1] == ' ') nl--;
-    snprintf(e->name, sizeof e->name, "%.*s", (int)nl, nm);
-    e->w = e->h = 0;
-    memset(e->g, '.', sizeof e->g);
-    for (int i = at + 1; i < f->nline && f->line[i][0] && f->line[i][0] != '@' && f->line[i][0] != '#' && f->line[i][0] != ':' && e->h < MAXH; i++) {
+    snprintf(out, n, "%.*s", (int)nl, nm);
+}
+static void sprite_key(const File *f, int sp, char *out, size_t n) {
+    const char *bar = strchr(f->line[f->sprite_line[sp]], '|');
+    if (!bar) { sprite_name(f, sp, out, n); return; }
+    bar++;
+    while (*bar == ' ') bar++;
+    snprintf(out, n, "%s", bar);
+}
+/* sprite sp's grid as palette characters ('.' where nothing was written) */
+static void grid_of(const File *f, int sp, char g[MAXH][MAXW + 1], int *w, int *h) {
+    *w = *h = 0;
+    memset(g, '.', sizeof(char) * MAXH * (MAXW + 1));
+    for (int i = f->sprite_line[sp] + 1; i < f->nline && f->line[i][0] && f->line[i][0] != '@' && f->line[i][0] != '#' && f->line[i][0] != ':' && *h < MAXH; i++) {
         int n = (int)strlen(f->line[i]);
         if (n > MAXW) n = MAXW;
-        memcpy(e->g[e->h], f->line[i], (size_t)n);
-        if (n > e->w) e->w = n;
-        e->h++;
+        memcpy(g[*h], f->line[i], (size_t)n);
+        if (n > *w) *w = n;
+        (*h)++;
     }
-    for (int y = 0; y < MAXH; y++) e->g[y][MAXW] = 0;
+    for (int y = 0; y < MAXH; y++) g[y][MAXW] = 0;
+}
+
+static void sprite_open(Ed *e, int sp) {
+    File *f = &e->f;
+    if (f->nsprite == 0) { e->w = e->h = 0; e->name[0] = 0; return; }
+    e->sp = (sp + f->nsprite) % f->nsprite;
+    sprite_name(f, e->sp, e->name, sizeof e->name);
+    grid_of(f, e->sp, e->g, &e->w, &e->h);
     e->nundo = e->nredo = 0;
+    e->del_ask = -1;
+}
+
+/* ---- animations: NAME-1, NAME-2 ... (Clawd frames, items) or NAME, NAME~2 ... (props) ------------------------------------ */
+/* the animation a name is a frame of and its number; returns 1 for NAME-N, 2 for NAME~N, 0 for a name without a number */
+static int split_name(const char *name, char *base, size_t n, int *num) {
+    const char *t = strrchr(name, '~'), *d = strrchr(name, '-');
+    const char *s = t && (!d || t > d) ? t : d;
+    if (s && s[1] >= '0' && s[1] <= '9') {
+        const char *q = s + 1;
+        while (*q >= '0' && *q <= '9') q++;
+        if (!*q) { snprintf(base, n, "%.*s", (int)(s - name), name); *num = atoi(s + 1); return *s == '~' ? 2 : 1; }
+    }
+    snprintf(base, n, "%s", name); *num = 1;
+    return 0;
+}
+/* the frames of sprite sp's animation in order, as sprite numbers; returns how many (1: a sprite on its own) */
+static int anim_frames(const File *f, int sp, int *out, int max) {
+    char name[64], base[64], b2[64], n2[64];
+    int num, k = 0, nums[128];
+    if (max > 128) max = 128;
+    sprite_name(f, sp, name, sizeof name);
+    int kind = split_name(name, base, sizeof base, &num);
+    for (int i = 0; i < f->nsprite && k < max; i++) {
+        sprite_name(f, i, n2, sizeof n2);
+        int kd = split_name(n2, b2, sizeof b2, &num);
+        if (strcmp(b2, base)) continue;
+        if (kind == 1 ? kd != 1 : kd == 1) continue; /* (NAME-N frames go together; NAME and its NAME~N frames go together) */
+        int at = k++;
+        while (at > 0 && nums[at - 1] > num) { nums[at] = nums[at - 1]; out[at] = out[at - 1]; at--; }
+        nums[at] = num; out[at] = i;
+    }
+    if (k == 0) { out[0] = sp; k = 1; }
+    return k;
+}
+static int frame_index(const int *fr, int n, int sp) { for (int i = 0; i < n; i++) if (fr[i] == sp) return i; return 0; }
+/* the sprite called NAME, or else the first frame of the animation called NAME (--edit walk); -1 if none */
+static int find_sprite(const File *f, const char *name) {
+    char n2[64], b2[64];
+    int num;
+    for (int i = 0; i < f->nsprite; i++) { sprite_name(f, i, n2, sizeof n2); if (!strcmp(n2, name)) return i; }
+    for (int i = 0; i < f->nsprite; i++) {
+        sprite_name(f, i, n2, sizeof n2);
+        if (split_name(n2, b2, sizeof b2, &num) && !strcmp(b2, name)) { int fr[128]; anim_frames(f, i, fr, 128); return fr[0]; }
+    }
+    return -1;
 }
 
 static void file_open(Ed *e, const char *dir, int which, const char *name) {
@@ -133,13 +205,8 @@ static void file_open(Ed *e, const char *dir, int which, const char *name) {
     snprintf(path, sizeof path, "%s/%s", dir, FILES[e->file]);
     if (file_load(&e->f, path)) snprintf(e->msg, sizeof e->msg, "CANNOT READ %s", FILES[e->file]);
     if (!e->orig[e->file]) e->orig[e->file] = slurp(path); /* (kept for a discard) */
-    int sp = 0;
-    if (name) for (int i = 0; i < e->f.nsprite; i++) {
-        const char *nm = e->f.line[e->f.sprite_line[i]] + 1;
-        while (*nm == ' ') nm++;
-        if (!strncmp(nm, name, strlen(name)) && (nm[strlen(name)] == ' ' || nm[strlen(name)] == '|' || !nm[strlen(name)])) sp = i;
-    }
-    sprite_open(e, sp);
+    int sp = name ? find_sprite(&e->f, name) : 0;
+    sprite_open(e, sp < 0 ? 0 : sp);
 }
 
 /* writes the grid back into the file's lines (a new palette letter goes after the last palette line), then the file */
@@ -215,6 +282,44 @@ static int new_frame(Ed *e) {
     return 0;
 }
 
+/* x x: delete the open frame of a prop (not its first: that is the prop); the frames after it are numbered on, so they
+ * stay NAME~2, ~3 ... without a gap (the room stops at the first missing number) */
+static int delete_frame(Ed *e) {
+    File *f = &e->f;
+    int fr[128], n = anim_frames(f, e->sp, fr, 128), k = frame_index(fr, n, e->sp);
+    if (k == 0) return -1;
+    char base[64], name[64];
+    int num;
+    sprite_name(f, e->sp, name, sizeof name);
+    split_name(name, base, sizeof base, &num);
+    int at = f->sprite_line[e->sp], end = at + 1;
+    while (end < f->nline && f->line[end][0] && f->line[end][0] != '@' && f->line[end][0] != '#' && f->line[end][0] != ':') end++;
+    int from = at > 0 && !f->line[at - 1][0] ? at - 1 : at; /* (and the blank line before it) */
+    for (int i = from; i < end; i++) free(f->line[i]);
+    memmove(&f->line[from], &f->line[end], sizeof(char *) * (size_t)(f->nline - end));
+    f->nline -= end - from;
+    for (int j = k + 1; j < n; j++) { /* the frames after it: one number down */
+        int ln = f->sprite_line[fr[j]] - (f->sprite_line[fr[j]] > at ? end - from : 0);
+        char head[160];
+        snprintf(head, sizeof head, "@ %s~%d | %s~%d", base, j, base, j);
+        free(f->line[ln]); f->line[ln] = strdup(head);
+    }
+    FILE *out = fopen(f->path, "w");
+    if (!out) return -1;
+    for (int i = 0; i < f->nline; i++) fprintf(out, "%s\n", f->line[i]);
+    fclose(out);
+    char path[700];
+    snprintf(path, sizeof path, "%s", f->path);
+    file_load(f, path);
+    e->changed[e->file] = 1;
+    char prev[80]; /* the frame before it: NAME, or NAME~K (frame K, at index K - 1) */
+    if (k == 1) snprintf(prev, sizeof prev, "%s", base); else snprintf(prev, sizeof prev, "%s~%d", base, k);
+    int sp = find_sprite(f, prev);
+    sprite_open(e, sp < 0 ? 0 : sp);
+    snprintf(e->msg, sizeof e->msg, "DELETED %s", name);
+    return 0;
+}
+
 static char letter_for(Ed *e, Rgb c) { /* a palette letter for colour c, adding one to the file if needed */
     File *f = &e->f;
     for (int i = 0; i < f->npal; i++) if (!f->pal_body[i] && rgb_eq(f->pal_c[i], c)) return f->pal_ch[i];
@@ -252,11 +357,11 @@ static void swap_undo(Ed *e, int at) {
 
 /* ---- the screen: canvas pixels; one terminal cell is 1 pixel wide and 2 high ---------------------------------------- */
 /* what is where, filled while drawing, so a click finds what it is on */
-enum { R_GRID, R_TOOL, R_FILE, R_NEW, R_FIELD, R_HUE, R_HEX, R_NUM, R_ADD };
+enum { R_GRID, R_TOOL, R_FILE, R_NEW, R_FIELD, R_HUE, R_HEX, R_NUM, R_ADD, R_FRAME, R_FADD, R_PLAY, R_SPEED, R_ONION };
 typedef struct { int kind, i, x0, y0, x1, y1; Rgb c; } Region;
-static Region g_reg[160];
+static Region g_reg[320];
 static int g_nreg;
-static void region(int kind, int i, int x, int y, int w, int h, Rgb c) { if (g_nreg < 160) g_reg[g_nreg++] = (Region){kind, i, x, y, x + w, y + h, c}; }
+static void region(int kind, int i, int x, int y, int w, int h, Rgb c) { if (g_nreg < 320) g_reg[g_nreg++] = (Region){kind, i, x, y, x + w, y + h, c}; }
 static const Region *hit(int x, int y) { for (int k = g_nreg - 1; k >= 0; k--) if (x >= g_reg[k].x0 && x < g_reg[k].x1 && y >= g_reg[k].y0 - 1 && y < g_reg[k].y1 + 1) return &g_reg[k]; return NULL; }
 
 typedef struct { int gx, gy, z, px, hy, hw; } Layout; /* the grid's origin and zoom; the panel's left edge; the help's top and width */
@@ -264,7 +369,9 @@ typedef struct { int gx, gy, z, px, hy, hw; } Layout; /* the grid's origin and z
 /* the help: what each key and button does, as key caps (bright) and what they do (dim), in three groups */
 typedef struct { const char *key, *what; } Help;
 static const Help H_MOUSE[] = {{"LEFT", "PAINT"}, {"RIGHT", "ERASE"}, {"ALT+LEFT", "PICK A COLOUR"}};
-static const Help H_EDIT[] = {{"CTRL+Z", "UNDO"}, {"CTRL+Y", "REDO"}, {"< >", "OTHER SPRITE"}, {"TAB", "OTHER FILE"}, {"+ -", "ZOOM"}, {"#", "TYPE A COLOUR"}, {"F", "NEW FRAME"}};
+static const Help H_EDIT[] = {{"CTRL+Z", "UNDO"}, {"CTRL+Y", "REDO"}, {"[ ]", "OTHER SPRITE"}, {"TAB", "OTHER FILE"}, {"B", "FILL"}, {"+ -", "ZOOM"}, {"#", "TYPE A COLOUR"}};
+static const Help H_ANIM[] = {{"< >", "FRAME"}, {"SPACE", "PLAY"}, {"O", "ONION SKIN"}, {"F", "NEW FRAME"}, {"X X", "DELETE FRAME"}};
+#define NH(a) ((int)(sizeof a / sizeof a[0]))
 static const Help H_SIZE[] = {{"W", "WIDER"}, {"N", "NARROWER"}, {"T", "TALLER"}, {"S", "SHORTER"}, {"Q", "QUIT (S SAVE / D DISCARD)"}};
 static int help_row(Canvas *cv, int y, const char *title, const Help *h, int n, int W) { /* returns the rows it took */
     int x = 4, rows = 1;
@@ -287,11 +394,12 @@ static int help_row(Canvas *cv, int y, const char *title, const Help *h, int n, 
 #define FIELD_H 44
 /* the colour panel's height down to the end of SHADES (the real-size view below it fits itself in) */
 static int panel_h(const Ed *e) { return 13 + FIELD_H + 3 + 8 + 11 + 7 + ((e->f.npal + 9) / 10) * 10 + 3 + 7 + 10; }
-static int help_rows(int W) { return help_row(NULL, 0, "", H_MOUSE, 3, W) + help_row(NULL, 0, "", H_EDIT, 7, W) + help_row(NULL, 0, "", H_SIZE, 5, W); }
+static int help_rows(int W) { return help_row(NULL, 0, "", H_MOUSE, NH(H_MOUSE), W) + help_row(NULL, 0, "", H_EDIT, NH(H_EDIT), W) + help_row(NULL, 0, "", H_ANIM, NH(H_ANIM), W) + help_row(NULL, 0, "", H_SIZE, NH(H_SIZE), W); }
 static void help(Canvas *cv, int y, int W) { /* the help from row y, wrapped at W */
-    y += 8 * help_row(cv, y, "MOUSE", H_MOUSE, 3, W);
-    y += 8 * help_row(cv, y, "EDIT", H_EDIT, 7, W);
-    help_row(cv, y, "SIZE", H_SIZE, 5, W);
+    y += 8 * help_row(cv, y, "MOUSE", H_MOUSE, NH(H_MOUSE), W);
+    y += 8 * help_row(cv, y, "EDIT", H_EDIT, NH(H_EDIT), W);
+    y += 8 * help_row(cv, y, "FRAMES", H_ANIM, NH(H_ANIM), W);
+    help_row(cv, y, "SIZE", H_SIZE, NH(H_SIZE), W);
 }
 
 static int grid_zoom(const Ed *e, int room_w, int room_h) {
@@ -301,7 +409,16 @@ static int grid_zoom(const Ed *e, int room_w, int room_h) {
 }
 /* The grid top left, the colour panel on its right, the help along the bottom. When the window is too short for the help
    under the panel, only a line "? SHORTCUTS  Q QUIT" is shown and ? opens the help in a box (hw = 0). */
+/* the timeline along the bottom: a line of buttons, the frames (twice their size if they are small), their numbers */
+static int thumb_zoom(const Ed *e) { return e->h * 2 <= 24 ? 2 : 1; }
+/* (the line, the buttons, the frames, their numbers; a short window gets only the line of buttons, a very short one none) */
+static int panel_h(const Ed *e);
+static int timeline_h(const Ed *e, int H) {
+    int full = 15 + e->h * thumb_zoom(e) + 9, room = H - 12 - panel_h(e) - 11;
+    return room >= full ? full : room >= 14 ? 14 : 0;
+}
 static Layout layout(const Ed *e, int W, int H) {
+    H -= timeline_h(e, H);
     Layout L;
     L.gx = 4; L.gy = 12; L.hw = W;
     L.hy = H - help_rows(W) * 8 - 1;
@@ -342,8 +459,144 @@ static void button(Canvas *cv, int x, int y, const char *t, int on, int kind, in
     region(kind, i, x, y, w, 9, RGB(0, 0, 0));
 }
 
+static double wall_now(void) { struct timeval tv; gettimeofday(&tv, NULL); return tv.tv_sec + tv.tv_usec / 1e6; }
+
+/* the frame PLAY shows now (a sprite number; -1: a Clawd pose the file has no frame for, drawn by the code like the room
+ * does); *p the Clawd's pose (for its bob, and the drawing by code) when the animation is one of the room's actions */
+static int play_frame(const Ed *e, double now, Pose *p, int *is_pose) {
+    int fr[128], n = anim_frames(&e->f, e->sp, fr, 128), num;
+    char name[64], base[64], key[128], k2[128];
+    double t = (now - e->play_t0) * e->speed;
+    sprite_name(&e->f, e->sp, name, sizeof name);
+    split_name(name, base, sizeof base, &num);
+    *is_pose = 0;
+    if (!strcmp(FILES[e->file], "clawd.txt")) for (int a = 0; a < N_ACTIONS; a++) if (!strcmp(ACTIONS[a].name, base)) {
+        Session s; /* (the same stand-in as the sprite sheet: actions.c) */
+        session_init(&s, "x", 1000.0);
+        s.seed = 0.0; s.state_t = 1000.0;
+        ACTIONS[a].set(&s);
+        double tt = 0.2 + t;
+        s.walk_phase = tt * 12;
+        *p = pose_for(&s, ACTIONS[a].state, tt, 1000.0 + tt);
+        *is_pose = 1;
+        pose_key(p, key, sizeof key);
+        for (int i = 0; i < e->f.nsprite; i++) { sprite_key(&e->f, i, k2, sizeof k2); if (!strcmp(k2, key)) return i; }
+        return -1;
+    }
+    double per = !strcmp(FILES[e->file], "items.txt") ? 1 / 3.0 : 0.3; /* (props: every 0.3 s; the thinking dots three a second) */
+    return fr[(int)(t / per) % n];
+}
+
+/* a sprite's pixels: the open one as it is being drawn, the others from the file */
+static void grid_now(const Ed *e, int sp, char g[MAXH][MAXW + 1], int *w, int *h) {
+    if (sp == e->sp) { memcpy(g, e->g, sizeof e->g); *w = e->w; *h = e->h; }
+    else grid_of(&e->f, sp, g, w, h);
+}
+static void draw_grid_at(Canvas *cv, const Ed *e, char g[MAXH][MAXW + 1], int w, int h, int x, int y, int z, int see) {
+    if (see) checker(cv, x, y, w * z, h * z);
+    for (int yy = 0; yy < h; yy++) for (int xx = 0; xx < w; xx++) { int tr; Rgb c = colour_of(&e->f, g[yy][xx], &tr); if (!tr) canvas_rect(cv, x + xx * z, y + yy * z, z, z, c); }
+}
+
+/* the sprite as the room shows it, k times bigger at (x, y), pad rows above it; while PLAY is on, the frame playing (a
+ * Clawd with its bounce) */
+static int is_action(const Ed *e) {
+    char name[64], base[64]; int num;
+    sprite_name(&e->f, e->sp, name, sizeof name); split_name(name, base, sizeof base, &num);
+    if (strcmp(FILES[e->file], "clawd.txt")) return 0;
+    for (int a = 0; a < N_ACTIONS; a++) if (!strcmp(ACTIONS[a].name, base)) return 1;
+    return 0;
+}
+static void draw_preview(Canvas *cv, const Ed *e, double now, int x, int y, int k, int pad) {
+    static char pg[MAXH][MAXW + 1];
+    int pw = e->w, ph = e->h, psp = e->sp, ip = 0;
+    Pose pose;
+    memset(&pose, 0, sizeof pose);
+    if (e->playing) psp = play_frame(e, now, &pose, &ip);
+    if (psp >= 0) grid_now(e, psp, pg, &pw, &ph);
+    Canvas c1 = canvas_new(e->w, e->h + pad, RGB(196, 204, 218)); /* drawn at 1x, then shown k times bigger */
+    if (psp >= 0) draw_grid_at(&c1, e, pg, pw, ph, 0, pad + (pad ? pose.bob : 0), 1, 0);
+    else draw_clawd(&c1, 7, pad + 1, &pose, NULL, C_CLAWD, NULL, ""); /* a pose the file has no frame for: by the code, as the room does */
+    for (int yy = 0; yy < c1.h; yy++) for (int xx = 0; xx < c1.w; xx++) canvas_rect(cv, x + xx * k, y + yy * k, k, k, c1.p[yy * c1.w + xx]);
+    canvas_free(&c1);
+}
+
+/* FILL: the pixels a click at (x, y) would fill: the touching ones of its colour, or (FILL ALL) every one of it */
+static int fill_area(const Ed *e, int x, int y, unsigned char m[MAXH][MAXW]) {
+    memset(m, 0, sizeof(unsigned char) * MAXH * MAXW);
+    char ch = e->g[y][x];
+    int n = 0;
+    if (e->filling == 2) { for (int yy = 0; yy < e->h; yy++) for (int xx = 0; xx < e->w; xx++) if (e->g[yy][xx] == ch) { m[yy][xx] = 1; n++; } return n; }
+    static int q[MAXW * MAXH];
+    q[n++] = y * MAXW + x; m[y][x] = 1;
+    for (int i = 0; i < n; i++) for (int d = 0; d < 4; d++) {
+        int xx = q[i] % MAXW + (d == 0) - (d == 1), yy = q[i] / MAXW + (d == 2) - (d == 3);
+        if (xx < 0 || yy < 0 || xx >= e->w || yy >= e->h || m[yy][xx] || e->g[yy][xx] != ch) continue;
+        m[yy][xx] = 1; q[n++] = yy * MAXW + xx;
+    }
+    return n;
+}
+
+/* the timeline along the bottom: the animation's name and frame, PLAY, the speed, ONION; the frames (click one to open
+ * it; the open one framed in yellow, the one playing marked under it); + adds a frame (props) */
+static void draw_timeline(Canvas *cv, const Ed *e, double now, int preview) {
+    int fr[128], n = anim_frames(&e->f, e->sp, fr, 128), at = frame_index(fr, n, e->sp), num, props = !strcmp(FILES[e->file], "props.txt");
+    int th = timeline_h(e, cv->h), y0 = cv->h - th, y = y0 + 3;
+    if (!th) return;
+    char name[64], base[64], t[96];
+    sprite_name(&e->f, e->sp, name, sizeof name);
+    split_name(name, base, sizeof base, &num);
+    canvas_rect(cv, 0, y0, cv->w, 1, RGB(44, 44, 56));
+    if (n > 1) snprintf(t, sizeof t, "%s  FRAME %d OF %d", base, at + 1, n); else snprintf(t, sizeof t, "%s  ONE FRAME", base);
+    for (char *q = t; *q; q++) if (*q >= 'a' && *q <= 'z') *q -= 32;
+    canvas_text(cv, 4, y + 2, t, C_YELLOW);
+    int bx = 4 + text_width(t) + 8;
+    button(cv, bx, y, e->playing ? "STOP" : "PLAY", e->playing, R_PLAY, 0); bx += text_width(e->playing ? "STOP" : "PLAY") + 9;
+    const char *sp = e->speed < 0.75 ? "0.5X" : e->speed > 1.5 ? "2X" : "1X";
+    button(cv, bx, y, sp, 0, R_SPEED, 0); bx += text_width(sp) + 9;
+    button(cv, bx, y, "ONION", e->onion, R_ONION, 0); bx += text_width("ONION") + 9;
+    const char *hint = props ? "< > FRAME  F NEW  X X DELETE" : "< > FRAME";
+    if (bx + text_width(hint) + 4 <= cv->w) canvas_text(cv, bx + 2, y + 2, hint, RGB(150, 150, 170));
+    if (th < 15 + e->h) return; /* (short window: the buttons only) */
+    int px = cv->w; /* while it plays and the panel has no room for the real-size view: it is here, at the right end */
+    if (preview) { int z2 = thumb_zoom(e), pad = is_action(e) ? 2 : 0; px = cv->w - e->w * z2 - 4; draw_preview(cv, e, now, px, y + 12 - pad * z2, z2, pad); px -= 6; }
+    /* the frames: twice their size if they fit, else at their size; a long animation scrolls to keep the open one in view */
+    int z = thumb_zoom(e), playing = -1, ty = y + 12;
+    if (e->playing) { Pose p; int ip; playing = play_frame(e, now, &p, &ip); }
+    static char g[MAXH][MAXW + 1];
+    for (int pass = 0; pass < 2; pass++) {
+        int total = 0;
+        for (int i = 0; i < n; i++) { int w, h; grid_of(&e->f, fr[i], g, &w, &h); total += w * z + 6; }
+        if (total + 20 <= cv->w - 4 || z == 1) break;
+        z = 1;
+    }
+    int first = 0, x = 4;
+    for (;;) { /* (the first frame shown: the open one must fit) */
+        int w2 = 0;
+        for (int i = first; i <= at; i++) { int w, h; grid_of(&e->f, fr[i], g, &w, &h); w2 += w * z + 6; }
+        if (w2 + 20 <= cv->w - 4 || first >= at) break;
+        first++;
+    }
+    if (first > 0) { canvas_text(cv, x, ty + 4, "<", C_GREY); x += 6; }
+    for (int i = first; i < n; i++) {
+        int w, h;
+        grid_now(e, fr[i], g, &w, &h);
+        if (x + w * z + 20 > px) { canvas_text(cv, x, ty + 4, ">", C_GREY); break; }
+        canvas_rect(cv, x - 1, ty - 1, w * z + 2, h * z + 2, i == at ? RGB(70, 70, 92) : RGB(34, 34, 44));
+        draw_grid_at(cv, e, g, w, h, x, ty, z, 1);
+        if (i == at) frame(cv, x - 1, ty - 1, w * z + 2, h * z + 2, C_YELLOW);
+        region(R_FRAME, fr[i], x - 1, ty - 1, w * z + 2, h * z + 2, RGB(0, 0, 0));
+        char nb[8];
+        snprintf(nb, sizeof nb, "%d", i + 1);
+        canvas_text(cv, x + (w * z - text_width(nb)) / 2, ty + h * z + 2, nb, i == at ? C_YELLOW : C_GREY);
+        if (fr[i] == playing) canvas_rect(cv, x, ty + h * z + 1, w * z, 1, C_WHITE); /* (playing now) */
+        x += w * z + 6;
+    }
+    if (props && x + 14 <= px) { canvas_rect(cv, x, ty, 12, e->h * z, RGB(34, 34, 44)); canvas_text(cv, x + 4, ty + e->h * z / 2 - 2, "+", C_GREY); region(R_FADD, 0, x, ty, 12, e->h * z, RGB(0, 0, 0)); }
+}
+
 static void draw(const Ed *e, Canvas *cv) {
     g_nreg = 0;
+    double now = wall_now();
     canvas_rect(cv, 0, 0, cv->w, cv->h, RGB(18, 18, 24));
     char t[160];
     snprintf(t, sizeof t, "EDIT %s  %s  %dX%d", e->name, FILES[e->file], e->w, e->h);
@@ -351,16 +604,41 @@ static void draw(const Ed *e, Canvas *cv) {
     canvas_text(cv, 4, 3, t, C_YELLOW);
     if (e->msg[0]) canvas_text(cv, cv->w - text_width(e->msg) - 4, 3, e->msg, C_GREY);
     Layout L = layout(e, cv->w, cv->h);
+    /* onion skin: where this frame is see-through, the frame before shows faintly red, the one after blue (both: purple) */
+    static char og[2][MAXH][MAXW + 1];
+    int ow[2] = {0, 0}, oh[2] = {0, 0}, ofr[128], on = e->onion ? anim_frames(&e->f, e->sp, ofr, 128) : 1;
+    if (on > 1) {
+        int at = frame_index(ofr, on, e->sp);
+        grid_of(&e->f, ofr[(at + on - 1) % on], og[0], &ow[0], &oh[0]);
+        if (on > 2) grid_of(&e->f, ofr[(at + 1) % on], og[1], &ow[1], &oh[1]);
+    }
     for (int y = 0; y < e->h; y++) for (int x = 0; x < e->w; x++) { /* the grid, see-through as a checker */
-        int tr;
+        int tr, tp = 1, tn = 1;
         Rgb c = colour_of(&e->f, e->g[y][x], &tr);
+        if (tr && y < oh[0] && x < ow[0]) colour_of(&e->f, og[0][y][x], &tp);
+        if (tr && y < oh[1] && x < ow[1]) colour_of(&e->f, og[1][y][x], &tn);
+        Rgb tint = !tp && !tn ? RGB(170, 120, 200) : !tp ? RGB(230, 90, 90) : RGB(90, 150, 240);
         for (int dy = 0; dy < L.z; dy++) for (int dx = 0; dx < L.z; dx++) {
             Rgb k = tr ? (((dx * 2 / L.z) + (dy * 2 / L.z)) % 2 ? RGB(70, 70, 80) : RGB(52, 52, 60)) : c;
+            if (tr && !(tp && tn)) k = RGB((k.r * 6 + tint.r * 4) / 10, (k.g * 6 + tint.g * 4) / 10, (k.b * 6 + tint.b * 4) / 10);
             canvas_px(cv, L.gx + x * L.z + dx, L.gy + y * L.z + dy, k);
         }
     }
     frame(cv, L.gx, L.gy, e->w * L.z, e->h * L.z, RGB(90, 90, 110));
-    if (e->hx >= 0 && e->hx < e->w && e->hy < e->h) frame(cv, L.gx + e->hx * L.z, L.gy + e->hy * L.z, L.z, L.z, RGB(255, 255, 255)); /* the pixel under the pointer */
+    if (e->filling && e->hx >= 0 && e->hx < e->w && e->hy < e->h) { /* FILL: what a click would fill, outlined in dashes */
+        static unsigned char m[MAXH][MAXW];
+        fill_area(e, e->hx, e->hy, m);
+        for (int y = 0; y < e->h; y++) for (int x = 0; x < e->w; x++) if (m[y][x]) {
+            int X = L.gx + x * L.z, Y = L.gy + y * L.z, z = L.z;
+            for (int k = 0; k < z; k++) {
+                if (((X + Y + k) / 2) % 2) continue;
+                if (y == 0 || !m[y - 1][x]) canvas_px(cv, X + k, Y, C_WHITE);
+                if (y == e->h - 1 || !m[y + 1][x]) canvas_px(cv, X + k, Y + z - 1, C_WHITE);
+                if (x == 0 || !m[y][x - 1]) canvas_px(cv, X, Y + k, C_WHITE);
+                if (x == e->w - 1 || !m[y][x + 1]) canvas_px(cv, X + z - 1, Y + k, C_WHITE);
+            }
+        }
+    } else if (e->hx >= 0 && e->hx < e->w && e->hy < e->h) frame(cv, L.gx + e->hx * L.z, L.gy + e->hy * L.z, L.z, L.z, RGB(255, 255, 255)); /* the pixel under the pointer */
     region(R_GRID, 0, L.gx, L.gy, e->w * L.z, e->h * L.z, RGB(0, 0, 0));
     /* under the grid: the pixel under the pointer */
     if (e->hx >= 0 && e->hx < e->w && e->hy < e->h) {
@@ -378,6 +656,7 @@ static void draw(const Ed *e, Canvas *cv) {
     button(cv, x, y, "PAINT", !tr && !e->picking, R_TOOL, 0);
     button(cv, x + 26, y, "ERASE", tr && !e->picking, R_TOOL, 1);
     button(cv, x + 52, y, "PICK", e->picking, R_TOOL, 2);
+    button(cv, x + 76, y, e->filling == 2 ? "FILL ALL" : "FILL", e->filling > 0, R_TOOL, 3);
     y += 13;
     double h, sat, val;
     rgb_hsv(cur, e->hue, &h, &sat, &val);
@@ -438,13 +717,14 @@ static void draw(const Ed *e, Canvas *cv) {
         static const Help H_SHORT[] = {{"?", "SHORTCUTS"}, {"Q", "QUIT"}};
         help_row(cv, L.hy, "", H_SHORT, 2, cv->w);
     }
-    int bottom = L.hy - 3, big = y + 8 + e->h * 2 <= bottom && x + e->w * 3 + 6 <= cv->w ? 2 : 1;
-    if (y + 8 + e->h <= bottom) canvas_text(cv, x, y, "AS IN THE ROOM", RGB(110, 110, 130)); /* the sprite at its real size (and twice) */
-    for (int k = 1; k <= big && y + 8 + e->h <= bottom; k++) {
-        int ox = x + (k - 1) * (e->w + 6), oy = y + 8;
-        canvas_rect(cv, ox, oy, e->w * k, e->h * k, RGB(196, 204, 218));
-        for (int yy = 0; yy < e->h; yy++) for (int xx = 0; xx < e->w; xx++) { int t2; Rgb c = colour_of(&e->f, e->g[yy][xx], &t2); if (!t2) canvas_rect(cv, ox + xx * k, oy + yy * k, k, k, c); }
-    }
+    /* the sprite at its real size (and twice); while PLAY is on, the animation as the room shows it */
+    int bottom = L.hy - 3, big = y + 8 + e->h * 2 + 4 <= bottom && x + e->w * 3 + 6 <= cv->w ? 2 : 1;
+    if (y + 8 + e->h <= bottom) canvas_text(cv, x, y, e->playing ? "AS IN THE ROOM  PLAYING" : "AS IN THE ROOM", RGB(110, 110, 130));
+    int pad = e->playing && is_action(e) ? 4 : 0; /* (room above for a Clawd's bounce, up to 4 pixels, as much as there is) */
+    if (pad && y + 8 + e->h + pad > bottom) pad = bottom - (y + 8 + e->h) > 0 ? bottom - (y + 8 + e->h) : 0;
+    int shown = 0;
+    for (int k = 1; k <= big && y + 8 + e->h + pad <= bottom; k++) { draw_preview(cv, e, now, x + (k - 1) * (e->w + 6), y + 8, k, pad); shown = 1; }
+    draw_timeline(cv, e, now, !shown && e->playing);
     if (e->show_help && !L.hw) { /* ?: the shortcuts in a box over the editor */
         int bw = cv->w - 16 < 300 ? cv->w - 16 : 300, rows = help_rows(bw - 4), bh = rows * 8 + 14, bx = (cv->w - bw) / 2, by = (cv->h - bh) / 2;
         canvas_rect(cv, bx - 1, by - 1, bw + 2, bh + 2, C_GREY);
@@ -503,21 +783,20 @@ static void tty_off(void) { put("\x1b[?1006l\x1b[?1003l\x1b[?1000l\x1b[0m\x1b[?7
 int editor_run(const char *dir, const char *name) {
     static Ed e;
     memset(&e, 0, sizeof e);
-    e.pk = 1; e.pi = 0; e.hx = e.hy = -1; e.drag = -1; e.last_pk = 1;
+    e.pk = 1; e.pi = 0; e.hx = e.hy = -1; e.drag = -1; e.last_pk = 1; e.speed = 1; e.onion = 1; e.del_ask = -1;
     int which = 0, found = 0;
-    for (int f = 0; f < NFILES && name && !found; f++) { /* the file that has NAME (props first) */
-        File tf;
-        memset(&tf, 0, sizeof tf);
-        char path[700];
-        snprintf(path, sizeof path, "%s/%s", dir, FILES[f]);
-        if (file_load(&tf, path) == 0) for (int i = 0; i < tf.nsprite && !found; i++) {
-            const char *nm = tf.line[tf.sprite_line[i]] + 1;
-            while (*nm == ' ') nm++;
-            size_t l = strlen(name);
-            if (!strncmp(nm, name, l) && (nm[l] == ' ' || nm[l] == '|' || !nm[l])) { which = f; found = 1; }
+    for (int pass = 0; pass < 2 && name && !found; pass++) /* the file that has a sprite called NAME (props first), else an animation */
+        for (int f = 0; f < NFILES && !found; f++) {
+            static File tf;
+            memset(&tf, 0, sizeof tf);
+            char path[700], n2[64];
+            snprintf(path, sizeof path, "%s/%s", dir, FILES[f]);
+            if (file_load(&tf, path) == 0) for (int i = 0; i < tf.nsprite && !found; i++) {
+                sprite_name(&tf, i, n2, sizeof n2);
+                if (pass == 0 ? !strcmp(n2, name) : find_sprite(&tf, name) >= 0) { which = f; found = 1; }
+            }
+            file_free(&tf);
         }
-        file_free(&tf);
-    }
     if (name && !found) { fprintf(stderr, "clawd-room --edit: no sprite called %s in %s/{props,items,clawd}.txt\n", name, dir); return 1; }
     file_open(&e, dir, which, name);
     if (!isatty(STDIN_FILENO) || !isatty(STDOUT_FILENO)) { fprintf(stderr, "clawd-room --edit needs a terminal\n"); return 1; }
@@ -541,7 +820,7 @@ int editor_run(const char *dir, const char *name) {
         Layout L = layout(&e, cv.w, cv.h);
         canvas_free(&cv);
         fd_set fs; FD_ZERO(&fs); FD_SET(STDIN_FILENO, &fs);
-        struct timeval tv = {0, 200000};
+        struct timeval tv = {0, e.playing ? 62500 : 200000}; /* (16 frames a second while it plays) */
         if (select(STDIN_FILENO + 1, &fs, NULL, NULL, &tv) <= 0) continue;
         ssize_t k = read(STDIN_FILENO, in + nin, sizeof in - 1 - (size_t)nin);
         if (k <= 0) continue;
@@ -589,6 +868,18 @@ int editor_run(const char *dir, const char *name) {
                         e.picking = 0;
                         continue;
                     }
+                    if (r && r->kind == R_GRID && e.filling && (btn == 0 || btn == 2)) { /* FILL: one click, not a drag */
+                        if (motion) continue;
+                        char ch = '.';
+                        if (btn == 0 && e.pk == 1) ch = e.f.pal_ch[e.pi];
+                        else if (btn == 0 && e.pk == 2) { ch = letter_for(&e, e.prgb); for (int q = 0; q < e.f.npal; q++) if (e.f.pal_ch[q] == ch) { e.pk = 1; e.pi = q; } }
+                        static unsigned char m[MAXH][MAXW];
+                        fill_area(&e, e.hx, e.hy, m);
+                        push_undo(&e);
+                        for (int yy = 0; yy < e.h; yy++) for (int xx = 0; xx < e.w; xx++) if (m[yy][xx]) e.g[yy][xx] = ch;
+                        save(&e);
+                        continue;
+                    }
                     if (r && r->kind == R_GRID && (btn == 0 || btn == 2)) {
                         if (!painting) { push_undo(&e); painting = 1; }
                         char ch = '.';
@@ -605,7 +896,13 @@ int editor_run(const char *dir, const char *name) {
                     if (r && !motion) {
                         if (r->kind == R_TOOL && r->i == 0) { e.picking = 0; if (e.pk == 0) { e.pk = e.last_pk ? e.last_pk : 1; e.pi = e.last_pi; e.prgb = e.last_prgb; } }
                         else if (r->kind == R_TOOL && r->i == 1) { e.picking = 0; if (e.pk) { e.last_pk = e.pk; e.last_pi = e.pi; e.last_prgb = e.prgb; } e.pk = 0; }
-                        else if (r->kind == R_TOOL && r->i == 2) e.picking = !e.picking;
+                        else if (r->kind == R_TOOL && r->i == 2) { e.picking = !e.picking; e.filling = 0; }
+                        else if (r->kind == R_TOOL && r->i == 3) { e.filling = (e.filling + 1) % 3; e.picking = 0; } /* FILL, FILL ALL, off */
+                        else if (r->kind == R_FRAME) { sprite_open(&e, r->i); e.msg[0] = 0; }
+                        else if (r->kind == R_FADD) { new_frame(&e); e.zoom = 0; }
+                        else if (r->kind == R_PLAY) { e.playing = !e.playing; e.play_t0 = wall_now(); }
+                        else if (r->kind == R_SPEED) e.speed = e.speed < 0.75 ? 1 : e.speed < 1.5 ? 2 : 0.5;
+                        else if (r->kind == R_ONION) e.onion = !e.onion;
                         else if (r->kind == R_ADD && e.pk == 2) { char ch = letter_for(&e, e.prgb); for (int q = 0; q < e.f.npal; q++) if (e.f.pal_ch[q] == ch) { e.pk = 1; e.pi = q; } save(&e); }
                         else if (r->kind == R_FILE) { e.pk = 1; e.pi = r->i; e.picking = 0; }
                         else if (r->kind == R_NEW) { /* a colour already in the file is that one; else a new colour */
@@ -649,14 +946,39 @@ int editor_run(const char *dir, const char *name) {
             }
             if (ch == '#') { e.typing = 1; e.tbuf[0] = 0; continue; }
             if (ch == '?') { e.show_help = !e.show_help; continue; }
-            if (ch == 'f' || ch == 'F') { new_frame(&e); e.zoom = 0; continue; } /* a new frame (props with frames are animated in the room) */
+            int was_del = e.del_ask; e.del_ask = -1;
+            if (ch == 'f' || ch == 'F' || ch == 'x' || ch == 'X') { /* a new frame / delete this one: props only (the room animates NAME~2, ~3 ...; the code picks the other frames) */
+                int fr[128], n = anim_frames(&e.f, e.sp, fr, 128), at = frame_index(fr, n, e.sp);
+                if (strcmp(FILES[e.file], "props.txt")) snprintf(e.msg, sizeof e.msg, "PROPS ONLY: THE ROOM CODE PICKS THESE FRAMES");
+                else if (ch == 'f' || ch == 'F') { new_frame(&e); e.zoom = 0; }
+                else if (at == 0) snprintf(e.msg, sizeof e.msg, "THE FIRST FRAME IS THE PROP: NOT DELETED");
+                else if (was_del == e.sp) delete_frame(&e);
+                else { e.del_ask = e.sp; snprintf(e.msg, sizeof e.msg, "X AGAIN: DELETE %s", e.name); for (char *q = e.msg; *q; q++) if (*q >= 'a' && *q <= 'z') *q -= 32; }
+                continue;
+            }
+            if (ch == ' ') { e.playing = !e.playing; e.play_t0 = wall_now(); continue; }
+            if (ch == 'o' || ch == 'O') { e.onion = !e.onion; continue; }
+            if (ch == 'b' || ch == 'B') { e.filling = (e.filling + 1) % 3; e.picking = 0; continue; }
             if (ch == 0x1A) ch = 'u'; /* Ctrl+Z: undo; Ctrl+Y: redo (U / R too) */
             else if (ch == 0x19) ch = 'r';
             else if (ch == 0x03) ch = 'q'; /* Ctrl+C: quit, asking about changes */
             if (ch == 'q') { int any = 0; for (int f = 0; f < NFILES; f++) any |= e.changed[f]; if (any) e.asking = 1; else quit = 1; }
             else if (ch == 'u' && e.nundo) { e.nundo--; swap_undo(&e, e.nundo); e.nredo++; save(&e); }
             else if (ch == 'r' && e.nredo) { swap_undo(&e, e.nundo); e.nundo++; e.nredo--; save(&e); }
-            else if (ch == ']' || ch == '[' || ch == '>' || ch == '<') { sprite_open(&e, e.sp + (ch == ']' || ch == '>' ? 1 : -1)); e.zoom = 0; e.msg[0] = 0; }
+            else if (ch == '>' || ch == '<' || ch == '.' || ch == ',') { /* the frame after / before in the animation (wrapping) */
+                int fr[128], n = anim_frames(&e.f, e.sp, fr, 128), at = frame_index(fr, n, e.sp);
+                sprite_open(&e, fr[(at + (ch == '>' || ch == '.' ? 1 : n - 1)) % n]); e.msg[0] = 0;
+            }
+            else if (ch == ']' || ch == '[') { /* the sprite after / before: the first frame of the next animation */
+                int fr[128], n = anim_frames(&e.f, e.sp, fr, 128), i = e.sp, go = e.sp;
+                for (int step = 0; step < e.f.nsprite; step++) {
+                    i = (i + (ch == ']' ? 1 : -1) + e.f.nsprite) % e.f.nsprite;
+                    int mine = 0;
+                    for (int k = 0; k < n; k++) if (fr[k] == i) mine = 1;
+                    if (!mine) { int f2[128]; anim_frames(&e.f, i, f2, 128); go = f2[0]; break; }
+                }
+                sprite_open(&e, go); e.zoom = 0; e.msg[0] = 0;
+            }
             else if (ch == '\t') { file_open(&e, dir, e.file + 1, NULL); e.zoom = 0; e.pk = 1; e.pi = 0; e.msg[0] = 0; }
             else if (ch == '+' || ch == '=') e.zoom = (L.z + 2 > 16 ? 16 : L.z + 2);
             else if (ch == '-') e.zoom = (L.z - 2 < 2 ? 2 : L.z - 2);
@@ -672,29 +994,45 @@ int editor_run(const char *dir, const char *name) {
     return 0;
 }
 
-/* --edit list: what can be opened, by file */
+/* --edit list: what can be opened, by file: each animation once with how many frames it has, in columns that fit the
+ * terminal (a name is never cut across two lines) */
 int editor_list(const char *dir) {
+    struct winsize ws;
+    int width = isatty(STDOUT_FILENO) && ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == 0 && ws.ws_col ? ws.ws_col : 80;
     for (int f = 0; f < NFILES; f++) {
         static File tf;
         memset(&tf, 0, sizeof tf);
         char path[700];
         snprintf(path, sizeof path, "%s/%s", dir, FILES[f]);
         if (file_load(&tf, path)) continue;
-        printf("%s (%d):\n ", FILES[f], tf.nsprite);
-        int col = 1;
-        for (int i = 0; i < tf.nsprite; i++) {
-            const char *nm = tf.line[tf.sprite_line[i]] + 1;
-            while (*nm == ' ') nm++;
-            const char *bar = strchr(nm, '|');
-            int nl = bar ? (int)(bar - nm) : (int)strlen(nm);
-            while (nl && nm[nl - 1] == ' ') nl--;
-            if (col + nl + 1 > 100) { printf("\n "); col = 1; }
-            printf(" %.*s", nl, nm);
-            col += nl + 1;
+        static char item[512][80];
+        int ni = 0, nanim = 0, colw = 0;
+        static unsigned char seen[512];
+        memset(seen, 0, sizeof seen);
+        for (int i = 0; i < tf.nsprite && ni < 512; i++) {
+            if (seen[i]) continue;
+            int fr[128], n = anim_frames(&tf, i, fr, 128), num;
+            for (int k = 0; k < n; k++) seen[fr[k]] = 1;
+            char name[64], base[64];
+            sprite_name(&tf, fr[0], name, sizeof name);
+            int numbered = split_name(name, base, sizeof base, &num) == 1; /* (NAME-1 alone is an animation of one frame) */
+            if (n > 1 || numbered) { snprintf(item[ni], sizeof item[ni], "%s %d", base, n); nanim++; } else snprintf(item[ni], sizeof item[ni], "%s", name);
+            if ((int)strlen(item[ni]) > colw) colw = (int)strlen(item[ni]);
+            ni++;
         }
-        printf("\n\n");
+        printf("%s   %d sprite%s", FILES[f], tf.nsprite, tf.nsprite == 1 ? "" : "s");
+        if (nanim) printf(", %d animation%s (name and frames)", nanim, nanim == 1 ? "" : "s");
+        printf("\n");
+        colw += 3;
+        int cols = (width - 2) / colw > 0 ? (width - 2) / colw : 1;
+        for (int i = 0; i < ni; i++) {
+            if (i % cols == 0) printf("  ");
+            printf("%-*s", i % cols == cols - 1 || i == ni - 1 ? 0 : colw, item[i]);
+            if (i % cols == cols - 1 || i == ni - 1) printf("\n");
+        }
+        printf("\n");
         file_free(&tf);
     }
-    printf("open one with: ./clawd-room.sh --edit NAME\n");
+    printf("open one: ./clawd-room.sh --edit NAME     (an animation by its name opens its first frame: --edit walk)\n");
     return 0;
 }
