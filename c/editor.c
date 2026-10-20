@@ -357,7 +357,7 @@ static void swap_undo(Ed *e, int at) {
 
 /* ---- the screen: canvas pixels; one terminal cell is 1 pixel wide and 2 high ---------------------------------------- */
 /* what is where, filled while drawing, so a click finds what it is on */
-enum { R_GRID, R_TOOL, R_FILE, R_NEW, R_FIELD, R_HUE, R_HEX, R_NUM, R_ADD, R_FRAME, R_FADD, R_PLAY, R_SPEED, R_ONION, R_STRIP };
+enum { R_GRID, R_TOOL, R_FILE, R_NEW, R_FIELD, R_HUE, R_HEX, R_NUM, R_ADD, R_FRAME, R_FADD, R_PLAY, R_SPEED, R_ONION, R_STRIP, R_DIV };
 typedef struct { int kind, i, x0, y0, x1, y1; Rgb c; } Region;
 static Region g_reg[320];
 static int g_nreg;
@@ -420,14 +420,22 @@ static int grid_zoom(const Ed *e, int room_w, int room_h) {
  * number: more than fit scroll sideways. A short window gets only the line, a very short one no timeline. */
 static int panel_h(const Ed *e);
 static int tl_full(const Ed *e, int z) { return 15 + e->h * z + 9 + 3; }
+/* The divider above the timeline can be dragged (g_tl_user: the height asked for; 0 the automatic one, double-click it to
+ * go back): the frames and the sprite on the left grow with it, the canvas above gives up the room, never all of it. */
+static int g_tl_user, g_div_drag, g_div_hover;
+#define TOP_LEAST 64 /* a dragged timeline leaves the canvas and the panel at least this: the tools, the colour field, the hex line */
+static int tl_most(const Ed *e, int H) { (void)e; return H - 12 - TOP_LEAST; }
+static int thumb_zoom(const Ed *e, int H);
+static int timeline_h(const Ed *e, int H) {
+    if (g_tl_user) { int lo = tl_full(e, 1), hi = tl_most(e, H), h = g_tl_user < lo ? lo : g_tl_user > hi ? hi : g_tl_user; return h >= lo ? h : 0; }
+    int full = tl_full(e, thumb_zoom(e, H)), rest = panel_h(e) - FIELD_H + 16;
+    return H - 12 - full >= rest ? full : H - 12 - 14 >= rest ? 14 : 0;
+}
 static int thumb_zoom(const Ed *e, int H) {
+    if (g_tl_user) { int th = timeline_h(e, H), z = 1; while (z < 8 && tl_full(e, z + 1) <= th) z++; return z; } /* (as big as the dragged height allows) */
     int rest = panel_h(e) - FIELD_H + 16; /* (the panel with its smallest colour field) */
     if (H - 12 - tl_full(e, 2) >= rest && tl_full(e, 2) <= H / 4) return 2;
     return 1;
-}
-static int timeline_h(const Ed *e, int H) {
-    int full = tl_full(e, thumb_zoom(e, H)), rest = panel_h(e) - FIELD_H + 16;
-    return H - 12 - full >= rest ? full : H - 12 - 14 >= rest ? 14 : 0;
 }
 static int g_tl_first, g_tl_seen = -1; /* the first frame the strip shows (scrolled), and the frame it last kept in view */
 /* The canvas and the colour panel side by side, the same height: the panel's colour field (16 to 44 high) makes it as tall
@@ -446,6 +454,8 @@ static Layout layout(const Ed *e, int W, int H) {
     g_field_h = f < 16 ? 16 : f > most ? most : f;
     int ph = rest + g_field_h - 2;
     L.ah = gh > ph ? gh : ph;
+    if (L.ah > L.hy - 5 - L.ty) L.ah = L.hy - 5 - L.ty; /* (a dragged timeline: the panel shows what still fits; room for the handle) */
+    if (L.ah < gh) L.ah = gh;
     int gap = ((L.hy - 1) - 9 - L.ah) / 2; /* (the canvas and the panel in the middle between the title and the timeline; the
                                             pointer's line goes in the gap under them, if it fits there) */
     if (gap >= 10) L.ty = 9 + gap;
@@ -611,7 +621,14 @@ static void draw_timeline(Canvas *cv, const Ed *e, double now, int preview, int 
     char name[64], base[64], t[96];
     sprite_name(&e->f, e->sp, name, sizeof name);
     split_name(name, base, sizeof base, &num);
-    canvas_rect(cv, 0, y0, cv->w, 1, RGB(44, 44, 56));
+    Rgb div = g_div_drag || g_div_hover ? RGB(120, 120, 150) : RGB(44, 44, 56);
+    canvas_rect(cv, 0, y0, cv->w, 1, div); /* the divider: drag it to make the timeline taller or shorter; a grip in its middle */
+    { /* (a handle: a short rounded bar on the line, brighter under the pointer) */
+        Rgb hk = g_div_drag || g_div_hover ? RGB(170, 170, 200) : RGB(74, 74, 92);
+        int hx = cv->w / 2 - 10;
+        canvas_rect(cv, hx + 1, y0 - 1, 18, 3, hk); canvas_rect(cv, hx, y0, 20, 1, hk);
+    }
+    region(R_DIV, 0, 0, y0 - 2, cv->w, 5, RGB(0, 0, 0));
     if (n > 1) snprintf(t, sizeof t, "[ %s ]  FRAME %d OF %d", base, at + 1, n); else snprintf(t, sizeof t, "[ %s ]  ONE FRAME", base);
     for (char *q = t; *q; q++) if (*q >= 'a' && *q <= 'z') *q -= 32;
     /* the left column: the short help, under it the sprite as in the room, as big as the column lets it be */
@@ -808,11 +825,13 @@ static void draw(const Ed *e, Canvas *cv) {
         nx += nw + 3;
     }
     y += 11;
-    section(cv, x, y, "IN THIS FILE");
-    if (e->pk == 2) { canvas_text(cv, x + FIELD_W - text_width("+ ADD"), y, "+ ADD", C_GREY); region(R_ADD, 0, x + FIELD_W - text_width("+ ADD") - 1, y - 1, text_width("+ ADD") + 2, 7, RGB(0, 0, 0)); }
+    int pbot = L.ty + L.ah; /* (a dragged timeline may leave less than the whole panel: what does not fit is left out, the shades first) */
+    if (y + SECTION + 8 <= pbot) section(cv, x, y, "IN THIS FILE");
+    if (y + SECTION + 8 <= pbot && e->pk == 2) { canvas_text(cv, x + FIELD_W - text_width("+ ADD"), y, "+ ADD", C_GREY); region(R_ADD, 0, x + FIELD_W - text_width("+ ADD") - 1, y - 1, text_width("+ ADD") + 2, 7, RGB(0, 0, 0)); }
     y += SECTION;
     for (int i = 0; i < e->f.npal; i++) {
         int sx = x + (i % 10) * 10, sy = y + (i / 10) * SW_ROW;
+        if (sy + 8 > pbot) break;
         canvas_rect(cv, sx, sy, 8, 8, e->f.pal_c[i]);
         region(R_FILE, i, sx, sy, 8, 8, e->f.pal_c[i]);
         int used = 0;
@@ -821,9 +840,9 @@ static void draw(const Ed *e, Canvas *cv) {
         if (e->pk == 1 && e->pi == i) frame(cv, sx - 1, sy - 1, 10, 10, RGB(150, 150, 170)); /* (the one painting: a soft ring, a dark gap inside it) */
     }
     y += ((e->f.npal + 9) / 10) * SW_ROW + 2;
-    section(cv, x, y, "SHADES");
+    if (y + SECTION + 8 <= pbot) section(cv, x, y, "SHADES");
     y += SECTION;
-    for (int k = -3; k <= 3; k++) { /* darker to lighter */
+    for (int k = -3; k <= 3 && y + 8 <= pbot; k++) { /* darker to lighter */
         int sx = x + (k + 3) * 10;
         Rgb c = shade(cur, k);
         if (!tr) { canvas_rect(cv, sx, y, 8, 8, c); region(R_NEW, 0, sx, y, 8, 8, c); }
@@ -976,6 +995,15 @@ int editor_run(const char *dir, const char *name) {
                     if (r && r->kind == R_GRID) { e.hx = (px - L.gx) / L.z; e.hy = (py - L.gy) / L.z; }
                     if (b & 64) { /* the mouse wheel: over the frames it scrolls them (up / left back, down / right on); elsewhere nothing */
                         if (r && (r->kind == R_STRIP || r->kind == R_FRAME || r->kind == R_FADD)) g_tl_first += (b & 3) == 0 || (b & 3) == 2 ? -1 : 1;
+                        continue;
+                    }
+                    if (g_div_drag) { if (release) g_div_drag = 0; else if (motion) g_tl_user = rows * 2 - py; continue; } /* (dragging the divider) */
+                    g_div_hover = r && r->kind == R_DIV;
+                    if (r && r->kind == R_DIV && btn == 0 && !motion && !release) { /* the divider: drag it; a double-click: back to automatic */
+                        static double last_click;
+                        double now2 = wall_now();
+                        if (now2 - last_click < 0.4) g_tl_user = 0; else { g_div_drag = 1; g_tl_user = timeline_h(&e, rows * 2); }
+                        last_click = now2;
                         continue;
                     }
                     if (release) { if (painting || e.drag >= 0) save(&e); painting = 0; e.drag = -1; continue; }
