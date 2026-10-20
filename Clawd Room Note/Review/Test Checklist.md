@@ -109,7 +109,7 @@ What to test next, one `[!example] Group X · …` callout per group. Each test 
 > - [ ] **T30** On a Clawd frame `f` or `x` → "PROPS ONLY" and nothing changes; `q` → `D` puts everything back.
 >
 > > [!tip]- T24–T30 · how to run them
-> > 1. Until PR #10 is merged the editor is on branch `feat/editor-animation`, checked out in the worktree `gallery/mock/wt`: run everything from there (`cd gallery/mock/wt`), so the rooms and the editor use the same sprites. After the merge: from the repo as usual.
+> > 1. Until PR #10 is merged the editor is on branch `feat/editor-animation`: `git switch feat/editor-animation` in the repo first (after the merge: `main` as usual).
 > > 2. Start a room (`./clawd-room.sh --try`), so you can see edits arrive.
 > > 3. In a WSL shell: the `--edit` commands above (the editor opens in its own window).
 > > 4. When done, `q` then `D` (discard) unless you mean to keep a drawing.
