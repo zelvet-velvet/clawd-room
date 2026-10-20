@@ -392,7 +392,8 @@ static int help_row(Canvas *cv, int y, const char *title, const Help *h, int n, 
 }
 static int g_field_w = 96; /* the colour field (saturation across, brightness down) and the hue bar under it: 96 to 160 wide, */
 #define FIELD_W g_field_w   /* as wide as the window leaves (set by draw) */
-#define FIELD_H 44
+static int g_field_h = 44; /* ... and 16 to 44 high: shorter when the window is, so the frames along the bottom stay */
+#define FIELD_H g_field_h
 /* the colour panel's height down to the end of SHADES (the real-size view below it fits itself in) */
 #define TOOL_ROW 25 /* the tools: a key cap (15), a gap, its name */
 static int panel_h(const Ed *e) { return TOOL_ROW + FIELD_H + 3 + 8 + 11 + 7 + ((e->f.npal + 9) / 10) * 10 + 3 + 7 + 10; }
@@ -416,15 +417,18 @@ static int thumb_zoom(const Ed *e) { return e->h * 2 <= 24 ? 2 : 1; }
 /* (the line, the buttons, the frames, their numbers; a short window gets only the line of buttons, a very short one none) */
 static int panel_h(const Ed *e);
 static int timeline_h(const Ed *e, int H) {
-    int full = 15 + e->h * thumb_zoom(e) + 9, room = H - 12 - panel_h(e) - 11;
-    return room >= full ? full : room >= 14 ? 14 : 0;
+    int full = 15 + e->h * thumb_zoom(e) + 9, rest = panel_h(e) - FIELD_H + 16; /* (the panel with its smallest colour field) */
+    return H - 12 - full >= rest ? full : H - 12 - 14 >= rest ? 14 : 0;
 }
+/* (the colour field's height follows: what the panel leaves of the room above the help, 16 to 44) */
 static Layout layout(const Ed *e, int W, int H) {
-    H -= timeline_h(e, H);
+    int th = timeline_h(e, H), rest = panel_h(e) - FIELD_H;
+    H -= th;
     Layout L;
     L.gx = 4; L.gy = 12; L.hw = W;
     L.hy = H - help_rows(W) * 8 - 1;
-    if (L.hy < L.gy + panel_h(e) + 2) { L.hw = 0; L.hy = H - 9; }
+    if (L.hy < L.gy + rest + 44 + 2) { L.hw = 0; L.hy = th ? H - 1 : H - 9; } /* (short: "? SHORTCUTS  Q QUIT" goes in the timeline's top line) */
+    g_field_h = L.hy - 3 - L.gy - rest; g_field_h = g_field_h < 16 ? 16 : g_field_h > 44 ? 44 : g_field_h;
     L.z = grid_zoom(e, W - 120, L.hy - L.gy - 14);
     L.px = L.gx + e->w * L.z + 10;
     return L;
@@ -570,7 +574,7 @@ static int fill_area(const Ed *e, int x, int y, unsigned char m[MAXH][MAXW]) {
 
 /* the timeline along the bottom: the animation's name and frame, PLAY, the speed, ONION; the frames (click one to open
  * it; the open one framed in yellow, the one playing marked under it); + adds a frame (props) */
-static void draw_timeline(Canvas *cv, const Ed *e, double now, int preview) {
+static void draw_timeline(Canvas *cv, const Ed *e, double now, int preview, int short_help) {
     int fr[128], n = anim_frames(&e->f, e->sp, fr, 128), at = frame_index(fr, n, e->sp), num, props = !strcmp(FILES[e->file], "props.txt");
     int th = timeline_h(e, cv->h), y0 = cv->h - th, y = y0 + 3;
     if (!th) return;
@@ -587,7 +591,10 @@ static void draw_timeline(Canvas *cv, const Ed *e, double now, int preview) {
     button(cv, bx, y, sp, 0, R_SPEED, 0); bx += text_width(sp) + 9;
     button(cv, bx, y, "ONION", e->onion, R_ONION, 0); bx += text_width("ONION") + 9;
     const char *hint = props ? "ARROWS FRAME  F NEW  X X DELETE" : "ARROWS FRAME";
-    if (bx + text_width(hint) + 4 <= cv->w) canvas_text(cv, bx + 2, y + 2, hint, RGB(150, 150, 170));
+    const char *sh = cv->w - bx >= text_width("? SHORTCUTS  Q QUIT") + 12 ? "? SHORTCUTS  Q QUIT" : "? HELP  Q QUIT";
+    int shx = cv->w - text_width(sh) - 4;
+    if (short_help && shx >= bx + 4) canvas_text(cv, shx, y + 2, sh, RGB(150, 150, 170)); else shx = cv->w;
+    if (bx + text_width(hint) + 8 <= shx) canvas_text(cv, bx + 2, y + 2, hint, RGB(150, 150, 170));
     if (th < 15 + e->h) return; /* (short window: the buttons only) */
     int px = cv->w; /* while it plays and the panel has no room for the real-size view: it is here, at the right end */
     if (preview) { int z2 = thumb_zoom(e), pad = is_action(e) ? 2 : 0; px = cv->w - e->w * z2 - 4; draw_preview(cv, e, now, px, y + 12 - pad * z2, z2, pad); px -= 6; }
@@ -705,7 +712,7 @@ static void draw(const Ed *e, Canvas *cv) {
     /* the panel (like Figma's colour picker): PAINT / ERASE / PICK, a colour field and a hue bar, the colour's hex and red
        green blue (click to type), the file's colours (+ ADD puts a new one in), shades, the real-size view */
     int x = L.px, y = L.gy, tr;
-    g_field_w = cv->w - x - 4 < 96 ? 96 : cv->w - x - 4 > 160 ? 160 : cv->w - x - 4;
+    g_field_w = cv->w - x - 4 < 96 ? 96 : cv->w - x - 4 > 128 ? 128 : cv->w - x - 4;
     Rgb cur = pick_colour(e, &tr);
     int body = e->pk == 1 && e->f.pal_body[e->pi];
     static const char *TOOL[4] = {"PAINT", "ERASE", "PICK", "FILL"};
@@ -774,14 +781,19 @@ static void draw(const Ed *e, Canvas *cv) {
     }
     y += 12;
     if (L.hw) help(cv, L.hy, L.hw);
-    else { /* short window: one line, the rest behind ? */
+    else if (!timeline_h(e, cv->h)) { /* very short window, no timeline: one line, the rest behind ? */
         static const Help H_SHORT[] = {{"?", "SHORTCUTS"}, {"Q", "QUIT"}};
         help_row(cv, L.hy, "", H_SHORT, 2, cv->w);
     }
     /* the sprite at its real size (and twice); while PLAY is on, the animation as the room shows it */
     int bottom = L.hy - 3, pad = e->playing && is_action(e) ? 4 : 0, shown = 0; /* (pad: room above for a Clawd's bounce) */
     int rx = x + FIELD_W + 12, lw = text_width("AS IN THE ROOM");
-    if (rx + (e->w * 2 > lw ? e->w * 2 : lw) + 2 <= cv->w) { /* a wide window: in the column right of the panel, 1x over 2x */
+    int ux = L.gx, uy = L.gy + e->h * L.z + 18, uw = L.px - L.gx - 10; /* (under the grid, below the pointer's line) */
+    if (uy + 9 + (e->h + pad) * 2 <= bottom && e->w * 3 + 6 <= uw && lw <= uw) { /* room under the grid: there, 1x beside 2x */
+        canvas_text(cv, ux, uy, e->playing ? "AS IN THE ROOM  PLAYING" : "AS IN THE ROOM", RGB(110, 110, 130));
+        for (int k = 1; k <= 2; k++) draw_preview(cv, e, now, ux + (k - 1) * (e->w + 6), uy + 9, k, pad);
+        shown = 1;
+    } else if (rx + (e->w * 2 > lw ? e->w * 2 : lw) + 2 <= cv->w) { /* a wide window: in the column right of the panel, 1x over 2x */
         int ry = L.gy;
         canvas_text(cv, rx, ry, "AS IN THE ROOM", RGB(110, 110, 130));
         if (e->playing) canvas_text(cv, rx, ry + 7, "PLAYING", C_YELLOW);
@@ -793,7 +805,7 @@ static void draw(const Ed *e, Canvas *cv) {
         if (pad && y + 8 + e->h + pad > bottom) pad = bottom - (y + 8 + e->h) > 0 ? bottom - (y + 8 + e->h) : 0;
         for (int k = 1; k <= big && y + 8 + e->h + pad <= bottom; k++) { draw_preview(cv, e, now, x + (k - 1) * (e->w + 6), y + 8, k, pad); shown = 1; }
     }
-    draw_timeline(cv, e, now, !shown && e->playing);
+    draw_timeline(cv, e, now, !shown && e->playing, !L.hw);
     if (e->show_help && !L.hw) { /* ?: the shortcuts in a box over the editor */
         int bw = cv->w - 16 < 300 ? cv->w - 16 : 300, rows = help_rows(bw - 4), bh = rows * 8 + 14, bx = (cv->w - bw) / 2, by = (cv->h - bh) / 2;
         canvas_rect(cv, bx - 1, by - 1, bw + 2, bh + 2, C_GREY);
