@@ -616,12 +616,13 @@ static void draw_timeline(Canvas *cv, const Ed *e, double now, int preview, int 
     for (char *q = t; *q; q++) if (*q >= 'a' && *q <= 'z') *q -= 32;
     /* the left column: the short help, under it the sprite as in the room, as big as the column lets it be */
     const char *sh = cv->w >= 220 ? "? SHORTCUTS  Q QUIT" : "? HELP  Q QUIT";
-    int lw = text_width(sh) + 12, sx0 = lw, sx1 = cv->w - 4; /* (the block on the right, from sx0 to sx1) */
+    int lw = text_width(sh) + 16, sx0 = lw, sx1 = cv->w - 4; /* (the block on the right, from sx0 to sx1; a line between, at sx0 - 8) */
+    canvas_rect(cv, sx0 - 8, y0 + 1, 1, th - 1, RGB(40, 40, 52));
     if (short_help) canvas_text(cv, 4, y + 2, sh, RGB(150, 150, 170));
     /* the block on the right: the name and frame at its left, PLAY / the speed / ONION at its right */
     canvas_text(cv, sx0, y + 2, t, C_YELLOW);
     const char *play = e->playing ? "STOP" : "PLAY", *sp = e->speed < 0.75 ? "0.5X" : e->speed > 1.5 ? "2X" : "1X";
-    int bw = text_width(play) + 9 + text_width(sp) + 9 + text_width("ONION") + 6, bx = sx1 - bw;
+    int bw = text_width("ONION") + 9 + text_width(sp) + 9 + text_width(play) + 6, bx = sx1 - bw; /* (ONION, the speed, PLAY) */
     if (sx0 + text_width(t) + 8 + bw > sx1) { /* (no room: the short way, NAME 2/9) */
         canvas_rect(cv, sx0, y + 1, text_width(t), 7, RGB(18, 18, 24));
         if (n > 1) snprintf(t, sizeof t, "%s %d/%d", base, at + 1, n); else snprintf(t, sizeof t, "%s", base);
@@ -629,13 +630,13 @@ static void draw_timeline(Canvas *cv, const Ed *e, double now, int preview, int 
         canvas_text(cv, sx0, y + 2, t, C_YELLOW);
     }
     if (bx < sx0 + text_width(t) + 8) bx = sx0 + text_width(t) + 8;
-    button(cv, bx, y, play, e->playing, R_PLAY, 0); bx += text_width(play) + 9;
+    button(cv, bx, y, "ONION", e->onion, R_ONION, 0); bx += text_width("ONION") + 9;
     button(cv, bx, y, sp, 0, R_SPEED, 0); bx += text_width(sp) + 9;
-    button(cv, bx, y, "ONION", e->onion, R_ONION, 0);
+    button(cv, bx, y, play, e->playing, R_PLAY, 0);
     if (!full) return; /* (short window: the line only) */
     int z = thumb_zoom(e, cv->h), gap = 6, ty = y + 12, bottom = cv->h - 2;
     if (preview) { /* (playing: the frame playing) */
-        int py = short_help ? ty : y, ah = bottom - py, aw = lw - 12, pz = aw / e->w < ah / e->h ? aw / e->w : ah / e->h;
+        int py = short_help ? ty : y, ah = bottom - py, aw = lw - 16, pz = aw / e->w < ah / e->h ? aw / e->w : ah / e->h; /* (left of the line, a gap to it) */
         if (pz < 1) pz = 1;
         draw_preview(cv, e, now, 4 + (aw - e->w * pz) / 2, py, pz, 0);
     }
