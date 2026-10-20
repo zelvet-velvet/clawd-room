@@ -3,7 +3,7 @@ title: Gallery · Style and mockups
 tags:
   - clawd-room
   - screenshots
-up: "[[Gallery index]]"
+up: "[[Index]]"
 sticker: lucide//palette
 ---
 Pictures of mockups and options to choose from (the picked one is marked), newest first: ✅ current (open), ♻️ replaced and ❌ not picked (folded; the status is in [[Snapshot status]]). The files are the source in `Assets/Snapshots/Style and mockups/`; this note is written by `tools/vault_gallery.py` (do not edit it by hand: add a picture, then run the tool).

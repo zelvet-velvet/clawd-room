@@ -100,3 +100,42 @@ Whether each picture in `Assets/Snapshots/` still shows how things are. `tools/v
 | 2026-10-19 pixel editor, shortcuts box in a short window.png | current |  |
 | 2026-10-19 wsl try, four rooms at 5 pt.png | current |  |
 | 2026-10-19 wsl try, four rooms at 8 pt.png | replaced | [[2026-10-19 wsl try, four rooms at 5 pt.png]] |
+| 2026-10-20 bottom bar covers the well, and the fix.png | current |  |
+| 2026-10-20 construct v1 glass pieces, coffee stairs.gif | replaced | [[2026-10-20 construct v2 real parts, coffee stairs (picked).gif]] |
+| 2026-10-20 construct v1 glass pieces, coffee stairs.png | replaced | [[2026-10-20 construct v2 real parts, coffee stairs (picked).png]] |
+| 2026-10-20 construct v1 glass pieces, coffee well.gif | replaced | [[2026-10-20 construct v2 real parts, coffee well (picked).gif]] |
+| 2026-10-20 construct v1 glass pieces, coffee well.png | replaced | [[2026-10-20 construct v2 real parts, coffee well (picked).png]] |
+| 2026-10-20 construct v1 glass pieces, office door.gif | replaced | [[2026-10-20 construct v2 real parts, office door (picked).gif]] |
+| 2026-10-20 construct v1 glass pieces, office door.png | replaced | [[2026-10-20 construct v2 real parts, office door (picked).png]] |
+| 2026-10-20 construct v1 glass pieces, office stairs.gif | replaced | [[2026-10-20 construct v2 real parts, office stairs (picked).gif]] |
+| 2026-10-20 construct v1 glass pieces, office stairs.png | replaced | [[2026-10-20 construct v2 real parts, office stairs (picked).png]] |
+| 2026-10-20 construct v1 glass pieces, park stoop.gif | replaced | [[2026-10-20 construct v2 real parts, park stoop (picked).gif]] |
+| 2026-10-20 construct v1 glass pieces, park stoop.png | replaced | [[2026-10-20 construct v2 real parts, park stoop (picked).png]] |
+| 2026-10-20 construct v2 real parts, coffee stairs (picked).gif | current |  |
+| 2026-10-20 construct v2 real parts, coffee stairs (picked).png | current |  |
+| 2026-10-20 construct v2 real parts, coffee well (picked).gif | current |  |
+| 2026-10-20 construct v2 real parts, coffee well (picked).png | current |  |
+| 2026-10-20 construct v2 real parts, office door (picked).gif | current |  |
+| 2026-10-20 construct v2 real parts, office door (picked).png | current |  |
+| 2026-10-20 construct v2 real parts, office stairs (picked).gif | current |  |
+| 2026-10-20 construct v2 real parts, office stairs (picked).png | current |  |
+| 2026-10-20 construct v2 real parts, park stoop (picked).gif | current |  |
+| 2026-10-20 construct v2 real parts, park stoop (picked).png | current |  |
+| 2026-10-20 gate tag arrows as triangles.png | current |  |
+| 2026-10-20 gate tag arrows with a shaft.png | current |  |
+| 2026-10-20 gate tags A, centred (picked).png | current |  |
+| 2026-10-20 gate tags A, left-aligned.png | replaced | [[2026-10-20 gate tags A, centred (picked).png]] |
+| 2026-10-20 gate tags, four looks.png | replaced | [[2026-10-20 gate tags A, left-aligned.png]] |
+| 2026-10-20 gates appearing, first round, coffee well.gif | not picked |  |
+| 2026-10-20 gates appearing, first round, coffee well.png | not picked |  |
+| 2026-10-20 gates appearing, first round, office door.gif | not picked |  |
+| 2026-10-20 gates appearing, first round, office door.png | not picked |  |
+| 2026-10-20 gates appearing, first round, office stairs.png | not picked |  |
+| 2026-10-20 gates appearing, first round, park door.png | not picked |  |
+| 2026-10-20 gates appearing, first round, park stoop.png | not picked |  |
+| 2026-10-20 picked Clawd looks A-E, seated.png | replaced | [[2026-10-20 picked Clawd, corners and spotlight fading (picked).gif]] |
+| 2026-10-20 picked Clawd looks A-E, standing.png | replaced | [[2026-10-20 picked Clawd, corners and spotlight fading (picked).gif]] |
+| 2026-10-20 picked Clawd spotlight strengths.png | not picked |  |
+| 2026-10-20 picked Clawd, corners and spotlight fading (picked).gif | current |  |
+| 2026-10-20 settings panel A and B (B picked).png | current |  |
+| 2026-10-20 well redesign options (A picked).png | current |  |

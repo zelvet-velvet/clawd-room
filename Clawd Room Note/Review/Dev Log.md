@@ -18,7 +18,7 @@ What changed and when, in short: **one note per day** in `Log/` (newest first), 
 | [[Test Checklist]] | what is still to check by eye |
 | [[Animations]] | every Clawd frame |
 
-Pictures are in `Assets/Snapshots/`, one folder per subject; browse them (and the animations) from [[Gallery index]]. Where everything is: [[Home]]. Details of every change: `git log`.
+Pictures are in `Assets/Snapshots/`, one folder per subject; browse them (and the animations) from [[Index|Gallery index]]. Where everything is: [[Home]]. Details of every change: `git log`.
 
 > [!info] Where the work is (branches)
 > Since 2026-10-19 (William joined) every change is a branch and a pull request into `main`, merged by Zaviel ([[Collaboration]]). Before that `main` was kept equal to `feat/style-a`.

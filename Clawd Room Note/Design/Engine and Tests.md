@@ -79,6 +79,7 @@ flowchart LR
 - `make -C c winsmoke` uses real Windows Terminal windows.
 - `clawd-room --check` (in `make test`, snapshot `overlap.txt`): items painting over each other across every room × gates × crowd × size.
 - `make -C c gallery`: the same scenes as contact sheets in `gallery/` (not committed) — look at them before handing a visual change over.
+- `tools/mock/build.sh`: the **mockup programs** (C, linking the room's object files; `theme_mock.c` is made from `c/theme.c` with one switch, the park without its big tree) draw every mockup again into `gallery/mock/out/` (not committed). The mockups shown are kept in `Assets/Snapshots/`, marked picked or not in [[Snapshot status]].
 
 > [!info] Where the snapshots come from
 > First made by the old Python version (the C port matched it line by line); since style A (2026-10-18) they come from the C program.
