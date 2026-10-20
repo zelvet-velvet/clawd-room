@@ -92,6 +92,7 @@ The notes are an Obsidian vault in git; setup, what is shared and how to write i
 ## 7. Rules that are not negotiable
 
 - **Privacy.** `~/.clawd-room/events.jsonl` describes real work. Never commit it, paste it into issues or widen what the hook records (`t, sid, ev, cwd folder name, tool` only).
+- **Nothing private in the repo** (it is to become public, notes included): no real folder or project names from your sessions (test data uses made-up ones), no work details, no screenshots showing your desktop, other apps or real session names.
 - **No dependencies.** C11 with libc/libm only; Python tools use the standard library only.
 - **No network, no background daemons.**
 - **Do not hurt anyone's windows** when testing: the helpers only touch windows titled `clawd-room ...`.
