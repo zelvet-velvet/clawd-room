@@ -91,7 +91,12 @@ Gates sit **on the room's walls, ceiling and floor**, not at the window edge, so
 > ![[2026-10-18 coffee stairs well and doors.png|300]] ![[2026-10-18 office stairs well and doors.png|300]]
 
 > [!note] Appearing
-> A gate that appears while the room runs animates in over `GATE_ANIM` (0.8 s): doors and fences rise, stairs appear step by step, the well opens, the treehouse ladder grows. Gates there from the first frame are simply there.
+> A gate that appears while the room runs animates in over `GATE_ANIM` (0.8 s): doors and fences rise, stairs appear step by step (the platform, railing and opening, and the park's building, come in on the last frame), the well opens. Gates there from the first frame are simply there.
+
+> [!todo]- Picked, not built yet
+> - **Railed well** (design A, 2026-10-20): a bigger opening, five steps going down from the right (floor level) to the left, a guard rail along the back and the left, open on the right where a Clawd steps in. ![[2026-10-20 well redesign options (A picked).png|250]] → [[2026-10-20]]
+> - **No big tree when the park has a way up** (2026-10-20): it stood behind the stoop building and its trunk showed under it; it fades out while the building appears.
+> - **Gates appear, simple or construct** (a setting, 2026-10-20): simple is the rise above with the parts coming in turn (nothing popping in at the end); construct (1.4 s) shows a blue outline of the gate, then its real parts (boards, treads, balusters, lengths of rail, the door's frame, leaf and handle) fly in, held in a pale blue glow, and click into place from the floor up. ![[2026-10-20 construct v2 real parts, coffee stairs (picked).gif|250]] → [[2026-10-20]]
 
 ---
 ## 🪧 Text on screen

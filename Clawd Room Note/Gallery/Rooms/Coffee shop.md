@@ -3,7 +3,7 @@ title: Gallery · Coffee shop
 tags:
   - clawd-room
   - screenshots
-up: "[[Gallery index]]"
+up: "[[Index]]"
 sticker: lucide//coffee
 ---
 Pictures of the coffee shop, newest first: ✅ current (open), ♻️ replaced and ❌ not picked (folded; the status is in [[Snapshot status]]). The files are the source in `Assets/Snapshots/Coffee shop/`; this note is written by `tools/vault_gallery.py` (do not edit it by hand: add a picture, then run the tool).
