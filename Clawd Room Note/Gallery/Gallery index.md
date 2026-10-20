@@ -5,11 +5,11 @@ tags:
   - screenshots
 sticker: lucide//images
 ---
-The pictures of clawd-room (snapshots): what the room looked like, mockups that were picked from, the user's own screenshots. **`Snapshots/` is the source**: one folder per subject with the picture files (`YYYY-MM-DD subject.png`; a person's own: `... (Zaviel).png`; the picked mockup: `... (picked).png`). Browse them in the notes below (this folder, Gallery, written by `tools/vault_gallery.py`); the [[Dev Log]] shows them with what changed.
+The pictures of clawd-room (snapshots): what the room looked like, mockups that were picked from, the user's own screenshots. **`Assets/Snapshots/` is the source**: one folder per subject with the picture files (`YYYY-MM-DD subject.png`; a person's own: `... (Zaviel).png`; the picked mockup: `... (picked).png`). Browse them in the notes below (this folder, Gallery, written by `tools/vault_gallery.py`); the [[Dev Log]] shows them with what changed.
 
 > [!tip] Adding a picture
 > 1. Save it in the subject folder that fits, named `YYYY-MM-DD subject.png` (names stay unique across folders).
-> 2. Embed it in its [[Dev Log]] entry: `![[YYYY-MM-DD subject.png|300]]`.
+> 2. Embed it in its Dev Log entry (the day's note in `Review/Log/`): `![[YYYY-MM-DD subject.png|300]]`.
 > 3. Give it a row in [[Snapshot status]] (and mark what it replaces as replaced).
 > 4. `python3 tools/vault_gallery.py` rewrites the notes in Gallery (CMD_SYNC runs it too).
 

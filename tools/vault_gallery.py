@@ -3,7 +3,7 @@
 
     python3 tools/vault_gallery.py
 
-`Clawd Room Note/Snapshots/` is the source: one folder per subject holding the picture files, named
+`Clawd Room Note/Assets/Snapshots/` is the source: one folder per subject holding the picture files, named
 `YYYY-MM-DD subject.png`. For people to browse them this writes `Clawd Room Note/Gallery/`: a note per subject,
 `SUBJECT gallery.md` (newest first: the picture, its caption, the Dev Log entry and notes that show it), and
 `Gallery index.md`. (Notes named like their folder are make.md's folder notes: never written here.) Run it after
@@ -15,7 +15,7 @@ import sys
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 VAULT = os.path.join(ROOT, "Clawd Room Note")
-SHOTS = os.path.join(VAULT, "Snapshots")
+SHOTS = os.path.join(VAULT, "Assets", "Snapshots")
 LOG = os.path.join(VAULT, "Gallery")
 STATUS = os.path.join(VAULT, "_Meta", "Snapshot status.md")  # (picture | current / replaced / not picked | replaced by)
 LOOK = {"current": ("success", "+", "✅ current"), "replaced": ("quote", "-", "♻️ replaced"), "not picked": ("failure", "-", "❌ not picked")}
@@ -100,8 +100,9 @@ def caption(subject):
 def links(name, shown):
     out = []
     for note, heading in shown.get(name, []):
-        target = "%s#%s" % (note, heading) if heading and note == "Dev Log" else note
-        label = heading if note == "Dev Log" and heading else note
+        day = re.match(r"^\d{4}-\d{2}-\d{2}$", note)  # (a day note of the Dev Log: link to the entry)
+        target = "%s#%s" % (note, heading) if heading and day else note
+        label = "%s · %s" % (note, heading) if heading and day else note
         link = "[[%s|%s]]" % (target, label)
         if link not in out:
             out.append(link)
@@ -114,7 +115,7 @@ def write_subject(folder, shown, status):
     lines = ["---", "title: Gallery · %s" % folder, "tags:", "  - clawd-room", "  - screenshots", "up: \"[[Gallery index]]\"",
              "sticker: " + sticker(ICON.get(folder, "image")), "---",
              "Pictures of %s, newest first: ✅ current (open), ♻️ replaced and ❌ not picked (folded; the status is in "
-             "[[Snapshot status]]). The files are the source in `Snapshots/%s/`; this note is written by "
+             "[[Snapshot status]]). The files are the source in `Assets/Snapshots/%s/`; this note is written by "
              "`tools/vault_gallery.py` (do not edit it by hand: add a picture, then run the tool)." % (ABOUT.get(folder, folder.lower()), folder), ""]
     day = None
     for f in pics:
@@ -150,13 +151,13 @@ def main():
         rows.append("| [[%s]] | %s | %d | %d | %d | %s | %s |" % (note_name(d), ABOUT.get(d, ""), count["current"], count["replaced"], count["not picked"], newest[:10] if newest else "", "![[%s\\|160]]" % newest if newest else ""))  # (a | in a table cell needs a backslash)
     index = ["---", "title: Gallery index", "tags:", "  - clawd-room", "  - screenshots", "sticker: " + sticker("images"), "---",
              "The pictures of clawd-room (snapshots): what the room looked like, mockups that were picked from, the user's own screenshots. "
-             "**`Snapshots/` is the source**: one folder per subject with the picture files (`YYYY-MM-DD subject.png`; a person's "
+             "**`Assets/Snapshots/` is the source**: one folder per subject with the picture files (`YYYY-MM-DD subject.png`; a person's "
              "own: `... (Zaviel).png`; the picked mockup: `... (picked).png`). Browse them in the notes below (this folder, "
              "Gallery, written by `tools/vault_gallery.py`); the "
              "[[Dev Log]] shows them with what changed.", "",
              "> [!tip] Adding a picture",
              "> 1. Save it in the subject folder that fits, named `YYYY-MM-DD subject.png` (names stay unique across folders).",
-             "> 2. Embed it in its [[Dev Log]] entry: `![[YYYY-MM-DD subject.png|300]]`.",
+             "> 2. Embed it in its Dev Log entry (the day's note in `Review/Log/`): `![[YYYY-MM-DD subject.png|300]]`.",
              "> 3. Give it a row in [[Snapshot status]] (and mark what it replaces as replaced).",
              "> 4. `python3 tools/vault_gallery.py` rewrites the notes in Gallery (CMD_SYNC runs it too).", "",
              "| Subject | What | ✅ current | ♻️ replaced | ❌ not picked | Newest current | |", "| --- | --- | --- | --- | --- | --- | --- |"] + rows

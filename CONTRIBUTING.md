@@ -30,7 +30,7 @@ Welcome! This is a small private project by **Zaviel** (owner, `zelvet-velvet`),
    ```
 3. Look at it: `./clawd-room.sh --try` opens four linked rooms with made-up Clawds (iTerm2 on macOS, Windows Terminal on WSL). On WSL first run `python3 setup_profile.py --update` once (adds the "Clawd Room" profile, 5 pt font).
 4. Optional, to see your own Claude Code sessions as Clawds: `python3 install_hooks.py` shows the change to `~/.claude/settings.json`; `--apply` installs it. The hook remembers where the repo is, so **do not move the repo folder** afterwards (or run `--apply` again).
-5. Read, in this order: this page, `Clawd Room Note/Docs/LLM_GUIDE.md` (map and rules, written for AI assistants but short and useful for people), the end of `Clawd Room Note/Docs/Dev Log.md` (what is pending). The `Clawd Room Note/` folder is an Obsidian vault (plain Markdown works too); how to share it is in `Clawd Room Note/Docs/Collaboration.md`.
+5. Read, in this order: this page, `Clawd Room Note/Start/LLM Guide.md` (map and rules, written for AI assistants but short and useful for people), `Clawd Room Note/Review/Dev Log.md` (the days, what is pending). The `Clawd Room Note/` folder is an Obsidian vault (plain Markdown works too); how to share it is in `Clawd Room Note/Start/Collaboration.md`.
 
 ---
 ## 3. The everyday loop (SOP)
@@ -81,12 +81,12 @@ Ideas waiting for someone are at the end of the Dev Log (Pending, Ideas); ask in
 ---
 ## 6. Notes and the Dev Log
 
-The notes are an Obsidian vault in git; setup, what is shared and how to write in it: `Clawd Room Note/Docs/Collaboration.md`. In short:
+The notes are an Obsidian vault in git; setup, what is shared and how to write in it: `Clawd Room Note/Start/Collaboration.md`. In short:
 
-- Every PR adds a short entry to `Clawd Room Note/Docs/Dev Log.md` under today's date (newest first): a title, two to four plain bullets about what changed **for someone using the room**, and `(William)` or `(Zaviel)` after the title. Pictures go in the subject folder under `Clawd Room Note/Snapshots/` (Office, Park, Gates ...) as `YYYY-MM-DD subject.png`.
+- Every PR adds a short entry to today's note in `Clawd Room Note/Review/Log/<year>/<month>/<week>/` (`YYYY-MM-DD.md`, newest first; in Obsidian *Open today's daily note* makes it in the right folder): a title, two to four plain bullets about what changed **for someone using the room**, and `(William)` or `(Zaviel)` after the title. Pictures go in the subject folder under `Clawd Room Note/Assets/Snapshots/` (Office, Park, Gates ...) as `YYYY-MM-DD subject.png`.
 - Two people adding entries at the top of the same file conflict easily: when `git merge origin/main` reports a conflict in the Dev Log, keep **both** entries.
 - Do not commit your own Obsidian layout or settings (`git restore "Clawd Room Note/.obsidian"` if you changed one by accident).
-- Bigger rewrites of the topic notes (`Clawd Room Note/Notes/`) are done by whoever runs the next `CMD_SYNC` (see the LLM guide).
+- Where things stand is in `Clawd Room Note/Review/Dev Status.md`. Your Claude keeps it and the notes with `CMD_SYNC`, `CMD_JOURNAL`, `CMD_NOTES_SYNC`, `CMD_ROLLOVER` (see the LLM guide); bigger rewrites of the design notes (`Clawd Room Note/Design/`) happen in `CMD_NOTES_SYNC`.
 
 ---
 ## 7. Rules that are not negotiable

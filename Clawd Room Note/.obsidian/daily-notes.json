@@ -1,0 +1,6 @@
+{
+  "folder": "Review/Log",
+  "format": "YYYY/MM/[W]WW/YYYY-MM-DD",
+  "template": "_Meta/Templates/Day note",
+  "autorun": false
+}

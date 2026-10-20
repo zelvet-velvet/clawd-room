@@ -915,7 +915,7 @@ int app_main(int argc, char **argv) {
         snprintf(root, sizeof root, "%s", dir);
         char *sl = strrchr(root, '/');
         if (sl) *sl = 0; else strcpy(root, ".");
-        snprintf(art, sizeof art, "%s/Clawd Room Note/Animations", root);
+        snprintf(art, sizeof art, "%s/Clawd Room Note/Assets/Animations", root);
         rc = a.export_sprites ? art_export(dir, a.force, a.add) : art_build(dir, art);
         sprites_free(&frames); sprites_free(&items);
         return rc;

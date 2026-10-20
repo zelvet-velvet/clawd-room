@@ -1,7 +1,7 @@
 ---
 up: "[[_Meta]]"
 ---
-Whether each picture in `Snapshots/` still shows how things are. `tools/vault_gallery.py` reads this table for the notes in `Gallery/`; edit a row to change a status, add a row for a new picture (a picture without a row is shown as **current**).
+Whether each picture in `Assets/Snapshots/` still shows how things are. `tools/vault_gallery.py` reads this table for the notes in `Gallery/`; edit a row to change a status, add a row for a new picture (a picture without a row is shown as **current**).
 
 - **current**: still what the room or tool looks like
 - **replaced**: changed later; *replaced by* is the picture that shows what came instead (a picked mockup is replaced by what was built from it)

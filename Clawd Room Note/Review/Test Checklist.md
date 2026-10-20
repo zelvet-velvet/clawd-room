@@ -78,9 +78,9 @@ What to test next, one `[!example] Group X · …` callout per group. Each test 
 > > 2. Open a second and a third (coffee shop, park) next to it: the first room's desks stay.
 > > 3. Quit the coffee shop: only its Clawds move.
 
-> [!example] Group E · WSL: the pixel editor with the mouse (T18–T22: the new colour panel)
-> - [ ] **T14** `./clawd-room.sh --edit window` → the editor opens in its own Clawd Room window in the middle of the screen; the window you typed in stays.
-> - [ ] **T15** Left click paints, right click erases, the palette picks a colour.
+> [!example] Group E · WSL: the pixel editor with the mouse (T18–T22: the new colour panel; T23: Ctrl+Z / Ctrl+Y)
+> - [x] **T14** `./clawd-room.sh --edit window` → the editor opens in its own Clawd Room window in the middle of the screen; the window you typed in stays.
+> - [x] **T15** Left click paints, right click erases, the palette picks a colour.
 > - [ ] **T16** A running room shows the change as you draw.
 > - [ ] **T17** `q` → asks save (S) or discard (D); D puts the picture back, in the room too.
 > - [ ] **T18** Colour field and hue bar: click or drag → the colour changes; on a file colour every pixel using it changes with it.
@@ -88,8 +88,9 @@ What to test next, one `[!example] Group X · …` callout per group. Each test 
 > - [ ] **T20** ERASE → left click erases; PICK → the next click on the grid takes that pixel's colour; PAINT → back to the colour before.
 > - [ ] **T21** Click the hex code or a red / green / blue number → type a value, Enter.
 > - [ ] **T22** A short editor window → one line `? SHORTCUTS  Q QUIT`, nothing runs over the colours; `?` opens and closes the shortcuts box.
+> - [ ] **T23** Paint, then **Ctrl+Z** → the pixel goes back (also in a running room); **Ctrl+Y** → it comes back; the editor is never suspended; **Ctrl+C** → asks save / discard like `q`.
 >
-> > [!tip]- T14–T22 · how to run them
+> > [!tip]- T14–T23 · how to run them
 > > 1. Start a room (`--try` or the profile; the office has the window).
 > > 2. In a WSL shell: `./clawd-room.sh --edit window`.
 > > 3. Paint a few pixels, erase some, pick another colour; watch the room's window.
