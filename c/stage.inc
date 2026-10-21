@@ -349,8 +349,9 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
     int roww = 0;
     for (int i = 0; i < 4; i++) roww += text_width(TOOL[i]) > 13 ? text_width(TOOL[i]) : 13;
     if (roww + 3 * 4 > fw) { TOOL = SHORT; roww = 0; for (int i = 0; i < 4; i++) roww += text_width(TOOL[i]) > 13 ? text_width(TOOL[i]) : 13; } /* (a narrow window: the names never touch) */
+    int sr = L.gx + L.cw + 1, x0t = (cv->w - 1 - fw + sr) / 2; /* (the row in the middle between the stage's frame (sr: the first column right of it) and the window's edge: the same gap left and right) */
     for (int i = 0, used = 0; i < 4; i++) {
-        int cw = text_width(TOOL[i]) > 13 ? text_width(TOOL[i]) : 13, tx = x + used + (fw - roww) * i / 3;
+        int cw = text_width(TOOL[i]) > 13 ? text_width(TOOL[i]) : 13, tx = x0t + used + (fw - roww) * i / 3;
         used += cw;
         int off = i == 2 && s->pick < a->npart && a->part[s->pick].sprite; /* (a sprite does not rotate) */
         int keyed = i == 3 && s->pick < a->npart && st_key_at(&a->part[s->pick], st_t(cur)) >= 0; /* (KEY is not a tool: a toggle, pressed in when this frame is a key of the picked part) */

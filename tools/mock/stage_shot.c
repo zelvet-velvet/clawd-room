@@ -17,6 +17,13 @@ static void shot_sized(const char *dir, const char *name, int frame, int pick, i
     if (getenv("SHOT_VIEW")) { s.zoom = 3; s.vx = 0; s.vy = 30; } /* (zoomed and moved: a part out of view) */
     Canvas cv = canvas_new(W, H, ST_BG);
     stage_draw(&s, &cv, 0);
+    if (getenv("TOOLGAP")) { /* (the gaps left of the first tool and right of the last, in pixels) */
+        int y = 12 + 16 + 2, l = -1, r = -1, sr = -1;
+        Rgb bg = ST_BG;
+        for (int x = 0; x < cv.w; x++) { Rgb c = cv.p[(y - 14) * cv.w + x]; (void)c; }
+        for (int x = cv.w / 3; x < cv.w; x++) { int any = 0; for (int yy = 12; yy < 12 + 22; yy++) { Rgb c = cv.p[yy * cv.w + x]; if (!rgb_eq(c, bg)) any = 1; } if (any && sr >= 0 && l < 0 && x > sr + 1) l = x; if (!any && sr < 0 && x > cv.w / 3) { int frame_left = 1; (void)frame_left; sr = x; } if (any && l >= 0) r = x; }
+        fprintf(stderr, "stage edge %d, first tool %d, last tool %d, width %d: gaps %d / %d\n", sr, l, r, cv.w, l - sr, cv.w - 1 - r);
+    }
     png_write(out, &cv, 3);
     fprintf(stderr, "wrote %s\n", out);
     canvas_free(&cv);
