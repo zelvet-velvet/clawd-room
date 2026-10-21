@@ -34,7 +34,7 @@ int main(int argc, char **argv) {
     snprintf(rd, sizeof rd, "%s/../anims", dir); parts_set_dir(rd); parts_set_mine_dir("");
     snprintf(p, sizeof p, "%s/stage-swing.png", o); shot(dir, "swing", 14, 3, 0, 0, 0, p);
     snprintf(p, sizeof p, "%s/stage-barista.png", o); shot(dir, "brew", 9, 1, 0, 0, 0, p);
-    snprintf(p, sizeof p, "%s/stage-help.png", o); shot(dir, "swing", 6, 4, 1, 1, 0, p);
+    snprintf(p, sizeof p, "%s/stage-help.png", o); shot_sized(dir, "swing", 6, 4, 1, 1, 0, 300, 120, 0, p);
     snprintf(p, sizeof p, "%s/stage-asking.png", o); shot(dir, "swing", 0, 3, 1, 0, 1, p);
     snprintf(p, sizeof p, "%s/stage-turn.png", o); shot(dir, "swing", 0, 3, 2, 0, 2, p);
     snprintf(p, sizeof p, "%s/stage-wide.png", o); shot_sized(dir, "swing", 6, 4, 1, 0, 0, 443, 265, 0, p);

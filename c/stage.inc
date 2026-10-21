@@ -28,6 +28,7 @@ typedef struct {
     int nundo, nredo;
     char name[24];
     int pick, row, frame, tool, playing, first, help, vx, vy, vw, vh, asking, changed;
+    int hscroll;              /* the help box scrolls when the window is too short for it */
     int zoom;                 /* the stage's zoom (0: as the window fits); vx, vy: the room pixel at its top left (vw, vh: what it shows) */
     int pscroll, pfollow;     /* the panel scrolls: how far, and whether it should bring the picked value into view */
     int pan; double pan_x0, pan_y0; int pan_vx, pan_vy; /* dragging the view with the right button */
@@ -413,15 +414,29 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
         canvas_text(cv, bx + (w - text_width(a)) / 2, by + 4, a, C_YELLOW);
         canvas_text(cv, bx + (w - text_width(b)) / 2, by + 14, b, C_WHITE);
     }
-    if (s->help) { /* ?: the keys and the mouse, in a box over the stage */
-        static const char *const H[] = {"MOUSE", "CLICK A PART: PICK IT", "SELECT: DRAG A BORDER TO RESIZE", "MOVE / TURN: DRAG ON THE STAGE", "KEY: CLICK TO ADD A KEY", "< > BESIDE A VALUE: CHANGE IT", "CLICK A FRAME: GO THERE", "WHEEL: ZOOM / SCROLL THE PANEL", "RIGHT DRAG: MOVE THE VIEW",
+    if (s->help) { /* ?: the keys and the mouse, in a box over the stage; a window too short for it scrolls it (up / down, the wheel) */
+        static const char *const H[] = {"HELP  (UP DOWN SCROLLS)", "MOUSE", "CLICK A PART: PICK IT", "SELECT: DRAG A BORDER TO RESIZE", "MOVE / TURN: DRAG ON THE STAGE", "KEY: CLICK TO ADD A KEY", "< > BESIDE A VALUE: CHANGE IT", "CLICK A FRAME: GO THERE", "WHEEL: ZOOM / SCROLL THE PANEL", "RIGHT DRAG: MOVE THE VIEW",
                                         "KEYS", "LEFT RIGHT  FRAME", "UP DOWN  A VALUE", "< >  CHANGE IT", "+ -  ZOOM THE STAGE", "W A S D  MOVE THE VIEW", "0  VIEW AS IT WAS", "SPACE  PLAY", "[ ]  OTHER PART", "K  ADD A KEY", "X  DELETE THE KEY", "E  KEY EASE", "U R  UNDO REDO", "Q  QUIT"};
         int n = (int)(sizeof H / sizeof *H), bw2 = 0;
         for (int i = 0; i < n; i++) if (text_width(H[i]) > bw2) bw2 = text_width(H[i]);
-        int hh = n * 7 + 8, hx = L.gx + (L.cw - bw2 - 12) / 2, hy = L.ty + (L.ah - hh) / 2;
-        if (hy < L.ty) hy = L.ty;
-        canvas_rect(cv, hx, hy, bw2 + 12, hh, RGB(26, 26, 36)); frame(cv, hx, hy, bw2 + 12, hh, RGB(110, 110, 140));
-        for (int i = 0; i < n; i++) canvas_text(cv, hx + 6, hy + 4 + i * 7, H[i], i == 0 || i == 9 ? C_YELLOW : C_WHITE);
+        int vis = (cv->h - 12 - 4 - 8) / 7, w = bw2 + 14; /* (as many lines as the window has room for) */
+        if (vis > n) vis = n;
+        if (vis < 3) vis = 3;
+        int most = n - vis;
+        if (s->hscroll > most) s->hscroll = most;
+        if (s->hscroll < 0) s->hscroll = 0;
+        int hh = vis * 7 + 8, hx = L.gx + (L.cw - w) / 2, hy = L.ty + (L.ah - hh) / 2;
+        if (hy < 2) hy = 2;
+        if (hy + hh > cv->h - 2) hy = cv->h - 2 - hh;
+        if (hx + w > cv->w - 2) hx = cv->w - 2 - w;
+        if (hx < 2) hx = 2;
+        canvas_rect(cv, hx, hy, w, hh, RGB(26, 26, 36)); frame(cv, hx, hy, w, hh, RGB(110, 110, 140));
+        for (int i = 0; i < vis; i++) { int k = i + s->hscroll; canvas_text(cv, hx + 6, hy + 4 + i * 7, H[k], k == 0 || !strcmp(H[k], "MOUSE") || !strcmp(H[k], "KEYS") ? C_YELLOW : C_WHITE); }
+        if (most) { /* a scroll bar inside the box's right edge */
+            int k0 = hy + 3 + (hh - 6) * s->hscroll / n, k1 = hy + 3 + (hh - 6) * (s->hscroll + vis) / n;
+            canvas_rect(cv, hx + w - 4, hy + 3, 1, hh - 6, RGB(40, 40, 52));
+            canvas_rect(cv, hx + w - 4, k0, 1, k1 - k0 > 4 ? k1 - k0 : 4, RGB(150, 150, 170));
+        }
     }
     canvas_free(&shot);
 }
@@ -521,7 +536,7 @@ static int stage_run(const char *dir, const char *name) {
         canvas_free(&cv);
         fd_set fs; FD_ZERO(&fs); FD_SET(STDIN_FILENO, &fs);
         struct timeval tv = {0, s.playing ? 62500 : 200000};
-        if (select(STDIN_FILENO + 1, &fs, NULL, NULL, &tv) <= 0) { if (nin == 1 && in[0] == 0x1b) { nin = 0; s.asking = 0; } continue; }
+        if (select(STDIN_FILENO + 1, &fs, NULL, NULL, &tv) <= 0) { if (nin == 1 && in[0] == 0x1b) { nin = 0; s.asking = 0; s.help = 0; } continue; }
         ssize_t k = read(STDIN_FILENO, in + nin, sizeof in - 1 - (size_t)nin);
         if (k <= 0) continue;
         nin += (int)k; in[nin] = 0;
@@ -540,7 +555,8 @@ static int stage_run(const char *dir, const char *name) {
                     const Region *rg = hit(px, py);
                     if (b & 64) { /* the wheel: over the stage it zooms, over the panel it scrolls it, over the frames it scrolls them */
                         int up = (b & 3) == 0 || (b & 3) == 2;
-                        if (px >= L.px && py >= L.ty + 27 && py < L.ty + L.ah) s.pscroll += up ? -9 : 9;
+                        if (s.help) s.hscroll += up ? -2 : 2;
+                        else if (px >= L.px && py >= L.ty + 27 && py < L.ty + L.ah) s.pscroll += up ? -9 : 9;
                         else if (px >= L.gx && px < L.gx + L.cw && py >= L.ty && py < L.ty + L.ah) st_zoom(&s, &L, up ? 1 : -1);
                         else if (rg && (rg->kind == R_STRIP || rg->kind == R_FRAME)) { s.first += up ? -1 : 1; if (s.first < 0) s.first = 0; if (s.first > nf - 1) s.first = nf - 1; }
                         continue;
@@ -619,12 +635,13 @@ static int stage_run(const char *dir, const char *name) {
                     char ar = in[i + 2];
                     i += 3;
                     s.playing = 0;
+                    if (s.help && (ar == 'A' || ar == 'B')) { s.hscroll += ar == 'B' ? 1 : -1; continue; } /* (the help box open: up / down scroll it) */
                     if (ar == 'C' || ar == 'D') { s.frame = (s.frame + (ar == 'C' ? 1 : nf - 1)) % nf; if (s.frame < s.first) s.first = s.frame; }
                     else { s.row = (s.row + (ar == 'B' ? 1 : ST_ROWS - 1)) % ST_ROWS; s.pfollow = 1; }
                     continue;
                 }
                 if (in[i + 1] == '[' && i + 2 < nin) { i += 3; continue; }
-                s.asking = 0; /* (a lone Esc: back to editing) */
+                s.asking = 0; s.help = 0; /* (a lone Esc: back to editing) */
                 i += 1; continue;
             }
             char ch = in[i++];
