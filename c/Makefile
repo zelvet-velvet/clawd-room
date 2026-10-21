@@ -15,7 +15,7 @@ OBJS = main.o canvas.o sprites.o clawd.o term.o theme.o draw.o fixture.o rng.o r
 clawd-room: $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $(OBJS) -lm
 
-%.o: %.c $(wildcard *.h)
+%.o: %.c $(wildcard *.h *.inc) # (editor.c includes stage.inc)
 	$(CC) $(CFLAGS) -c $<
 
 clean:

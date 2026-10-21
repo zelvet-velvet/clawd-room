@@ -48,7 +48,8 @@ flowchart LR
 | `gallery.c` | `--check` (overlaps) and `--gallery DIR` (contact sheets) |
 | `place.c` | the placer: wall items by priority around what must stay clear |
 | `anim.c` | the animator: eased values (gates appearing, doors swinging) |
-| `parts.c` | part animations: loads `anims/*.txt` (parts with keyframes: where, turn, shows, glow) and says where each part is at a time (read again when the file changes). The room moves a swinging Clawd by `anims/swing.txt`'s `clawd` part; nothing else uses it yet |
+| `stage.inc` | the pixel editor's stage page for part animations (`--edit anims/NAME`): the room with the thing on a stage, the picked part's values, the frames as pictures with the keys under them; included by `editor.c`; saves to `~/.clawd-room/anims/` as you go |
+| `parts.c` | part animations: loads and saves `anims/*.txt` (parts with keyframes: where, turn, shows, glow; the scene and the boxes the editor's stage shows) and says where each part is at a time (yours in `~/.clawd-room/anims/` first; read again when the file changes). The room moves a swinging Clawd by `anims/swing.txt`'s `clawd` part; nothing else uses it yet |
 | `editor.c` | the pixel editor (`--edit`) |
 | `theme.c` | the three rooms: backgrounds, workspaces, gates, signs |
 | `persp.c` | vanishing point, floor mapping, quads, boxes |

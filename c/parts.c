@@ -3,7 +3,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <dirent.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include "parts.h"
 
 static int ease_by_name(const char *s) {
@@ -72,12 +74,18 @@ static int parse_anim(PartAnim *a, char **save, const char *path, int line) {
     if (a->length <= 0) { fprintf(stderr, "%s:%d: the length must be above 0\n", path, line); return -1; }
     return 0;
 }
+/* part NAME [group GROUP] [box X Y W H] */
 static int parse_part(PartAnim *a, char **save, const char *path, int line) {
-    char *name = strtok_r(NULL, " \t", save), *w = strtok_r(NULL, " \t", save), *g = w ? strtok_r(NULL, " \t", save) : NULL;
+    char *name = strtok_r(NULL, " \t", save);
     Part *p = name ? add_part(a, name) : NULL;
     if (!p) { fprintf(stderr, "%s:%d: part needs a name (at most %d parts)\n", path, line, PARTS_MAX); return -1; }
-    if (w && (strcmp(w, "group") || !g)) { fprintf(stderr, "%s:%d: part NAME [group GROUP]\n", path, line); return -1; }
-    if (g) snprintf(p->group, sizeof p->group, "%s", g);
+    for (char *w = strtok_r(NULL, " \t", save); w; w = strtok_r(NULL, " \t", save)) {
+        if (!strcmp(w, "group")) { char *g = strtok_r(NULL, " \t", save); if (!g) { fprintf(stderr, "%s:%d: group needs a name\n", path, line); return -1; } snprintf(p->group, sizeof p->group, "%s", g); }
+        else if (!strcmp(w, "box")) {
+            for (int i = 0; i < 4; i++) { char *v = strtok_r(NULL, " \t", save); if (!v) { fprintf(stderr, "%s:%d: box needs X Y W H\n", path, line); return -1; } p->box[i] = atoi(v); }
+            p->has_box = 1;
+        } else { fprintf(stderr, "%s:%d: part NAME [group GROUP] [box X Y W H]\n", path, line); return -1; }
+    }
     return 0;
 }
 int parts_load(PartAnim *a, const char *path) {
@@ -94,6 +102,14 @@ int parts_load(PartAnim *a, const char *path) {
         if (!strcmp(word, "anim")) rc = parse_anim(a, &save, path, line);
         else if (!strcmp(word, "part")) rc = parse_part(a, &save, path, line);
         else if (!strcmp(word, "key")) rc = parse_key(a, &save, path, line);
+        else if (!strcmp(word, "scene")) { /* scene LINE: a line of the stage's fixture, as it is */
+            char *rest = save ? save + strspn(save, " \t") : (char *)"";
+            if (a->nscene >= PARTS_SCENE_LINES) { fprintf(stderr, "%s:%d: too many scene lines\n", path, line); rc = -1; }
+            else snprintf(a->scene[a->nscene++], sizeof a->scene[0], "%s", rest);
+        } else if (!strcmp(word, "view")) { /* view X Y */
+            char *x = strtok_r(NULL, " \t", &save), *y = strtok_r(NULL, " \t", &save);
+            if (!x || !y) { fprintf(stderr, "%s:%d: view X Y\n", path, line); rc = -1; } else { a->view_x = atoi(x); a->view_y = atoi(y); }
+        }
         else { fprintf(stderr, "%s:%d: not understood: %s\n", path, line, word); rc = -1; }
     }
     fclose(f);
@@ -120,23 +136,83 @@ PartPose parts_pose(const PartAnim *a, int part, double t) {
     return r;
 }
 
+int parts_save(const PartAnim *a, const char *path) {
+    char dir[700];
+    snprintf(dir, sizeof dir, "%s", path);
+    char *sl = strrchr(dir, '/');
+    if (sl) { *sl = 0; mkdir(dir, 0755); }
+    char tmp[720];
+    snprintf(tmp, sizeof tmp, "%s.tmp", path);
+    FILE *f = fopen(tmp, "w");
+    if (!f) return -1;
+    fprintf(f, "# %s: a part animation (the pixel editor wrote this file; the format is in anims/swing.txt)\n", a->name);
+    fprintf(f, "anim %s length %g %s\n", a->name, a->length, a->loop ? "loop" : "once");
+    for (int i = 0; i < a->nscene; i++) fprintf(f, "scene %s\n", a->scene[i]);
+    fprintf(f, "view %d %d\n", a->view_x, a->view_y);
+    static const char *const EASE[] = {"linear", "out", "in-out", "back", "in", "sine", "sine-out", "sine-in"};
+    for (int i = 0; i < a->npart; i++) {
+        const Part *p = &a->part[i];
+        fprintf(f, "part %s", p->name);
+        if (p->group[0]) fprintf(f, " group %s", p->group);
+        if (p->has_box) fprintf(f, " box %d %d %d %d", p->box[0], p->box[1], p->box[2], p->box[3]);
+        fprintf(f, "\n");
+    }
+    for (int i = 0; i < a->npart; i++) {
+        const Part *p = &a->part[i];
+        for (int k = 0; k < p->nkey; k++) {
+            const PartKey *q = &p->key[k];
+            fprintf(f, "key %s %g x=%g y=%g turn=%g glow=%g show=%d", p->name, q->t, q->pose.x, q->pose.y, q->pose.turn, q->pose.glow, q->pose.show);
+            if (q->ease != EASE_LINEAR) fprintf(f, " ease=%s", EASE[q->ease]);
+            fprintf(f, "\n");
+        }
+    }
+    if (fclose(f)) return -1;
+    return rename(tmp, path); /* (all or nothing: a room reading it never sees half a file) */
+}
+
 /* the anims folder (next to sprites/ and rooms/) and the animations in it, each read again when its file changes (like the room files) */
-static char g_dir[600];
+static char g_dir[600], g_mine[600];
 void parts_set_dir(const char *dir) { snprintf(g_dir, sizeof g_dir, "%s", dir ? dir : ""); }
+void parts_set_mine_dir(const char *dir) { snprintf(g_mine, sizeof g_mine, "%s", dir ? dir : ""); }
+const char *parts_mine_dir(void) { return g_mine; }
+const char *parts_default_dir(void) { return g_dir; }
 #define NAMED 8
 const PartAnim *parts_get(const char *name) {
-    static struct { char name[24]; PartAnim a; time_t mt; int ok, tried; } C[NAMED];
+    static struct { char name[24], path[700]; PartAnim a; time_t mt; int ok, tried; } C[NAMED];
     struct stat st;
     char path[700];
     int k = 0;
     while (k < NAMED && C[k].tried && strcmp(C[k].name, name)) k++;
     if (k == NAMED || !g_dir[0]) return NULL;
-    snprintf(path, sizeof path, "%s/%s.txt", g_dir, name);
+    snprintf(path, sizeof path, "%s/%s.txt", g_mine, name);
+    if (!g_mine[0] || stat(path, &st) != 0) snprintf(path, sizeof path, "%s/%s.txt", g_dir, name); /* (yours first, else the default) */
     if (stat(path, &st) != 0) { C[k].tried = 1; C[k].ok = 0; snprintf(C[k].name, sizeof C[k].name, "%s", name); return NULL; }
-    if (!C[k].tried || st.st_mtime != C[k].mt) { /* (new, or the file changed: a file with a mistake keeps the last good one) */
+    if (!C[k].tried || st.st_mtime != C[k].mt || strcmp(path, C[k].path)) { /* (new, or the file changed: a file with a mistake keeps the last good one) */
         static PartAnim fresh;
-        C[k].tried = 1; C[k].mt = st.st_mtime; snprintf(C[k].name, sizeof C[k].name, "%s", name);
+        C[k].tried = 1; C[k].mt = st.st_mtime; snprintf(C[k].name, sizeof C[k].name, "%s", name); snprintf(C[k].path, sizeof C[k].path, "%s", path);
         if (parts_load(&fresh, path) == 0) { C[k].a = fresh; C[k].ok = 1; }
     }
     return C[k].ok ? &C[k].a : NULL;
+}
+
+static int cmp_names(const void *a, const void *b) { return strcmp((const char *)a, (const char *)b); }
+int parts_names(char names[][24], int max) {
+    int n = 0;
+    const char *dirs[2] = {g_dir, g_mine};
+    for (int d = 0; d < 2; d++) {
+        DIR *dp = dirs[d][0] ? opendir(dirs[d]) : NULL;
+        if (!dp) continue;
+        for (struct dirent *e; (e = readdir(dp)); ) {
+            size_t l = strlen(e->d_name);
+            if (l < 5 || l > 27 || strcmp(e->d_name + l - 4, ".txt")) continue;
+            char nm[24];
+            snprintf(nm, sizeof nm, "%.*s", (int)(l - 4), e->d_name);
+            int have = 0;
+            for (int i = 0; i < n; i++) if (!strcmp(names[i], nm)) have = 1;
+            if (!have && n < max) snprintf(names[n++], 24, "%s", nm);
+        }
+        closedir(dp);
+    }
+    qsort(names, (size_t)n, 24, cmp_names);
+    return n;
 }

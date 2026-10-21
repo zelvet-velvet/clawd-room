@@ -10,4 +10,5 @@ typedef struct {
 } Fixture;
 
 int fixture_load(Fixture *f, const char *path); /* 0 on success */
+int fixture_load_text(Fixture *f, const char *text); /* ... the same from lines in memory (the pixel editor's stage) */
 #endif

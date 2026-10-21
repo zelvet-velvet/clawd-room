@@ -12,12 +12,22 @@
 
 typedef struct { double x, y, turn, glow; int show; } PartPose; /* offsets from the part's rest place in room pixels, degrees, 0..100, 0 or 1 */
 typedef struct { double t; PartPose pose; int ease; } PartKey;   /* ease: how the part gets here from the key before */
-typedef struct { char name[24], group[24]; PartKey key[PARTS_MAX_KEYS]; int nkey; } Part;
-typedef struct { char name[24]; double length; int loop; Part part[PARTS_MAX]; int npart; } PartAnim;
+typedef struct { char name[24], group[24]; PartKey key[PARTS_MAX_KEYS]; int nkey; int has_box, box[4]; } Part; /* box: x y w h at rest, in room pixels (the editor outlines it) */
+#define PARTS_SCENE_LINES 12
+typedef struct {
+    char name[24]; double length; int loop; Part part[PARTS_MAX]; int npart;
+    char scene[PARTS_SCENE_LINES][160]; int nscene;  /* the editor's stage: lines of a fixture (see tools/fixtures), or `emote SID KIND`: that Clawd starts that emote when the animation does */
+    int view_x, view_y;                               /* ... and the room pixel at the top left of what it shows */
+} PartAnim;
 
 int parts_load(PartAnim *a, const char *path);                   /* 0 ok; on an error says which line on stderr and returns -1 */
-void parts_set_dir(const char *dir);                              /* the folder of the animation files */
-const PartAnim *parts_get(const char *name);                       /* anims/NAME.txt, loaded and read again when it changes; NULL if there is none */
+int parts_save(const PartAnim *a, const char *path);              /* 0 ok (makes the folder); comments in the old file are not kept */
+void parts_set_dir(const char *dir);                              /* the folder of the animation files (the defaults, in the repo) */
+void parts_set_mine_dir(const char *dir);                         /* ... and yours (~/.clawd-room/anims): a file there is used instead of the default */
+const char *parts_mine_dir(void);
+const char *parts_default_dir(void);
+const PartAnim *parts_get(const char *name);                       /* anims/NAME.txt (yours first), loaded and read again when it changes; NULL if there is none */
+int parts_names(char names[][24], int max);                        /* the animations there are: the names of the files in both folders, sorted */
 int parts_find(const PartAnim *a, const char *part);              /* the part's index, or -1 */
 PartPose parts_pose(const PartAnim *a, int part, double t);       /* where it is at time t seconds (a looping animation wraps t) */
 #endif

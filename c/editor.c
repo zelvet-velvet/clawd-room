@@ -1473,8 +1473,10 @@ static void tty_on(void) {
 }
 static void tty_off(void) { put("\x1b[?1006l\x1b[?1003l\x1b[?1000l\x1b[0m\x1b[?7h\x1b[?25h\x1b[?1049l"); tcsetattr(STDIN_FILENO, TCSADRAIN, &g_old); }
 #include <sys/ioctl.h>
+#include "stage.inc"
 int editor_find(const char *dir, const char *name, int *which);
 int editor_run(const char *dir, const char *name) {
+    if (name && !strncmp(name, "anims/", 6)) return stage_run(dir, name + 6); /* (a part animation: the stage page) */
     static Ed e;
     memset(&e, 0, sizeof e);
     e.pk = 1; e.pi = 0; e.hx = e.hy = -1; e.drag = -1; e.last_pk = 1; e.speed = 1; e.onion = 1; e.del_ask = -1;
@@ -1794,6 +1796,16 @@ static int edit_distance(const char *a, const char *b) {
 }
 /* 0 if the sprites have a sprite or an animation called NAME (the file it is in in *which); else the error is printed */
 int editor_find(const char *dir, const char *name, int *which) {
+    if (!strncmp(name, "anims/", 6)) { /* a part animation of anims/ (yours or the default) */
+        if (which) *which = -1;
+        if (parts_get(name + 6)) return 0;
+        char names[32][24];
+        int n = parts_names(names, 32);
+        fprintf(stderr, "clawd-room --edit: no part animation called %s\n  there are:", name + 6);
+        for (int i = 0; i < n; i++) fprintf(stderr, " anims/%s", names[i]);
+        fprintf(stderr, "%s\n", n ? "" : " none");
+        return 1;
+    }
     char best[3][64] = {"", "", ""}, n2[64], b2[64];
     int bd[3] = {99, 99, 99}, num;
     for (int pass = 0; pass < 2; pass++)
@@ -1874,6 +1886,8 @@ int editor_list(const char *dir) {
         printf("\n");
         file_free(&tf);
     }
+    { char names[32][24]; int n = parts_names(names, 32); /* the part animations: opened with their folder, anims/NAME */
+      if (n) { printf("[ anims ] %d part animation%s\n", n, n == 1 ? "" : "s"); printf("  "); for (int i = 0; i < n; i++) printf("%sanims/%s", i ? "    " : "", names[i]); printf("\n\n"); } }
     printf("open one: ./clawd-room.sh --edit NAME\n");
     return 0;
 }
