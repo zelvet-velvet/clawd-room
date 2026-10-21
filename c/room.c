@@ -537,10 +537,11 @@ static void plan(Room *r, Session *s, int has_seat, double seat_x, double seat_y
 static void play(Session *s, const Geo *geo, double now) { /* swing back and forth, climb the ladder and slide down */
     double u = now - s->emote_start;
     if (!strcmp(s->emote, "swing")) {
-        const PartAnim *an = parts_get("swing"); /* (anims/swing.txt, its clawd part: 2 * sin(3.2 u) when there is no file) */
+        const PartAnim *an = parts_get("swing"); /* (anims/swing.txt, its clawd part's move x / y: 2 * sin(3.2 u) up and down when there is no file) */
         int cl = an ? parts_find(an, "clawd") : -1;
-        s->px = geo->spots.swing.x;              /* the swing set faces us: towards us and back */
-        s->py = geo->spots.swing.y + (cl >= 0 ? parts_pose(an, cl, u).y : 2 * sin(u * 3.2));
+        PartPose q = cl >= 0 ? parts_pose(an, cl, u) : (PartPose){0, 2 * sin(u * 3.2), 0, 0, 1};
+        s->px = geo->spots.swing.x + q.x;        /* the swing set faces us: towards us and back (and sideways, if the file says so) */
+        s->py = geo->spots.swing.y + q.y;
     } else {
         double bx = geo->spots.slide.base[0], by = geo->spots.slide.base[1], tx = geo->spots.slide.top[0], ty = geo->spots.slide.top[1];
         double ex = geo->spots.slide.bottom[0], ey = geo->spots.slide.bottom[1];
