@@ -334,8 +334,8 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
     if (s->pick >= 0 && s->pick < a->npart) { /* GROW: how much of the picked part has come in at this frame (a running figure, a bar; click or drag it) */
         int gx0 = L.px, gy0 = L.ty + L.ah + 2, bx0 = gx0 + 17, bw = L.fw - 17, g = (int)lround(parts_pose(a, s->pick, t).grow);
         g = g < 0 ? 0 : g > 100 ? 100 : g;
-        char fig[16]; /* (a Clawd from sprites/ui.txt: asleep, walking while the bar is dragged or PLAY runs) */
-        if (s->growdrag || s->playing) snprintf(fig, sizeof fig, "grow-walk-%d", 1 + (int)(wall * 8) % 4); else snprintf(fig, sizeof fig, "grow-sleep");
+        char fig[16]; /* (a Clawd from sprites/ui.txt, always running: faster while the bar is dragged or PLAY runs; at rest it steps with the page's redraws) */
+        snprintf(fig, sizeof fig, "grow-walk-%d", 1 + (int)(wall * (s->growdrag || s->playing ? 8 : 5)) % 4);
         if (!ui_icon(cv, fig, gx0, gy0, 0)) canvas_rect(cv, gx0 + 3, gy0 + 2, 9, 5, C_CLAWD); /* (no such sprite: a plain block) */
         canvas_rect(cv, bx0, gy0 + 2, bw, 5, RGB(34, 34, 44));
         canvas_rect(cv, bx0, gy0 + 2, bw * g / 100, 5, C_YELLOW);
@@ -506,7 +506,7 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
         canvas_text(cv, bx + (w - text_width(b)) / 2, by + 14, b, C_WHITE);
     }
     if (s->help) { /* ?: the keys and the mouse, in a box over the stage; a window too short for it scrolls it (up / down, the wheel) */
-        static const char *const H[] = {"HELP  (UP DOWN SCROLLS)", "MOUSE", "CLICK A PART: PICK IT", "SELECT: DRAG A BORDER TO RESIZE", "MOVE / ROTATE: DRAG ON THE STAGE", "KEY: A KEY AT THIS FRAME, OR NONE", "< > BESIDE A VALUE: CHANGE IT", "THE BAR BY THE SLEEPING CLAWD: HOW MUCH HAS COME IN", "CLICK A FRAME: GO THERE", "WHEEL: ZOOM / SCROLL THE PANEL", "RIGHT DRAG: MOVE THE VIEW",
+        static const char *const H[] = {"HELP  (UP DOWN SCROLLS)", "MOUSE", "CLICK A PART: PICK IT", "SELECT: DRAG A BORDER TO RESIZE", "MOVE / ROTATE: DRAG ON THE STAGE", "KEY: A KEY AT THIS FRAME, OR NONE", "< > BESIDE A VALUE: CHANGE IT", "THE BAR BY THE RUNNING CLAWD: HOW MUCH HAS COME IN", "CLICK A FRAME: GO THERE", "WHEEL: ZOOM / SCROLL THE PANEL", "RIGHT DRAG: MOVE THE VIEW",
                                         "KEYS", "LEFT RIGHT  FRAME", "UP DOWN  A VALUE", "< >  CHANGE IT", "+ -  ZOOM THE STAGE", "W A S D  MOVE THE VIEW", "0  ZOOM AS IT WAS, THE PART IN THE MIDDLE", "V  KEYS ON THE STAGE: ON / OFF", "SPACE  PLAY", "O  ONION SKIN (BEFORE RED, AFTER BLUE)", "[ ]  OTHER PART", "K  A KEY HERE OR NONE", "X  DELETE THE KEY", "E  KEY EASE", "U R  UNDO REDO", "Q  QUIT"};
         int n = (int)(sizeof H / sizeof *H), bw2 = 0;
         for (int i = 0; i < n; i++) if (text_width(H[i]) > bw2) bw2 = text_width(H[i]);
