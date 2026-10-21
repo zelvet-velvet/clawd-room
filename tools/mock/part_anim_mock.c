@@ -51,20 +51,20 @@ static void blit_crop(Canvas *cv, const Canvas *st, int sx, int sy, int w, int h
 static void diamond(Canvas *c, int x, int y, Rgb k) { canvas_px(c, x, y - 2, k); canvas_rect(c, x - 1, y - 1, 3, 1, k); canvas_rect(c, x - 2, y, 5, 1, k); canvas_rect(c, x - 1, y + 1, 3, 1, k); canvas_px(c, x, y + 2, k); }
 
 /* the stage tools as key caps in the editor's own style (tool_button's shape), their icons 9 x 9 */
-static const char *const STAGE_ICON[4][9] = {
+static const char *const MOCK_ICON[4][9] = {
     {"k........", "kwk......", "kwwk.....", "kwwwk....", "kwwwwk...", "kwwkkk...", "kwkwk....", "kk.kwk...", "....kk..."}, /* SELECT: a pointer */
     {"....w....", "...www...", "....w....", ".w..w..w.", "wwwwwwwww", ".w..w..w.", "....w....", "...www...", "....w...."}, /* MOVE: four arrows */
     {"..bbbbb..", ".b.....b.", "b.......b", "b.......b", "b......bbb", ".b......b.", "..bbbbb.b.", ".......b..", "........."},  /* TURN: an arrow round */
     {"....y....", "...yyy...", "..yyyyy..", ".yyyyyyy.", "yyyyyyyyy", ".yyyyyyy.", "..yyyyy..", "...yyy...", "....y...."},  /* KEY: a diamond */
 };
-static void stage_tool(Canvas *cv, int x, int y, int which, int on) {
+static void mock_tool(Canvas *cv, int x, int y, int which, int on) {
     int w = 13, h = 13, dy = on ? 1 : 0;
     canvas_rect(cv, x + 1, y + 1, w - 2, h, RGB(14, 14, 20)); canvas_rect(cv, x, y + 2, w, h - 2, RGB(14, 14, 20));
     Rgb cap = on ? RGB(70, 72, 100) : RGB(52, 54, 70);
     canvas_rect(cv, x + 1, y + dy, w - 2, h - dy, cap); canvas_rect(cv, x, y + dy + 1, w, h - dy - 2, cap);
     canvas_rect(cv, x + 2, y + dy, w - 4, 1, on ? RGB(110, 112, 145) : RGB(86, 88, 110));
-    for (int yy = 0; yy < 9; yy++) for (int xx = 0; xx < 9 && STAGE_ICON[which][yy][xx]; xx++)
-        if (STAGE_ICON[which][yy][xx] != '.') canvas_px(cv, x + 2 + xx, y + 2 + dy + yy, tool_colour(STAGE_ICON[which][yy][xx]));
+    for (int yy = 0; yy < 9; yy++) for (int xx = 0; xx < 9 && MOCK_ICON[which][yy][xx]; xx++)
+        if (MOCK_ICON[which][yy][xx] != '.') canvas_px(cv, x + 2 + xx, y + 2 + dy + yy, tool_colour(MOCK_ICON[which][yy][xx]));
     if (on) canvas_rect(cv, x + 2, y + h + 1, w - 4, 1, C_YELLOW);
 }
 static void value_box(Canvas *cv, int x, int y, int w, const char *v, int on) { /* like the hex code's box */
@@ -82,7 +82,7 @@ static void panel(Canvas *cv, const Case *cs, const Layout *L) { /* where the co
     for (int i = 0, used = 0; i < 4; i++) {
         int cw = text_width(TOOL[i]) > 13 ? text_width(TOOL[i]) : 13, tx = x + used + (FIELD_W - roww) * i / 3;
         used += cw;
-        stage_tool(cv, tx + (cw - 13) / 2, y, i, i == 0);
+        mock_tool(cv, tx + (cw - 13) / 2, y, i, i == 0);
         canvas_text(cv, tx + (cw - text_width(TOOL[i])) / 2, y + 16, TOOL[i], i == 0 ? C_WHITE : C_GREY);
     }
     y += TOOL_ROW + 4;
