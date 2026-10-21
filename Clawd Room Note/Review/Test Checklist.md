@@ -26,7 +26,7 @@ What to test next, one `[!example] Group X · …` callout per group. Each test 
 > [!tip] Setting up a test
 > `./clawd-room.sh --try` opens **four linked rooms**, one in each quarter of the screen (office, coffee shop / park, office), with **made-up Clawds** in them, so every gate shows at once. Quit any one to close all four, or `./clawd-room.sh --try close`. `--try real` shows only your real sessions. On WSL `--try --desktop N` opens them on virtual desktop N without switching to it (switch there yourself to look).
 
-> [!example] Group A · WSL: the Clawd Room profile at 5 pt (needs `python3 setup_profile.py --update` once)
+> [!done]- Group A · WSL: the Clawd Room profile at 5 pt (needs `python3 setup_profile.py --update` once)
 > - [x] **T1** Clawd Room from Windows Terminal's dropdown → the room starts, its window moves to the quarter of the screen it is in.
 > - [x] **T2** Room pixels are square and about as many as on the Mac (the whole room fits; the park shows the swing set and the building's plaque).
 > - [x] **T3** `q` → the room and its window close; nothing is left behind.
@@ -39,7 +39,7 @@ What to test next, one `[!example] Group X · …` callout per group. Each test 
 > > 2. `q`.
 > > 3. In a WSL shell in the repo: `./clawd-room.sh --try real`, hands off for about 3 s; hover over Windows Terminal in the taskbar. `~/.clawd-room/try/snap.log` says how each room was snapped.
 
-> [!example] Group B · WSL: the rooms and the bottom bar
+> [!done]- Group B · WSL: the rooms and the bottom bar
 > - [x] **T5** Office, coffee shop and park look as on the Mac (style A, the park plaza and its buildings).
 > - [x] **T6** The bottom bar's text is readable at 5 pt (`?` shows the help).
 > - [x] **T7** Hold `g` or `m` → the yellow hint shows only while the key is held and goes right after letting go.
@@ -53,7 +53,7 @@ What to test next, one `[!example] Group X · …` callout per group. Each test 
 > > 3. Hold `g` for two seconds and let go; the same with `m`.
 > > 4. `./clawd-room.sh --try close`.
 
-> [!example] Group C · WSL: sending and moving Clawds between rooms
+> [!done]- Group C · WSL: sending and moving Clawds between rooms
 > - [x] **T8** `g` + an arrow → a Clawd walks to that gate (door, stairs, well), goes through and comes out in the room next to it.
 > - [x] **T9** `m` + an arrow → the picked Clawd packs its desk into a box (poof), carries it out and unpacks at a new desk in the other room.
 > - [x] **T10** The room it left does not blink; `m` + arrow while it carries the box → straight to the new gate.
@@ -67,7 +67,7 @@ What to test next, one `[!example] Group X · …` callout per group. Each test 
 > > 3. `Tab` until a Clawd at a desk is picked, `m` + →, watch both rooms; pick a Clawd carrying a box, `m` + ↓.
 > > 4. `b`.
 
-> [!example] Group D · WSL: desks stay in their room
+> [!done]- Group D · WSL: desks stay in their room
 > - [x] **T12** Opening the rooms one by one → a desk never jumps to another room.
 > - [x] **T13** Closing one room → only its Clawds show up elsewhere.
 >
@@ -78,7 +78,7 @@ What to test next, one `[!example] Group X · …` callout per group. Each test 
 > > 2. Open a second and a third (coffee shop, park) next to it: the first room's desks stay.
 > > 3. Quit the coffee shop: only its Clawds move.
 
-> [!example] Group E · WSL: the pixel editor with the mouse (T18–T22: the new colour panel; T23: Ctrl+Z / Ctrl+Y)
+> [!done]- Group E · WSL: the pixel editor with the mouse (T18–T22: the new colour panel; T23: Ctrl+Z / Ctrl+Y)
 > - [x] **T14** `./clawd-room.sh --edit window` → the editor opens in its own Clawd Room window in the middle of the screen; the window you typed in stays.
 > - [x] **T15** Left click paints, right click erases, the palette picks a colour.
 > - [x] **T16** A running room shows the change as you draw.
@@ -99,17 +99,17 @@ What to test next, one `[!example] Group X · …` callout per group. Each test 
 > > 4. `q`, then `D`: the window is back as before.
 > > 5. T18–T22: the new colour panel (like Figma). Compare with ![[2026-10-19 pixel editor, colour field palette.png|300]]
 
-> [!example] Group F · WSL: the pixel editor, animations and fill (T24–T30, PR #10)
-> - [ ] **T24** `./clawd-room.sh --edit list` → each animation once with its frame count (`walk 4`, `think 9`), in columns, no name cut across two lines.
-> - [ ] **T25** `./clawd-room.sh --edit walk` → `walk-1` opens; the timeline shows four frames; clicking a frame or `<` `>` opens it; `[` `]` go to the next animation.
-> - [ ] **T26** Space → the real-size view plays the walk as in the room (legs and arms in turn); **1X** → 2x, 0.5x; Space stops. Try `cheer` (it bounces) and `wait`.
-> - [ ] **T27** **ONION** on → where the frame is empty, the frame before shows faintly red and the one after blue; `o` turns it off.
-> - [ ] **T28** **FILL** → the area under the pointer is outlined in dashes; a click fills it (a closed gap between the legs stays); right click erases it; click FILL again → **FILL ALL** fills every pixel of that colour; Ctrl+Z undoes.
-> - [ ] **T29** `--edit window` → `f` adds `WINDOW~2` (a copy); paint it → a running room animates the window; `x` `x` deletes it; on the first frame `x` `x` says it is the prop and does nothing.
-> - [ ] **T30** On a Clawd frame `f` or `x` → "PROPS ONLY" and nothing changes; `q` → `D` puts everything back.
+> [!done]- Group F · WSL: the pixel editor, animations and fill (T24–T30, PR #10)
+> - [x] **T24** `./clawd-room.sh --edit list` → each animation once with its frame count (`walk 4`, `think 9`), in columns, no name cut across two lines.
+> - [x] **T25** `./clawd-room.sh --edit walk` → `walk-1` opens; the timeline shows four frames; clicking a frame or `<` `>` opens it; `[` `]` go to the next animation.
+> - [x] **T26** Space → the real-size view plays the walk as in the room (legs and arms in turn); **1X** → 2x, 0.5x; Space stops. Try `cheer` (it bounces) and `wait`.
+> - [x] **T27** **ONION** on → where the frame is empty, the frame before shows faintly red and the one after blue; `o` turns it off.
+> - [x] **T28** **FILL** → the area under the pointer is outlined in dashes; a click fills it (a closed gap between the legs stays); right click erases it; click FILL again → **FILL ALL** fills every pixel of that colour; Ctrl+Z undoes.
+> - [x] **T29** `--edit window` → `f` adds `WINDOW~2` (a copy); paint it → a running room animates the window; `x` `x` deletes it; on the first frame `x` `x` says it is the prop and does nothing.
+> - [x] **T30** On a Clawd frame `f` or `x` → "PROPS ONLY" and nothing changes; `q` → `D` puts everything back.
 >
 > > [!tip]- T24–T30 · how to run them
-> > 1. Until PR #10 is merged the editor is on branch `feat/editor-animation`: `git switch feat/editor-animation` in the repo first (after the merge: `main` as usual).
+> > 1. In the repo, on `main` (PR #10 is merged).
 > > 2. Start a room (`./clawd-room.sh --try`), so you can see edits arrive.
 > > 3. In a WSL shell: the `--edit` commands above (the editor opens in its own window).
 > > 4. When done, `q` then `D` (discard) unless you mean to keep a drawing.
