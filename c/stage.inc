@@ -12,7 +12,7 @@
 
 Canvas render(int cols, int rows, Room *room, double now, double t, char *note, size_t note_n); /* draw.c */
 
-enum { R_SSTAGE = 64, R_SVAL, R_SPART, R_SKEY, R_SKEYDEL, R_SEASE, R_STOOL, R_SPANEL, R_SSCROLL };
+enum { R_SSTAGE = 64, R_SVAL, R_SPART, R_SKEY, R_SKEYDEL, R_SEASE, R_STOOL, R_SPANEL, R_SSCROLL, R_SKEYSHOW };
 #define ST_UNDO 24
 #define ST_FPS 16          /* the frames: 16 a second, like the room */
 #define ST_MAXF 300
@@ -28,6 +28,7 @@ typedef struct {
     int nundo, nredo;
     char name[24];
     int pick, row, frame, tool, playing, first, help, vx, vy, vw, vh, asking, changed;
+    int hide_keys;            /* the keys' marks on the stage are hidden (v, or the KEYS button under the stage) */
     int hscroll;              /* the help box scrolls when the window is too short for it */
     int zoom;                 /* the stage's zoom (0: as the window fits); vx, vy: the room pixel at its top left (vw, vh: what it shows) */
     int pscroll, pfollow;     /* the panel scrolls: how far, and whether it should bring the picked value into view */
@@ -191,6 +192,21 @@ static StLayout st_layout(const Stage *s, int W, int H) {
     return L;
 }
 
+static void st_mark(Canvas *cv, int x, int y, Rgb k) { /* a key's mark: a small plus with a dark edge, readable on any ground */
+    Rgb d = RGB(20, 20, 28);
+    canvas_rect(cv, x - 2, y - 1, 5, 3, d); canvas_rect(cv, x - 1, y - 2, 3, 5, d);
+    canvas_rect(cv, x - 1, y, 3, 1, k); canvas_rect(cv, x, y - 1, 1, 3, k);
+}
+static void st_line_in(Canvas *cv, int x0, int y0, int x1, int y1, Rgb k, int cx0, int cy0, int cx1, int cy1) { /* a line, only inside the box (cx0, cy0)-(cx1, cy1) */
+    int dx = abs(x1 - x0), dy = -abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1, err = dx + dy;
+    for (int n = 0; n < 4000; n++) {
+        if (x0 >= cx0 && x0 <= cx1 && y0 >= cy0 && y0 <= cy1) canvas_px(cv, x0, y0, k);
+        if (x0 == x1 && y0 == y1) break;
+        int e2 = 2 * err;
+        if (e2 >= dy) { err += dy; x0 += sx; }
+        if (e2 <= dx) { err += dx; y0 += sy; }
+    }
+}
 static void stage_draw(Stage *s, Canvas *cv, double wall) {
     g_nreg = 0;
     canvas_rect(cv, 0, 0, cv->w, cv->h, ST_BG);
@@ -231,13 +247,6 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
             canvas_line(cv, (px4[0] + px4[1]) / 2, (py4[0] + py4[1]) / 2, (int)lround(cxp), (int)lround(cyp), oc); /* (top middle to the middle: which way is up) */
         }
     }
-    if (s->pick < a->npart && a->part[s->pick].has_box) { /* the path of the picked part: where it is at each frame, dotted */
-        const Part *p = &a->part[s->pick];
-        for (int f = 0; f < nf; f++) {
-            PartPose q = parts_pose(a, s->pick, st_t(f));
-            canvas_px(cv, L.gx + (p->box[0] + p->box[2] / 2 + (int)lround(q.x) - vx) * L.z + L.z / 2, L.ty + (p->box[1] + (int)lround(q.y) - vy) * L.z + L.z / 2, f == cur ? C_WHITE : RGB(150, 130, 60));
-        }
-    }
     if (s->tool == 0 && s->pick < a->npart && a->part[s->pick].has_box) { /* SELECT: handles on the picked part's border (drag one to resize it) */
         int bx, by, bw, bh;
         st_box(&a->part[s->pick], parts_pose(a, s->pick, t), &bx, &by, &bw, &bh);
@@ -245,11 +254,20 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
         int hx[8] = {x0, xm, x1, x0, x1, x0, xm, x1}, hy[8] = {y0, y0, y0, ym, ym, y1, y1, y1};
         for (int k = 0; k < 8; k++) if (hx[k] > L.gx && hx[k] < L.gx + L.cw - 1 && hy[k] > L.ty && hy[k] < L.ty + L.ah - 1) { canvas_rect(cv, hx[k] - 1, hy[k] - 1, 3, 3, C_YELLOW); canvas_px(cv, hx[k], hy[k], ST_BG); }
     }
-    if (s->pick < a->npart && a->part[s->pick].has_box) { /* the keys of the picked part: a diamond where it is at each (the one at this frame white) */
+    if (!s->hide_keys && s->pick < a->npart && a->part[s->pick].has_box) { /* the keys of the picked part: a line through where it is at each, in time order, and a small mark on each */
         const Part *p = &a->part[s->pick];
+        int kx[PARTS_MAX_KEYS], ky[PARTS_MAX_KEYS];
         for (int k = 0; k < p->nkey; k++) {
-            int dx = L.gx + (p->box[0] + p->box[2] / 2 + (int)lround(p->key[k].pose.x) - vx) * L.z + L.z / 2, dy = L.ty + (p->box[1] + p->box[3] / 2 + (int)lround(p->key[k].pose.y) - vy) * L.z + L.z / 2;
-            if (dx > L.gx + 2 && dx < L.gx + L.cw - 3 && dy > L.ty + 2 && dy < L.ty + L.ah - 3) st_diamond(cv, dx, dy, fabs(p->key[k].t - t) < 0.5 / ST_FPS ? C_WHITE : C_YELLOW);
+            kx[k] = L.gx + (p->box[0] + p->box[2] / 2 + (int)lround(p->key[k].pose.x) - vx) * L.z + L.z / 2;
+            ky[k] = L.ty + (p->box[1] + p->box[3] / 2 + (int)lround(p->key[k].pose.y) - vy) * L.z + L.z / 2;
+        }
+        for (int k = 1; k < p->nkey; k++) st_line_in(cv, kx[k - 1], ky[k - 1], kx[k], ky[k], RGB(130, 112, 52), L.gx + 1, L.ty + 1, L.gx + L.cw - 2, L.ty + L.ah - 2);
+        for (int k = 0; k < p->nkey; k++) {
+            if (kx[k] < L.gx + 3 || kx[k] > L.gx + L.cw - 4 || ky[k] < L.ty + 3 || ky[k] > L.ty + L.ah - 4) continue;
+            int stacked = 0, here = fabs(p->key[k].t - t) < 0.5 / ST_FPS;
+            for (int m = 0; m < p->nkey; m++) if (m != k && abs(kx[m] - kx[k]) <= 2 && abs(ky[m] - ky[k]) <= 2) stacked = 1;
+            if (stacked) frame(cv, kx[k] - 3, ky[k] - 3, 7, 7, RGB(200, 170, 60)); /* (keys on top of each other: a ring round them) */
+            st_mark(cv, kx[k], ky[k], here ? C_WHITE : C_YELLOW);
         }
     }
     frame(cv, L.gx, L.ty, L.cw, L.ah, RGB(90, 90, 110));
@@ -261,6 +279,7 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
         canvas_text(cv, L.gx, L.ty + L.ah + 4, buf, C_GREY);
         if (s->msg[0]) canvas_text(cv, L.gx + text_width(buf) + 10, L.ty + L.ah + 4, s->msg, C_YELLOW);
     }
+    { const char *kl = s->hide_keys ? "KEYS OFF" : "KEYS ON"; button(cv, L.gx + L.cw - text_width(kl) - 6, L.ty + L.ah + 2, kl, !s->hide_keys, R_SKEYSHOW, 0); } /* (the marks of the keys on the stage: on / off) */
     /* the panel: the tools, the picked part, its values at this frame, the keys' buttons, the parts */
     int x = L.px, y = L.ty, fw = L.fw, pbot = L.ty + L.ah;
     static const char *TOOL[4] = {"SELECT", "MOVE", "ROTATE", "KEY"};
@@ -416,7 +435,7 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
     }
     if (s->help) { /* ?: the keys and the mouse, in a box over the stage; a window too short for it scrolls it (up / down, the wheel) */
         static const char *const H[] = {"HELP  (UP DOWN SCROLLS)", "MOUSE", "CLICK A PART: PICK IT", "SELECT: DRAG A BORDER TO RESIZE", "MOVE / ROTATE: DRAG ON THE STAGE", "KEY: CLICK TO ADD A KEY", "< > BESIDE A VALUE: CHANGE IT", "CLICK A FRAME: GO THERE", "WHEEL: ZOOM / SCROLL THE PANEL", "RIGHT DRAG: MOVE THE VIEW",
-                                        "KEYS", "LEFT RIGHT  FRAME", "UP DOWN  A VALUE", "< >  CHANGE IT", "+ -  ZOOM THE STAGE", "W A S D  MOVE THE VIEW", "0  VIEW AS IT WAS", "SPACE  PLAY", "[ ]  OTHER PART", "K  ADD A KEY", "X  DELETE THE KEY", "E  KEY EASE", "U R  UNDO REDO", "Q  QUIT"};
+                                        "KEYS", "LEFT RIGHT  FRAME", "UP DOWN  A VALUE", "< >  CHANGE IT", "+ -  ZOOM THE STAGE", "W A S D  MOVE THE VIEW", "0  VIEW AS IT WAS", "V  KEYS ON THE STAGE: ON / OFF", "SPACE  PLAY", "[ ]  OTHER PART", "K  ADD A KEY", "X  DELETE THE KEY", "E  KEY EASE", "U R  UNDO REDO", "Q  QUIT"};
         int n = (int)(sizeof H / sizeof *H), bw2 = 0;
         for (int i = 0; i < n; i++) if (text_width(H[i]) > bw2) bw2 = text_width(H[i]);
         int vis = (cv->h - 12 - 4 - 8) / 7, w = bw2 + 14; /* (as many lines as the window has room for) */
@@ -621,6 +640,7 @@ static int stage_run(const char *dir, const char *name) {
                         }
                     }
                     else if (rg->kind == R_STOOL) s.tool = rg->i;
+                    else if (rg->kind == R_SKEYSHOW) s.hide_keys = !s.hide_keys;
                     else if (rg->kind == R_SPART) s.pick = rg->i;
                     else if (rg->kind == R_SVAL) { s.row = rg->i / 3; if (rg->i % 3) { s.playing = 0; st_change(&s, s.row, rg->i % 3 == 2 ? 1 : -1); } }
                     else if (rg->kind == R_SKEY) { s.playing = 0; st_add_key(&s); }
@@ -654,6 +674,7 @@ static int stage_run(const char *dir, const char *name) {
             else if (ch == ',' || ch == '<') { s.playing = 0; st_change(&s, s.row, -1); s.pfollow = 1; }
             else if (ch == '+' || ch == '=') st_zoom(&s, &L, 1);
             else if (ch == '-') st_zoom(&s, &L, -1);
+            else if (ch == 'v' || ch == 'V') s.hide_keys = !s.hide_keys;
             else if (ch == '0') { s.zoom = 0; s.vx = s.a.view_x; s.vy = s.a.view_y; }
             else if (ch == 'w' || ch == 'W') st_pan(&s, 0, -1);
             else if (ch == 's' || ch == 'S') st_pan(&s, 0, 1);

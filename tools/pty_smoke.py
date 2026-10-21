@@ -203,7 +203,7 @@ with tempfile.TemporaryDirectory() as tmp:
     out, st = run(["--edit", "anims/swing"], clamp, aenv, cols=300, rows=90)
     txt = open(swing_mine).read()
     check("stage: MOVE keeps the part inside what the stage shows", st == 0 and re.search(r"key seat 0 x=43 ", txt))
-    out, st = run(["--edit", "anims/swing"], [(1.2, b"+"), (1.4, b"+"), (1.6, b"d"), (1.8, b"w"), (2.0, b"-"), (2.2, b"0"), (2.4, b"\x1b[<65;250;30M"), (2.6, b"\x1b[<64;250;30M"), (2.8, b"\x1b[<64;40;40M"), (3.0, b"q"), (3.4, b"s")], aenv, cols=300, rows=90)  # (zoom in and out, move the view, reset it, the wheel over the panel and the stage)
+    out, st = run(["--edit", "anims/swing"], [(1.2, b"+"), (1.4, b"+"), (1.6, b"d"), (1.8, b"w"), (2.0, b"-"), (2.2, b"0"), (2.4, b"\x1b[<65;250;30M"), (2.6, b"\x1b[<64;250;30M"), (2.8, b"\x1b[<64;40;40M"), (2.9, b"v"), (3.0, b"v"), (3.2, b"q"), (3.6, b"s")], aenv, cols=300, rows=90)  # (zoom in and out, move the view, reset it, the wheel over the panel and the stage)
     check("stage: + - zoom, w a s d move the view, 0 resets it, the wheel scrolls the panel and zooms the stage (no crash, nothing changed)", st == 0)
     out, st = run(["--edit", "anims/swing"], [(1.2, b"?"), (1.4, b"\x1b[B"), (1.5, b"\x1b[B"), (1.6, b"\x1b[B"), (1.8, b"\x1b[<65;60;40M"), (2.0, b"\x1b[A"), (2.2, b"?"), (2.6, b"q"), (3.0, b"s")], aenv, cols=300, rows=50)  # (a short window: the help box scrolls with the arrows and the wheel)
     check("stage: ? opens the help, which scrolls in a short window (up / down, the wheel)", st == 0)
