@@ -17,7 +17,7 @@ sticker: lucide//activity
 - **Gates as Part Animations**: The office's door, stairs and well appear by `anims/gate-*.txt`, the same look as before; editable in the ANIMS tab with a grow bar and a running Clawd beside it; the view puts the picked part in the middle (#22).
 - **Stage Page Folds**: The panel folds to a ribbon of the tools (`p` or the fold button), the timeline to its one line (drag the line above it); the panel has the same gap on both sides (#22).
 - **Picker Search Focus**: A click outside the search box leaves it (letters stop typing, `q` quits); clicked into, `q` is typed (#22).
-- **KEYS ON Mockups**: Four looks for the stage's key-marks toggle (an eye, a check box, a switch, an icon); waiting for a pick.
+- **Eye + KEYS Button**: The stage's key-marks toggle is an eye (open: shown, shut: hidden) with KEYS; picked from four mockups (#22).
 
 ## 📅 Yesterday's Progress (2026-10-20)
 - **WSL Test Queue Done**: T16 – T30 pass (the pixel editor, its animations and fill), so all of [[Test Checklist]]'s queue (T1 – T30) passes on WSL.
@@ -48,7 +48,7 @@ sticker: lucide//activity
 
 ### ⚙️ Engine and tools
 - [>] **Animations**: `--build-art` to record room animations (packing, carrying, unpacking, doors, stairs, the well, each room) as GIFs, in category folders, with Gallery notes. Started (GIF colour rounding, category folders), parked in a stash.
-- [>] **Stage Page Polish**: Esc picks nothing (#21, T39 – T40 on its branch); folding the panel and the timeline, the picker's search focus (#22, T45 – T49 on its branch); the KEYS ON toggle's new look: pick A – D ([[2026-10-21]]).
+- [>] **Stage Page Polish**: Esc picks nothing (#21, T39 – T40 on its branch); folding the panel and the timeline, the picker's search focus (#22, T45 – T49 on its branch); the eye + KEYS button (#22, T50).
 - [ ] **Less CPU**: Skip frames when nothing moves; stop drawing (FPS 0) when the window is covered, minimised or on another desktop; later dirty rects. (The terminal output is already diffed and written once per frame.)
 
 ### 🗂️ Repo and vault

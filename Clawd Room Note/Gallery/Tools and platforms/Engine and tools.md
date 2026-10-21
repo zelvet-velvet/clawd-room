@@ -20,7 +20,7 @@ Pictures of the debug overlay, the placer, the pixel editor, the gallery, newest
 
 > [!success]+ ✅ current · Stage page KEYS toggle, A B C D (A picked)
 > ![[2026-10-21 stage page KEYS toggle, A B C D (A picked).png|420]]
-> Shown in: not in a note yet
+> Shown in: [[2026-10-21#🗂️ The stage page folds like the editor; the picker's search lets go (Zaviel)|2026-10-21 · 🗂️ The stage page folds like the editor; the picker's search lets go (Zaviel)]]
 
 > [!success]+ ✅ current · Part animations in the editor, the barista brewing (now, A dope sheet, B frames, B picked)
 > ![[2026-10-21 part animations in the editor, the barista brewing (now, A dope sheet, B frames, B picked).png|420]]
