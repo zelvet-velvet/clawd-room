@@ -80,10 +80,21 @@ sticker: lucide//gamepad-2
 
 ![[2026-10-20 editor playing a Clawd at the room's speed.png|774]]
 
+### 🎬 The stage page: part animations
+
+A **part animation** is a file in `anims/` (`swing.txt`, `brew.txt`; the format is in the header of `swing.txt`): a thing made of **parts** (the swing's bar, chains, seat and Clawd; the coffee machine, cup, steam and barista), each with **keys**. A key is a saved pose of one part at one frame: where it is (move x / y), rotate, show, glow, and the ease into it. Between keys the part is moved for you (the frames in between are worked out), so a few keys make the whole animation. A part marked `sprite` (a Clawd) moves but does not rotate (a turned pixel drawing breaks up). The room plays the swing's Clawd from `swing.txt`; your edits go to `~/.clawd-room/anims/` and are used over the defaults, read again when they change.
+
+`./clawd-room.sh --edit anims/swing` (or the **ANIMS** tab in the sprite picker, Enter) opens it on the stage page, laid out as the editor (layout B, picked 2026-10-21):
+
+- **The stage** (where the canvas is): the room with the thing, every part outlined (the picked one yellow), the picked part's keys as small marks joined in time order (`v` or **KEYS ON** under the stage: off); **ONION** (`o`) shows the frame before faintly red and the one after blue. `+ -` or the wheel zoom it, `W A S D` or a right drag move the view, `0` puts it back.
+- **The tools**: **SELECT** picks a part and shows handles on its border (drag one to resize the part's box); **MOVE** drags the part pressed on (it stays inside the stage); **ROTATE** drags its angle (greyed for a sprite); **KEY** adds a key at this frame.
+- **The panel**: the picked part, its values at this frame with `<` `>` (`< >` keys; up / down picks a value), **+ KEY**, **− KEY**, the key's **EASE**, the parts. It scrolls in a short window.
+- **The timeline**: the frames as pictures with a diamond under each key of the picked part, the real-size view at its left, PLAY and the speed; its scroll bar and the wheel scroll it.
+- A change makes a key at this frame if there is none. `u` / `r` undo / redo, `?` the keys (scrolls), `q` asks like the editor (S save, D discard, Esc back); from the picker, `q` comes back to it.
+
 > [!todo]- Picked, not built yet
-> - **Part animations in the pixel editor** (planned: the gate case 2026-10-20, widened to every animation 2026-10-21 after Zaviel's note): not only gates but a Clawd on the swing, the barista brewing, the slide, a door. A thing made of **parts** (a gate: steps, boards, balusters, rail; a swing: seat and chains; the coffee machine: cup, steam; a Clawd is a part too: its position and which pose) gets **keyframes** for each part: where it is, how it is turned, whether it shows, its glow. The engine moves the parts between keyframes, so one animation fits every room size and all three rooms. Saved as data (a file per animation, e.g. `anims/construct.txt`, `anims/swing.txt`), so a developer makes or changes one in the editor without code; code stays only for effects keyframes cannot express (the construct's glow).
-> - **In the current editor, not a new tool**: the editor's timeline, play at the room's speed and onion skin stay; a part animation opens on a **stage page** (the room and the thing picked with buttons, a part clicked, `g` its group), the part's values at this frame, and the timeline frame by frame with keyframes as diamonds (**B picked** on 2026-10-21: the timeline shows the frames as pictures, like today's, with a diamond under each keyframe of the picked part; a dope sheet, a row per part or group, comes later as a view switch like the picker's cards and list; a gate gets a row per group of parts, not one per baluster). Leaving gets its own keyframes or plays appearing backwards.
-> - **Order**: the settings file, gates appearing (simple and construct), the keyframe format and the stage page, then the swing and the barista as more cases. ![[2026-10-20 gate editor, part keyframes, A dope sheet and B one track.png|300]] (that mockup shows the gate case; the next two start from the editor as it is, then the stage page with a dope sheet (A) or the frames as pictures (B, picked)) → [[2026-10-20]]
+> - **Rotation drawn in the room**: only the stage's outline turns; how the swing's chains and seat and a Clawd should look turned is parked (a mockup of three ways, 2026-10-21, in `gallery/mock/out/19-rotate/`, not picked).
+> - **More cases in the room**: the barista's brewing, gates appearing as part animations (simple / construct, then their keys).
 >   ![[2026-10-21 part animations in the editor, a Clawd on the swing (now, A dope sheet, B frames, B picked).png|300]]
 >   ![[2026-10-21 part animations in the editor, the barista brewing (now, A dope sheet, B frames, B picked).png|300]]
 

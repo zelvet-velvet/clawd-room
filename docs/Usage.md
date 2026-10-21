@@ -61,3 +61,22 @@ arrows or W A S D move the view) and back to auto follow. While zoomed, the stat
 follow, so the first Clawd to come in is followed. `z` turns auto zoom on or off: the zoom then frames the busy Clawds (close on one, wider for several).
 A Clawd walking out through a gate takes the camera to the door, rope or stairs; once it has crossed the camera zooms out to
 the whole room (not in free mode). Zooming never moves the gates: they line up with the next window as at 1x.
+
+## Part animations: the stage page
+
+    ./clawd-room.sh --edit anims/swing         # a part animation of anims/ on the editor's stage page (or the ANIMS tab of the picker)
+    ./clawd-room.sh --edit list                # names them too: anims/swing, anims/brew
+
+A part animation is a thing of the room made of parts with keys (a key: a part's pose at one frame; the frames between are worked out). The file format is in the header of `anims/swing.txt`; what you change is saved to `~/.clawd-room/anims/` (yours, used over the default).
+
+| Key / mouse | Does |
+| --- | --- |
+| click a part (stage or list), `[` `]` | pick a part |
+| SELECT, drag a handle | resize the part's box |
+| MOVE / ROTATE, drag on the stage | move / turn the part pressed on, at this frame (a sprite does not turn) |
+| KEY, `k` / `x` / `e` | add a key / delete it / its ease |
+| left / right, click a frame | the frame |
+| up / down, `<` `>` | pick a value, change it |
+| `+ -`, wheel; `W A S D`, right drag; `0` | zoom; move the view; as it was |
+| `o`, `v` | onion skin; the keys' marks on the stage |
+| Space, `u` / `r`, `?`, `q` | play; undo / redo; the keys; quit (save or discard) |
