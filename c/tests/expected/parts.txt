@@ -1,4 +1,4 @@
-swing.txt: swing length 1.60 loop parts 5
+swing.txt: swing length 1.96 loop parts 5
   bar      frame    t=-0.10 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
   bar      frame    t= 0.00 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
   bar      frame    t= 0.20 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
@@ -8,42 +8,42 @@ swing.txt: swing length 1.60 loop parts 5
   bar      frame    t= 1.60 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
   bar      frame    t= 1.70 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
   bar      frame    t= 2.50 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  chain-l  swing    t=-0.10 x=  0.00 y=  0.00 turn=  -7.50 glow=  0.00 show=1
-  chain-l  swing    t= 0.00 x=  0.00 y=  0.00 turn=  -8.00 glow=  0.00 show=1
-  chain-l  swing    t= 0.20 x=  0.00 y=  0.00 turn=  -6.00 glow=  0.00 show=1
-  chain-l  swing    t= 0.40 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  chain-l  swing    t= 0.80 x=  0.00 y=  0.00 turn=   8.00 glow=  0.00 show=1
-  chain-l  swing    t= 1.20 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  chain-l  swing    t= 1.60 x=  0.00 y=  0.00 turn=  -8.00 glow=  0.00 show=1
-  chain-l  swing    t= 1.70 x=  0.00 y=  0.00 turn=  -7.50 glow=  0.00 show=1
-  chain-l  swing    t= 2.50 x=  0.00 y=  0.00 turn=   7.50 glow=  0.00 show=1
-  chain-r  swing    t=-0.10 x=  0.00 y=  0.00 turn=  -7.50 glow=  0.00 show=1
-  chain-r  swing    t= 0.00 x=  0.00 y=  0.00 turn=  -8.00 glow=  0.00 show=1
-  chain-r  swing    t= 0.20 x=  0.00 y=  0.00 turn=  -6.00 glow=  0.00 show=1
-  chain-r  swing    t= 0.40 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  chain-r  swing    t= 0.80 x=  0.00 y=  0.00 turn=   8.00 glow=  0.00 show=1
-  chain-r  swing    t= 1.20 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  chain-r  swing    t= 1.60 x=  0.00 y=  0.00 turn=  -8.00 glow=  0.00 show=1
-  chain-r  swing    t= 1.70 x=  0.00 y=  0.00 turn=  -7.50 glow=  0.00 show=1
-  chain-r  swing    t= 2.50 x=  0.00 y=  0.00 turn=   7.50 glow=  0.00 show=1
-  seat     swing    t=-0.10 x=  0.00 y=  1.87 turn=  -7.50 glow=  0.00 show=1
-  seat     swing    t= 0.00 x=  0.00 y=  2.00 turn=  -8.00 glow=  0.00 show=1
-  seat     swing    t= 0.20 x=  0.00 y=  1.50 turn=  -6.00 glow=  0.00 show=1
-  seat     swing    t= 0.40 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  seat     swing    t= 0.80 x=  0.00 y= -2.00 turn=   8.00 glow=  0.00 show=1
-  seat     swing    t= 1.20 x=  0.00 y= -0.00 turn=   0.00 glow=  0.00 show=1
-  seat     swing    t= 1.60 x=  0.00 y=  2.00 turn=  -8.00 glow=  0.00 show=1
-  seat     swing    t= 1.70 x=  0.00 y=  1.88 turn=  -7.50 glow=  0.00 show=1
-  seat     swing    t= 2.50 x=  0.00 y= -1.88 turn=   7.50 glow=  0.00 show=1
-  clawd    swing    t=-0.10 x=  0.00 y=  1.87 turn=   0.00 glow=  0.00 show=1
-  clawd    swing    t= 0.00 x=  0.00 y=  2.00 turn=   0.00 glow=  0.00 show=1
-  clawd    swing    t= 0.20 x=  0.00 y=  1.50 turn=   0.00 glow=  0.00 show=1
-  clawd    swing    t= 0.40 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  clawd    swing    t= 0.80 x=  0.00 y= -2.00 turn=   0.00 glow=  0.00 show=1
-  clawd    swing    t= 1.20 x=  0.00 y= -0.00 turn=   0.00 glow=  0.00 show=1
-  clawd    swing    t= 1.60 x=  0.00 y=  2.00 turn=   0.00 glow=  0.00 show=1
-  clawd    swing    t= 1.70 x=  0.00 y=  1.88 turn=   0.00 glow=  0.00 show=1
-  clawd    swing    t= 2.50 x=  0.00 y= -1.88 turn=   0.00 glow=  0.00 show=1
+  chain-l  swing    t=-0.10 x=  0.00 y=  0.00 turn=  -2.52 glow=  0.00 show=1
+  chain-l  swing    t= 0.00 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
+  chain-l  swing    t= 0.20 x=  0.00 y=  0.00 turn=   4.78 glow=  0.00 show=1
+  chain-l  swing    t= 0.40 x=  0.00 y=  0.00 turn=   7.66 glow=  0.00 show=1
+  chain-l  swing    t= 0.80 x=  0.00 y=  0.00 turn=   4.40 glow=  0.00 show=1
+  chain-l  swing    t= 1.20 x=  0.00 y=  0.00 turn=  -5.14 glow=  0.00 show=1
+  chain-l  swing    t= 1.60 x=  0.00 y=  0.00 turn=  -7.34 glow=  0.00 show=1
+  chain-l  swing    t= 1.70 x=  0.00 y=  0.00 turn=  -5.97 glow=  0.00 show=1
+  chain-l  swing    t= 2.50 x=  0.00 y=  0.00 turn=   7.91 glow=  0.00 show=1
+  chain-r  swing    t=-0.10 x=  0.00 y=  0.00 turn=  -2.52 glow=  0.00 show=1
+  chain-r  swing    t= 0.00 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
+  chain-r  swing    t= 0.20 x=  0.00 y=  0.00 turn=   4.78 glow=  0.00 show=1
+  chain-r  swing    t= 0.40 x=  0.00 y=  0.00 turn=   7.66 glow=  0.00 show=1
+  chain-r  swing    t= 0.80 x=  0.00 y=  0.00 turn=   4.40 glow=  0.00 show=1
+  chain-r  swing    t= 1.20 x=  0.00 y=  0.00 turn=  -5.14 glow=  0.00 show=1
+  chain-r  swing    t= 1.60 x=  0.00 y=  0.00 turn=  -7.34 glow=  0.00 show=1
+  chain-r  swing    t= 1.70 x=  0.00 y=  0.00 turn=  -5.97 glow=  0.00 show=1
+  chain-r  swing    t= 2.50 x=  0.00 y=  0.00 turn=   7.91 glow=  0.00 show=1
+  seat     swing    t=-0.10 x=  0.00 y= -0.63 turn=   0.00 glow=  0.00 show=1
+  seat     swing    t= 0.00 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
+  seat     swing    t= 0.20 x=  0.00 y=  1.19 turn=   0.00 glow=  0.00 show=1
+  seat     swing    t= 0.40 x=  0.00 y=  1.92 turn=   0.00 glow=  0.00 show=1
+  seat     swing    t= 0.80 x=  0.00 y=  1.10 turn=   0.00 glow=  0.00 show=1
+  seat     swing    t= 1.20 x=  0.00 y= -1.29 turn=   0.00 glow=  0.00 show=1
+  seat     swing    t= 1.60 x=  0.00 y= -1.84 turn=   0.00 glow=  0.00 show=1
+  seat     swing    t= 1.70 x=  0.00 y= -1.49 turn=   0.00 glow=  0.00 show=1
+  seat     swing    t= 2.50 x=  0.00 y=  1.98 turn=   0.00 glow=  0.00 show=1
+  clawd    swing    t=-0.10 x=  0.00 y= -0.63 turn=   0.00 glow=  0.00 show=1
+  clawd    swing    t= 0.00 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
+  clawd    swing    t= 0.20 x=  0.00 y=  1.19 turn=   0.00 glow=  0.00 show=1
+  clawd    swing    t= 0.40 x=  0.00 y=  1.92 turn=   0.00 glow=  0.00 show=1
+  clawd    swing    t= 0.80 x=  0.00 y=  1.10 turn=   0.00 glow=  0.00 show=1
+  clawd    swing    t= 1.20 x=  0.00 y= -1.29 turn=   0.00 glow=  0.00 show=1
+  clawd    swing    t= 1.60 x=  0.00 y= -1.84 turn=   0.00 glow=  0.00 show=1
+  clawd    swing    t= 1.70 x=  0.00 y= -1.49 turn=   0.00 glow=  0.00 show=1
+  clawd    swing    t= 2.50 x=  0.00 y=  1.98 turn=   0.00 glow=  0.00 show=1
 brew.txt: brew length 1.70 once parts 4
   machine  machine  t=-0.10 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
   machine  machine  t= 0.00 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1

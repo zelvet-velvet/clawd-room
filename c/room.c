@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "room.h"
+#include "parts.h"
 
 #define HOLD_WORK 0.8
 #define STALE_AFTER 1800.0
@@ -536,9 +537,10 @@ static void plan(Room *r, Session *s, int has_seat, double seat_x, double seat_y
 static void play(Session *s, const Geo *geo, double now) { /* swing back and forth, climb the ladder and slide down */
     double u = now - s->emote_start;
     if (!strcmp(s->emote, "swing")) {
-        double ph = u * 3.2;
+        const PartAnim *an = parts_get("swing"); /* (anims/swing.txt, its clawd part: 2 * sin(3.2 u) when there is no file) */
+        int cl = an ? parts_find(an, "clawd") : -1;
         s->px = geo->spots.swing.x;              /* the swing set faces us: towards us and back */
-        s->py = geo->spots.swing.y + 2 * sin(ph);
+        s->py = geo->spots.swing.y + (cl >= 0 ? parts_pose(an, cl, u).y : 2 * sin(u * 3.2));
     } else {
         double bx = geo->spots.slide.base[0], by = geo->spots.slide.base[1], tx = geo->spots.slide.top[0], ty = geo->spots.slide.top[1];
         double ex = geo->spots.slide.bottom[0], ey = geo->spots.slide.bottom[1];
@@ -820,4 +822,12 @@ void room_step(Room *r, const Geo *geo, double now) {
         if (r->ngp == before) i++; /* (a guest that left was removed: the next one is now at i) */
     }
     fly(r, dt);
+}
+
+void room_emote(Room *r, const char *sid, const char *kind, double now, double dur) { /* (for the scripts: that Clawd starts that emote now) */
+    Session *s = find_any(r, sid);
+    if (!s) return;
+    snprintf(s->emote, sizeof s->emote, "%s", kind);
+    s->emote_start = now; s->emote_end = now + dur;
+    s->has_pos = 1; s->has_goal = 0; s->moving = 0;
 }

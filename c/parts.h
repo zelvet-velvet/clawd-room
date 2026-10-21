@@ -16,6 +16,8 @@ typedef struct { char name[24], group[24]; PartKey key[PARTS_MAX_KEYS]; int nkey
 typedef struct { char name[24]; double length; int loop; Part part[PARTS_MAX]; int npart; } PartAnim;
 
 int parts_load(PartAnim *a, const char *path);                   /* 0 ok; on an error says which line on stderr and returns -1 */
+void parts_set_dir(const char *dir);                              /* the folder of the animation files */
+const PartAnim *parts_get(const char *name);                       /* anims/NAME.txt, loaded and read again when it changes; NULL if there is none */
 int parts_find(const PartAnim *a, const char *part);              /* the part's index, or -1 */
 PartPose parts_pose(const PartAnim *a, int part, double t);       /* where it is at time t seconds (a looping animation wraps t) */
 #endif

@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include "parts.h"
 
 static int ease_by_name(const char *s) {
@@ -10,6 +11,10 @@ static int ease_by_name(const char *s) {
     if (!strcmp(s, "out")) return EASE_OUT;
     if (!strcmp(s, "in-out")) return EASE_IN_OUT;
     if (!strcmp(s, "back")) return EASE_BACK;
+    if (!strcmp(s, "in")) return EASE_IN;
+    if (!strcmp(s, "sine")) return EASE_SINE;
+    if (!strcmp(s, "sine-out")) return EASE_SINE_OUT;
+    if (!strcmp(s, "sine-in")) return EASE_SINE_IN;
     return -1;
 }
 int parts_find(const PartAnim *a, const char *part) {
@@ -113,4 +118,25 @@ PartPose parts_pose(const PartAnim *a, int part, double t) {
     r.glow = k0->pose.glow + (k1->pose.glow - k0->pose.glow) * e;
     r.show = k0->pose.show; /* (shows or hides at the key, not in between) */
     return r;
+}
+
+/* the anims folder (next to sprites/ and rooms/) and the animations in it, each read again when its file changes (like the room files) */
+static char g_dir[600];
+void parts_set_dir(const char *dir) { snprintf(g_dir, sizeof g_dir, "%s", dir ? dir : ""); }
+#define NAMED 8
+const PartAnim *parts_get(const char *name) {
+    static struct { char name[24]; PartAnim a; time_t mt; int ok, tried; } C[NAMED];
+    struct stat st;
+    char path[700];
+    int k = 0;
+    while (k < NAMED && C[k].tried && strcmp(C[k].name, name)) k++;
+    if (k == NAMED || !g_dir[0]) return NULL;
+    snprintf(path, sizeof path, "%s/%s.txt", g_dir, name);
+    if (stat(path, &st) != 0) { C[k].tried = 1; C[k].ok = 0; snprintf(C[k].name, sizeof C[k].name, "%s", name); return NULL; }
+    if (!C[k].tried || st.st_mtime != C[k].mt) { /* (new, or the file changed: a file with a mistake keeps the last good one) */
+        static PartAnim fresh;
+        C[k].tried = 1; C[k].mt = st.st_mtime; snprintf(C[k].name, sizeof C[k].name, "%s", name);
+        if (parts_load(&fresh, path) == 0) { C[k].a = fresh; C[k].ok = 1; }
+    }
+    return C[k].ok ? &C[k].a : NULL;
 }
