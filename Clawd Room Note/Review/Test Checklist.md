@@ -142,6 +142,17 @@ What to test next, one `[!example] Group X · …` callout per group. Each test 
 > > 1. `git switch feat/gate-parts` in the repo (until its pull request is merged).
 > > 2. Your edits are in `~/.clawd-room/anims/gate-*.txt`; delete them (or RESET in the picker) to go back.
 
+> [!example] Group J · WSL: folding the stage page's panel and timeline; the picker's search (T45–T49)
+> - [ ] **T45** `./clawd-room.sh --edit anims/gate-stairs` → the panel on the right has the same gap to the stage as to the window's edge, at any window size.
+> - [ ] **T46** `p` (or the fold button, top right) → the panel folds to a ribbon of the four tools; the stage grows; the tools still work. `p` again opens it.
+> - [ ] **T47** Drag the line above the frames down → the timeline folds to its one line; drag it up → the frames come back. The line's grip never touches KEYS ON.
+> - [ ] **T48** `./clawd-room.sh --edit` → the search box is framed yellow; typing finds; `q` with the box empty quits. Click a card → the frame goes, letters do nothing, `q` quits.
+> - [ ] **T49** Click the search box, type `q` → a Q is typed (the window stays). Esc clears it, Esc again leaves the box, `q` then quits.
+>
+> > [!tip]- T45–T49 · how to run them
+> > 1. `git switch feat/gate-parts` in the repo (until its pull request is merged).
+> > 2. Try a narrow and a wide window for T45 – T47.
+
 ## Rooms and art ([[Rooms and Art]])
 - [x] Each room (office, coffee shop, park) looks like the mockups at your window size
 - [x] Seated Clawds show behind their desk / table / bench; the barista behind the bar

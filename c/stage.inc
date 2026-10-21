@@ -6,7 +6,7 @@
  *   mouse: a part on the stage or in the list picks it; SELECT / MOVE / ROTATE / KEY tools: MOVE drags the picked part, ROTATE drags
  *          its angle, KEY adds a key at this frame; < > beside a value change it at this frame (a key is made if there is none)
  *   keys:  left / right frame, Space play, up / down value, + - change it, [ ] part, k add key, x delete key, e ease of the key,
- *          u / r undo / redo, q quit */
+ *          u / r undo / redo, p fold the panel (like the editor: the fold button too; the line above the frames folds them), q quit */
 #include "fixture.h"
 #include "parts.h"
 
@@ -19,6 +19,7 @@ enum { R_SSTAGE = 64, R_SVAL, R_SPART, R_SKEY, R_SKEYDEL, R_SEASE, R_STOOL, R_SP
 #define ST_TW 44           /* a frame as a picture */
 #define ST_TH 26
 #define ST_BG RGB(18, 18, 24)
+#define ST_GAP 9           /* the gap between the stage's frame and the panel, and between the panel and the window's edge */
 #define ST_ROWS 5          /* the values: move x, move y, rotate, show, glow (grow is the bar under the panel) */
 static const char *const ST_ROW[ST_ROWS] = {"MOVE X", "MOVE Y", "ROTATE", "SHOW", "GLOW"};
 static const char *const ST_EASE[] = {"LINEAR", "OUT", "IN OUT", "BACK", "IN", "SINE", "SINE OUT", "SINE IN"};
@@ -32,6 +33,8 @@ typedef struct {
     int hide_keys;            /* the keys' marks on the stage are hidden (v, or the KEYS button under the stage) */
     int hscroll;              /* the help box scrolls when the window is too short for it */
     int growdrag;             /* dragging the grow bar */
+    int folded, fold_hover;   /* p or the fold button: the panel folded to a ribbon of the tools (like the editor's) */
+    int tl_folded, div_drag, div_hover; /* the line above the timeline dragged down: the timeline folded to its top line */
     int focus;                /* the view goes to the picked part (put in the middle) at the next drawing */
     int zoom;                 /* the stage's zoom (0: as the window fits); vx, vy: the room pixel at its top left (vw, vh: what it shows) */
     int pscroll, pfollow;     /* the panel scrolls: how far, and whether it should bring the picked value into view */
@@ -196,13 +199,13 @@ static void st_box(const Part *p, PartPose q, int *x, int *y, int *w, int *h) { 
 typedef struct { int gx, ty, cw, ah, z, px, fw, th, y0; } StLayout; /* the stage's corner and size, the panel's left and width, the timeline's height and top */
 static StLayout st_layout(const Stage *s, int W, int H) {
     StLayout L;
-    L.th = H >= 150 ? 3 + 12 + ST_TH + 22 : 15; /* (too short: the timeline's line only) */
+    L.th = H >= 150 && !s->tl_folded ? 3 + 12 + ST_TH + 22 : 15; /* (too short, or folded: the timeline's line only) */
     L.y0 = H - L.th;
     L.gx = 4; L.ty = 12;
-    L.fw = W >= 280 ? 104 : W >= 200 ? 96 : 84; /* (a narrow window: a narrower panel) */
-    L.px = W - 4 - L.fw;
-    L.cw = L.px - 10 - L.gx;
-    L.ah = L.y0 - 12 - L.ty;
+    L.fw = s->folded ? RIBBON : W >= 280 ? 104 : W >= 200 ? 96 : 84; /* (a narrow window: a narrower panel; folded, the ribbon) */
+    L.px = W - ST_GAP - L.fw - (s->folded ? 0 : 2); /* (the same gap left and right of the panel: its scroll bar is 2 more) */
+    L.cw = L.px - ST_GAP - 1 - L.gx;
+    L.ah = L.y0 - 14 - L.ty; /* (the line under the stage: its buttons clear of the timeline's grip) */
     L.z = s->zoom > 0 ? s->zoom : L.cw >= 120 ? 2 : 1;
     return L;
 }
@@ -235,7 +238,9 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
     char buf[160];
     snprintf(buf, sizeof buf, "EDIT %s  ANIMS/%s.TXT  %d PART%s", a->name, s->name, a->npart, a->npart == 1 ? "" : "S");
     for (char *p = buf; *p; p++) if (*p >= 'a' && *p <= 'z') *p -= 32;
+    while (buf[0] && 4 + text_width(buf) + 6 > cv->w - 4 - 9) buf[strlen(buf) - 1] = 0; /* (never touching the fold button) */
     canvas_text(cv, 4, 3, buf, C_YELLOW);
+    fold_button(cv, s->folded, s->fold_hover);
     /* the stage: the room at this time, a crop of it, every part outlined (the picked one yellow), the picked part's keys */
     Canvas shot = st_shot(a, t);
     if (s->onion && !s->playing) { /* onion skin: where the frame before / after differs from this one, it shows faintly red / blue */
@@ -331,7 +336,7 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
         canvas_text(cv, L.gx, L.ty + L.ah + 4, line, s->msg[0] ? C_YELLOW : C_GREY);
         button(cv, kx, L.ty + L.ah + 2, kl, !s->hide_keys, R_SKEYSHOW, 0);
     }
-    if (s->pick >= 0 && s->pick < a->npart) { /* GROW: how much of the picked part has come in at this frame (a running figure, a bar; click or drag it) */
+    if (!s->folded && s->pick >= 0 && s->pick < a->npart) { /* GROW: how much of the picked part has come in at this frame (a running figure, a bar; click or drag it) */
         int gx0 = L.px, gy0 = L.ty + L.ah + 2, bx0 = gx0 + 17, bw = L.fw - 17, g = (int)lround(parts_pose(a, s->pick, t).grow);
         g = g < 0 ? 0 : g > 100 ? 100 : g;
         char fig[16]; /* (a Clawd from sprites/ui.txt, always running: faster while the bar is dragged or PLAY runs; at rest it steps with the page's redraws) */
@@ -349,10 +354,16 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
     int roww = 0;
     for (int i = 0; i < 4; i++) roww += text_width(TOOL[i]) > 13 ? text_width(TOOL[i]) : 13;
     if (roww + 3 * 4 > fw) { TOOL = SHORT; roww = 0; for (int i = 0; i < 4; i++) roww += text_width(TOOL[i]) > 13 ? text_width(TOOL[i]) : 13; } /* (a narrow window: the names never touch) */
-    int sr = L.gx + L.cw + 1, x0t = (cv->w - 1 - fw + sr) / 2; /* (the row in the middle between the stage's frame (sr: the first column right of it) and the window's edge: the same gap left and right) */
     for (int i = 0, used = 0; i < 4; i++) {
-        int cw = text_width(TOOL[i]) > 13 ? text_width(TOOL[i]) : 13, tx = x0t + used + (fw - roww) * i / 3;
+        int cw = text_width(TOOL[i]) > 13 ? text_width(TOOL[i]) : 13, tx = x + used + (fw - roww) * i / 3;
         used += cw;
+        if (s->folded) { /* folded: a ribbon, the tools one over another (no names) */
+            int ry = y + i * 17, off = i == 2 && s->pick < a->npart && a->part[s->pick].sprite, keyed = i == 3 && s->pick < a->npart && st_key_at(&a->part[s->pick], st_t(cur)) >= 0;
+            stage_tool(cv, x, ry, i, i == 3 ? keyed : s->tool == i && !off);
+            if (off) st_dim(cv, x, ry, 13, 15);
+            region(R_STOOL, i, x, ry, 13, 15, RGB(0, 0, 0));
+            continue;
+        }
         int off = i == 2 && s->pick < a->npart && a->part[s->pick].sprite; /* (a sprite does not rotate) */
         int keyed = i == 3 && s->pick < a->npart && st_key_at(&a->part[s->pick], st_t(cur)) >= 0; /* (KEY is not a tool: a toggle, pressed in when this frame is a key of the picked part) */
         stage_tool(cv, tx + (cw - 13) / 2, y, i, i == 3 ? keyed : s->tool == i && !off);
@@ -360,12 +371,13 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
         canvas_text(cv, tx + (cw - text_width(TOOL[i])) / 2, y + 16, TOOL[i], off ? RGB(70, 70, 86) : keyed ? C_YELLOW : i != 3 && s->tool == i ? C_WHITE : C_GREY);
         region(R_STOOL, i, tx, y, cw, 21, RGB(0, 0, 0));
     }
+    const Part *pp = s->pick < a->npart ? &a->part[s->pick] : NULL;
+    if (!s->folded) { /* (the rest of the panel: not while it is folded) */
     int top = L.ty + 27, pvis = pbot - top;
     if (pvis < 16) pvis = 16;
     region(R_SPANEL, 0, x, top, fw + 2, pvis, RGB(0, 0, 0));
     int n0 = g_nreg;
     Canvas pc = canvas_new(fw + 2, 300, ST_BG); /* (the rest of the panel is drawn whole, then the part that is in view is copied: it scrolls) */
-    const Part *pp = s->pick < a->npart ? &a->part[s->pick] : NULL;
     PartPose q = pp ? parts_pose(a, s->pick, t) : (PartPose){0, 0, 0, 0, 1, 100};
     int kat = pp ? st_key_at(pp, st_t(cur)) : -1, py = 0, row_y[ST_ROWS] = {0};
     if (pp) {
@@ -431,9 +443,16 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
         canvas_rect(cv, bx2, k0, 1, k1 - k0 > 4 ? k1 - k0 : 4, RGB(140, 140, 160));
     }
     canvas_free(&pc);
+    } /* (the panel, unfolded) */
     /* the timeline: its line, the thing as in the room at its left, the frames as pictures with the picked part's keys under them */
     int ty0 = L.y0, ly = ty0 + 3;
-    canvas_rect(cv, 0, ty0, cv->w, 1, RGB(44, 44, 56));
+    canvas_rect(cv, 0, ty0, cv->w, 1, s->div_drag || s->div_hover ? RGB(120, 120, 150) : RGB(44, 44, 56)); /* the divider: drag it down to fold the timeline to this line, up to open it (the editor's handle) */
+    if (cv->h >= 150) {
+        Rgb hk = s->div_drag || s->div_hover ? RGB(170, 170, 200) : RGB(74, 74, 92);
+        int hx = cv->w / 2 - 10;
+        canvas_rect(cv, hx + 1, ty0 - 1, 18, 3, hk); canvas_rect(cv, hx, ty0, 20, 1, hk);
+        region(R_DIV, 0, 0, ty0 - 2, cv->w, 5, RGB(0, 0, 0));
+    }
     const char *sh = cv->w >= 220 ? "? SHORTCUTS  Q QUIT" : "? HELP  Q QUIT";
     int lw = text_width(sh) + 16, sx0 = lw, sx1 = cv->w - 4;
     canvas_rect(cv, sx0 - 8, ty0 + 1, 1, L.th - 1, RGB(40, 40, 52));
@@ -507,8 +526,8 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
         canvas_text(cv, bx + (w - text_width(b)) / 2, by + 14, b, C_WHITE);
     }
     if (s->help) { /* ?: the keys and the mouse, in a box over the stage; a window too short for it scrolls it (up / down, the wheel) */
-        static const char *const H[] = {"HELP  (UP DOWN SCROLLS)", "MOUSE", "CLICK A PART: PICK IT", "SELECT: DRAG A BORDER TO RESIZE", "MOVE / ROTATE: DRAG ON THE STAGE", "KEY: A KEY AT THIS FRAME, OR NONE", "< > BESIDE A VALUE: CHANGE IT", "THE BAR BY THE RUNNING CLAWD: HOW MUCH HAS COME IN", "CLICK A FRAME: GO THERE", "WHEEL: ZOOM / SCROLL THE PANEL", "RIGHT DRAG: MOVE THE VIEW",
-                                        "KEYS", "LEFT RIGHT  FRAME", "UP DOWN  A VALUE", "< >  CHANGE IT", "+ -  ZOOM THE STAGE", "W A S D  MOVE THE VIEW", "0  ZOOM AS IT WAS, THE PART IN THE MIDDLE", "V  KEYS ON THE STAGE: ON / OFF", "SPACE  PLAY", "O  ONION SKIN (BEFORE RED, AFTER BLUE)", "[ ]  OTHER PART", "K  A KEY HERE OR NONE", "X  DELETE THE KEY", "E  KEY EASE", "U R  UNDO REDO", "Q  QUIT"};
+        static const char *const H[] = {"HELP  (UP DOWN SCROLLS)", "MOUSE", "CLICK A PART: PICK IT", "SELECT: DRAG A BORDER TO RESIZE", "MOVE / ROTATE: DRAG ON THE STAGE", "KEY: A KEY AT THIS FRAME, OR NONE", "< > BESIDE A VALUE: CHANGE IT", "THE BAR BY THE RUNNING CLAWD: HOW MUCH HAS COME IN", "CLICK A FRAME: GO THERE", "WHEEL: ZOOM / SCROLL THE PANEL", "RIGHT DRAG: MOVE THE VIEW", "DRAG THE LINE ABOVE THE FRAMES: FOLD THEM", "THE BUTTON TOP RIGHT: FOLD THE PANEL",
+                                        "KEYS", "LEFT RIGHT  FRAME", "UP DOWN  A VALUE", "< >  CHANGE IT", "+ -  ZOOM THE STAGE", "W A S D  MOVE THE VIEW", "0  ZOOM AS IT WAS, THE PART IN THE MIDDLE", "V  KEYS ON THE STAGE: ON / OFF", "P  FOLD THE PANEL", "SPACE  PLAY", "O  ONION SKIN (BEFORE RED, AFTER BLUE)", "[ ]  OTHER PART", "K  A KEY HERE OR NONE", "X  DELETE THE KEY", "E  KEY EASE", "U R  UNDO REDO", "Q  QUIT"};
         int n = (int)(sizeof H / sizeof *H), bw2 = 0;
         for (int i = 0; i < n; i++) if (text_width(H[i]) > bw2) bw2 = text_width(H[i]);
         int vis = (cv->h - 12 - 4 - 8) / 7, w = bw2 + 14; /* (as many lines as the window has room for) */
@@ -726,8 +745,17 @@ static int stage_loop(const char *dir, const char *name) {
                         }
                         continue;
                     }
+                    if (s.div_drag) { /* (dragging the line above the timeline: below two thirds of it, folded to its top line) */
+                        if (release) s.div_drag = 0;
+                        else if (motion) s.tl_folded = rows * 2 - py < (3 + 12 + ST_TH + 22) * 2 / 3;
+                        continue;
+                    }
+                    s.fold_hover = rg && rg->kind == R_FOLD;
+                    s.div_hover = rg && rg->kind == R_DIV;
                     if (release || motion || btn != 0 || !rg) continue;
                     s.msg[0] = 0;
+                    if (rg->kind == R_FOLD) { s.folded = !s.folded; continue; }
+                    if (rg->kind == R_DIV) { s.div_drag = 1; continue; }
                     if (rg->kind == R_SGROW) { s.playing = 0; st_push(&s); s.growdrag = 1; st_grow_to(&s, &L, px); continue; }
                     if (rg->kind == R_SSCROLL) { s.sbdrag = 1; s.first = (int)((long)(px - s.sb_x0) * nf / s.sb_w) - s.cap / 2; if (s.first > nf - s.cap) s.first = nf - s.cap; if (s.first < 0) s.first = 0; continue; }
                     if (rg->kind == R_SSTAGE) {
@@ -788,6 +816,7 @@ static int stage_loop(const char *dir, const char *name) {
             else if (ch == '+' || ch == '=') st_zoom(&s, &L, 1);
             else if (ch == '-') st_zoom(&s, &L, -1);
             else if (ch == 'v' || ch == 'V') s.hide_keys = !s.hide_keys;
+            else if (ch == 'p' || ch == 'P') s.folded = !s.folded; /* (the panel folds / unfolds, like the editor's) */
             else if (ch == 'o' || ch == 'O') s.onion = !s.onion;
             else if (ch == '0') { s.zoom = 0; s.vx = s.a.view_x; s.vy = s.a.view_y; s.focus = 1; } /* (the zoom as it was, the picked part in the middle) */
             else if (ch == 'w' || ch == 'W') st_pan(&s, 0, -1);

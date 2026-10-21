@@ -14,6 +14,7 @@ static void shot_sized(const char *dir, const char *name, int frame, int pick, i
     if (asking == 2) { s.asking = 0; s.a.part[3].key[0].pose.turn = 25; s.a.part[4].key[0].pose.turn = -15; }
     if (asking == 2) snprintf(s.msg, sizeof s.msg, "KEY ADDED: SEAT AT FRAME 1");
     s.pscroll = pscroll;
+    if (getenv("SHOT_FOLD")) { int f = atoi(getenv("SHOT_FOLD")); s.folded = f & 1; s.tl_folded = (f & 2) != 0; } /* (1 the panel folded, 2 the timeline, 3 both) */
     if (getenv("SHOT_VIEW")) { s.zoom = 3; s.vx = 0; s.vy = 30; } /* (zoomed and moved: a part out of view) */
     Canvas cv = canvas_new(W, H, ST_BG);
     stage_draw(&s, &cv, 0);
@@ -37,6 +38,7 @@ static void sizes_shot(const char *dir, const char *out) { /* the page at window
         static Stage s;
         if (stage_open(&s, "swing")) return;
         s.frame = 3; s.pick = 4; s.tool = 2;
+        if (getenv("SHOT_FOLD")) { int f = atoi(getenv("SHOT_FOLD")); s.folded = f & 1; s.tl_folded = (f & 2) != 0; }
         snprintf(s.msg, sizeof s.msg, "A SPRITE MOVES, IT DOES NOT ROTATE");
         Canvas cv = canvas_new(WH[k][0], WH[k][1], ST_BG);
         stage_draw(&s, &cv, 0);

@@ -69,6 +69,8 @@ typedef struct {
     int page;                                 /* 0 editing, 1 the sprite picker (--edit with no name, or l) */
     char find[32]; int psel, ptab, pview, pscroll, came_from_edit; /* the picker: what is typed, the one picked, the file tab,
                                                  the view (0 cards, 1 a list), how far it scrolled, opened from editing */
+    int pfocus;                               /* the picker's search box has the focus: letters go into it (1 as the picker opens: q still
+                                                 quits while it is empty; 2 clicked: q is typed too; 0 a click elsewhere: nothing is typed) */
 } Ed;
 
 static char *slurp(const char *path) {
@@ -505,7 +507,7 @@ static void swap_undo(Ed *e, int at) {
 /* ---- the screen: canvas pixels; one terminal cell is 1 pixel wide and 2 high ---------------------------------------- */
 /* what is where, filled while drawing, so a click finds what it is on */
 enum { R_GRID, R_TOOL, R_FILE, R_NEW, R_FIELD, R_HUE, R_HEX, R_NUM, R_ADD, R_FRAME, R_FADD, R_PLAY, R_SPEED, R_ONION, R_STRIP, R_DIV, R_FOLD, R_PITEM, R_PTAB, R_PVIEW,
-       R_PRESET, R_PRESETALL, R_PMAKEDEF };
+       R_PRESET, R_PRESETALL, R_PMAKEDEF, R_PFIND };
 typedef struct { int kind, i, x0, y0, x1, y1; Rgb c; } Region;
 static Region g_reg[320];
 static int g_nreg;
@@ -823,6 +825,18 @@ static int fill_area(const Ed *e, int x, int y, unsigned char m[MAXH][MAXW]) {
  * frames (click one to open it; the open one framed in yellow, the one playing marked under it; + adds a frame to a
  * prop). On the left: the short help ("? SHORTCUTS  Q QUIT") in a short window, and the frame playing when the panel has
  * no room for the real-size view. */
+/* the fold button, top right: a small window in dim lines, its right part (the panel) shaded while it is open; brighter under the
+   pointer (the stage page has one too) */
+static void fold_button(Canvas *cv, int folded, int hover) {
+    int fx = cv->w - 4 - 9, fy = 3;
+    region(R_FOLD, 0, fx - 1, fy - 1, 11, 8, RGB(0, 0, 0));
+    if (ui_icon(cv, folded ? "fold-closed" : "fold-open", fx, fy, hover ? 0.4 : 0)) return;
+    Rgb k = hover ? RGB(150, 150, 175) : RGB(76, 76, 96), fill = hover ? RGB(90, 90, 112) : RGB(46, 46, 60);
+    canvas_rect(cv, fx + 1, fy, 7, 1, k); canvas_rect(cv, fx + 1, fy + 4, 7, 1, k);       /* (its outline without the corner */
+    canvas_rect(cv, fx, fy + 1, 1, 3, k); canvas_rect(cv, fx + 8, fy + 1, 1, 3, k);       /*  pixels: softly rounded) */
+    if (!folded) canvas_rect(cv, fx + 6, fy + 1, 2, 3, fill);
+    canvas_rect(cv, fx + 5, fy + 1, 1, 3, k);
+}
 static void draw_timeline(Canvas *cv, const Ed *e, double now, int preview, int short_help) {
     int fr[128], n = anim_frames(&e->f, e->sp, fr, 128), at = frame_index(fr, n, e->sp), num, props = !strcmp(FILES[e->file], "props.txt");
     int th = timeline_h(e, cv->h), y0 = cv->h - th, y = y0 + 3, full = th >= tl_full(e, 1);
@@ -990,10 +1004,12 @@ static void picker_view_button(Canvas *cv, int x, int y, int which, int on) {
     }
     region(R_PVIEW, which, x - 2, y - 2, 13, 11, RGB(0, 0, 0));
 }
-static void picker_search(Canvas *cv, int x, int y, int w, const char *typed) {
+static void picker_search(Canvas *cv, int x, int y, int w, const char *typed, int focus) { /* (focused: a yellow frame and the cursor) */
     canvas_rect(cv, x, y, w, 9, RGB(30, 30, 40));
-    canvas_text(cv, x + 3, y + 2, typed[0] ? typed : "TYPE TO FIND", typed[0] ? C_WHITE : RGB(90, 90, 110));
-    if (typed[0]) canvas_rect(cv, x + 3 + text_width(typed) + 1, y + 2, 3, 5, C_YELLOW);
+    if (focus) frame(cv, x, y, w, 9, C_YELLOW);
+    canvas_text(cv, x + 3, y + 2, typed[0] ? typed : focus ? "TYPE TO FIND" : "CLICK TO FIND", typed[0] ? C_WHITE : RGB(90, 90, 110));
+    if (typed[0] && focus) canvas_rect(cv, x + 3 + text_width(typed) + 1, y + 2, 3, 5, C_YELLOW);
+    region(R_PFIND, 0, x, y, w, 9, RGB(0, 0, 0));
 }
 static void draw_picker(const Ed *e, Canvas *cv, double now) {
     int W = cv->w, H = cv->h, sh[512], n = picker_shown(e, sh), k = (int)fmod(now / 0.3, 1e6); /* (k: the picked one plays; fmod: the wall clock / 0.3 is past what an int holds) */
@@ -1012,7 +1028,7 @@ static void draw_picker(const Ed *e, Canvas *cv, double now) {
             tx += tw + 2;
         }
         int sw = W - 4 - tx - 6 < 90 ? W - 4 - tx - 6 : 90;
-        if (sw > 40) picker_search(cv, W - 4 - sw, ty, sw, e->find);
+        if (sw > 40) picker_search(cv, W - 4 - sw, ty, sw, e->find, e->pfocus);
         int gap = 4, cols = (W - 8 + gap) / (46 + gap) > 0 ? (W - 8 + gap) / (46 + gap) : 1, cw = (W - 8 + gap) / cols - gap, chh = 42, y0 = ty + 16;
         int vis = (H - 24 - y0 + gap) / (chh + gap) > 0 ? (H - 24 - y0 + gap) / (chh + gap) : 1;
         g_pick_cols = cols;
@@ -1039,7 +1055,7 @@ static void draw_picker(const Ed *e, Canvas *cv, double now) {
         if ((first + vis) * cols < n) canvas_text(cv, W / 2 - 1, H - 29, "V", C_GREY);
     } else { /* a list by file, the picked one big on the right with its file, size and frames */
         int lw = W / 3 < 92 ? 92 : W / 3, y = 26;
-        picker_search(cv, 4, 14, lw - 4, e->find);
+        picker_search(cv, 4, 14, lw - 4, e->find, e->pfocus);
         int rows = (H - 26 - y) / 7, at = 0, line = 0;
         for (int j = 0; j < n; j++) { if (sh[j] == e->psel) at = j; }
         (void)rows;
@@ -1117,7 +1133,7 @@ static void draw_picker(const Ed *e, Canvas *cv, double now) {
 /* the picker opens: the items again, the open sprite's animation picked */
 static void picker_open(Ed *e, const char *dir, int from_edit) {
     picker_gather(dir);
-    e->page = 1; e->came_from_edit = from_edit; e->find[0] = 0; e->pscroll = 0; e->ptab = e->file; e->psel = -1;
+    e->page = 1; e->came_from_edit = from_edit; e->find[0] = 0; e->pfocus = 1; e->pscroll = 0; e->ptab = e->file; e->psel = -1;
     char nm[64], base[64], b2[64]; int num;
     snprintf(nm, sizeof nm, "%s", e->name);
     split_name(nm, base, sizeof base, &num);
@@ -1267,18 +1283,7 @@ static void draw(const Ed *e, Canvas *cv) {
     canvas_text(cv, 4, 3, t, C_YELLOW);
     int msg_top = e->msg[0] && 4 + text_width(t) + 12 + text_width(e->msg) + 4 + 16 <= cv->w; /* (a message that does not fit by the title goes under the grid) */
     if (msg_top) canvas_text(cv, cv->w - 16 - text_width(e->msg) - 4, 3, e->msg, C_GREY);
-    { /* the fold button, top right: a small window in dim lines, its right part (the panel) shaded while it is open;
-         brighter under the pointer */
-        int fx = cv->w - 4 - 9, fy = 3;
-        if (ui_icon(cv, g_panel_folded ? "fold-closed" : "fold-open", fx, fy, g_fold_hover ? 0.4 : 0)) { region(R_FOLD, 0, fx - 1, fy - 1, 11, 8, RGB(0, 0, 0)); goto folded_icon; }
-        Rgb k = g_fold_hover ? RGB(150, 150, 175) : RGB(76, 76, 96), fill = g_fold_hover ? RGB(90, 90, 112) : RGB(46, 46, 60);
-        canvas_rect(cv, fx + 1, fy, 7, 1, k); canvas_rect(cv, fx + 1, fy + 4, 7, 1, k);       /* (its outline without the corner */
-        canvas_rect(cv, fx, fy + 1, 1, 3, k); canvas_rect(cv, fx + 8, fy + 1, 1, 3, k);       /*  pixels: softly rounded) */
-        if (!g_panel_folded) canvas_rect(cv, fx + 6, fy + 1, 2, 3, fill);
-        canvas_rect(cv, fx + 5, fy + 1, 1, 3, k);
-        region(R_FOLD, 0, fx - 1, fy - 1, 11, 8, RGB(0, 0, 0));
-        folded_icon:;
-    }
+    fold_button(cv, g_panel_folded, g_fold_hover);
     Layout L = layout(e, cv->w, cv->h);
     /* onion skin: where this frame is see-through, the frame before shows faintly red, the one after blue (both: purple) */
     static char og[2][MAXH][MAXW + 1];
@@ -1560,7 +1565,7 @@ int editor_run(const char *dir, const char *name) {
                 nin = 0;
                 if (e.asking) e.asking = 0;
                 else if (e.typing) e.typing = 0;
-                else if (e.page) { if (e.find[0]) { e.find[0] = 0; picker_refind(&e); } else quit = 1; } /* (the picker: Esc clears the search, else quits) */
+                else if (e.page) { if (e.find[0]) { e.find[0] = 0; picker_refind(&e); } else if (e.pfocus == 2) e.pfocus = 0; else quit = 1; } /* (the picker: Esc clears the search, then leaves the clicked box, else quits) */
             }
             continue;
         }
@@ -1574,7 +1579,7 @@ int editor_run(const char *dir, const char *name) {
                 if (e.asking && in[i + 1] != '[') { e.asking = 0; i++; continue; } /* (Esc: back to editing) */
                 if (e.page && !e.asking && in[i + 1] != '[') { /* the picker, Esc: clears the search, else quits */
                     i++;
-                    if (e.find[0]) { e.find[0] = 0; picker_refind(&e); } else quit = 1;
+                    if (e.find[0]) { e.find[0] = 0; picker_refind(&e); } else if (e.pfocus == 2) e.pfocus = 0; else quit = 1;
                     continue;
                 }
                 if (e.page && in[i + 1] == '[' && i + 2 < nin && in[i + 2] >= 'A' && in[i + 2] <= 'D') { /* the picker's arrows */
@@ -1593,6 +1598,7 @@ int editor_run(const char *dir, const char *name) {
                     const Region *r = hit(px, py);
                     if (e.page) { /* the picker: a click picks (on the picked one: opens it); a tab, a view; the wheel moves */
                         if (b & 64) { picker_move(&e, ((b & 3) == 0 ? -1 : 1) * (e.pview == 0 ? g_pick_cols : 1)); continue; }
+                        if (!motion && !release && btn == 0) e.pfocus = r && r->kind == R_PFIND ? 2 : 0; /* (a press on the search box focuses it, anywhere else not) */
                         if (motion || release || btn != 0 || !r) continue;
                         if (r->kind == R_PITEM) { if (r->i == e.psel) picker_pick(&e, dir); else e.psel = r->i; }
                         else if (r->kind == R_PTAB) { e.ptab = r->i; e.pscroll = 0; int sh[512]; if (picker_shown(&e, sh)) e.psel = sh[0]; }
@@ -1726,7 +1732,8 @@ int editor_run(const char *dir, const char *name) {
                 if (ch == '\r' || ch == '\n') picker_pick(&e, dir);
                 else if (ch == '\t') { e.ptab = (e.ptab + 1) % (ANIMS + 1); e.pscroll = 0; int sh[512]; if (picker_shown(&e, sh)) e.psel = sh[0]; }
                 else if (ch == '\\') { e.pview = !e.pview; e.pscroll = 0; } /* (\: the other view; Ctrl+V is Windows Terminal's paste) */
-                else if (ch == 0x03 || ((ch == 'q' || ch == 'Q') && !fl)) quit = 1; /* (q, the search empty, or Ctrl+C: quit) */
+                else if (ch == 0x03 || ((ch == 'q' || ch == 'Q') && e.pfocus != 2 && (!fl || !e.pfocus))) quit = 1; /* (q, the search empty or not focused, or Ctrl+C: quit; clicked into, q is typed) */
+                else if (!e.pfocus) {} /* (the search not focused: letters are not typed) */
                 else if ((ch == 127 || ch == 8) && fl) { e.find[fl - 1] = 0; picker_refind(&e); }
                 else if (((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') || ch == '-' || ch == '~') && fl < sizeof e.find - 1) {
                     e.find[fl] = (char)(ch >= 'a' && ch <= 'z' ? ch - 32 : ch); e.find[fl + 1] = 0; picker_refind(&e);
