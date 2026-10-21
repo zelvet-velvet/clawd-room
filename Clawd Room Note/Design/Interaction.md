@@ -59,6 +59,11 @@ sticker: lucide//gamepad-2
 | `w` `n` / `t` `s` | wider / narrower, taller / shorter |
 | `q` | quit: with changes it asks **S** save, **D** discard (the files go back to how they were when you opened them), **Esc** back to editing |
 
+> [!todo]- Picked, not built yet
+> - **Part animations in the pixel editor** (planned: the gate case 2026-10-20, widened to every animation 2026-10-21 after Zaviel's note): not only gates but a Clawd on the swing, the barista brewing, the slide, a door. A thing made of **parts** (a gate: steps, boards, balusters, rail; a swing: seat and chains; the coffee machine: cup, steam; a Clawd is a part too: its position and which pose) gets **keyframes** for each part: where it is, how it is turned, whether it shows, its glow. The engine moves the parts between keyframes, so one animation fits every room size and all three rooms. Saved as data (a file per animation, e.g. `anims/construct.txt`, `anims/swing.txt`), so a developer makes or changes one in the editor without code; code stays only for effects keyframes cannot express (the construct's glow).
+> - **In the current editor, not a new tool**: the editor's timeline, play at the room's speed and onion skin stay; a part animation opens on a **stage page** (the room and the thing picked with buttons, a part clicked, `g` its group), the part's values at this frame, and the timeline frame by frame with keyframes as diamonds (two layouts to pick from: a dope sheet, a row per group; or one track for the picked part). Leaving gets its own keyframes or plays appearing backwards.
+> - **Order**: the settings file, gates appearing (simple and construct), the keyframe format and the stage page, then the swing and the barista as more cases. ![[2026-10-20 gate editor, part keyframes, A dope sheet and B one track.png|300]] (the mockup shows the gate case) → [[2026-10-20]]
+
 ## 📐 Room size and resizing
 
 - The room **always fills the window** and takes its shape; dragging the window re-lays it out at once.
