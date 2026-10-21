@@ -4,7 +4,7 @@
 # programs are here so an idea can be drawn again or taken further.
 #
 #   tools/mock/build.sh            build them all and draw every mockup into gallery/mock/out/ (not in git)
-#   tools/mock/build.sh NAME ...   only these (pick_gate_mock, tag_mock, well_mock, settings_mock, bar_demo, palette_mock, editor_mock, tool_icons_mock, picker_mock, layer_mock, newcolour_mock)
+#   tools/mock/build.sh NAME ...   only these (pick_gate_mock, tag_mock, well_mock, settings_mock, bar_demo, palette_mock, editor_mock, tool_icons_mock, picker_mock, layer_mock, newcolour_mock, gate_editor_mock, part_anim_mock)
 #
 # Each links the room's object files (all but main.o). theme_mock.c is made from c/theme.c with one switch added (the
 # park without its big tree), for the construct mockup of the park's building.
@@ -13,7 +13,7 @@ HERE=$(cd "$(dirname "$0")" && pwd)
 ROOT=$(cd "$HERE/../.." && pwd)
 OUT="$ROOT/gallery/mock"
 make -s -C "$ROOT/c" clawd-room
-mkdir -p "$OUT/bin" "$OUT/out"/{01-pick-highlight,02-gate-appear-first-round,03-gate-construct,04-bar-and-gate-tags,05-pick-d-spotlight,06-settings,07-construct-real-parts,08-well-redesign,09-editor-animation,11-tool-icons,14-sprite-picker,15-your-sprites,16-new-colour,palette}
+mkdir -p "$OUT/bin" "$OUT/out"/{01-pick-highlight,02-gate-appear-first-round,03-gate-construct,04-bar-and-gate-tags,05-pick-d-spotlight,06-settings,07-construct-real-parts,08-well-redesign,09-editor-animation,10-gate-editor,11-tool-icons,14-sprite-picker,15-your-sprites,16-new-colour,17-part-animations,palette}
 python3 - "$ROOT/c/theme.c" "$OUT/bin/theme_mock.c" <<'EOF'
 import sys
 s = open(sys.argv[1]).read()
@@ -32,10 +32,10 @@ CC=${CC:-cc}
 FLAGS="-O2 -std=c11 -D_DEFAULT_SOURCE -I$ROOT/c"
 OBJS=$(ls "$ROOT"/c/*.o | grep -v -e '/main.o$' -e '/theme.o$')
 $CC $FLAGS -c "$OUT/bin/theme_mock.c" -o "$OUT/bin/theme_mock.o"
-NAMES=${*:-pick_gate_mock tag_mock well_mock settings_mock bar_demo palette_mock editor_mock tool_icons_mock picker_mock layer_mock newcolour_mock}
+NAMES=${*:-pick_gate_mock tag_mock well_mock settings_mock bar_demo palette_mock editor_mock tool_icons_mock picker_mock layer_mock newcolour_mock gate_editor_mock part_anim_mock}
 cd "$OUT"
 for n in $NAMES; do
-    if [ "$n" = editor_mock ] || [ "$n" = tool_icons_mock ] || [ "$n" = picker_mock ] || [ "$n" = layer_mock ] || [ "$n" = newcolour_mock ]; then # (it includes c/editor.c, to draw with the editor's own code)
+    if [ "$n" = editor_mock ] || [ "$n" = tool_icons_mock ] || [ "$n" = picker_mock ] || [ "$n" = layer_mock ] || [ "$n" = newcolour_mock ] || [ "$n" = part_anim_mock ]; then # (it includes c/editor.c, to draw with the editor's own code)
         $CC $FLAGS -Wno-unused-function "$HERE/$n.c" "$OUT/bin/theme_mock.o" $(echo $OBJS | tr ' ' '\n' | grep -v '/editor.o$') -lm -o "bin/$n"
     else
         $CC $FLAGS "$HERE/$n.c" "$OUT/bin/theme_mock.o" $OBJS -lm -o "bin/$n"
@@ -49,6 +49,8 @@ for n in $NAMES; do
         layer_mock) bin/$n out/15-your-sprites "$ROOT/sprites" ;;
         newcolour_mock) bin/$n out/16-new-colour "$ROOT/sprites" ;;
         tool_icons_mock) bin/$n out/11-tool-icons "$ROOT/sprites"; bin/$n out/11-tool-icons "$ROOT/sprites" b; bin/$n out/11-tool-icons "$ROOT/sprites" b1 ;;
+        gate_editor_mock) bin/$n out/10-gate-editor ;;
+        part_anim_mock) bin/$n out/17-part-animations "$ROOT/sprites" ;;
         *) bin/$n ;;
     esac
 done

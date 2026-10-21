@@ -8,6 +8,16 @@ sticker: lucide//wrench
 ---
 Pictures of the debug overlay, the placer, the pixel editor, the gallery, newest first: ✅ current (open), ♻️ replaced and ❌ not picked (folded; the status is in [[Snapshot status]]). The files are the source in `Assets/Snapshots/Engine and tools/`; this note is written by `tools/vault_gallery.py` (do not edit it by hand: add a picture, then run the tool).
 
+## 2026-10-21
+
+> [!success]+ ✅ current · Part animations in the editor, the barista brewing (now, A dope sheet, B frames, B picked)
+> ![[2026-10-21 part animations in the editor, the barista brewing (now, A dope sheet, B frames, B picked).png|420]]
+> Shown in: [[Interaction|Interaction]]
+
+> [!success]+ ✅ current · Part animations in the editor, a Clawd on the swing (now, A dope sheet, B frames, B picked)
+> ![[2026-10-21 part animations in the editor, a Clawd on the swing (now, A dope sheet, B frames, B picked).png|420]]
+> Shown in: [[Interaction|Interaction]]
+
 ## 2026-10-20
 
 > [!quote]- ♻️ replaced · Editor your sprites mockup, A B C (B picked)
@@ -32,7 +42,7 @@ Pictures of the debug overlay, the placer, the pixel editor, the gallery, newest
 
 > [!success]+ ✅ current · Editor timeline, onion skin and fill
 > ![[2026-10-20 editor timeline, onion skin and fill.png|420]]
-> Shown in: [[Interaction|Interaction]], [[Test Checklist|Test Checklist]], [[2026-10-20#🎞️ The pixel editor edits animations; a fill tool (Zaviel)|2026-10-20 · 🎞️ The pixel editor edits animations; a fill tool (Zaviel)]]
+> Shown in: [[Test Checklist|Test Checklist]], [[2026-10-20#🎞️ The pixel editor edits animations; a fill tool (Zaviel)|2026-10-20 · 🎞️ The pixel editor edits animations; a fill tool (Zaviel)]], [[Interaction|Interaction]]
 
 > [!success]+ ✅ current · Editor timeline divider dragged up a lot
 > ![[2026-10-20 editor timeline divider dragged up a lot.png|420]]
@@ -62,7 +72,7 @@ Pictures of the debug overlay, the placer, the pixel editor, the gallery, newest
 
 > [!success]+ ✅ current · Editor playing a Clawd at the room's speed
 > ![[2026-10-20 editor playing a Clawd at the room's speed.png|420]]
-> Shown in: [[Interaction|Interaction]], [[Test Checklist|Test Checklist]], [[2026-10-20#🎞️ The pixel editor edits animations; a fill tool (Zaviel)|2026-10-20 · 🎞️ The pixel editor edits animations; a fill tool (Zaviel)]]
+> Shown in: [[Test Checklist|Test Checklist]], [[2026-10-20#🎞️ The pixel editor edits animations; a fill tool (Zaviel)|2026-10-20 · 🎞️ The pixel editor edits animations; a fill tool (Zaviel)]], [[Interaction|Interaction]]
 
 > [!success]+ ✅ current · Editor picker with yours marked, reset buttons
 > ![[2026-10-20 editor picker with yours marked, reset buttons.png|420]]
@@ -140,7 +150,7 @@ Pictures of the debug overlay, the placer, the pixel editor, the gallery, newest
 > [!quote]- ♻️ replaced · Pixel editor with rooms
 > ![[2026-10-18 pixel editor with rooms.png|420]]
 > Replaced by: [[2026-10-18 pixel editor, new palette and help.png]]
-> Shown in: [[Engine Design|Engine Design]], [[2026-10-18#🎨 Engine step 3: props as sprites, rooms as text files, the pixel editor|2026-10-18 · 🎨 Engine step 3: props as sprites, rooms as text files, the pixel editor]]
+> Shown in: [[2026-10-18#🎨 Engine step 3: props as sprites, rooms as text files, the pixel editor|2026-10-18 · 🎨 Engine step 3: props as sprites, rooms as text files, the pixel editor]], [[Engine Design|Engine Design]]
 
 > [!quote]- ♻️ replaced · Gallery coffee (part)
 > ![[2026-10-18 gallery coffee (part).png|420]]
@@ -150,7 +160,7 @@ Pictures of the debug overlay, the placer, the pixel editor, the gallery, newest
 > [!quote]- ♻️ replaced · Debug overlay
 > ![[2026-10-18 debug overlay.png|420]]
 > Replaced by: [[2026-10-18 debug overlay with labels.png]]
-> Shown in: [[Engine Design|Engine Design]], [[2026-10-18#🧱 Engine step 1: the scene, the overlap check, the gallery, the overlay|2026-10-18 · 🧱 Engine step 1: the scene, the overlap check, the gallery, the overlay]]
+> Shown in: [[2026-10-18#🧱 Engine step 1: the scene, the overlap check, the gallery, the overlay|2026-10-18 · 🧱 Engine step 1: the scene, the overlap check, the gallery, the overlay]], [[Engine Design|Engine Design]]
 
 > [!success]+ ✅ current · Debug overlay with labels
 > ![[2026-10-18 debug overlay with labels.png|420]]

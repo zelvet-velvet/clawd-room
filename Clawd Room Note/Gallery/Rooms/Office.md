@@ -18,7 +18,7 @@ Pictures of the office room, newest first: ✅ current (open), ♻️ replaced a
 > [!quote]- ♻️ replaced · Style A built office
 > ![[2026-10-18 style A built office.png|420]]
 > Replaced by: [[2026-10-18 placer office all gates 181x53.png]]
-> Shown in: [[Rooms and Art|Rooms and Art]], [[2026-10-18#🏛️ The rooms in perspective are built|2026-10-18 · 🏛️ The rooms in perspective are built]]
+> Shown in: [[2026-10-18#🏛️ The rooms in perspective are built|2026-10-18 · 🏛️ The rooms in perspective are built]], [[Rooms and Art|Rooms and Art]]
 
 > [!quote]- ♻️ replaced · Office steel stairs
 > ![[2026-10-18 office steel stairs.png|420]]
@@ -33,7 +33,7 @@ Pictures of the office room, newest first: ✅ current (open), ♻️ replaced a
 > [!quote]- ♻️ replaced · Office stairs well and doors
 > ![[2026-10-18 office stairs well and doors.png|420]]
 > Replaced by: [[2026-10-18 office steel balusters taller doors.png]]
-> Shown in: [[Rooms and Art|Rooms and Art]], [[2026-10-18#🪜 Way up at the platform's right end, stair well at the back right|2026-10-18 · 🪜 Way up at the platform's right end, stair well at the back right]]
+> Shown in: [[2026-10-18#🪜 Way up at the platform's right end, stair well at the back right|2026-10-18 · 🪜 Way up at the platform's right end, stair well at the back right]], [[Rooms and Art|Rooms and Art]]
 
 > [!quote]- ♻️ replaced · Office real steps, window over the platform
 > ![[2026-10-18 office real steps, window over the platform.png|420]]

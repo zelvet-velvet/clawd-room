@@ -23,4 +23,4 @@ Pictures of Windows Terminal, iTerm2, `--try`, newest first: ✅ current (open),
 
 > [!success]+ ✅ current · ITerm2 resize stripes · by Zaviel
 > ![[2026-10-17 iTerm2 resize stripes (Zaviel).png|420]]
-> Shown in: [[Platforms and Windows|Platforms and Windows]], [[2026-10-17#🩹 Resizing in iTerm2|2026-10-17 · 🩹 Resizing in iTerm2]]
+> Shown in: [[2026-10-17#🩹 Resizing in iTerm2|2026-10-17 · 🩹 Resizing in iTerm2]], [[Platforms and Windows|Platforms and Windows]]

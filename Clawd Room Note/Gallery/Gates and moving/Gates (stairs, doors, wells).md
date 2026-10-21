@@ -12,7 +12,7 @@ Pictures of the ways between rooms: doors, stairs, the half floor, wells, newest
 
 > [!success]+ ✅ current · Well redesign options (A picked)
 > ![[2026-10-20 well redesign options (A picked).png|420]]
-> Shown in: [[Rooms and Art|Rooms and Art]], [[2026-10-20#🕳️ A new stair well and no tree behind the park's building: mockups (Zaviel)|2026-10-20 · 🕳️ A new stair well and no tree behind the park's building: mockups (Zaviel)]]
+> Shown in: [[2026-10-20#🕳️ A new stair well and no tree behind the park's building: mockups (Zaviel)|2026-10-20 · 🕳️ A new stair well and no tree behind the park's building: mockups (Zaviel)]], [[Rooms and Art|Rooms and Art]]
 
 > [!failure]- ❌ not picked · Gates appearing, first round, park stoop
 > ![[2026-10-20 gates appearing, first round, park stoop.png|420]]
@@ -41,6 +41,10 @@ Pictures of the ways between rooms: doors, stairs, the half floor, wells, newest
 > [!failure]- ❌ not picked · Gates appearing, first round, coffee well
 > ![[2026-10-20 gates appearing, first round, coffee well.gif|420]]
 > Shown in: not in a note yet
+
+> [!success]+ ✅ current · Gate editor, part keyframes, A dope sheet and B one track
+> ![[2026-10-20 gate editor, part keyframes, A dope sheet and B one track.png|420]]
+> Shown in: [[2026-10-20#🧩 Part animations in the pixel editor: the plan and a mockup (Zaviel)|2026-10-20 · 🧩 Part animations in the pixel editor: the plan and a mockup (Zaviel)]], [[Rooms and Art|Rooms and Art]], [[Interaction|Interaction]]
 
 > [!success]+ ✅ current · Construct v2 real parts, park stoop · picked
 > ![[2026-10-20 construct v2 real parts, park stoop (picked).png|420]]
@@ -80,7 +84,7 @@ Pictures of the ways between rooms: doors, stairs, the half floor, wells, newest
 
 > [!success]+ ✅ current · Construct v2 real parts, coffee stairs · picked
 > ![[2026-10-20 construct v2 real parts, coffee stairs (picked).gif|420]]
-> Shown in: [[Rooms and Art|Rooms and Art]], [[2026-10-20#🏗️ Gates appear as a construct: mockups (Zaviel)|2026-10-20 · 🏗️ Gates appear as a construct: mockups (Zaviel)]]
+> Shown in: [[2026-10-20#🏗️ Gates appear as a construct: mockups (Zaviel)|2026-10-20 · 🏗️ Gates appear as a construct: mockups (Zaviel)]], [[Rooms and Art|Rooms and Art]]
 
 > [!quote]- ♻️ replaced · Construct v1 glass pieces, park stoop
 > ![[2026-10-20 construct v1 glass pieces, park stoop.png|420]]

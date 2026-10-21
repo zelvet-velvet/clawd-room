@@ -36,7 +36,7 @@ Pictures of mockups and options to choose from (the picked one is marked), newes
 > [!quote]- ♻️ replaced · Style options A perspective
 > ![[2026-10-18 style options A perspective.png|420]]
 > Replaced by: [[2026-10-18 style A built office.png]]
-> Shown in: [[Rooms and Art|Rooms and Art]], [[2026-10-18#🎨 A new look, picked from mockups|2026-10-18 · 🎨 A new look, picked from mockups]]
+> Shown in: [[2026-10-18#🎨 A new look, picked from mockups|2026-10-18 · 🎨 A new look, picked from mockups]], [[Rooms and Art|Rooms and Art]]
 
 > [!quote]- ♻️ replaced · Style A mockup stair well
 > ![[2026-10-18 style A mockup stair well.png|420]]
