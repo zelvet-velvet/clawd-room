@@ -447,7 +447,7 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
             if (on) frame(cv, tx - 1, ty - 1, ST_TW + 2, ST_TH + 2, C_YELLOW);
             region(R_FRAME, f, tx - 1, ty - 1, ST_TW + 2, ST_TH + 2, RGB(0, 0, 0));
             char nb[8]; snprintf(nb, sizeof nb, "%d", f + 1);
-            canvas_text(cv, tx + (ST_TW - text_width(nb)) / 2, ty + ST_TH + 2, nb, on ? C_YELLOW : C_GREY);
+            canvas_text(cv, tx + ST_TW / 2 - text_width(nb) / 2, ty + ST_TH + 2, nb, on ? C_YELLOW : C_GREY); /* (the number and the key's diamond on one middle) */
             if (pp && st_key_at(pp, st_t(f)) >= 0) st_diamond(cv, tx + ST_TW / 2, ty + ST_TH + 11, C_YELLOW);
         }
         if (shown < nf) { /* a scroll bar: where the frames shown are among all of them; click or drag it, or use the wheel over the frames */
