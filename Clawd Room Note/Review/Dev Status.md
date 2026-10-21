@@ -42,7 +42,7 @@ sticker: lucide//activity
 
 ### ⚙️ Engine and tools
 - [>] **Animations**: `--build-art` to record room animations (packing, carrying, unpacking, doors, stairs, the well, each room) as GIFs, in category folders, with Gallery notes. Started (GIF colour rounding, category folders), parked in a stash.
-- [>] **Part Animations in the Editor**: The file, the swing driven by it and the editor's stage page are built (#19, layout B); with a tab in the sprite picker and onion skin; to check by eye: T31 – T38 in [[Test Checklist]]; not yet: rotation drawn in the room (parked), the barista's brewing in the room ([[Interaction]]).
+- [>] **Part Animations in the Editor**: The file, the swing driven by it and the editor's stage page are built (#19, layout B); with a tab in the sprite picker and onion skin; to check by eye: T31 – T38 (Group G of [[Test Checklist]], in #19); not yet: rotation drawn in the room (parked), the barista's brewing in the room ([[Interaction]]).
 - [ ] **Less CPU**: Skip frames when nothing moves; stop drawing (FPS 0) when the window is covered, minimised or on another desktop; later dirty rects. (The terminal output is already diffed and written once per frame.)
 
 ### 🗂️ Repo and vault
