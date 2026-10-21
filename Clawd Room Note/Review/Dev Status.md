@@ -39,11 +39,11 @@ sticker: lucide//activity
 
 ### ⚙️ Engine and tools
 - [>] **Animations**: `--build-art` to record room animations (packing, carrying, unpacking, doors, stairs, the well, each room) as GIFs, in category folders, with Gallery notes. Started (GIF colour rounding, category folders), parked in a stash.
-- [ ] **Gate Styles**: Gates as parts with keyframes that developers can add, edited on a gate page of the editor; picked, not built (#13).
+- [ ] **Part Animations in the Editor**: Gates, the swing, the barista's brewing and more as parts with keyframes, made in the current pixel editor without code; a plan and a mockup to pick from, not built (#16; [[Interaction]]).
 - [ ] **Less CPU**: Skip frames when nothing moves; stop drawing (FPS 0) when the window is covered, minimised or on another desktop; later dirty rects. (The terminal output is already diffed and written once per frame.)
 
 ### 🗂️ Repo and vault
-- [>] **Pull Requests**: #13 (gate styles and gate keyframes: the plan and a mockup) waiting for Zaviel; #1 – #12 merged.
+- [>] **Pull Requests**: #16 (part animations in the editor: the plan and a mockup) and #15 (README and docs) waiting for Zaviel; #1 – #12 merged; #13 closed (became #16).
 - [ ] **Go Public** (decided 2026-10-20: code and notes public together): at a quiet moment with no open PRs, look at the six `(Zaviel)` screenshots; rewrite the old fixture names out of the history (`git filter-repo`; everyone re-clones once); add a `LICENSE` (MIT) and an unofficial-fan-project line to the README (Clawd is Anthropic's character); make the repo public; then **restrict merging**: protect `main` (no direct pushes, changes only through a pull request, Zaviel's approval to merge).
 - [ ] **William's Setup**: Accept the invite, clone, Templater settings ([[Collaboration]]).
 
