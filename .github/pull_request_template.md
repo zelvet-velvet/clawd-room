@@ -13,7 +13,7 @@
 ## Notes
 - [ ] Dev Log entry with my name
 - [ ] Test Checklist: what still needs someone's eyes
-- [ ] README updated if commands, flags or keys changed
+- [ ] README / `docs/` updated if commands, flags or keys changed
 
 ## Not tested / unsure
 <!-- what you could not check, what needs the other platform -->

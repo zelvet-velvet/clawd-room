@@ -66,7 +66,7 @@ Keep PRs to **one topic** and ideally under a few hundred lines; two small PRs r
 | **Rooms and drawing** (new props, gates, a new room) | `c/theme.c`, `c/draw.c`, `c/persp.c`, `c/scene.c`, `c/place.c` | Mockup first (a picture Zaviel picks), then code. |
 | **Behaviour** (Clawd states, walking, visits, moves) | `c/room.c`, `c/clawd.c`, `c/anim.c` | Keep the timings unless agreed (90 s sleep, 30 min stale, 2.5 s cheer). Add a test scene in `tools/scenarios/`. |
 | **Linked windows, platforms** | `c/link.c`, `c/win.c`, `c/ps_scripts.h`, `c/mac_scripts.h`, `clawd-room.sh` | Say which platform you tested on; the other one is checked by its owner. |
-| **Tools, docs** | `tools/`, `README.md`, `Clawd Room Note/` | |
+| **Tools, docs** | `tools/`, `README.md`, `docs/`, `Clawd Room Note/` | |
 
 Ideas waiting for someone are at the end of the Dev Log (Pending, Ideas); ask in an issue before starting a big one.
 

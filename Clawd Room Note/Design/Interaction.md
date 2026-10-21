@@ -76,7 +76,27 @@ sticker: lucide//gamepad-2
 | `?` | the shortcuts in a box (a short window shows only `? SHORTCUTS  Q QUIT`; a very short one has no timeline) |
 | Esc in the picker, Ctrl+C | quit: with changes it asks **S** save, **D** discard (the files go back to how they were when you opened them), **Esc** back |
 
-![[2026-10-20 editor timeline, onion skin and fill.png|300]] ![[2026-10-20 editor playing a Clawd at the room's speed.png|300]]
+![[2026-10-20 editor timeline, onion skin and fill.png|774]]
+
+![[2026-10-20 editor playing a Clawd at the room's speed.png|774]]
+
+### 🎬 The stage page: part animations
+
+A **part animation** is a file in `anims/` (`swing.txt`, `brew.txt`; the format is in the header of `swing.txt`): a thing made of **parts** (the swing's bar, chains, seat and Clawd; the coffee machine, cup, steam and barista), each with **keys**. A key is a saved pose of one part at one frame: where it is (move x / y), rotate, show, glow, and the ease into it. Between keys the part is moved for you (the frames in between are worked out), so a few keys make the whole animation. A part marked `sprite` (a Clawd) moves but does not rotate (a turned pixel drawing breaks up). The room plays the swing's Clawd from `swing.txt`; your edits go to `~/.clawd-room/anims/` and are used over the defaults, read again when they change.
+
+`./clawd-room.sh --edit anims/swing` (or the **ANIMS** tab in the sprite picker, Enter) opens it on the stage page, laid out as the editor (layout B, picked 2026-10-21):
+
+- **The stage** (where the canvas is): the room with the thing, every part outlined (the picked one yellow), the picked part's keys as small marks joined in time order (`v` or **KEYS ON** under the stage: off); **ONION** (`o`) shows the frame before faintly red and the one after blue. `+ -` or the wheel zoom it, `W A S D` or a right drag move the view, `0` puts it back.
+- **The tools** work on the part pressed on (pressing where there is none does nothing): **SELECT** picks a part and shows handles on its border (drag one to resize the part's box); **MOVE** drags the part pressed on (it stays inside the stage); **ROTATE** drags its angle (greyed for a sprite, and a sprite cannot be picked while it is on); **KEY** is not a tool but a toggle beside them: pressed in when this frame is a key of the picked part; a click puts a key here or takes it away.
+- **The panel**: the picked part, its values at this frame with `<` `>` (`< >` keys; up / down picks a value), the key's **EASE**, the parts. It scrolls in a short window.
+- **The timeline**: the frames as pictures with a diamond under each key of the picked part, the real-size view at its left, PLAY and the speed; its scroll bar and the wheel scroll it.
+- A change makes a key at this frame if there is none. `u` / `r` undo / redo, `?` the keys (scrolls), `q` asks like the editor (S save, D discard, Esc back); from the picker, `q` comes back to it.
+
+> [!todo]- Picked, not built yet
+> - **Rotation drawn in the room**: only the stage's outline turns; how the swing's chains and seat and a Clawd should look turned is parked (a mockup of three ways, 2026-10-21, in `gallery/mock/out/19-rotate/`, not picked).
+> - **More cases in the room**: the barista's brewing, gates appearing as part animations (simple / construct, then their keys).
+>   ![[2026-10-21 part animations in the editor, a Clawd on the swing (now, A dope sheet, B frames, B picked).png|300]]
+>   ![[2026-10-21 part animations in the editor, the barista brewing (now, A dope sheet, B frames, B picked).png|300]]
 
 ## 📐 Room size and resizing
 
