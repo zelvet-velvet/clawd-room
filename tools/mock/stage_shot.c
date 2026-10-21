@@ -14,6 +14,7 @@ static void shot_sized(const char *dir, const char *name, int frame, int pick, i
     if (asking == 2) { s.asking = 0; s.a.part[3].key[0].pose.turn = 25; s.a.part[4].key[0].pose.turn = -15; }
     if (asking == 2) snprintf(s.msg, sizeof s.msg, "KEY ADDED: SEAT AT FRAME 1");
     s.pscroll = pscroll;
+    if (getenv("SHOT_VIEW")) { s.zoom = 3; s.vx = 0; s.vy = 30; } /* (zoomed and moved: a part out of view) */
     Canvas cv = canvas_new(W, H, ST_BG);
     stage_draw(&s, &cv, 0);
     png_write(out, &cv, 3);

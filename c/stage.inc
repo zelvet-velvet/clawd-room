@@ -269,14 +269,19 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
         st_box(p, parts_pose(a, i, t), &bx, &by, &bw, &bh);
         Rgb oc = i == s->pick ? C_YELLOW : s->tool == 2 && p->sprite ? RGB(58, 62, 78) : RGB(95, 105, 135); /* (ROTATE: a sprite's outline dim, it cannot be picked) */
         double turn = parts_pose(a, i, t).turn;
-        if (fabs(turn) < 0.5) frame(cv, L.gx + (bx - vx) * L.z, L.ty + (by - vy) * L.z, bw * L.z, bh * L.z, oc);
+        int cx0 = L.gx, cy0 = L.ty, cx1 = L.gx + L.cw - 1, cy1 = L.ty + L.ah - 1; /* (outlines stay inside the stage: a part out of view draws nothing over the panel) */
+        if (fabs(turn) < 0.5) { /* (frame()'s border, one pixel outside the box, line by line inside the stage) */
+            int x0 = L.gx + (bx - vx) * L.z - 1, y0 = L.ty + (by - vy) * L.z - 1, x1 = x0 + bw * L.z + 1, y1 = y0 + bh * L.z + 1;
+            st_line_in(cv, x0, y0, x1, y0, oc, cx0, cy0, cx1, cy1); st_line_in(cv, x0, y1, x1, y1, oc, cx0, cy0, cx1, cy1);
+            st_line_in(cv, x0, y0, x0, y1, oc, cx0, cy0, cx1, cy1); st_line_in(cv, x1, y0, x1, y1, oc, cx0, cy0, cx1, cy1);
+        }
         else { /* turned: the outline turned about its middle, and a mark on its top edge */
             double cxp = L.gx + (bx - vx + bw / 2.0) * L.z, cyp = L.ty + (by - vy + bh / 2.0) * L.z, w2 = bw * L.z / 2.0 + 1, h2 = bh * L.z / 2.0 + 1, ca = cos(turn * M_PI / 180), sa = sin(turn * M_PI / 180);
             double cx4[4] = {-w2, w2, w2, -w2}, cy4[4] = {-h2, -h2, h2, h2};
             int px4[4], py4[4];
             for (int k = 0; k < 4; k++) { px4[k] = (int)lround(cxp + cx4[k] * ca - cy4[k] * sa); py4[k] = (int)lround(cyp + cx4[k] * sa + cy4[k] * ca); }
-            for (int k = 0; k < 4; k++) canvas_line(cv, px4[k], py4[k], px4[(k + 1) % 4], py4[(k + 1) % 4], oc);
-            canvas_line(cv, (px4[0] + px4[1]) / 2, (py4[0] + py4[1]) / 2, (int)lround(cxp), (int)lround(cyp), oc); /* (top middle to the middle: which way is up) */
+            for (int k = 0; k < 4; k++) st_line_in(cv, px4[k], py4[k], px4[(k + 1) % 4], py4[(k + 1) % 4], oc, cx0, cy0, cx1, cy1);
+            st_line_in(cv, (px4[0] + px4[1]) / 2, (py4[0] + py4[1]) / 2, (int)lround(cxp), (int)lround(cyp), oc, cx0, cy0, cx1, cy1); /* (top middle to the middle: which way is up) */
         }
     }
     if (s->tool == 0 && s->pick < a->npart && a->part[s->pick].has_box) { /* SELECT: handles on the picked part's border (drag one to resize it) */
