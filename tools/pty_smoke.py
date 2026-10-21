@@ -207,6 +207,10 @@ with tempfile.TemporaryDirectory() as tmp:
     check("stage: + - zoom, w a s d move the view, 0 resets it, the wheel scrolls the panel and zooms the stage (no crash, nothing changed)", st == 0)
     out, st = run(["--edit", "anims/swing"], [(1.2, b"?"), (1.4, b"\x1b[B"), (1.5, b"\x1b[B"), (1.6, b"\x1b[B"), (1.8, b"\x1b[<65;60;40M"), (2.0, b"\x1b[A"), (2.2, b"?"), (2.6, b"q"), (3.0, b"s")], aenv, cols=300, rows=50)  # (a short window: the help box scrolls with the arrows and the wheel)
     check("stage: ? opens the help, which scrolls in a short window (up / down, the wheel)", st == 0)
+    out, st = run(["--edit", "-"], [(1.0, b"\t"), (1.1, b"\t"), (1.2, b"\t"), (1.3, b"\t"), (1.6, b"\r"), (2.6, b"o"), (2.8, b"."), (3.2, b"q"), (3.5, b"s"), (4.0, b"q")], aenv, cols=300, rows=90)  # (the picker: Tab to ANIMS, Enter opens brew on the stage; o, a change, q s back to the picker; q quits)
+    brew_mine = os.path.join(mine_a, "brew.txt")
+    txt = open(brew_mine).read() if os.path.exists(brew_mine) else ""
+    check("picker: the ANIMS tab opens a part animation on the stage page, q there comes back, q quits", st == 0 and "key machine 0 x=0 y=1 " in txt)
     before = open(swing_mine).read()
     out, st = run(["--edit", "anims/swing"], [(1.2, b"."), (1.5, b"."), (1.8, b"q"), (2.1, b"d")], aenv, cols=300, rows=90)  # (q with changes asks: D puts your file back as it was)
     check("stage: q with changes asks keep or discard; D puts your file back as it was", st == 0 and open(swing_mine).read() == before)

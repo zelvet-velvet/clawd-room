@@ -28,6 +28,7 @@ typedef struct {
     int nundo, nredo;
     char name[24];
     int pick, row, frame, tool, playing, first, help, vx, vy, vw, vh, asking, changed;
+    int onion;                /* o / ONION: the frame before shows faintly red, the one after blue, where they differ (not while playing) */
     int hide_keys;            /* the keys' marks on the stage are hidden (v, or the KEYS button under the stage) */
     int hscroll;              /* the help box scrolls when the window is too short for it */
     int zoom;                 /* the stage's zoom (0: as the window fits); vx, vy: the room pixel at its top left (vw, vh: what it shows) */
@@ -223,8 +224,24 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
     for (char *p = buf; *p; p++) if (*p >= 'a' && *p <= 'z') *p -= 32;
     canvas_text(cv, 4, 3, buf, C_YELLOW);
     if (s->msg[0]) canvas_text(cv, cv->w - 6 - text_width(s->msg), 3, s->msg, C_YELLOW);
-    /* the stage: the room at this time, a crop of it, every part outlined (the picked one yellow), the picked part's path dotted */
+    /* the stage: the room at this time, a crop of it, every part outlined (the picked one yellow), the picked part's keys */
     Canvas shot = st_shot(a, t);
+    if (s->onion && !s->playing) { /* onion skin: where the frame before / after differs from this one, it shows faintly red / blue */
+        int fb = (cur + nf - 1) % nf, fa = (cur + 1) % nf;
+        if (!a->loop) { fb = cur > 0 ? cur - 1 : -1; fa = cur + 1 < nf ? cur + 1 : -1; }
+        for (int side = 0; side < 2; side++) {
+            int f = side ? fa : fb;
+            if (f < 0) continue;
+            Canvas o = st_shot(a, st_t(f));
+            Rgb tint = side ? RGB(90, 150, 240) : RGB(230, 90, 90);
+            for (int i = 0; i < shot.w * shot.h && i < o.w * o.h; i++) if (!rgb_eq(o.p[i], shot.p[i])) {
+                Rgb c = shot.p[i], g = o.p[i];
+                Rgb gt = RGB((g.r + tint.r) / 2, (g.g + tint.g) / 2, (g.b + tint.b) / 2);
+                shot.p[i] = RGB((c.r * 6 + gt.r * 4) / 10, (c.g * 6 + gt.g * 4) / 10, (c.b * 6 + gt.b * 4) / 10);
+            }
+            canvas_free(&o);
+        }
+    }
     int vw = L.cw / L.z, vh = L.ah / L.z;
     int vx = s->vx, vy = s->vy; /* (the piece of the room shown stays inside it) */
     if (vx + vw > shot.w) vx = shot.w - vw;
@@ -381,7 +398,8 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
     for (char *p = buf; *p; p++) if (*p >= 'a' && *p <= 'z') *p -= 32;
     canvas_text(cv, sx0, ly + 2, buf, C_YELLOW);
     const char *spd = s->speed < 0.75 ? "0.5X" : s->speed > 1.5 ? "2X" : "1X", *play = s->playing ? "STOP" : "PLAY";
-    int bw = text_width(spd) + 9 + text_width(play) + 6, bx = sx1 - bw;
+    int bw = text_width("ONION") + 9 + text_width(spd) + 9 + text_width(play) + 6, bx = sx1 - bw;
+    button(cv, bx, ly, "ONION", s->onion, R_ONION, 0); bx += text_width("ONION") + 9;
     button(cv, bx, ly, spd, 0, R_SPEED, 0); bx += text_width(spd) + 9;
     button(cv, bx, ly, play, s->playing, R_PLAY, 0);
     if (L.th > 15) {
@@ -442,7 +460,7 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
     }
     if (s->help) { /* ?: the keys and the mouse, in a box over the stage; a window too short for it scrolls it (up / down, the wheel) */
         static const char *const H[] = {"HELP  (UP DOWN SCROLLS)", "MOUSE", "CLICK A PART: PICK IT", "SELECT: DRAG A BORDER TO RESIZE", "MOVE / ROTATE: DRAG ON THE STAGE", "KEY: CLICK TO ADD A KEY", "< > BESIDE A VALUE: CHANGE IT", "CLICK A FRAME: GO THERE", "WHEEL: ZOOM / SCROLL THE PANEL", "RIGHT DRAG: MOVE THE VIEW",
-                                        "KEYS", "LEFT RIGHT  FRAME", "UP DOWN  A VALUE", "< >  CHANGE IT", "+ -  ZOOM THE STAGE", "W A S D  MOVE THE VIEW", "0  VIEW AS IT WAS", "V  KEYS ON THE STAGE: ON / OFF", "SPACE  PLAY", "[ ]  OTHER PART", "K  ADD A KEY", "X  DELETE THE KEY", "E  KEY EASE", "U R  UNDO REDO", "Q  QUIT"};
+                                        "KEYS", "LEFT RIGHT  FRAME", "UP DOWN  A VALUE", "< >  CHANGE IT", "+ -  ZOOM THE STAGE", "W A S D  MOVE THE VIEW", "0  VIEW AS IT WAS", "V  KEYS ON THE STAGE: ON / OFF", "SPACE  PLAY", "O  ONION SKIN (BEFORE RED, AFTER BLUE)", "[ ]  OTHER PART", "K  ADD A KEY", "X  DELETE THE KEY", "E  KEY EASE", "U R  UNDO REDO", "Q  QUIT"};
         int n = (int)(sizeof H / sizeof *H), bw2 = 0;
         for (int i = 0; i < n; i++) if (text_width(H[i]) > bw2) bw2 = text_width(H[i]);
         int vis = (cv->h - 12 - 4 - 8) / 7, w = bw2 + 14; /* (as many lines as the window has room for) */
@@ -467,11 +485,37 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
     canvas_free(&shot);
 }
 
+/* the picker's card of a part animation: its room at time t, around its parts, as big as fits */
+static void picker_anim(Canvas *cv, int ai, double t, int x, int y, int w, int h) {
+    const PartAnim *a = parts_get(g_anim[ai]);
+    if (!a || !a->nscene) { canvas_text(cv, x + w / 2 - 1, y + h / 2 - 2, "?", C_GREY); return; }
+    t = a->loop ? fmod(t, a->length) : fmod(t, a->length + 0.5);
+    if (t > a->length) t = a->length;
+    Canvas shot = st_shot(a, t);
+    int x0 = 1 << 30, y0 = 1 << 30, x1 = -(1 << 30), y1 = -(1 << 30);
+    for (int i = 0; i < a->npart; i++) if (a->part[i].has_box) {
+        const int *b = a->part[i].box;
+        x0 = b[0] < x0 ? b[0] : x0; y0 = b[1] < y0 ? b[1] : y0;
+        x1 = b[0] + b[2] > x1 ? b[0] + b[2] : x1; y1 = b[1] + b[3] > y1 ? b[1] + b[3] : y1;
+    }
+    if (x1 < x0) { x0 = a->view_x; y0 = a->view_y; x1 = x0 + 40; y1 = y0 + 26; }
+    x0 -= 4; y0 -= 4; x1 += 4; y1 += 4;
+    int z = w / (x1 - x0) < h / (y1 - y0) ? w / (x1 - x0) : h / (y1 - y0);
+    z = z < 1 ? 1 : z > 4 ? 4 : z;
+    int cw = w / z, ch = h / z, cx = (x0 + x1) / 2 - cw / 2, cy = (y0 + y1) / 2 - ch / 2;
+    if (cx + cw > shot.w) cx = shot.w - cw;
+    if (cy + ch > shot.h) cy = shot.h - ch;
+    if (cx < 0) cx = 0;
+    if (cy < 0) cy = 0;
+    st_crop(cv, &shot, cx, cy, cw, ch, x + (w - cw * z) / 2, y + (h - ch * z) / 2, z);
+    canvas_free(&shot);
+}
+
 /* ---- the window --------------------------------------------------------------------------------------------------------- */
 static int stage_open(Stage *s, const char *name) {
     memset(s, 0, sizeof *s);
     snprintf(s->name, sizeof s->name, "%s", name);
-    s->speed = 1; s->row = 1; s->thumb_pick = -1;
+    s->speed = 1; s->row = 1; s->thumb_pick = -1; s->onion = 1;
     s->seen = -1;
     char path[700];
     snprintf(path, sizeof path, "%s/%s.txt", parts_mine_dir(), name);
@@ -534,13 +578,15 @@ static void st_zoom(Stage *s, const StLayout *L, int d) { /* the stage's zoom on
     s->vx = (int)lround(cx - (L->cw / z) / 2.0); s->vy = (int)lround(cy - (L->ah / z) / 2.0);
 }
 static void st_pan(Stage *s, int dx, int dy) { int st = s->vw / 8 > 2 ? s->vw / 8 : 2; s->vx += dx * st; s->vy += dy * st; }
-static int stage_run(const char *dir, const char *name) {
-    static Stage s;
+static void stage_dirs(const char *dir) { /* the folders of the animations: the defaults next to sprites/, yours next to your sprites */
     if (!parts_default_dir()[0]) { char rd[700]; snprintf(rd, sizeof rd, "%s", dir); char *sl = strrchr(rd, '/'); strcpy(sl ? sl : rd, "/anims"); parts_set_dir(rd); }
     if (!parts_mine_dir()[0]) { char md[700]; snprintf(md, sizeof md, "%s", getenv("CLAWD_MY_ANIMS") ? getenv("CLAWD_MY_ANIMS") : sprites_mine_dir()); if (!getenv("CLAWD_MY_ANIMS")) { char *sl = strrchr(md, '/'); if (sl) strcpy(sl, "/anims"); } parts_set_mine_dir(md); }
+}
+/* the stage page in a terminal that is already set up (the editor's sprite picker opens it too): until q; 1 if it cannot open */
+static int stage_loop(const char *dir, const char *name) {
+    static Stage s;
+    (void)dir;
     if (stage_open(&s, name)) return 1;
-    if (!isatty(STDIN_FILENO) || !isatty(STDOUT_FILENO)) { fprintf(stderr, "clawd-room --edit needs a terminal\n"); return 1; }
-    tty_on();
     Cells prev = {0, 0, NULL};
     int quit = 0, cols = 0, rows = 0;
     char in[256]; int nin = 0;
@@ -656,6 +702,7 @@ static int stage_run(const char *dir, const char *name) {
                     else if (rg->kind == R_SEASE) { s.playing = 0; st_ease(&s); }
                     else if (rg->kind == R_FRAME) { s.frame = rg->i; s.playing = 0; }
                     else if (rg->kind == R_PLAY) { s.playing = !s.playing; s.play_t0 = wall_now() - st_t(s.frame) / s.speed; }
+                    else if (rg->kind == R_ONION) s.onion = !s.onion;
                     else if (rg->kind == R_SPEED) s.speed = s.speed < 0.75 ? 1 : s.speed < 1.5 ? 2 : 0.5;
                     continue;
                 }
@@ -683,6 +730,7 @@ static int stage_run(const char *dir, const char *name) {
             else if (ch == '+' || ch == '=') st_zoom(&s, &L, 1);
             else if (ch == '-') st_zoom(&s, &L, -1);
             else if (ch == 'v' || ch == 'V') s.hide_keys = !s.hide_keys;
+            else if (ch == 'o' || ch == 'O') s.onion = !s.onion;
             else if (ch == '0') { s.zoom = 0; s.vx = s.a.view_x; s.vy = s.a.view_y; }
             else if (ch == 'w' || ch == 'W') st_pan(&s, 0, -1);
             else if (ch == 's' || ch == 'S') st_pan(&s, 0, 1);
@@ -699,9 +747,17 @@ static int stage_run(const char *dir, const char *name) {
         memmove(in, in + i, (size_t)(nin - i)); nin -= i;
         (void)t;
     }
-    tty_off();
     cells_free(&prev);
     for (int f = 0; f < ST_MAXF; f++) if (s.thumb[f].p) canvas_free(&s.thumb[f]);
     free(s.orig);
     return 0;
+}
+static int stage_run(const char *dir, const char *name) { /* --edit anims/NAME */
+    stage_dirs(dir);
+    { static Stage probe; int bad = stage_open(&probe, name); free(probe.orig); if (bad) return 1; } /* (a file that does not load says so before the terminal changes) */
+    if (!isatty(STDIN_FILENO) || !isatty(STDOUT_FILENO)) { fprintf(stderr, "clawd-room --edit needs a terminal\n"); return 1; }
+    tty_on();
+    int rc = stage_loop(dir, name);
+    tty_off();
+    return rc;
 }

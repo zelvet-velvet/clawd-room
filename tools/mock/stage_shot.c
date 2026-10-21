@@ -21,6 +21,20 @@ static void shot_sized(const char *dir, const char *name, int frame, int pick, i
     canvas_free(&cv);
     (void)dir;
 }
+static void picker_shot(const char *dir, int view, const char *out) { /* the sprite picker on its ANIMS tab */
+    static Ed E2;
+    memset(&E2, 0, sizeof E2);
+    E2.pk = 1; E2.hx = E2.hy = -1; E2.drag = -1; E2.speed = 1; E2.del_ask = -1;
+    file_open(&E2, dir, 2, "walk-1");
+    picker_open(&E2, dir, 0);
+    E2.ptab = ANIMS; E2.pview = view;
+    for (int i = 0; i < g_npi; i++) if (g_pi[i].file == ANIMS) { E2.psel = i; break; }
+    Canvas cv = canvas_new(300, 200, ST_BG);
+    draw(&E2, &cv);
+    png_write(out, &cv, 3);
+    fprintf(stderr, "wrote %s\n", out);
+    canvas_free(&cv);
+}
 int main(int argc, char **argv) {
     const char *o = argc > 1 ? argv[1] : "out/18-stage", *dir = argc > 2 ? argv[2] : "sprites";
     char p[700];
@@ -39,5 +53,7 @@ int main(int argc, char **argv) {
     snprintf(p, sizeof p, "%s/stage-turn.png", o); shot(dir, "swing", 0, 3, 2, 0, 2, p);
     snprintf(p, sizeof p, "%s/stage-wide.png", o); shot_sized(dir, "swing", 6, 4, 1, 0, 0, 443, 265, 0, p);
     snprintf(p, sizeof p, "%s/stage-wide-scrolled.png", o); shot_sized(dir, "swing", 6, 4, 1, 0, 0, 330, 175, 45, p);
+    snprintf(p, sizeof p, "%s/picker-anims.png", o); picker_shot(dir, 0, p);
+    snprintf(p, sizeof p, "%s/picker-anims-list.png", o); picker_shot(dir, 1, p);
     return 0;
 }
