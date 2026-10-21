@@ -4,7 +4,7 @@
 # programs are here so an idea can be drawn again or taken further.
 #
 #   tools/mock/build.sh            build them all and draw every mockup into gallery/mock/out/ (not in git)
-#   tools/mock/build.sh NAME ...   only these (pick_gate_mock, tag_mock, well_mock, settings_mock, bar_demo, palette_mock, editor_mock, gate_editor_mock)
+#   tools/mock/build.sh NAME ...   only these (pick_gate_mock, tag_mock, well_mock, settings_mock, bar_demo, palette_mock, editor_mock, gate_editor_mock, part_anim_mock)
 #
 # Each links the room's object files (all but main.o). theme_mock.c is made from c/theme.c with one switch added (the
 # park without its big tree), for the construct mockup of the park's building.
@@ -13,7 +13,7 @@ HERE=$(cd "$(dirname "$0")" && pwd)
 ROOT=$(cd "$HERE/../.." && pwd)
 OUT="$ROOT/gallery/mock"
 make -s -C "$ROOT/c" clawd-room
-mkdir -p "$OUT/bin" "$OUT/out"/{01-pick-highlight,02-gate-appear-first-round,03-gate-construct,04-bar-and-gate-tags,05-pick-d-spotlight,06-settings,07-construct-real-parts,08-well-redesign,09-editor-animation,10-gate-editor,palette}
+mkdir -p "$OUT/bin" "$OUT/out"/{01-pick-highlight,02-gate-appear-first-round,03-gate-construct,04-bar-and-gate-tags,05-pick-d-spotlight,06-settings,07-construct-real-parts,08-well-redesign,09-editor-animation,10-gate-editor,11-part-animations,palette}
 python3 - "$ROOT/c/theme.c" "$OUT/bin/theme_mock.c" <<'EOF'
 import sys
 s = open(sys.argv[1]).read()
@@ -32,7 +32,7 @@ CC=${CC:-cc}
 FLAGS="-O2 -std=c11 -D_DEFAULT_SOURCE -I$ROOT/c"
 OBJS=$(ls "$ROOT"/c/*.o | grep -v -e '/main.o$' -e '/theme.o$')
 $CC $FLAGS -c "$OUT/bin/theme_mock.c" -o "$OUT/bin/theme_mock.o"
-NAMES=${*:-pick_gate_mock tag_mock well_mock settings_mock bar_demo palette_mock editor_mock gate_editor_mock}
+NAMES=${*:-pick_gate_mock tag_mock well_mock settings_mock bar_demo palette_mock editor_mock gate_editor_mock part_anim_mock}
 cd "$OUT"
 for n in $NAMES; do
     if [ "$n" = editor_mock ]; then # (it includes c/editor.c, to draw with the editor's own code)
@@ -46,6 +46,7 @@ for n in $NAMES; do
         palette_mock) bin/$n out/palette ;;
         editor_mock) bin/$n out/09-editor-animation "$ROOT/sprites" ;;
         gate_editor_mock) bin/$n out/10-gate-editor ;;
+        part_anim_mock) bin/$n out/11-part-animations ;;
         *) bin/$n ;;
     esac
 done

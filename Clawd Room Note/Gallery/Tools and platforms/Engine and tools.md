@@ -8,6 +8,16 @@ sticker: lucide//wrench
 ---
 Pictures of the debug overlay, the placer, the pixel editor, the gallery, newest first: ✅ current (open), ♻️ replaced and ❌ not picked (folded; the status is in [[Snapshot status]]). The files are the source in `Assets/Snapshots/Engine and tools/`; this note is written by `tools/vault_gallery.py` (do not edit it by hand: add a picture, then run the tool).
 
+## 2026-10-21
+
+> [!success]+ ✅ current · Part animations, the barista brewing, A dope sheet and B one track
+> ![[2026-10-21 part animations, the barista brewing, A dope sheet and B one track.png|420]]
+> Shown in: [[Interaction|Interaction]]
+
+> [!success]+ ✅ current · Part animations, a Clawd on the swing, A dope sheet and B one track
+> ![[2026-10-21 part animations, a Clawd on the swing, A dope sheet and B one track.png|420]]
+> Shown in: [[Interaction|Interaction]]
+
 ## 2026-10-19
 
 > [!success]+ ✅ current · Pixel editor, shortcuts box in a short window
