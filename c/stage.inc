@@ -12,7 +12,7 @@
 
 Canvas render(int cols, int rows, Room *room, double now, double t, char *note, size_t note_n); /* draw.c */
 
-enum { R_SSTAGE = 64, R_SVAL, R_SPART, R_SKEY, R_SKEYDEL, R_SEASE, R_STOOL, R_SPANEL };
+enum { R_SSTAGE = 64, R_SVAL, R_SPART, R_SKEY, R_SKEYDEL, R_SEASE, R_STOOL, R_SPANEL, R_SSCROLL };
 #define ST_UNDO 24
 #define ST_FPS 16          /* the frames: 16 a second, like the room */
 #define ST_MAXF 300
@@ -31,6 +31,8 @@ typedef struct {
     int zoom;                 /* the stage's zoom (0: as the window fits); vx, vy: the room pixel at its top left (vw, vh: what it shows) */
     int pscroll, pfollow;     /* the panel scrolls: how far, and whether it should bring the picked value into view */
     int pan; double pan_x0, pan_y0; int pan_vx, pan_vy; /* dragging the view with the right button */
+    int rsz, rsz_box[4], rsz_off[2]; /* resizing the picked part's border: which edges (1 left, 2 right, 4 top, 8 bottom), its box before, where it is at this frame */
+    int sbdrag, seen, cap, sb_x0, sb_w; /* the frame strip's scroll bar: being dragged; the frame last seen (the strip follows it when it changes); frames in view; the bar's place */
     char *orig; /* your file as it was when the page opened (NULL: you had none), for a discard */ /* (vx, vy: the room pixel at the stage's top left, as last drawn) */
     double play_t0, speed;
     int drag; double px0, py0; PartPose dpose; /* dragging the picked part: where the mouse and the key were */
@@ -235,6 +237,13 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
             canvas_px(cv, L.gx + (p->box[0] + p->box[2] / 2 + (int)lround(q.x) - vx) * L.z + L.z / 2, L.ty + (p->box[1] + (int)lround(q.y) - vy) * L.z + L.z / 2, f == cur ? C_WHITE : RGB(150, 130, 60));
         }
     }
+    if (s->tool == 0 && s->pick < a->npart && a->part[s->pick].has_box) { /* SELECT: handles on the picked part's border (drag one to resize it) */
+        int bx, by, bw, bh;
+        st_box(&a->part[s->pick], parts_pose(a, s->pick, t), &bx, &by, &bw, &bh);
+        int x0 = L.gx + (bx - vx) * L.z, y0 = L.ty + (by - vy) * L.z, x1 = x0 + bw * L.z, y1 = y0 + bh * L.z, xm = (x0 + x1) / 2, ym = (y0 + y1) / 2;
+        int hx[8] = {x0, xm, x1, x0, x1, x0, xm, x1}, hy[8] = {y0, y0, y0, ym, ym, y1, y1, y1};
+        for (int k = 0; k < 8; k++) if (hx[k] > L.gx && hx[k] < L.gx + L.cw - 1 && hy[k] > L.ty && hy[k] < L.ty + L.ah - 1) { canvas_rect(cv, hx[k] - 1, hy[k] - 1, 3, 3, C_YELLOW); canvas_px(cv, hx[k], hy[k], ST_BG); }
+    }
     if (s->pick < a->npart && a->part[s->pick].has_box) { /* the keys of the picked part: a diamond where it is at each (the one at this frame white) */
         const Part *p = &a->part[s->pick];
         for (int k = 0; k < p->nkey; k++) {
@@ -354,9 +363,14 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
         frame(cv, 4, ty, aw, ah > 40 ? 40 : ah, RGB(70, 70, 92));
         int cap = (sx1 - sx0 + 6) / (ST_TW + 6);
         if (cap < 1) cap = 1;
-        if (cur < s->first) s->first = cur; /* (the strip keeps the open frame in view) */
-        if (cur >= s->first + cap) s->first = cur - cap + 1;
+        if (cur != s->seen) { /* (the frame changed: the strip brings it into view; scrolling the strip by hand is left alone) */
+            if (cur < s->first) s->first = cur;
+            if (cur >= s->first + cap) s->first = cur - cap + 1;
+            s->seen = cur;
+        }
+        if (s->first > nf - cap) s->first = nf - cap;
         if (s->first < 0) s->first = 0;
+        s->cap = cap;
         int tx = sx0, shown = 0;
         region(R_STRIP, 0, sx0, ty - 1, sx1 - sx0, ST_TH + 12, RGB(0, 0, 0));
         if (s->thumb_pick != s->pick) { memset(s->thumb_ok, 0, sizeof s->thumb_ok); s->thumb_pick = s->pick; }
@@ -380,10 +394,12 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
             canvas_text(cv, tx + (ST_TW - text_width(nb)) / 2, ty + ST_TH + 2, nb, on ? C_YELLOW : C_GREY);
             if (pp && st_key_at(pp, st_t(f)) >= 0) st_diamond(cv, tx + ST_TW / 2, ty + ST_TH + 11, C_YELLOW);
         }
-        if (shown < nf) { /* a scroll bar: where the frames shown are among all of them */
+        if (shown < nf) { /* a scroll bar: where the frames shown are among all of them; click or drag it, or use the wheel over the frames */
             int by = ty + ST_TH + 16, tw = sx1 - sx0, k0 = sx0 + tw * s->first / nf, k1 = sx0 + tw * (s->first + shown) / nf;
-            canvas_rect(cv, sx0, by, tw, 2, RGB(40, 40, 52));
-            canvas_rect(cv, k0, by, k1 - k0 > 4 ? k1 - k0 : 4, 2, RGB(140, 140, 160));
+            canvas_rect(cv, sx0, by, tw, 3, RGB(40, 40, 52));
+            canvas_rect(cv, k0, by, k1 - k0 > 6 ? k1 - k0 : 6, 3, s->sbdrag ? C_WHITE : RGB(140, 140, 160));
+            region(R_SSCROLL, 0, sx0, by - 3, tw, 9, RGB(0, 0, 0));
+            s->sb_x0 = sx0; s->sb_w = tw;
         }
     }
     if (s->asking) { /* q: the editor's own window (draw_asking): save or discard if something changed, else just quit */
@@ -398,14 +414,14 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
         canvas_text(cv, bx + (w - text_width(b)) / 2, by + 14, b, C_WHITE);
     }
     if (s->help) { /* ?: the keys and the mouse, in a box over the stage */
-        static const char *const H[] = {"MOUSE", "CLICK A PART: PICK IT", "MOVE / TURN: DRAG ON THE STAGE", "KEY: CLICK TO ADD A KEY", "< > BESIDE A VALUE: CHANGE IT", "CLICK A FRAME: GO THERE", "WHEEL: ZOOM / SCROLL THE PANEL", "RIGHT DRAG: MOVE THE VIEW",
+        static const char *const H[] = {"MOUSE", "CLICK A PART: PICK IT", "SELECT: DRAG A BORDER TO RESIZE", "MOVE / TURN: DRAG ON THE STAGE", "KEY: CLICK TO ADD A KEY", "< > BESIDE A VALUE: CHANGE IT", "CLICK A FRAME: GO THERE", "WHEEL: ZOOM / SCROLL THE PANEL", "RIGHT DRAG: MOVE THE VIEW",
                                         "KEYS", "LEFT RIGHT  FRAME", "UP DOWN  A VALUE", "< >  CHANGE IT", "+ -  ZOOM THE STAGE", "W A S D  MOVE THE VIEW", "0  VIEW AS IT WAS", "SPACE  PLAY", "[ ]  OTHER PART", "K  ADD A KEY", "X  DELETE THE KEY", "E  KEY EASE", "U R  UNDO REDO", "Q  QUIT"};
         int n = (int)(sizeof H / sizeof *H), bw2 = 0;
         for (int i = 0; i < n; i++) if (text_width(H[i]) > bw2) bw2 = text_width(H[i]);
         int hh = n * 7 + 8, hx = L.gx + (L.cw - bw2 - 12) / 2, hy = L.ty + (L.ah - hh) / 2;
         if (hy < L.ty) hy = L.ty;
         canvas_rect(cv, hx, hy, bw2 + 12, hh, RGB(26, 26, 36)); frame(cv, hx, hy, bw2 + 12, hh, RGB(110, 110, 140));
-        for (int i = 0; i < n; i++) canvas_text(cv, hx + 6, hy + 4 + i * 7, H[i], i == 0 || i == 8 ? C_YELLOW : C_WHITE);
+        for (int i = 0; i < n; i++) canvas_text(cv, hx + 6, hy + 4 + i * 7, H[i], i == 0 || i == 9 ? C_YELLOW : C_WHITE);
     }
     canvas_free(&shot);
 }
@@ -415,7 +431,7 @@ static int stage_open(Stage *s, const char *name) {
     memset(s, 0, sizeof *s);
     snprintf(s->name, sizeof s->name, "%s", name);
     s->speed = 1; s->row = 1; s->thumb_pick = -1;
-    s->vx = -1000; /* (set from the file's view when first drawn) */
+    s->seen = -1;
     char path[700];
     snprintf(path, sizeof path, "%s/%s.txt", parts_mine_dir(), name);
     s->orig = parts_mine_dir()[0] ? slurp(path) : NULL;
@@ -438,6 +454,34 @@ static void st_pick_at(Stage *s, double t, int mx, int my, const StLayout *L) { 
         if (X >= bx - 1 && X <= bx + bw && Y >= by - 1 && Y <= by + bh && bw * bh < barea) { best = i; barea = bw * bh; }
     }
     if (best >= 0) s->pick = best;
+}
+/* which borders of the picked part the pointer is on (1 left, 2 right, 4 top, 8 bottom; two for a corner), 0 if none */
+static int st_edge_at(const Stage *s, const StLayout *L, double t, int mx, int my) {
+    if (s->pick >= s->a.npart || !s->a.part[s->pick].has_box) return 0;
+    int bx, by, bw, bh;
+    st_box(&s->a.part[s->pick], parts_pose(&s->a, s->pick, t), &bx, &by, &bw, &bh);
+    int x0 = L->gx + (bx - s->vx) * L->z, y0 = L->ty + (by - s->vy) * L->z, x1 = x0 + bw * L->z, y1 = y0 + bh * L->z, r = 3, m = 0;
+    int inx = mx >= x0 - r && mx <= x1 + r, iny = my >= y0 - r && my <= y1 + r;
+    if (iny && abs(mx - x0) <= r) m |= 1;
+    if (iny && abs(mx - x1) <= r) m |= 2;
+    if (inx && abs(my - y0) <= r) m |= 4;
+    if (inx && abs(my - y1) <= r) m |= 8;
+    if ((m & 3) == 3) m &= abs(mx - x0) < abs(mx - x1) ? ~2 : ~1; /* (a thin part: the nearer side) */
+    if ((m & 12) == 12) m &= abs(my - y0) < abs(my - y1) ? ~8 : ~4;
+    return m;
+}
+static void st_resize(Stage *s, const StLayout *L, int mx, int my) { /* the dragged borders follow the pointer (room pixels, inside what the stage shows) */
+    Part *p = &s->a.part[s->pick];
+    int X = s->vx + (mx - L->gx) / L->z, Y = s->vy + (my - L->ty) / L->z;
+    X = X < s->vx ? s->vx : X > s->vx + s->vw ? s->vx + s->vw : X;
+    Y = Y < s->vy ? s->vy : Y > s->vy + s->vh ? s->vy + s->vh : Y;
+    int l = s->rsz_box[0] + s->rsz_off[0], t0 = s->rsz_box[1] + s->rsz_off[1], r = l + s->rsz_box[2], b = t0 + s->rsz_box[3]; /* (as they were, where the part is now) */
+    if (s->rsz & 1) l = X < r ? X : r - 1;
+    if (s->rsz & 2) r = X > l ? X : l + 1;
+    if (s->rsz & 4) t0 = Y < b ? Y : b - 1;
+    if (s->rsz & 8) b = Y > t0 ? Y : t0 + 1;
+    p->box[0] = l - s->rsz_off[0]; p->box[1] = t0 - s->rsz_off[1]; p->box[2] = r - l; p->box[3] = b - t0;
+    st_changed(s);
 }
 static void st_zoom(Stage *s, const StLayout *L, int d) { /* the stage's zoom one step, about the middle of what it shows */
     int z = L->z + d;
@@ -501,6 +545,15 @@ static int stage_run(const char *dir, const char *name) {
                         else if (rg && (rg->kind == R_STRIP || rg->kind == R_FRAME)) { s.first += up ? -1 : 1; if (s.first < 0) s.first = 0; if (s.first > nf - 1) s.first = nf - 1; }
                         continue;
                     }
+                    if (s.sbdrag) { /* dragging the frame strip's scroll bar */
+                        if (release) s.sbdrag = 0;
+                        else if (motion && s.sb_w > 0) { s.first = (int)((long)(px - s.sb_x0) * nf / s.sb_w) - s.cap / 2; if (s.first > nf - s.cap) s.first = nf - s.cap; if (s.first < 0) s.first = 0; }
+                        continue;
+                    }
+                    if (s.rsz && (motion || release)) { /* dragging a border of the picked part */
+                        if (release) { s.rsz = 0; st_save(&s); } else st_resize(&s, &L, px, py);
+                        continue;
+                    }
                     if (s.pan) { /* dragging the view with the right button */
                         if (release) s.pan = 0;
                         else if (motion) { s.vx = s.pan_vx - (int)lround((px - s.pan_x0) / L.z); s.vy = s.pan_vy - (int)lround((py - s.pan_y0) / L.z); }
@@ -529,8 +582,19 @@ static int stage_run(const char *dir, const char *name) {
                     }
                     if (release || motion || btn != 0 || !rg) continue;
                     s.msg[0] = 0;
+                    if (rg->kind == R_SSCROLL) { s.sbdrag = 1; s.first = (int)((long)(px - s.sb_x0) * nf / s.sb_w) - s.cap / 2; if (s.first > nf - s.cap) s.first = nf - s.cap; if (s.first < 0) s.first = 0; continue; }
                     if (rg->kind == R_SSTAGE) {
                         s.playing = 0;
+                        if (s.tool == 0) { /* SELECT: a border of the picked part is dragged to resize it */
+                            int m = st_edge_at(&s, &L, st_t(s.frame), px, py);
+                            if (m) {
+                                const Part *pt = &s.a.part[s.pick];
+                                PartPose pz = parts_pose(&s.a, s.pick, st_t(s.frame));
+                                st_push(&s);
+                                s.rsz = m; memcpy(s.rsz_box, pt->box, sizeof s.rsz_box); s.rsz_off[0] = (int)lround(pz.x); s.rsz_off[1] = (int)lround(pz.y);
+                                continue;
+                            }
+                        }
                         st_pick_at(&s, st_t(s.frame), px, py, &L); /* (the part pressed on is the one the tool works on) */
                         if (s.tool == 0) {}
                         else if (s.tool == 3) st_add_key(&s);
