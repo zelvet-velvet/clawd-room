@@ -32,7 +32,7 @@ sticker: lucide//activity
 ### 🎨 Rooms and art
 - [ ] **Railed Stair Well**: Build design A (a bigger opening, steps right to left, a guard rail); no big tree in the park when it has a way up ([[2026-10-20]]).
 - [ ] **Gates Appear**: A setting: simple (the parts in turn, nothing popping in at the end) or construct (real parts fly into a blue outline, 1.4 s).
-- [ ] **README Look**: `README.md` still describes the old flat look in places (banner, gates at the window edge).
+- [ ] **Docs Look**: `README.md` is a short front page now (`docs/` has the details, #15); `docs/Linked-Rooms.md` and `docs/Platforms.md` still describe the old flat look in places (banner, gates at the window edge).
 
 ### 🎮 Interaction
 - [ ] **Picked Clawd**: Yellow corners and a spotlight (60 in 100) that fade in and out on Tab.
