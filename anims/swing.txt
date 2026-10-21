@@ -1,0 +1,28 @@
+# The park's swing: a Clawd on it swinging towards us and back. A part animation (c/parts.c; the editor makes and changes these).
+#   anim NAME length SECONDS [loop | once]     a looping one wraps time; put a key at the length so it ends where it began
+#   part NAME [group GROUP]                    a part of the thing; a group is edited together
+#   key PART TIME [x=] [y=] [turn=] [glow=] [show=] [ease=]
+#        x y     where the part is from its rest place, in room pixels (y down)
+#        turn    degrees, glow 0..100, show 0 or 1 (it shows or hides at the key, not in between)
+#        ease    how the part gets to this key from the one before: linear (default), out, in-out, back
+#   A field a key leaves out stays as the part's key before it had it (the first key starts at 0 and shown).
+anim swing length 1.6 loop
+part bar    group frame
+part chain-l group swing
+part chain-r group swing
+part seat   group swing
+part clawd  group swing
+key bar     0.0
+key bar     1.6
+key chain-l 0.0 turn=-8
+key chain-l 0.8 turn=8 ease=in-out
+key chain-l 1.6 turn=-8 ease=in-out
+key chain-r 0.0 turn=-8
+key chain-r 0.8 turn=8 ease=in-out
+key chain-r 1.6 turn=-8 ease=in-out
+key seat    0.0 y=2 turn=-8
+key seat    0.8 y=-2 turn=8 ease=in-out
+key seat    1.6 y=2 turn=-8 ease=in-out
+key clawd   0.0 y=2
+key clawd   0.8 y=-2 ease=in-out
+key clawd   1.6 y=2 ease=in-out

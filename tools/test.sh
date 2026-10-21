@@ -39,6 +39,7 @@ snap rng.txt $bin --golden-rng
 snap scenarios.txt $bin --script tools/scenarios/*.sc
 snap ui.txt $bin --golden-ui tools/fixtures/events-odd.jsonl
 snap win.txt $bin --golden-win
+snap parts.txt $bin --golden-parts anims/swing.txt anims/brew.txt tools/fixtures/anims/bad-order.txt tools/fixtures/anims/bad-field.txt tools/fixtures/anims/bad-ease.txt tools/fixtures/anims/bad-time.txt tools/fixtures/anims/loop-wrap.txt
 snap dump.txt dumps
 snap overlap.txt $bin --check   # items painting over each other (Engine Design: the placer brings this to 0)
 [ $mode = update ] && exit 0

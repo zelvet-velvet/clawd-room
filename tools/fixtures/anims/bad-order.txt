@@ -1,0 +1,4 @@
+anim t length 1 once
+part a
+key a 0.5 x=1
+key a 0.2 x=2

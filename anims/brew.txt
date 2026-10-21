@@ -1,0 +1,21 @@
+# The coffee shop: the barista brews. The cup rises to the machine, steam puffs, the cup comes down again. See anims/swing.txt
+# for the file format.
+anim brew length 1.7 once
+part machine group machine
+part cup     group machine
+part steam   group machine
+part clawd   group barista
+key machine 0.0
+key machine 0.4 y=-1 ease=out
+key machine 0.8 y=0 ease=in-out
+key cup     0.0 y=0
+key cup     0.5 y=-5 ease=out
+key cup     1.1 y=-5 glow=20
+key cup     1.7 y=0 glow=0 ease=in-out
+key steam   0.5 show=0
+key steam   0.6 show=1 y=0 glow=0
+key steam   1.1 y=-6 glow=40 ease=out
+key steam   1.4 y=-9 glow=0 ease=out
+key clawd   0.0 x=0
+key clawd   0.4 x=2 ease=in-out
+key clawd   1.7 x=0 ease=in-out
