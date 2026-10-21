@@ -44,7 +44,7 @@ Pictures of the ways between rooms: doors, stairs, the half floor, wells, newest
 
 > [!success]+ ✅ current · Gate editor, part keyframes, A dope sheet and B one track
 > ![[2026-10-20 gate editor, part keyframes, A dope sheet and B one track.png|420]]
-> Shown in: [[2026-10-20#🧩 Part animations in the pixel editor: the plan and a mockup (Zaviel)|2026-10-20 · 🧩 Part animations in the pixel editor: the plan and a mockup (Zaviel)]], [[Interaction|Interaction]], [[Rooms and Art|Rooms and Art]]
+> Shown in: [[2026-10-20#🧩 Part animations in the pixel editor: the plan and a mockup (Zaviel)|2026-10-20 · 🧩 Part animations in the pixel editor: the plan and a mockup (Zaviel)]], [[Rooms and Art|Rooms and Art]], [[Interaction|Interaction]]
 
 > [!success]+ ✅ current · Construct v2 real parts, park stoop · picked
 > ![[2026-10-20 construct v2 real parts, park stoop (picked).png|420]]

@@ -10,12 +10,12 @@ Pictures of the debug overlay, the placer, the pixel editor, the gallery, newest
 
 ## 2026-10-21
 
-> [!success]+ ✅ current · Part animations in the editor, the barista brewing (now, A dope sheet, B frames)
-> ![[2026-10-21 part animations in the editor, the barista brewing (now, A dope sheet, B frames).png|420]]
+> [!success]+ ✅ current · Part animations in the editor, the barista brewing (now, A dope sheet, B frames, B picked)
+> ![[2026-10-21 part animations in the editor, the barista brewing (now, A dope sheet, B frames, B picked).png|420]]
 > Shown in: [[Interaction|Interaction]]
 
-> [!success]+ ✅ current · Part animations in the editor, a Clawd on the swing (now, A dope sheet, B frames)
-> ![[2026-10-21 part animations in the editor, a Clawd on the swing (now, A dope sheet, B frames).png|420]]
+> [!success]+ ✅ current · Part animations in the editor, a Clawd on the swing (now, A dope sheet, B frames, B picked)
+> ![[2026-10-21 part animations in the editor, a Clawd on the swing (now, A dope sheet, B frames, B picked).png|420]]
 > Shown in: [[Interaction|Interaction]]
 
 ## 2026-10-20

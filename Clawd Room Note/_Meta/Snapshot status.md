@@ -122,8 +122,8 @@ Whether each picture in `Assets/Snapshots/` still shows how things are. `tools/v
 | 2026-10-20 construct v2 real parts, park stoop (picked).gif | current |  |
 | 2026-10-20 construct v2 real parts, park stoop (picked).png | current |  |
 | 2026-10-20 gate editor, part keyframes, A dope sheet and B one track.png | current |  |
-| 2026-10-21 part animations in the editor, a Clawd on the swing (now, A dope sheet, B frames).png | current |  |
-| 2026-10-21 part animations in the editor, the barista brewing (now, A dope sheet, B frames).png | current |  |
+| 2026-10-21 part animations in the editor, a Clawd on the swing (now, A dope sheet, B frames, B picked).png | current |  |
+| 2026-10-21 part animations in the editor, the barista brewing (now, A dope sheet, B frames, B picked).png | current |  |
 | 2026-10-20 editor FILL ALL on a prop.png | current |  |
 | 2026-10-20 editor animation mockup A and B (A picked).png | replaced | [[2026-10-20 editor timeline, onion skin and fill.png]] |
 | 2026-10-20 editor colour panel folded to a ribbon.png | current |  |
