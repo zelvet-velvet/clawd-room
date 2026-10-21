@@ -68,7 +68,7 @@ Clawd Room Note/    this Obsidian vault (open this folder in Obsidian; plugin co
 CLAUDE.md           points here
 ```
 
-Test hooks (environment): `CLAWD_EVENTS` (events file), `CLAWD_MY_SPRITES` (your own sprites' folder; the tests use none), `CLAWD_LINK_DIR` (link folder), `CLAWD_SIZE_LOG` (logs terminal size, gate positions and who the camera follows), `CLAWD_STATUS_LOG` (the bottom bar's text: it is pixels, so the pty tests read it here), `CLAWD_SHOWN_LOG` (which sessions a linked room shows).
+Test hooks (environment): `CLAWD_EVENTS` (events file), `CLAWD_MY_SPRITES` (your own sprites' folder; the tests use none), `CLAWD_LINK_DIR` (link folder), `CLAWD_SIZE_LOG` (logs terminal size, gate positions and who the camera follows), `CLAWD_STATUS_LOG` (the bottom bar's text: it is pixels, so the pty tests read it here), `CLAWD_SHOWN_LOG` (which sessions a linked room shows), `CLAWD_ANIMS` / `CLAWD_MY_ANIMS` (the part animations' folders: the defaults, yours), `CLAWD_STAGE_LOG` (the stage page's tool, view, picked part and frame after each input: the pty tests read it).
 
 ---
 ## ⚠️ Rules that prevent breakage

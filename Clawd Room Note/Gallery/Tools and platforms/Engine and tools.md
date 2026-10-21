@@ -12,11 +12,28 @@ Pictures of the debug overlay, the placer, the pixel editor, the gallery, newest
 
 > [!success]+ ✅ current · Part animations in the editor, the barista brewing (now, A dope sheet, B frames, B picked)
 > ![[2026-10-21 part animations in the editor, the barista brewing (now, A dope sheet, B frames, B picked).png|420]]
-> Shown in: [[Interaction|Interaction]]
+> Shown in: [[2026-10-21#🧩 Part animations in the pixel editor: the editor now, then the stage page (Zaviel)|2026-10-21 · 🧩 Part animations in the pixel editor: the editor now, then the stage page (Zaviel)]], [[Interaction|Interaction]]
 
 > [!success]+ ✅ current · Part animations in the editor, a Clawd on the swing (now, A dope sheet, B frames, B picked)
 > ![[2026-10-21 part animations in the editor, a Clawd on the swing (now, A dope sheet, B frames, B picked).png|420]]
-> Shown in: [[Interaction|Interaction]]
+> Shown in: [[2026-10-21#🧩 Part animations in the pixel editor: the editor now, then the stage page (Zaviel)|2026-10-21 · 🧩 Part animations in the pixel editor: the editor now, then the stage page (Zaviel)]], [[Interaction|Interaction]]
+
+> [!failure]- ❌ not picked · Grow bar running Clawd, C1 C2 C3 (not picked)
+> ![[2026-10-21 grow bar running Clawd, C1 C2 C3 (not picked).png|420]]
+> Shown in: [[2026-10-21#🏃 The grow bar's Clawd; turning a part, parked: mockups (Zaviel)|2026-10-21 · 🏃 The grow bar's Clawd; turning a part, parked: mockups (Zaviel)]]
+
+> [!success]+ ✅ current · Grow bar figure, the Clawd's own walk frames · picked
+> ![[2026-10-21 grow bar figure, the Clawd's own walk frames (picked).png|420]]
+> Shown in: [[2026-10-21#🏃 The grow bar's Clawd; turning a part, parked: mockups (Zaviel)|2026-10-21 · 🏃 The grow bar's Clawd; turning a part, parked: mockups (Zaviel)]]
+
+> [!quote]- ♻️ replaced · Grow bar figure, A B C D (C picked)
+> ![[2026-10-21 grow bar figure, A B C D (C picked).png|420]]
+> Replaced by: [[2026-10-21 grow bar figure, the Clawd's own walk frames (picked).png]]
+> Shown in: [[2026-10-21#🏃 The grow bar's Clawd; turning a part, parked: mockups (Zaviel)|2026-10-21 · 🏃 The grow bar's Clawd; turning a part, parked: mockups (Zaviel)]]
+
+> [!failure]- ❌ not picked · A part rotated, A B C (parked)
+> ![[2026-10-21 a part rotated, A B C (parked).png|420]]
+> Shown in: [[2026-10-21#🏃 The grow bar's Clawd; turning a part, parked: mockups (Zaviel)|2026-10-21 · 🏃 The grow bar's Clawd; turning a part, parked: mockups (Zaviel)]]
 
 ## 2026-10-20
 
