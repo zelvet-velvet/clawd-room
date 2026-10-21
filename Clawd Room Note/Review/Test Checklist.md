@@ -116,8 +116,9 @@ What to test next, one `[!example] Group X · …` callout per group. Each test 
 > > 5. Compare with ![[2026-10-20 editor timeline, onion skin and fill.png|300]] and ![[2026-10-20 editor playing a Clawd at the room's speed.png|300]]
 
 > [!example] Group G · WSL: the stage page for part animations (T31–T38, PR #19)
-> - [ ] **T31** `./clawd-room.sh --edit anims/swing` → the stage page opens: the park with the Clawd on the swing, the parts outlined, the panel, the frames as pictures; `?` shows the keys (and scrolls in a short window).
-> - [ ] **T32** Click the seat, then the Clawd, then a name in PARTS → that part is picked (yellow); SELECT shows handles; drag one → the outline resizes.
+> - [x] **T31** `./clawd-room.sh --edit anims/swing` → the stage page opens: the park with the Clawd on the swing, the parts outlined, the panel, the frames as pictures; `?` shows the keys (and scrolls in a short window).
+> - [x] **T32** Click the seat, then the Clawd, then a name in PARTS → that part is picked (yellow); SELECT shows handles; drag one → the outline resizes.
+> ✅ 2026-10-21: T31, T32 pass (Zaviel).
 > - [ ] **T33** MOVE: drag the part pressed on → it moves and stops at the edge of the stage; ROTATE: drag the seat → its outline turns; on the Clawd, ROTATE is greyed.
 > - [ ] **T34** Go to frame 8 (right arrow or a frame picture), KEY or `k` → "KEY ADDED", a diamond under frame 8 and a mark on the stage; `x` takes it away; `e` changes its ease.
 > - [ ] **T35** `+ -` and the wheel zoom the stage, `W A S D` and a right drag move the view, `0` puts it back; `o` onion skin, `v` the key marks.
