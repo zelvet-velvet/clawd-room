@@ -335,7 +335,7 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
         int gx0 = L.px, gy0 = L.ty + L.ah + 2, bx0 = gx0 + 17, bw = L.fw - 17, g = (int)lround(parts_pose(a, s->pick, t).grow);
         g = g < 0 ? 0 : g > 100 ? 100 : g;
         char fig[16]; /* (a Clawd from sprites/ui.txt, always running: faster while the bar is dragged or PLAY runs; at rest it steps with the page's redraws) */
-        snprintf(fig, sizeof fig, "grow-walk-%d", 1 + (int)(wall * (s->growdrag || s->playing ? 8 : 5)) % 4);
+        snprintf(fig, sizeof fig, "grow-walk-%d", 1 + (int)fmod(wall * (s->growdrag || s->playing ? 8 : 5), 4)); /* (fmod: the wall clock times 5 is past what an int holds) */
         if (!ui_icon(cv, fig, gx0, gy0, 0)) canvas_rect(cv, gx0 + 3, gy0 + 2, 9, 5, C_CLAWD); /* (no such sprite: a plain block) */
         canvas_rect(cv, bx0, gy0 + 2, bw, 5, RGB(34, 34, 44));
         canvas_rect(cv, bx0, gy0 + 2, bw * g / 100, 5, C_YELLOW);

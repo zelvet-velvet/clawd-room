@@ -996,7 +996,7 @@ static void picker_search(Canvas *cv, int x, int y, int w, const char *typed) {
     if (typed[0]) canvas_rect(cv, x + 3 + text_width(typed) + 1, y + 2, 3, 5, C_YELLOW);
 }
 static void draw_picker(const Ed *e, Canvas *cv, double now) {
-    int W = cv->w, H = cv->h, sh[512], n = picker_shown(e, sh), k = (int)(now / 0.3); /* (k: the picked one plays) */
+    int W = cv->w, H = cv->h, sh[512], n = picker_shown(e, sh), k = (int)fmod(now / 0.3, 1e6); /* (k: the picked one plays; fmod: the wall clock / 0.3 is past what an int holds) */
     canvas_text(cv, 4, 3, "OPEN A SPRITE", C_YELLOW);
     picker_view_button(cv, W - 4 - 24, 3, 0, e->pview == 0);
     picker_view_button(cv, W - 4 - 9, 3, 1, e->pview == 1);
