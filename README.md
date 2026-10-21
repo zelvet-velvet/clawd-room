@@ -1,189 +1,159 @@
-# clawd-room
+<p align="center">
+  <img src="clawd-room-512px.png" width="120" alt="Clawd Room">
+</p>
 
-A pixel room with one little character per running Claude Code session.
+<h1 align="center">clawd-room</h1>
 
-**New here?** Read [`CONTRIBUTING.md`](CONTRIBUTING.md) (setup, how we work, what you can work on), then
-`Clawd Room Note/Start/LLM Guide.md` (map and rules) and `Clawd Room Note/Review/Dev Log.md` (what changed by day, what is pending).
-Quick look: `make -C c test`, then `./clawd-room.sh --try` (four linked rooms with made-up Clawds).
+<p align="center">
+  A pixel room in your terminal where every running <b>Claude Code</b> session is a little Clawd.<br>
+  Busy ones type at their desk, waiting ones hold up a sign, finished ones cheer.
+</p>
 
-- `hook.py` — Claude Code hook. Appends `{time, session id, event, folder name, tool name}` to
-  `~/.clawd-room/events.jsonl` (mode 600). Never stores prompts, tool input/output or full paths.
-- `room.py` — the window (pygame-ce, via WSLg). Replays the last 10 min, then follows the file.
-- `c/` — the terminal version, written in C (standard C11, no libraries, no window needed). `clawd-room.sh` builds and starts it. Same states and timings as the window version.
-- `install_hooks.py` — prints / applies / removes the hook entries in `~/.claude/settings.json`.
-- `simulate.py` — fake sessions to watch the animations. `run.sh` — start the window.
+<p align="center">
+  <img src="docs/images/four-rooms.png" width="820" alt="Four linked rooms: office, coffee shop, park, office">
+</p>
 
-States: thinking (dots), working (typing, monitor shows the tool), needs OK (sign), done (cheer),
-idle 90 s (asleep), session end (walks out). A session with no events for 30 min is dropped.
+## Contents
 
-    ./run.sh                                  # open the window
-    .venv/bin/python simulate.py              # in another terminal: fake activity
-    python3 install_hooks.py                  # show the settings change
-    python3 install_hooks.py --apply          # install (backs up settings.json first)
-    python3 install_hooks.py --remove         # uninstall
+- [What it does](#what-it-does)
+- [Screenshots](#screenshots)
+- [Get it](#get-it)
+- [Quick start](#quick-start)
+- [Keys](#keys)
+- [Linked rooms](#linked-rooms)
+- [Platforms](#platforms)
+- [Pixel editor](#pixel-editor)
+- [Privacy](#privacy)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
 
-## Terminal version
+## What it does
 
-    ./clawd-room.sh                           # draws in the terminal (works in a 60x20 pane or fullscreen); builds c/ on the first start
-    ./clawd-room.sh --dump 100x30 --events /tmp/e.jsonl --at 1800000010   # one plain-text frame, for tests
+- **One Clawd per session.** A Claude Code hook writes one small line per event; the room follows that file and animates a Clawd for every session.
+- **You see the state at a glance.** Thinking (dots), working (typing, the monitor shows the tool), needs your OK (a sign), done (a cheer), idle for 90 s (asleep), session ended (walks out). A session silent for 30 min is dropped.
+- **Three rooms.** Office, coffee shop and park, drawn in one-point perspective.
+- **Linked windows.** Put two rooms next to each other: Clawds walk through doors, stairs and wells into the room next door, and you can move one with a key.
+- **Camera.** Zoom in and follow the Clawd that needs you.
+- **A pixel editor** for the sprites and animations, built in.
+- **C11, no libraries, no network, no daemon.** Python 3 (standard library only) is used just for the hook and the helpers.
 
-Keys: `q` or Esc quit, `p` pause, `?` help line, `r` room size list, `[` `]` camera zoom, `z` auto zoom, left / right (A / D) or Tab pick the Clawd the camera follows, `c` follow / free camera (then the arrows or W A S D move it), `g` send a Clawd next door (hold `g` + an arrow: which way), `m` + an arrow move the picked Clawd to that room (it packs its desk into a box and lives there while the rooms run), `b` call your Clawds back (or send visitors home), `f` fit. Needs at least 44x20 cells. Messages, the help line and the `g` / `m` hint show in a bar along the bottom of the room. The hook must be
-installed once (`python3 install_hooks.py` shows what it would change) or the room stays empty.
-Needs a truecolor terminal (Windows Terminal is fine). It only reads the events file.
+## Screenshots
 
-In the terminal version the Clawds move around: busy ones sit at their desk (typing, thinking,
-waving for OK, cheering, sleeping), idle ones walk around the room and sometimes visit another idle
-Clawd to chat, wave (hearts), hop, high-five, dance or play tag; they also watch a busy friend work,
-applaud when a friend finishes, and do little solo acts (stretch, dance, jump, wave). New sessions walk in through the left side, ended ones walk out.
+<table>
+  <tr>
+    <td align="center"><img src="docs/images/office.png" alt="Office"><br><sub>Office</sub></td>
+    <td align="center"><img src="docs/images/coffee.png" alt="Coffee shop"><br><sub>Coffee shop</sub></td>
+    <td align="center"><img src="docs/images/park.png" alt="Park"><br><sub>Park</sub></td>
+  </tr>
+</table>
 
-## Linking windows and room themes
+**Moving a Clawd to the next room:** it packs its desk into a box and carries it out.
 
-    ./clawd-room.sh --room park               # window 1
-    ./clawd-room.sh --room coffee             # window 2
-    ./clawd-room.sh --edit                    # the pixel editor on its sprite picker: cards with pictures (or a list), type to find;
-                                              # your edits go to ~/.clawd-room/sprites (shown over the defaults; RESET in the picker)
-    ./clawd-room.sh --edit list               # what the pixel editor can open: props, items, Clawd animations and their frames
-    ./clawd-room.sh --edit window             # the pixel editor (its own window): draw a prop with the mouse, colours in a
-                                              # Figma-like picker; rooms show it at once; Ctrl+Z / Ctrl+Y undo / redo;
-                                              # ? shortcuts; q: keep or discard
-    ./clawd-room.sh --edit walk               # an animation: its frames in a timeline (arrows: frame), Space plays it at the
-                                              # room's speed, o onion skin, b fill (again: fill all), f / x x frames (props)
-    ./clawd-room.sh --try                     # iTerm2 / WSL: four linked rooms in the four quarters, with made-up Clawds
-                                              # (quit one to close all; --try close; --try real for real sessions only;
-                                              # WSL: --try --desktop N opens them on virtual desktop N without switching to it)
+<p align="center"><img src="docs/images/moving.png" width="700" alt="A Clawd packing its desk into a box"></p>
 
-Rooms on the same machine find each other and exchange small messages through files in
-`~/.clawd-room/link/` (private folder, no network, no daemon). The banner shows `LINK COFFEE`,
-with an arrow (`>` or `<`) and a glowing door on that side of the room when the other window is
-close enough on the Windows desktop. `clawd-room --link-demo NAME [SECONDS]` is a tiny demo that pings other rooms.
-Messages carry only a type and small values, never prompts or tool data.
+**Gates appear** when two windows are next to each other:
 
-How "close enough" works: each room sets its window title to `clawd-room <id>`, and one small
-`powershell.exe` (started by the room, stopped when it quits) reports the screen rectangles of
-windows whose title starts with `clawd-room ` and nothing else. Windows side by side with a gap of
-at most 30 px (`--near PX`; an attached pair stays attached until the gap passes 45 px) count as close. It needs the room's tab to be the active tab of its
-window; `--no-detect` turns it off. `clawd-room --list-windows` lists the clawd-room windows it can see.
+<p align="center"><img src="docs/images/gate-construct.gif" width="700" alt="Stairs being built from real parts"></p>
 
-On macOS the same works in **iTerm2** (the room must run inside iTerm2, not inside tmux): instead of PowerShell a small
-`osascript` (JavaScript) reports the iTerm2 windows titled `clawd-room ...`, in points, about four times a second, and quits
-with the room. **Split panes** count as windows of their own: two clawd-room panes side by side (or stacked) in one window
-get a gate between them, like two attached windows. iTerm2 does not say where a pane or the text area is, so they are
-worked out from the window size, the title and tab bar and iTerm2's margins (simple splits only: a row of side-by-side
-panes or a column of stacked ones). `f` resizes the window there too. Started from a normal iTerm2 window,
-`./clawd-room.sh` opens the room in **its own window with a "Clawd Room" profile** (Menlo 6, line spacing 1.1: 4x8 pt
-cells, so a room pixel is always a square 4x4 pt) in the quarter of the screen that window was in and closes the window it was typed in (unless that has
-other tabs or panes; `--keep` leaves it). After the first run, **Profiles → Clawd Room** (or Cmd+O) starts the room
-directly, already a quarter of the screen; its window closes when the room quits. The profile is the file
-`~/Library/Application Support/iTerm2/DynamicProfiles/clawd-room.json` (delete it to remove the profile). `--here` runs
-the room in the current window instead (iTerm2 ignores the escape code that would switch the open window's profile).
-When a room opens in iTerm2 its window becomes a quarter of the screen (`--size screen`, the default there), like macOS's
-four-window tiling: half the usable width and height, snapped into the quarter its centre is in (at least 44x20 cells). `--size COLSxROWS` or `--size off`
-as on WSL.
+## Get it
 
-Themes (`--theme office|coffee|park`, by default guessed from the room name):
-- office: desks and monitors.
-- coffee: the oldest session is the barista (apron, espresso machine behind a counter), the others
-  are customers at cafe tables; idle customers go and order a coffee and carry it back.
-- park: picnic tables with laptops; idle Clawds play on the swing and the slide.
+There is no installer or release yet: clone the repository.
 
-Room size: the room always fills the window and takes its shape; dragging the window resizes it live. It grows (more
-floor, more desks) up to the chosen room size, then the pixels get bigger instead (grow, then scale). `r` opens the ROOM SIZE
-list (up/down or W/S, Enter picks, Esc or `r` closes; `--room-size auto|s|m|l|xl`):
-- AUTO (default): just big enough to seat every session with floor to walk on; it changes when sessions come and go.
-- S 120x60, M 160x90, L 220x120, XL 300x160 room pixels: the biggest the room may be (an 80x25 window is 80x50 room pixels).
-(`--ratio 3:1|2:1|16:9|4:3|1:1|3:4` still pins an old fixed shape; it is kept for the tests.)
+```bash
+git clone https://github.com/zelvet-velvet/clawd-room.git
+cd clawd-room
+```
 
-Camera: `[` and `]` zoom a camera into the room (1x to 4x; `--zoom N` starts zoomed); the room keeps its layout, only the
-view gets closer. When zoomed the camera follows a Clawd and only moves when that Clawd nears the edge of the view. Auto
-follow (default) picks the Clawd that needs you, else the one that just finished, else the most recently active one, and
-takes turns every 10 s when nothing happens; visitors count too (a room with only a visitor follows it). While following,
-left / right (A / D) or Tab pick the previous / next Clawd and stay on it; `c` switches to a free camera (only then do the
-arrows or W A S D move the view) and back to auto follow. While zoomed, the status line says what the camera does
-(`AUTO FOLLOW (WAITING)`, `AUTO: NAME`, `FOLLOW NAME`, `FREE CAMERA`); in a room with nobody to follow `c` stays on auto
-follow, so the first Clawd to come in is followed. `z` turns auto zoom on or off: the zoom then frames the busy Clawds (close on one, wider for several).
-A Clawd walking out through a gate takes the camera to the door, rope or stairs; once it has crossed the camera zooms out to
-the whole room (not in free mode). Zooming never moves the gates: they line up with the next window as at 1x.
+Needs:
+- **Claude Code** (the sessions to watch) and **Python 3**.
+- `make` and a C compiler (`sudo apt install build-essential` on WSL / Linux, `xcode-select --install` on macOS). `clawd-room.sh` builds the room by itself the first time.
+- A **truecolor terminal**, at least 44 x 20 cells: Windows Terminal (WSL2) or iTerm2 (macOS).
 
-Font size follows the window (WSL, Windows Terminal): when you stop resizing, a window with fewer
-than 110 columns gets a smaller font and one with more than 170 a bigger one (it sends the
-terminal's own Ctrl+minus / Ctrl+plus, and only to a window that has the focus). `--no-auto-font`
-turns that off. `f` fits right now: in auto mode it adjusts the font; with a pinned shape it also
-resizes the window to exactly that grid. It needs the default font-size shortcuts.
+## Quick start
 
-Crossing: when two windows are close enough (or you pass `--left/--right/--up/--down NAME` to say
-who is next to whom), an idle Clawd sometimes walks out through the door and into the next window
-(a `walk` message with its folder name and height only). There it visits for 25-45 s (chats,
-plays, orders a coffee, uses the swing), shown with a blue name tag, then walks back. Its desk
-shows AWAY meanwhile; if its session gets busy or ends, the other window is asked to send it home.
+```bash
+# 1. See it with made-up Clawds (four linked rooms; iTerm2 on macOS, Windows Terminal on WSL)
+./clawd-room.sh --try
 
-Windows above or below: a window stacked over another gets a knotted rope hanging from the top
-(Clawds climb it to the room above) and the one below gets stairs in the floor. A door on the
-side shows the floor and wall of the room next door. Press `g` to send an idle Clawd next door now.
+# 2. Show your own Claude Code sessions: install the hook once
+python3 install_hooks.py            # prints the change to ~/.claude/settings.json
+python3 install_hooks.py --apply    # installs it (backs the file up first)
+./clawd-room.sh                     # start the room
+```
 
-Sessions are shared between linked rooms (each session lives in one room and stays there while that room runs:
-a new session goes to the room a hash of its id and the room's id scores highest; one moved with `m`
-lives in the room it moved to), so two windows do not show the same Clawds. `--no-split` shows every session in every room.
-The rooms read the same `~/.clawd-room/events.jsonl`: real Claude Code sessions (hook installed)
-and `simulate.py` fake ones both show up.
+- **Do not move the folder** after `--apply`: the hook calls `hook.py` by its full path (run `--apply` again if you do).
+- Remove the hook with `python3 install_hooks.py --remove`.
+- **WSL:** run `python3 setup_profile.py --apply` once to add the "Clawd Room" Windows Terminal profile (`--update` after pulling a new version, `--remove` to delete it).
+- Quit with `q`.
 
-Windows are never moved to attach them: you put them where you like. The gates line up on
-screen instead:
-- Windows above/below get a ladder hatch (in the floor of the upper window, with a rope ladder
-  hanging from a ceiling hatch in the lower one) at the same screen x.
-- Windows side by side get a doorframe at the same screen height.
-The two rooms swap where their cells are on screen (cell size, offset, scale, walking strip) in the
-small presence file and search for the position that both of their grids can hit most closely, so
-the two ends match to within a few pixels even with different fonts.
-Different font sizes: a room pixel is a different size on screen in each window, so a gate drawn
-the same number of pixels would be small in one and big in the other. Both windows therefore draw
-the gate at the size it needs in the window with the bigger cells (the window with the smaller
-cells draws it 1.5x, 2x ... as many pixels), so both ends are the same size on screen to within
-a few percent. Only the Clawds themselves keep their window's scale.
-Gates wait for the windows to be still: while a window is being moved or resized there is no gate,
-and it appears (at its new, aligned place) once nothing has moved for a second.
-A gate only opens when it fits: a door needs the two floors to share enough height for a Clawd
-(14 room pixels), a hatch needs the two windows to overlap sideways by at least a hatch width
-(21 room pixels). Otherwise there is no gate, no arrow in the banner, and nobody crosses.
-The terminal's own cell size (asked with CSI 14t/16t) is used to turn screen pixels into cells.
-Names: a Clawd is labelled with the folder name the Claude Code session was started in (the
-`cwd` basename the hook records, nothing else), cut to fit its slot. The room for this repo shows
-as CLAWD-R... for `clawd-room`, a session started in a folder called `LLM` shows as LLM.
+## Keys
 
-Hiding the tab bar and the scroll bar: a program cannot do that from inside Windows Terminal
-(`python3 wt_settings.py` prints the settings that do: `alwaysShowTabs`/`showTabsInTitlebar` off and
-`scrollbarState` hidden; it changes nothing).
-`python3 setup_profile.py` prints a "Clawd Room" profile (scroll bar hidden, no padding, pixel-Clawd-in-a-room tab icon); `--apply` writes it (and the generated `clawd-room.ico`) as a
-Windows Terminal fragment file (`settings.json` is not touched), `--remove` deletes it. Restart Windows Terminal,
-then open that profile (a start menu with a picture of each scene asks which to open: office, coffee shop or park, S = solo; passing `--room` or `--theme` skips it) or start a window with the `wt.exe -w new -p "Clawd Room" ...` line it prints.
-The tab bar is a global setting, so it needs the two lines from `wt_settings.py`, or
-`python3 setup_profile.py --apply-global`, which adds them (and the 5 pt font for the Clawd Room profile; a fragment's own font loses against the `profiles.defaults` font) to Windows Terminal's `settings.json` after copying it to
-`settings.json.clawd-room.bak` (copy that back to undo). Run it only if you want that.
+| Key | Does |
+| --- | --- |
+| `q` / Esc | quit |
+| `p` | pause |
+| `?` | help line |
+| `r` | room size list |
+| `[` `]` | camera zoom out / in |
+| `z` | auto zoom on / off |
+| ← → (`A` `D`) / Tab | pick the Clawd the camera follows |
+| `c` | follow / free camera (then arrows or `W A S D` move it) |
+| `g` + arrow | send a Clawd next door (hold `g`: which way) |
+| `m` + arrow | move the picked Clawd to that room for good |
+| `b` | call your Clawds back (or send visitors home) |
+| `f` | fit the window and font |
 
-When a room opens on WSL (the start menu included) it sets the terminal font to 5 pt (`--font PT`, 0 = leave it; the
-Clawd Room profile already has it, so a room pixel is about the size it is on macOS) and the window to the quarter of the
-screen it is in, like iTerm2 (`--size screen`; `COLSxROWS` for a cell count, `off` = leave it). The room is then drawn at a TUI scale (1x, 2x, 3x:
-every room pixel is scale x scale cells) that follows the window size and the number of sessions, and a window
-resize only changes that scale, never the font. Ctrl +/- sets the terminal font by
-hand; after that the automatic part stays off until `f` (font and scale automatic again, camera back to 1x). `--scale N` starts at a
-fixed scale, `--no-auto` turns all of it off. The terminal font is put back when the room quits.
-A window opened from the profile menu starts at Windows Terminal's own default size and is then moved to its quarter.
+The status line, the help and the `g` / `m` hint show in a bar along the bottom. All the options: [docs/Usage.md](docs/Usage.md).
 
-## Building and testing
+## Linked rooms
 
-`c/` is plain C11 with no libraries. `clawd-room.sh` builds it by itself (`make -C c`) when the program is missing or older than its sources, so the profile and shortcuts only ever call the script (after pulling a new version run `python3 setup_profile.py --update`). Needs `make` and a C compiler (`sudo apt install build-essential`).
+Start more than one room and put the windows next to each other (side by side or stacked):
 
-- `make -C c test` compares the program with the snapshots in `c/tests/expected` (frames, terminal output, random numbers, scenes, geometry) — about a second, no terminal needed. `tools/test.sh --update` rewrites the snapshots when a change of behaviour is meant.
-- `make -C c smoke` / `linksmoke` / `winsmoke` drive the real program in ptys and in real Windows Terminal windows (your own throwaway `alpha` / `beta` ones).
-- The Python version of the room (`room_tui.py` and friends) was removed on 2026-10-16 after the two had been compared frame by frame; it is in git history and `clawd-room-archive`. Python is still used for the hook, the installer, the simulator and the profile tools.
+```bash
+./clawd-room.sh --room park       # window 1
+./clawd-room.sh --room coffee     # window 2
+```
 
-## Editing the Clawd frames and items
+Gates appear on the walls, ceiling and floor; idle Clawds visit the next room, and `g` / `m` send or move one. Sessions are shared, so two windows never show the same Clawd. Rooms talk through small files in `~/.clawd-room/link/` (no network). How it works: [docs/Linked-Rooms.md](docs/Linked-Rooms.md).
 
-Every Clawd frame and the items it carries (speech bubbles, cup, sign) are text grids in `sprites/clawd.txt` and `sprites/items.txt`, one character per pixel. Edit them, then `clawd-room --build-art` redraws the sheet and one GIF per action in `Clawd Room Note/Assets/Animations/`; the room uses the same files when it starts. A frame missing from the files is drawn by the code. `clawd-room --export-sprites --force` rewrites the files from the code (`--add` only appends frames a file lacks).
+## Platforms
 
-## Notes vault
+| | Terminal | Notes |
+| --- | --- | --- |
+| **WSL2 on Windows** | Windows Terminal | a "Clawd Room" profile at 5 pt; the room snaps to a quarter of the screen |
+| **macOS** | iTerm2 | a "Clawd Room" dynamic profile with a fixed 4 x 8 pt cell |
 
-`Clawd Room Note/` is the Obsidian vault for the project notes (open that folder as a vault). It reuses
-the CSS snippets, the Minimal theme and the community plugins of another vault; the plugin code, the
-workspace state and Make.md's cache are not in git (see `.gitignore`), copy the plugins from that vault
-or install them from Obsidian's community plugins list (`.obsidian/community-plugins.json` names them).
-Start with `Start/Home.md`.
+Details, fonts and profiles: [docs/Platforms.md](docs/Platforms.md).
+
+## Pixel editor
+
+```bash
+./clawd-room.sh --edit            # pick a sprite (cards with pictures, or a list)
+./clawd-room.sh --edit walk       # an animation: timeline, play, onion skin, fill
+```
+
+<p align="center"><img src="docs/images/editor-picker.png" width="420" alt="The sprite picker"> <img src="docs/images/editor-timeline.png" width="420" alt="The editor's timeline, onion skin and fill"></p>
+
+Your edits go to `~/.clawd-room/sprites/` and the running rooms show them at once.
+
+## Privacy
+
+The events file holds only the time, the session id, the event, the **folder name** (not the path) and the tool name. It never stores prompts, tool input or output. Everything stays on your machine: no network, no background daemon, files are mode 600.
+
+## Documentation
+
+| | |
+| --- | --- |
+| [Usage](docs/Usage.md) | commands, keys, themes, room size, camera |
+| [Linked rooms](docs/Linked-Rooms.md) | gates, crossing, moving, sessions |
+| [Platforms](docs/Platforms.md) | Windows Terminal, iTerm2, fonts, profiles |
+| [Development](docs/Development.md) | code map, build, tests, sprite files, the notes vault |
+| [Project notes](Clawd%20Room%20Note/Start/Home.md) | design notes and the day-by-day Dev Log (an Obsidian vault) |
+
+## Contributing
+
+Work on a branch, open a pull request, the owner merges. How we work, how to set up and what you can pick up: [CONTRIBUTING.md](CONTRIBUTING.md). Build and test notes: [docs/Development.md](docs/Development.md).
+
+## Disclaimer
+
+An unofficial fan project. Clawd is Anthropic's character; this project is not made or endorsed by Anthropic.
