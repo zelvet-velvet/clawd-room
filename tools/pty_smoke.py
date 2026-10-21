@@ -211,6 +211,9 @@ with tempfile.TemporaryDirectory() as tmp:
     brew_mine = os.path.join(mine_a, "brew.txt")
     txt = open(brew_mine).read() if os.path.exists(brew_mine) else ""
     check("picker: the ANIMS tab opens a part animation on the stage page, q there comes back, q quits", st == 0 and "key machine 0 x=0 y=1 " in txt)
+    out, st = run(["--edit", "anims/swing"], [(1.2, b"]"), (1.3, b"]"), (1.4, b"]"), (1.5, b"]"), (1.7, b"\x1b[<0;262;12M"), (1.8, b"\x1b[<0;262;12m"), (2.0, b"\x1b[<0;95;31M"), (2.1, b"\x1b[<32;105;31M"), (2.2, b"\x1b[<0;105;31m"), (2.6, b"q"), (3.0, b"s")], aenv, cols=300, rows=90)  # (the clawd picked: ROTATE cannot be picked, so the drag on the stage is SELECT's: a resize, no turn)
+    txt = open(swing_mine).read()
+    check("stage: with a sprite (the Clawd) picked, ROTATE cannot be picked", st == 0 and not re.search(r"key clawd [0-9.]+ x=[-0-9.]+ y=[-0-9.]+ turn=[1-9-]", txt))
     before = open(swing_mine).read()
     out, st = run(["--edit", "anims/swing"], [(1.2, b"."), (1.5, b"."), (1.8, b"q"), (2.1, b"d")], aenv, cols=300, rows=90)  # (q with changes asks: D puts your file back as it was)
     check("stage: q with changes asks keep or discard; D puts your file back as it was", st == 0 and open(swing_mine).read() == before)

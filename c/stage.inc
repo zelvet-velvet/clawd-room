@@ -693,7 +693,7 @@ static int stage_loop(const char *dir, const char *name) {
                             if (k2 >= 0) { s.drag = 1; s.px0 = px; s.py0 = py; s.dpose = s.a.part[s.pick].key[k2].pose; }
                         }
                     }
-                    else if (rg->kind == R_STOOL) s.tool = rg->i;
+                    else if (rg->kind == R_STOOL) { if (rg->i == 2 && s.a.part[s.pick].sprite) st_msg(&s, "A SPRITE MOVES, IT DOES NOT ROTATE"); else s.tool = rg->i; } /* (ROTATE greyed for a sprite: not picked) */
                     else if (rg->kind == R_SKEYSHOW) s.hide_keys = !s.hide_keys;
                     else if (rg->kind == R_SPART) s.pick = rg->i;
                     else if (rg->kind == R_SVAL) { s.row = rg->i / 3; if (rg->i % 3) { s.playing = 0; st_change(&s, s.row, rg->i % 3 == 2 ? 1 : -1); } }
