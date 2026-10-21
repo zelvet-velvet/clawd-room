@@ -84,6 +84,8 @@ sticker: lucide//gamepad-2
 
 A **part animation** is a file in `anims/` (`swing.txt`, `brew.txt`; the format is in the header of `swing.txt`): a thing made of **parts** (the swing's bar, chains, seat and Clawd; the coffee machine, cup, steam and barista), each with **keys**. A key is a saved pose of one part at one frame: where it is (move x / y), rotate, show, glow, and the ease into it. Between keys the part is moved for you (the frames in between are worked out), so a few keys make the whole animation. A part marked `sprite` (a Clawd) moves but does not rotate (a turned pixel drawing breaks up). The room plays the swing's Clawd from `swing.txt`; your edits go to `~/.clawd-room/anims/` and are used over the defaults, read again when they change.
 
+**Gates appearing** are part animations too: `anims/gate-door.txt` (a door on a side wall), `gate-stairs.txt` (the way up: steps, platform, opening, rail) and `gate-well.txt` (the way down). Each part comes in by its **GROW** (0 not there, 100 whole); the files hold what the room always did (every part 0 to 100 in 0.8 s, ease out), so nothing looks different until you change them. Their stage is the office with that gate appearing (`scene still`, `scene appear SIDE`). The room uses only GROW for a gate part; the other values are for later.
+
 `./clawd-room.sh --edit anims/swing` (or the **ANIMS** tab in the sprite picker, Enter) opens it on the stage page, laid out as the editor (layout B, picked 2026-10-21):
 
 - **The stage** (where the canvas is): the room with the thing, every part outlined (the picked one yellow), the picked part's keys as small marks joined in time order (`v` or **KEYS ON** under the stage: off); **ONION** (`o`) shows the frame before faintly red and the one after blue. `+ -` or the wheel zoom it, `W A S D` or a right drag move the view, `0` puts it back.
@@ -94,7 +96,7 @@ A **part animation** is a file in `anims/` (`swing.txt`, `brew.txt`; the format 
 
 > [!todo]- Picked, not built yet
 > - **Rotation drawn in the room**: only the stage's outline turns; how the swing's chains and seat and a Clawd should look turned is parked (a mockup of three ways, 2026-10-21, in `gallery/mock/out/19-rotate/`, not picked).
-> - **More cases in the room**: the barista's brewing, gates appearing as part animations (simple / construct, then their keys).
+> - **More cases in the room**: the barista's brewing; gates leaving, the park's own gates, and the construct style (the office's gates appearing are built).
 >   ![[2026-10-21 part animations in the editor, a Clawd on the swing (now, A dope sheet, B frames, B picked).png|300]]
 >   ![[2026-10-21 part animations in the editor, the barista brewing (now, A dope sheet, B frames, B picked).png|300]]
 

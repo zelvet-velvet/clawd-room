@@ -1,0 +1,20 @@
+# A gate of the room appearing, as a part animation: the parts come in by their grow (0: not there, 100: whole). The room plays this
+# when the gate appears (a window next to this one): the way down: the well.
+# Every part as the room always did it: grow 0 to 100 in 0.8 s, fast, then settling (ease out). See anims/swing.txt for the file format.
+anim gate-well length 0.8 once
+scene theme office
+scene title office
+scene terminal 160 50
+scene time 1000.0 3.4
+scene scale 1
+scene still
+scene peer beta down
+scene neighbor down office
+scene linkpos down 25.5
+scene gate down 1.0
+scene session s00 name=api created=900 last=999 state=work tool=Bash hold=100000 px=80 py=70
+scene appear down
+view 0 50
+part well     group well box 9 89 30 9
+key well     0.0 grow=0
+key well     0.8 grow=100 ease=out

@@ -5,13 +5,15 @@
 #   key PART TIME [x=] [y=] [turn=] [glow=] [show=] [ease=]
 #        x y     where the part is from its rest place, in room pixels (y down)
 #        turn    degrees, glow 0..100, show 0 or 1 (it shows or hides at the key, not in between)
+#        grow    how much of the part has come in, 0..100 (a gate appearing; 100 when not given)
 #        ease    how the part gets to this key from the one before: linear (default), in, out, in-out, back,
 #                sine (a half wave: slow, fast, slow), sine-out (a quarter wave, fast then slowing), sine-in (slow then fast)
 #   A field a key leaves out stays as the part's key before it had it (the first key starts at 0 and shown).
 #   part NAME ... box X Y W H     where the part is at rest, in room pixels: the editor outlines it on its stage
 #   part NAME ... sprite          a drawn sprite (a Clawd): it moves, but it does not rotate (a turned pixel drawing breaks up)
 #   scene LINE                    a line of a fixture (tools/fixtures/*.fx): the room the editor's stage shows; a line `scene emote SID KIND`
-#                                 starts that emote on that Clawd when the animation begins, so the stage is at the frame you are on
+#                                 starts that emote on that Clawd when the animation begins, so the stage is at the frame you are on;
+#                                 `scene appear SIDE` makes that gate begin to appear then; `scene still`: nobody moves (a gate scene)
 #   view X Y                      the room pixel at the top left of the stage
 # 3.2 radians a second, as the room always swung: a period of 2 pi / 3.2 = 1.9635 s, a quarter of it 0.4909 s. The keys are the
 # swing's farthest points; the sine eases between them make the same motion as 2 * sin(3.2 t).

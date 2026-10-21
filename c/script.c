@@ -60,7 +60,7 @@ int script_run(const char *path) {
             snprintf(nb->theme, sizeof nb->theme, "%s", tok[2]);
             snprintf(nb->id, sizeof nb->id, "id-%s", tok[1]);
         } else if (!strcmp(tok[0], "linkpos") && n > 2) { int s = side_index(tok[1]); room.has_link[s] = 1; room.link_pos[s] = atof(tok[2]); }
-        else if (ni < 512 && (!strcmp(tok[0], "ev") || !strcmp(tok[0], "msg") || !strcmp(tok[0], "gone") || !strcmp(tok[0], "key") || !strcmp(tok[0], "emote")) && n > 1) {
+        else if (ni < 512 && (!strcmp(tok[0], "ev") || !strcmp(tok[0], "msg") || !strcmp(tok[0], "gone") || !strcmp(tok[0], "key") || !strcmp(tok[0], "emote") || !strcmp(tok[0], "appear")) && n > 1) {
             Item *it = &items[ni++];
             memset(it, 0, sizeof *it);
             snprintf(it->kind, sizeof it->kind, "%s", tok[0]);
@@ -90,6 +90,11 @@ int script_run(const char *path) {
                 m.side = side_index(it->e);
                 m.home = it->y > 0;
                 room_receive(&room, &m);
+            } else if (!strcmp(it->kind, "appear") && room.nnb < SIDES) { /* appear T side theme: a window comes next to this one, its gate appears */
+                Neighbor *nb = &room.nb[room.nnb++];
+                nb->side = side_index(it->a);
+                snprintf(nb->theme, sizeof nb->theme, "%s", it->b);
+                snprintf(nb->id, sizeof nb->id, "id-%s", it->a);
             } else if (!strcmp(it->kind, "emote")) room_emote(&room, it->a, it->b, start + it->t, it->c[0] ? atof(it->c) : 6.0); /* emote T sid kind [seconds] */
             else if (!strcmp(it->kind, "gone")) room_peer_gone(&room, it->a);
             else if (!strcmp(it->kind, "key")) { /* the g key (key T g [SIDE]): needs the geometry of the last frame */

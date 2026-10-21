@@ -10,7 +10,8 @@
 #define PARTS_MAX 24       /* parts in an animation */
 #define PARTS_MAX_KEYS 32  /* keyframes of a part */
 
-typedef struct { double x, y, turn, glow; int show; } PartPose; /* offsets from the part's rest place in room pixels, degrees, 0..100, 0 or 1 */
+typedef struct { double x, y, turn, glow; int show; double grow; } PartPose; /* offsets from the part's rest place in room pixels, degrees, glow 0..100, show 0 or 1,
+                                                                       grow 0..100: how much of the part has come in (a gate appearing; 100 when not given) */
 typedef struct { double t; PartPose pose; int ease; } PartKey;   /* ease: how the part gets here from the key before */
 typedef struct { char name[24], group[24]; PartKey key[PARTS_MAX_KEYS]; int nkey; int has_box, box[4], sprite; } Part; /* box: x y w h at rest, in room pixels (the editor outlines it); sprite: a drawn sprite (a Clawd): it moves, it does not rotate */
 #define PARTS_SCENE_LINES 12

@@ -253,6 +253,13 @@ with tempfile.TemporaryDirectory() as tmp:
     check("--edit list names the part animations (anims/swing)", r.returncode == 0 and "anims/swing" in r.stdout and "anims/brew" in r.stdout)
     r = subprocess.run(CMD + ["--edit-check", "anims/nope"], capture_output=True, text=True, env=dict(os.environ, **aenv))
     check("--edit anims/NAME with no such animation says so and names the ones there are", r.returncode == 1 and "anims/swing" in r.stderr)
+    keys = [(1.2, b"\x1b[B"), (1.3, b"\x1b[B"), (1.4, b"\x1b[B"), (1.5, b"\x1b[B")] + [(1.6 + i * 0.05, b"\x1b[C") for i in range(4)] + [(2.0, b"<"), (2.1, b"<"), (2.2, b"<"), (2.6, b"q"), (3.0, b"s")]  # (GROW, frame 5, three steps less: the steps come in later)
+    g0 = subprocess.run(CMD + ["--script", os.path.join(ROOT, "tools", "scenarios", "office-gates-appear.sc")], capture_output=True, text=True, env=dict(os.environ, **aenv))
+    out, st = run(["--edit", "anims/gate-stairs"], keys, aenv, cols=300, rows=90)
+    gmine = os.path.join(mine_a, "gate-stairs.txt")
+    txt = open(gmine).read() if os.path.exists(gmine) else ""
+    g1 = subprocess.run(CMD + ["--script", os.path.join(ROOT, "tools", "scenarios", "office-gates-appear.sc")], capture_output=True, text=True, env=dict(os.environ, **aenv))
+    check("stage: a gate (anims/gate-stairs) is edited like any part animation (GROW), and a room's gate appears by your file", st == 0 and re.search(r"key steps 0\.25 .* grow=", txt) and g0.returncode == 0 and g1.stdout != g0.stdout)
     shutil.rmtree(anims, ignore_errors=True); shutil.rmtree(mine_a, ignore_errors=True)
     shutil.rmtree(spr, ignore_errors=True)
 print("%d failed" % len(fails) if fails else "all passed")

@@ -279,7 +279,7 @@ static int golden_parts(int nfiles, char **files) {
         printf("%s: %s length %.2f %s parts %d\n", base, a.name, a.length, a.loop ? "loop" : "once", a.npart);
         for (int p = 0; p < a.npart; p++) for (size_t i = 0; i < sizeof T / sizeof *T; i++) {
             PartPose q = parts_pose(&a, p, T[i]);
-            printf("  %-8s %-8s t=%5.2f x=%6.2f y=%6.2f turn=%7.2f glow=%6.2f show=%d\n", a.part[p].name, a.part[p].group, T[i], q.x + 0.0, q.y + 0.0, q.turn + 0.0, q.glow + 0.0, q.show); /* (+ 0.0: no "-0.00") */
+            printf("  %-8s %-8s t=%5.2f x=%6.2f y=%6.2f turn=%7.2f glow=%6.2f show=%d grow=%6.2f\n", a.part[p].name, a.part[p].group, T[i], q.x + 0.0, q.y + 0.0, q.turn + 0.0, q.glow + 0.0, q.show, q.grow + 0.0); /* (+ 0.0: no "-0.00") */
         }
     }
     return 0;

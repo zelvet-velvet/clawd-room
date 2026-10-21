@@ -38,7 +38,7 @@ static int parse_key(PartAnim *a, char **save, const char *path, int line) {
     Part *p = name ? add_part(a, name) : NULL;
     if (!p || !tm) { fprintf(stderr, "%s:%d: key needs a part and a time\n", path, line); return -1; }
     if (p->nkey >= PARTS_MAX_KEYS) { fprintf(stderr, "%s:%d: too many keys for %s\n", path, line, p->name); return -1; }
-    PartKey k = p->nkey ? p->key[p->nkey - 1] : (PartKey){0, {0, 0, 0, 0, 1}, EASE_LINEAR};
+    PartKey k = p->nkey ? p->key[p->nkey - 1] : (PartKey){0, {0, 0, 0, 0, 1, 100}, EASE_LINEAR};
     char *end;
     k.t = strtod(tm, &end);
     if (*end) { fprintf(stderr, "%s:%d: %s is not a time\n", path, line, tm); return -1; }
@@ -53,6 +53,7 @@ static int parse_key(PartAnim *a, char **save, const char *path, int line) {
         else if (!strcmp(f, "y")) k.pose.y = atof(v);
         else if (!strcmp(f, "turn")) k.pose.turn = atof(v);
         else if (!strcmp(f, "glow")) k.pose.glow = atof(v);
+        else if (!strcmp(f, "grow")) k.pose.grow = atof(v);
         else if (!strcmp(f, "show")) k.pose.show = atoi(v) != 0;
         else if (!strcmp(f, "ease")) { k.ease = ease_by_name(v); if (k.ease < 0) { fprintf(stderr, "%s:%d: no ease called %s\n", path, line, v); return -1; } }
         else { fprintf(stderr, "%s:%d: no field called %s\n", path, line, f); return -1; }
@@ -120,7 +121,7 @@ int parts_load(PartAnim *a, const char *path) {
 
 PartPose parts_pose(const PartAnim *a, int part, double t) {
     const Part *p = &a->part[part];
-    if (!p->nkey) return (PartPose){0, 0, 0, 0, 1};
+    if (!p->nkey) return (PartPose){0, 0, 0, 0, 1, 100};
     if (a->loop) { t = fmod(t, a->length); if (t < 0) t += a->length; }
     if (t <= p->key[0].t) return p->key[0].pose;
     int i = 0;
@@ -133,6 +134,7 @@ PartPose parts_pose(const PartAnim *a, int part, double t) {
     r.y = k0->pose.y + (k1->pose.y - k0->pose.y) * e;
     r.turn = k0->pose.turn + (k1->pose.turn - k0->pose.turn) * e;
     r.glow = k0->pose.glow + (k1->pose.glow - k0->pose.glow) * e;
+    r.grow = k0->pose.grow + (k1->pose.grow - k0->pose.grow) * e;
     r.show = k0->pose.show; /* (shows or hides at the key, not in between) */
     return r;
 }
@@ -164,6 +166,7 @@ int parts_save(const PartAnim *a, const char *path) {
         for (int k = 0; k < p->nkey; k++) {
             const PartKey *q = &p->key[k];
             fprintf(f, "key %s %g x=%g y=%g turn=%g glow=%g show=%d", p->name, q->t, q->pose.x, q->pose.y, q->pose.turn, q->pose.glow, q->pose.show);
+            if (q->pose.grow != 100) fprintf(f, " grow=%g", q->pose.grow);
             if (q->ease != EASE_LINEAR) fprintf(f, " ease=%s", EASE[q->ease]);
             fprintf(f, "\n");
         }

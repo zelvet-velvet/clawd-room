@@ -1,106 +1,163 @@
 swing.txt: swing length 1.96 loop parts 5
-  bar      frame    t=-0.10 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  bar      frame    t= 0.00 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  bar      frame    t= 0.20 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  bar      frame    t= 0.40 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  bar      frame    t= 0.80 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  bar      frame    t= 1.20 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  bar      frame    t= 1.60 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  bar      frame    t= 1.70 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  bar      frame    t= 2.50 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  chain-l  swing    t=-0.10 x=  0.00 y=  0.00 turn=  -2.52 glow=  0.00 show=1
-  chain-l  swing    t= 0.00 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  chain-l  swing    t= 0.20 x=  0.00 y=  0.00 turn=   4.78 glow=  0.00 show=1
-  chain-l  swing    t= 0.40 x=  0.00 y=  0.00 turn=   7.66 glow=  0.00 show=1
-  chain-l  swing    t= 0.80 x=  0.00 y=  0.00 turn=   4.40 glow=  0.00 show=1
-  chain-l  swing    t= 1.20 x=  0.00 y=  0.00 turn=  -5.14 glow=  0.00 show=1
-  chain-l  swing    t= 1.60 x=  0.00 y=  0.00 turn=  -7.34 glow=  0.00 show=1
-  chain-l  swing    t= 1.70 x=  0.00 y=  0.00 turn=  -5.97 glow=  0.00 show=1
-  chain-l  swing    t= 2.50 x=  0.00 y=  0.00 turn=   7.91 glow=  0.00 show=1
-  chain-r  swing    t=-0.10 x=  0.00 y=  0.00 turn=  -2.52 glow=  0.00 show=1
-  chain-r  swing    t= 0.00 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  chain-r  swing    t= 0.20 x=  0.00 y=  0.00 turn=   4.78 glow=  0.00 show=1
-  chain-r  swing    t= 0.40 x=  0.00 y=  0.00 turn=   7.66 glow=  0.00 show=1
-  chain-r  swing    t= 0.80 x=  0.00 y=  0.00 turn=   4.40 glow=  0.00 show=1
-  chain-r  swing    t= 1.20 x=  0.00 y=  0.00 turn=  -5.14 glow=  0.00 show=1
-  chain-r  swing    t= 1.60 x=  0.00 y=  0.00 turn=  -7.34 glow=  0.00 show=1
-  chain-r  swing    t= 1.70 x=  0.00 y=  0.00 turn=  -5.97 glow=  0.00 show=1
-  chain-r  swing    t= 2.50 x=  0.00 y=  0.00 turn=   7.91 glow=  0.00 show=1
-  seat     swing    t=-0.10 x=  0.00 y= -0.63 turn=   0.00 glow=  0.00 show=1
-  seat     swing    t= 0.00 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  seat     swing    t= 0.20 x=  0.00 y=  1.19 turn=   0.00 glow=  0.00 show=1
-  seat     swing    t= 0.40 x=  0.00 y=  1.92 turn=   0.00 glow=  0.00 show=1
-  seat     swing    t= 0.80 x=  0.00 y=  1.10 turn=   0.00 glow=  0.00 show=1
-  seat     swing    t= 1.20 x=  0.00 y= -1.29 turn=   0.00 glow=  0.00 show=1
-  seat     swing    t= 1.60 x=  0.00 y= -1.84 turn=   0.00 glow=  0.00 show=1
-  seat     swing    t= 1.70 x=  0.00 y= -1.49 turn=   0.00 glow=  0.00 show=1
-  seat     swing    t= 2.50 x=  0.00 y=  1.98 turn=   0.00 glow=  0.00 show=1
-  clawd    swing    t=-0.10 x=  0.00 y= -0.63 turn=   0.00 glow=  0.00 show=1
-  clawd    swing    t= 0.00 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  clawd    swing    t= 0.20 x=  0.00 y=  1.19 turn=   0.00 glow=  0.00 show=1
-  clawd    swing    t= 0.40 x=  0.00 y=  1.92 turn=   0.00 glow=  0.00 show=1
-  clawd    swing    t= 0.80 x=  0.00 y=  1.10 turn=   0.00 glow=  0.00 show=1
-  clawd    swing    t= 1.20 x=  0.00 y= -1.29 turn=   0.00 glow=  0.00 show=1
-  clawd    swing    t= 1.60 x=  0.00 y= -1.84 turn=   0.00 glow=  0.00 show=1
-  clawd    swing    t= 1.70 x=  0.00 y= -1.49 turn=   0.00 glow=  0.00 show=1
-  clawd    swing    t= 2.50 x=  0.00 y=  1.98 turn=   0.00 glow=  0.00 show=1
+  bar      frame    t=-0.10 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  bar      frame    t= 0.00 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  bar      frame    t= 0.20 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  bar      frame    t= 0.40 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  bar      frame    t= 0.80 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  bar      frame    t= 1.20 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  bar      frame    t= 1.60 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  bar      frame    t= 1.70 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  bar      frame    t= 2.50 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  chain-l  swing    t=-0.10 x=  0.00 y=  0.00 turn=  -2.52 glow=  0.00 show=1 grow=100.00
+  chain-l  swing    t= 0.00 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  chain-l  swing    t= 0.20 x=  0.00 y=  0.00 turn=   4.78 glow=  0.00 show=1 grow=100.00
+  chain-l  swing    t= 0.40 x=  0.00 y=  0.00 turn=   7.66 glow=  0.00 show=1 grow=100.00
+  chain-l  swing    t= 0.80 x=  0.00 y=  0.00 turn=   4.40 glow=  0.00 show=1 grow=100.00
+  chain-l  swing    t= 1.20 x=  0.00 y=  0.00 turn=  -5.14 glow=  0.00 show=1 grow=100.00
+  chain-l  swing    t= 1.60 x=  0.00 y=  0.00 turn=  -7.34 glow=  0.00 show=1 grow=100.00
+  chain-l  swing    t= 1.70 x=  0.00 y=  0.00 turn=  -5.97 glow=  0.00 show=1 grow=100.00
+  chain-l  swing    t= 2.50 x=  0.00 y=  0.00 turn=   7.91 glow=  0.00 show=1 grow=100.00
+  chain-r  swing    t=-0.10 x=  0.00 y=  0.00 turn=  -2.52 glow=  0.00 show=1 grow=100.00
+  chain-r  swing    t= 0.00 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  chain-r  swing    t= 0.20 x=  0.00 y=  0.00 turn=   4.78 glow=  0.00 show=1 grow=100.00
+  chain-r  swing    t= 0.40 x=  0.00 y=  0.00 turn=   7.66 glow=  0.00 show=1 grow=100.00
+  chain-r  swing    t= 0.80 x=  0.00 y=  0.00 turn=   4.40 glow=  0.00 show=1 grow=100.00
+  chain-r  swing    t= 1.20 x=  0.00 y=  0.00 turn=  -5.14 glow=  0.00 show=1 grow=100.00
+  chain-r  swing    t= 1.60 x=  0.00 y=  0.00 turn=  -7.34 glow=  0.00 show=1 grow=100.00
+  chain-r  swing    t= 1.70 x=  0.00 y=  0.00 turn=  -5.97 glow=  0.00 show=1 grow=100.00
+  chain-r  swing    t= 2.50 x=  0.00 y=  0.00 turn=   7.91 glow=  0.00 show=1 grow=100.00
+  seat     swing    t=-0.10 x=  0.00 y= -0.63 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  seat     swing    t= 0.00 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  seat     swing    t= 0.20 x=  0.00 y=  1.19 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  seat     swing    t= 0.40 x=  0.00 y=  1.92 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  seat     swing    t= 0.80 x=  0.00 y=  1.10 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  seat     swing    t= 1.20 x=  0.00 y= -1.29 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  seat     swing    t= 1.60 x=  0.00 y= -1.84 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  seat     swing    t= 1.70 x=  0.00 y= -1.49 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  seat     swing    t= 2.50 x=  0.00 y=  1.98 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  clawd    swing    t=-0.10 x=  0.00 y= -0.63 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  clawd    swing    t= 0.00 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  clawd    swing    t= 0.20 x=  0.00 y=  1.19 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  clawd    swing    t= 0.40 x=  0.00 y=  1.92 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  clawd    swing    t= 0.80 x=  0.00 y=  1.10 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  clawd    swing    t= 1.20 x=  0.00 y= -1.29 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  clawd    swing    t= 1.60 x=  0.00 y= -1.84 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  clawd    swing    t= 1.70 x=  0.00 y= -1.49 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  clawd    swing    t= 2.50 x=  0.00 y=  1.98 turn=   0.00 glow=  0.00 show=1 grow=100.00
 brew.txt: brew length 1.70 once parts 4
-  machine  machine  t=-0.10 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  machine  machine  t= 0.00 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  machine  machine  t= 0.20 x=  0.00 y= -0.75 turn=   0.00 glow=  0.00 show=1
-  machine  machine  t= 0.40 x=  0.00 y= -1.00 turn=   0.00 glow=  0.00 show=1
-  machine  machine  t= 0.80 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  machine  machine  t= 1.20 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  machine  machine  t= 1.60 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  machine  machine  t= 1.70 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  machine  machine  t= 2.50 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  cup      machine  t=-0.10 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  cup      machine  t= 0.00 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  cup      machine  t= 0.20 x=  0.00 y= -3.20 turn=   0.00 glow=  0.00 show=1
-  cup      machine  t= 0.40 x=  0.00 y= -4.80 turn=   0.00 glow=  0.00 show=1
-  cup      machine  t= 0.80 x=  0.00 y= -5.00 turn=   0.00 glow= 10.00 show=1
-  cup      machine  t= 1.20 x=  0.00 y= -4.72 turn=   0.00 glow= 18.89 show=1
-  cup      machine  t= 1.60 x=  0.00 y= -0.28 turn=   0.00 glow=  1.11 show=1
-  cup      machine  t= 1.70 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  cup      machine  t= 2.50 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  steam    machine  t=-0.10 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=0
-  steam    machine  t= 0.00 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=0
-  steam    machine  t= 0.20 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=0
-  steam    machine  t= 0.40 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=0
-  steam    machine  t= 0.80 x=  0.00 y= -3.84 turn=   0.00 glow= 25.60 show=1
-  steam    machine  t= 1.20 x=  0.00 y= -7.67 turn=   0.00 glow= 17.78 show=1
-  steam    machine  t= 1.60 x=  0.00 y= -9.00 turn=   0.00 glow=  0.00 show=1
-  steam    machine  t= 1.70 x=  0.00 y= -9.00 turn=   0.00 glow=  0.00 show=1
-  steam    machine  t= 2.50 x=  0.00 y= -9.00 turn=   0.00 glow=  0.00 show=1
-  clawd    barista  t=-0.10 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  clawd    barista  t= 0.00 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  clawd    barista  t= 0.20 x=  1.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  clawd    barista  t= 0.40 x=  2.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  clawd    barista  t= 0.80 x=  1.62 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  clawd    barista  t= 1.20 x=  0.59 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  clawd    barista  t= 1.60 x=  0.02 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  clawd    barista  t= 1.70 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  clawd    barista  t= 2.50 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
+  machine  machine  t=-0.10 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  machine  machine  t= 0.00 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  machine  machine  t= 0.20 x=  0.00 y= -0.75 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  machine  machine  t= 0.40 x=  0.00 y= -1.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  machine  machine  t= 0.80 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  machine  machine  t= 1.20 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  machine  machine  t= 1.60 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  machine  machine  t= 1.70 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  machine  machine  t= 2.50 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  cup      machine  t=-0.10 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  cup      machine  t= 0.00 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  cup      machine  t= 0.20 x=  0.00 y= -3.20 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  cup      machine  t= 0.40 x=  0.00 y= -4.80 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  cup      machine  t= 0.80 x=  0.00 y= -5.00 turn=   0.00 glow= 10.00 show=1 grow=100.00
+  cup      machine  t= 1.20 x=  0.00 y= -4.72 turn=   0.00 glow= 18.89 show=1 grow=100.00
+  cup      machine  t= 1.60 x=  0.00 y= -0.28 turn=   0.00 glow=  1.11 show=1 grow=100.00
+  cup      machine  t= 1.70 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  cup      machine  t= 2.50 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  steam    machine  t=-0.10 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=0 grow=100.00
+  steam    machine  t= 0.00 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=0 grow=100.00
+  steam    machine  t= 0.20 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=0 grow=100.00
+  steam    machine  t= 0.40 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=0 grow=100.00
+  steam    machine  t= 0.80 x=  0.00 y= -3.84 turn=   0.00 glow= 25.60 show=1 grow=100.00
+  steam    machine  t= 1.20 x=  0.00 y= -7.67 turn=   0.00 glow= 17.78 show=1 grow=100.00
+  steam    machine  t= 1.60 x=  0.00 y= -9.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  steam    machine  t= 1.70 x=  0.00 y= -9.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  steam    machine  t= 2.50 x=  0.00 y= -9.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  clawd    barista  t=-0.10 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  clawd    barista  t= 0.00 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  clawd    barista  t= 0.20 x=  1.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  clawd    barista  t= 0.40 x=  2.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  clawd    barista  t= 0.80 x=  1.62 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  clawd    barista  t= 1.20 x=  0.59 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  clawd    barista  t= 1.60 x=  0.02 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  clawd    barista  t= 1.70 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  clawd    barista  t= 2.50 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+gate-door.txt: gate-door length 0.80 once parts 1
+  door     door     t=-0.10 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=  0.00
+  door     door     t= 0.00 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=  0.00
+  door     door     t= 0.20 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow= 43.75
+  door     door     t= 0.40 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow= 75.00
+  door     door     t= 0.80 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  door     door     t= 1.20 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  door     door     t= 1.60 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  door     door     t= 1.70 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  door     door     t= 2.50 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+gate-stairs.txt: gate-stairs length 0.80 once parts 4
+  steps    stairs   t=-0.10 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=  0.00
+  steps    stairs   t= 0.00 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=  0.00
+  steps    stairs   t= 0.20 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow= 43.75
+  steps    stairs   t= 0.40 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow= 75.00
+  steps    stairs   t= 0.80 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  steps    stairs   t= 1.20 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  steps    stairs   t= 1.60 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  steps    stairs   t= 1.70 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  steps    stairs   t= 2.50 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  platform stairs   t=-0.10 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=  0.00
+  platform stairs   t= 0.00 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=  0.00
+  platform stairs   t= 0.20 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow= 43.75
+  platform stairs   t= 0.40 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow= 75.00
+  platform stairs   t= 0.80 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  platform stairs   t= 1.20 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  platform stairs   t= 1.60 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  platform stairs   t= 1.70 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  platform stairs   t= 2.50 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  opening  stairs   t=-0.10 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=  0.00
+  opening  stairs   t= 0.00 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=  0.00
+  opening  stairs   t= 0.20 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow= 43.75
+  opening  stairs   t= 0.40 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow= 75.00
+  opening  stairs   t= 0.80 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  opening  stairs   t= 1.20 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  opening  stairs   t= 1.60 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  opening  stairs   t= 1.70 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  opening  stairs   t= 2.50 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  rail     stairs   t=-0.10 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=  0.00
+  rail     stairs   t= 0.00 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=  0.00
+  rail     stairs   t= 0.20 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow= 43.75
+  rail     stairs   t= 0.40 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow= 75.00
+  rail     stairs   t= 0.80 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  rail     stairs   t= 1.20 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  rail     stairs   t= 1.60 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  rail     stairs   t= 1.70 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  rail     stairs   t= 2.50 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+gate-well.txt: gate-well length 0.80 once parts 1
+  well     well     t=-0.10 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=  0.00
+  well     well     t= 0.00 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=  0.00
+  well     well     t= 0.20 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow= 43.75
+  well     well     t= 0.40 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow= 75.00
+  well     well     t= 0.80 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  well     well     t= 1.20 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  well     well     t= 1.60 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  well     well     t= 1.70 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  well     well     t= 2.50 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
 bad-order.txt: error
 bad-field.txt: error
 bad-ease.txt: error
 bad-time.txt: error
 loop-wrap.txt: wrap length 1.00 loop parts 2
-  a                 t=-0.10 x=  9.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  a                 t= 0.00 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  a                 t= 0.20 x=  2.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  a                 t= 0.40 x=  4.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  a                 t= 0.80 x=  8.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  a                 t= 1.20 x=  2.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  a                 t= 1.60 x=  6.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  a                 t= 1.70 x=  7.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  a                 t= 2.50 x=  5.00 y=  0.00 turn=   0.00 glow=  0.00 show=1
-  b        g        t=-0.10 x=  0.00 y=  4.00 turn=   0.00 glow=  0.00 show=1
-  b        g        t= 0.00 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=0
-  b        g        t= 0.20 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=0
-  b        g        t= 0.40 x=  0.00 y=  1.20 turn=   0.00 glow=  0.00 show=0
-  b        g        t= 0.80 x=  0.00 y=  4.00 turn=   0.00 glow=  0.00 show=1
-  b        g        t= 1.20 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=0
-  b        g        t= 1.60 x=  0.00 y=  2.80 turn=   0.00 glow=  0.00 show=0
-  b        g        t= 1.70 x=  0.00 y=  3.60 turn=   0.00 glow=  0.00 show=0
-  b        g        t= 2.50 x=  0.00 y=  2.00 turn=   0.00 glow=  0.00 show=0
+  a                 t=-0.10 x=  9.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  a                 t= 0.00 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  a                 t= 0.20 x=  2.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  a                 t= 0.40 x=  4.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  a                 t= 0.80 x=  8.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  a                 t= 1.20 x=  2.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  a                 t= 1.60 x=  6.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  a                 t= 1.70 x=  7.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  a                 t= 2.50 x=  5.00 y=  0.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  b        g        t=-0.10 x=  0.00 y=  4.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  b        g        t= 0.00 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=0 grow=100.00
+  b        g        t= 0.20 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=0 grow=100.00
+  b        g        t= 0.40 x=  0.00 y=  1.20 turn=   0.00 glow=  0.00 show=0 grow=100.00
+  b        g        t= 0.80 x=  0.00 y=  4.00 turn=   0.00 glow=  0.00 show=1 grow=100.00
+  b        g        t= 1.20 x=  0.00 y=  0.00 turn=   0.00 glow=  0.00 show=0 grow=100.00
+  b        g        t= 1.60 x=  0.00 y=  2.80 turn=   0.00 glow=  0.00 show=0 grow=100.00
+  b        g        t= 1.70 x=  0.00 y=  3.60 turn=   0.00 glow=  0.00 show=0 grow=100.00
+  b        g        t= 2.50 x=  0.00 y=  2.00 turn=   0.00 glow=  0.00 show=0 grow=100.00

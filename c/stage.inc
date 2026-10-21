@@ -19,8 +19,8 @@ enum { R_SSTAGE = 64, R_SVAL, R_SPART, R_SKEY, R_SKEYDEL, R_SEASE, R_STOOL, R_SP
 #define ST_TW 44           /* a frame as a picture */
 #define ST_TH 26
 #define ST_BG RGB(18, 18, 24)
-#define ST_ROWS 5          /* the values: move x, move y, turn, show, glow */
-static const char *const ST_ROW[ST_ROWS] = {"MOVE X", "MOVE Y", "ROTATE", "SHOW", "GLOW"};
+#define ST_ROWS 6          /* the values: move x, move y, rotate, show, glow, grow */
+static const char *const ST_ROW[ST_ROWS] = {"MOVE X", "MOVE Y", "ROTATE", "SHOW", "GLOW", "GROW"};
 static const char *const ST_EASE[] = {"LINEAR", "OUT", "IN OUT", "BACK", "IN", "SINE", "SINE OUT", "SINE IN"};
 
 typedef struct {
@@ -49,23 +49,31 @@ static double st_now_t(const Stage *s, double wall) { return s->playing ? fmod((
 static int st_key_at(const Part *p, double t) { for (int k = 0; k < p->nkey; k++) if (fabs(p->key[k].t - t) < 0.5 / ST_FPS) return k; return -1; }
 
 /* the room of the scene at time t of the animation: the scene lines as a fixture (a line `emote SID KIND` starts that emote when the
- * animation began, t ago), rendered once to settle the room, then at that moment */
+ * animation began, t ago; `appear SIDE` makes that gate begin to appear then), rendered once to settle the room, then at that moment */
 static Canvas st_shot(const PartAnim *a, double t) {
     static Fixture fx;
     char text[PARTS_SCENE_LINES * 200 + 16], sid[PARTS_SCENE_LINES][24], kind[PARTS_SCENE_LINES][16];
-    int nemote = 0;
+    int nemote = 0, ngate = 0, gside[4], still = 0;
     text[0] = 0;
     for (int i = 0; i < a->nscene; i++) {
+        if (!strcmp(a->scene[i], "still")) { still = 1; continue; } /* still: nobody moves (a gate scene: the room keeps the gates the fixture gives) */
+        if (!strncmp(a->scene[i], "appear ", 7)) { char sd[16]; if (ngate < 4 && sscanf(a->scene[i] + 7, "%15s", sd) == 1) gside[ngate++] = side_index(sd); continue; } /* appear SIDE: that gate begins to appear when the animation does */
         if (!strncmp(a->scene[i], "emote ", 6)) { if (nemote < PARTS_SCENE_LINES && sscanf(a->scene[i] + 6, "%23s %15s", sid[nemote], kind[nemote]) == 2) nemote++; continue; }
         size_t n = strlen(text);
         snprintf(text + n, sizeof text - n, "%s\n", a->scene[i]);
     }
     if (fixture_load_text(&fx, text)) return canvas_new(8, 8, ST_BG);
-    fx.room.freeze = 0; /* (it moves: the swing's Clawd by the animation) */
+    fx.room.freeze = still; /* (it moves: the swing's Clawd by the animation; a still scene does not) */
     char note[64];
     Canvas settle = render(fx.cols, fx.rows, &fx.room, fx.now, fx.t, note, sizeof note);
     canvas_free(&settle);
     for (int i = 0; i < nemote; i++) room_emote(&fx.room, sid[i], kind[i], fx.now - t, 100000.0);
+    for (int i = 0; i < ngate; i++) if (gside[i] >= 0) { /* (a gate: it began to appear t ago) */
+        char key[8];
+        fx.room.gate_t0[gside[i]] = fx.t - t; /* (gates run on the drawing's clock, fx.t, not the events' one) */
+        snprintf(key, sizeof key, "gate%d", gside[i]);
+        anim_start(&fx.room.anim, key, 0, 1, fx.t - t, 0.8, EASE_OUT);
+    }
     return render(fx.cols, fx.rows, &fx.room, fx.now, fx.t, note, sizeof note);
 }
 static void st_crop(Canvas *dst, const Canvas *src, int sx, int sy, int w, int h, int dx, int dy, int z) { /* a piece of a picture, z times, at (dx, dy) */
@@ -117,7 +125,8 @@ static void st_value(PartPose *q, int row, int delta) {
     else if (row == 1) q->y += delta;
     else if (row == 2) q->turn += delta * 5;
     else if (row == 3) q->show = !q->show;
-    else { q->glow += delta * 10; q->glow = q->glow < 0 ? 0 : q->glow > 100 ? 100 : q->glow; }
+    else if (row == 4) { q->glow += delta * 10; q->glow = q->glow < 0 ? 0 : q->glow > 100 ? 100 : q->glow; }
+    else { q->grow += delta * 10; q->grow = q->grow < 0 ? 0 : q->grow > 100 ? 100 : q->grow; }
 }
 static void st_change(Stage *s, int row, int delta) { /* the value of the picked part at this frame, one step (a key is made if there is none) */
     if (row == 2 && s->a.part[s->pick].sprite) { st_msg(s, "A SPRITE MOVES, IT DOES NOT ROTATE"); return; }
@@ -223,7 +232,7 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
     double t = st_now_t(s, wall);
     int nf = st_nf(a), cur = (int)lround(t * ST_FPS) % nf;
     char buf[160];
-    snprintf(buf, sizeof buf, "EDIT %s  ANIMS/%s.TXT  %d PARTS", a->name, s->name, a->npart);
+    snprintf(buf, sizeof buf, "EDIT %s  ANIMS/%s.TXT  %d PART%s", a->name, s->name, a->npart, a->npart == 1 ? "" : "S");
     for (char *p = buf; *p; p++) if (*p >= 'a' && *p <= 'z') *p -= 32;
     canvas_text(cv, 4, 3, buf, C_YELLOW);
     /* the stage: the room at this time, a crop of it, every part outlined (the picked one yellow), the picked part's keys */
@@ -332,7 +341,7 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
     int n0 = g_nreg;
     Canvas pc = canvas_new(fw + 2, 300, ST_BG); /* (the rest of the panel is drawn whole, then the part that is in view is copied: it scrolls) */
     const Part *pp = s->pick < a->npart ? &a->part[s->pick] : NULL;
-    PartPose q = pp ? parts_pose(a, s->pick, t) : (PartPose){0, 0, 0, 0, 1};
+    PartPose q = pp ? parts_pose(a, s->pick, t) : (PartPose){0, 0, 0, 0, 1, 100};
     int kat = pp ? st_key_at(pp, st_t(cur)) : -1, py = 0, row_y[ST_ROWS] = {0};
     if (pp) {
         canvas_text(&pc, 0, py, "PART", RGB(84, 84, 104)); canvas_rect(&pc, 0, py + 7, fw, 1, RGB(40, 40, 52));
@@ -345,7 +354,7 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
         py += 11;
         canvas_text(&pc, 0, py, kat >= 0 ? "AT THIS FRAME  (A KEY)" : "AT THIS FRAME", RGB(84, 84, 104)); canvas_rect(&pc, 0, py + 7, fw, 1, RGB(40, 40, 52));
         py += 12;
-        double vals[ST_ROWS] = {q.x, q.y, q.turn, q.show, q.glow};
+        double vals[ST_ROWS] = {q.x, q.y, q.turn, q.show, q.glow, q.grow};
         for (int i = 0; i < ST_ROWS; i++, py += 9) {
             int on = i == s->row, off = i == 2 && pp->sprite;
             row_y[i] = py;
@@ -437,6 +446,8 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
                 Canvas full = st_shot(a, st_t(f));
                 int cx = vx + 4, cy = vy + 6;
                 if (pp && pp->has_box) { cx = pp->box[0] + pp->box[2] / 2 - ST_TW / 2; cy = pp->box[1] + pp->box[3] / 2 - ST_TH / 2; }
+                cx = cx > full.w - ST_TW ? full.w - ST_TW : cx; cy = cy > full.h - ST_TH ? full.h - ST_TH : cy; /* (inside the room: no black edge) */
+                cx = cx < 0 ? 0 : cx; cy = cy < 0 ? 0 : cy;
                 s->thumb[f] = canvas_new(ST_TW, ST_TH, ST_BG);
                 st_crop(&s->thumb[f], &full, cx, cy, ST_TW, ST_TH, 0, 0, 1);
                 canvas_free(&full);

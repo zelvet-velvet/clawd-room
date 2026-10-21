@@ -72,6 +72,9 @@ int main(int argc, char **argv) {
     snprintf(p, sizeof p, "%s/stage-turn.png", o); shot(dir, "swing", 0, 3, 2, 0, 2, p);
     snprintf(p, sizeof p, "%s/stage-wide.png", o); shot_sized(dir, "swing", 6, 4, 1, 0, 0, 443, 265, 0, p);
     snprintf(p, sizeof p, "%s/stage-wide-scrolled.png", o); shot_sized(dir, "swing", 6, 4, 1, 0, 0, 330, 175, 45, p);
+    snprintf(p, sizeof p, "%s/stage-gate-stairs.png", o); shot_sized(dir, "gate-stairs", 5, 0, 0, 0, 0, 443, 265, 0, p);
+    snprintf(p, sizeof p, "%s/stage-gate-door.png", o); shot_sized(dir, "gate-door", 6, 0, 0, 0, 0, 300, 215, 0, p);
+    snprintf(p, sizeof p, "%s/stage-gate-well.png", o); shot_sized(dir, "gate-well", 6, 0, 0, 0, 0, 300, 215, 0, p);
     snprintf(p, sizeof p, "%s/stage-rotate-list.png", o); shot_sized(dir, "swing", 6, 3, 2, 0, 0, 443, 265, 0, p);
     snprintf(p, sizeof p, "%s/stage-sizes.png", o); sizes_shot(dir, p);
     snprintf(p, sizeof p, "%s/picker-anims.png", o); picker_shot(dir, 0, p);

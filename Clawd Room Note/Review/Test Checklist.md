@@ -132,6 +132,16 @@ What to test next, one `[!example] Group X · …` callout per group. Each test 
 > > 3. In a WSL shell: `./clawd-room.sh --edit anims/swing` (the editor opens in its own window).
 > > 4. Your edits are in `~/.clawd-room/anims/`; delete `swing.txt` there (or RESET in the picker) to go back to the default.
 
+> [!example] Group I · WSL: gates appearing, edited on the stage page (T41–T44)
+> - [ ] **T41** `./clawd-room.sh --edit` → ANIMS has GATE-DOOR, GATE-STAIRS, GATE-WELL; each opens on the stage page with the office and that gate coming in over the frames (step through them, PLAY).
+> - [ ] **T42** GATE-STAIRS: the parts STEPS, PLATFORM, OPENING, RAIL; the panel has a GROW row. Pick STEPS, go to frame 5, GROW down (`<` or the arrow beside it) → in the frames the steps come in later.
+> - [ ] **T43** With that change kept, open two rooms one above the other (`./clawd-room.sh --try`, or two windows stacked): when the stairs appear they follow your file. Without your file (`q` → D, or RESET in the picker) they appear as before.
+> - [ ] **T44** Nothing else about gates changed: doors, stairs and the well look and appear as before in all three rooms.
+>
+> > [!tip]- T41–T44 · how to run them
+> > 1. `git switch feat/gate-parts` in the repo (until its pull request is merged).
+> > 2. Your edits are in `~/.clawd-room/anims/gate-*.txt`; delete them (or RESET in the picker) to go back.
+
 ## Rooms and art ([[Rooms and Art]])
 - [x] Each room (office, coffee shop, park) looks like the mockups at your window size
 - [x] Seated Clawds show behind their desk / table / bench; the barista behind the bar
