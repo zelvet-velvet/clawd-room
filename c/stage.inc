@@ -258,7 +258,7 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
         if (!p->has_box) continue;
         int bx, by, bw, bh;
         st_box(p, parts_pose(a, i, t), &bx, &by, &bw, &bh);
-        Rgb oc = i == s->pick ? C_YELLOW : RGB(95, 105, 135);
+        Rgb oc = i == s->pick ? C_YELLOW : s->tool == 2 && p->sprite ? RGB(58, 62, 78) : RGB(95, 105, 135); /* (ROTATE: a sprite's outline dim, it cannot be picked) */
         double turn = parts_pose(a, i, t).turn;
         if (fabs(turn) < 0.5) frame(cv, L.gx + (bx - vx) * L.z, L.ty + (by - vy) * L.z, bw * L.z, bh * L.z, oc);
         else { /* turned: the outline turned about its middle, and a mark on its top edge */
@@ -371,7 +371,8 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
         snprintf(buf, sizeof buf, "%s", a->part[i].name); for (char *p = buf; *p; p++) if (*p >= 'a' && *p <= 'z') *p -= 32;
         int bw = text_width(buf) + 6;
         if (bx + bw > fw) { bx = 0; py += 11; }
-        button(&pc, bx, py, buf, i == s->pick, R_SPART, i);
+        if (s->tool == 2 && a->part[i].sprite) { canvas_rect(&pc, bx, py, bw, 9, RGB(28, 28, 36)); canvas_text(&pc, bx + 3, py + 2, buf, RGB(70, 70, 86)); } /* (ROTATE: a sprite cannot be picked) */
+        else button(&pc, bx, py, buf, i == s->pick, R_SPART, i);
         bx += bw + 3;
     }
     py += 11;
@@ -706,7 +707,7 @@ static int stage_loop(const char *dir, const char *name) {
                     }
                     else if (rg->kind == R_STOOL) { if (rg->i == 3) { s.playing = 0; st_toggle_key(&s); } else if (rg->i == 2 && s.a.part[s.pick].sprite) st_msg(&s, "A SPRITE MOVES, IT DOES NOT ROTATE"); else s.tool = rg->i; } /* (KEY: a key here or none; ROTATE greyed for a sprite: not picked) */
                     else if (rg->kind == R_SKEYSHOW) s.hide_keys = !s.hide_keys;
-                    else if (rg->kind == R_SPART) { s.pick = rg->i; if (s.tool == 2 && s.a.part[s.pick].sprite) { s.tool = 0; st_msg(&s, "A SPRITE DOES NOT ROTATE: SELECT"); } }
+                    else if (rg->kind == R_SPART) s.pick = rg->i;
                     else if (rg->kind == R_SVAL) { s.row = rg->i / 3; if (rg->i % 3) { s.playing = 0; st_change(&s, s.row, rg->i % 3 == 2 ? 1 : -1); } }
                     else if (rg->kind == R_SKEY) { s.playing = 0; st_toggle_key(&s); }
                     else if (rg->kind == R_SEASE) { s.playing = 0; st_ease(&s); }
@@ -746,7 +747,9 @@ static int stage_loop(const char *dir, const char *name) {
             else if (ch == 's' || ch == 'S') st_pan(&s, 0, 1);
             else if (ch == 'a' || ch == 'A') st_pan(&s, -1, 0);
             else if (ch == 'd' || ch == 'D') st_pan(&s, 1, 0);
-            else if (ch == ']' || ch == '[') { s.pick = (s.pick + (ch == ']' ? 1 : s.a.npart - 1)) % s.a.npart; if (s.tool == 2 && s.a.part[s.pick].sprite) { s.tool = 0; st_msg(&s, "A SPRITE DOES NOT ROTATE: SELECT"); } }
+            else if (ch == ']' || ch == '[') { /* the next / last part (ROTATE: the sprites are skipped) */
+                for (int n = 0; n < s.a.npart; n++) { s.pick = (s.pick + (ch == ']' ? 1 : s.a.npart - 1)) % s.a.npart; if (!(s.tool == 2 && s.a.part[s.pick].sprite)) break; }
+            }
             else if (ch == 'k' || ch == 'K') st_toggle_key(&s);
             else if (ch == 'x' || ch == 'X') st_del_key(&s);
             else if (ch == 'e' || ch == 'E') st_ease(&s);
