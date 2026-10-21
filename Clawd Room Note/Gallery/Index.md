@@ -20,7 +20,7 @@ The pictures of clawd-room (snapshots): what the room looked like, mockups that 
 | Rooms | [[Park]] | the park plaza and its buildings | 3 | 20 | 0 | 2026-10-19 | ![[2026-10-19 park, one corner building on the right.png\|160]] |
 | Gates and moving | [[Gates (stairs, doors, wells)]] | the ways between rooms: doors, stairs, the half floor, wells | 18 | 16 | 7 | 2026-10-20 | ![[2026-10-20 well redesign options (A picked).png\|160]] |
 | Gates and moving | [[Interaction (keys, moving)]] | keys, hints, sending and moving Clawds | 9 | 5 | 1 | 2026-10-20 | ![[2026-10-20 settings panel A and B (B picked).png\|160]] |
-| Tools and platforms | [[Engine and tools]] | the debug overlay, the placer, the pixel editor, the gallery | 21 | 15 | 2 | 2026-10-21 | ![[2026-10-21 part animations in the editor, the barista brewing (now, A dope sheet, B frames, B picked).png\|160]] |
+| Tools and platforms | [[Engine and tools]] | the debug overlay, the placer, the pixel editor, the gallery | 24 | 15 | 2 | 2026-10-21 | ![[2026-10-21 stage page, the panel with even gaps.png\|160]] |
 | Tools and platforms | [[Platforms]] | Windows Terminal, iTerm2, `--try` | 2 | 1 | 0 | 2026-10-19 | ![[2026-10-19 wsl try, four rooms at 5 pt.png\|160]] |
 | Style | [[Style and mockups]] | mockups and options to choose from (the picked one is marked) | 0 | 9 | 10 | 2026-10-19 | ![[2026-10-19 editor palette mockup C, photoshop.png\|160]] |
 | Style | [[Old look]] | how it looked before style A | 0 | 4 | 0 | 2026-10-18 | ![[2026-10-18 four windows before style A (Zaviel).png\|160]] |

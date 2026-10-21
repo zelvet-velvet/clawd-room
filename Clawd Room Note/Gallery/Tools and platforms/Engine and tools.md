@@ -10,13 +10,26 @@ Pictures of the debug overlay, the placer, the pixel editor, the gallery, newest
 
 ## 2026-10-21
 
+> [!success]+ ✅ current · Stage page, the panel with even gaps
+> ![[2026-10-21 stage page, the panel with even gaps.png|420]]
+> Shown in: [[2026-10-21#🗂️ The stage page folds like the editor; the picker's search lets go (Zaviel)|2026-10-21 · 🗂️ The stage page folds like the editor; the picker's search lets go (Zaviel)]]
+
+> [!success]+ ✅ current · Stage page, the panel and the timeline folded
+> ![[2026-10-21 stage page, the panel and the timeline folded.png|420]]
+> Shown in: [[2026-10-21#🗂️ The stage page folds like the editor; the picker's search lets go (Zaviel)|2026-10-21 · 🗂️ The stage page folds like the editor; the picker's search lets go (Zaviel)]]
+
+> [!success]+ ✅ current · Stage page KEYS toggle, A B C D (to pick)
+> ![[2026-10-21 stage page KEYS toggle, A B C D (to pick).png|420]]
+> Replaced by: [[not picked yet]]
+> Shown in: [[Interaction|Interaction]], [[2026-10-21#🗂️ The stage page folds like the editor; the picker's search lets go (Zaviel)|2026-10-21 · 🗂️ The stage page folds like the editor; the picker's search lets go (Zaviel)]]
+
 > [!success]+ ✅ current · Part animations in the editor, the barista brewing (now, A dope sheet, B frames, B picked)
 > ![[2026-10-21 part animations in the editor, the barista brewing (now, A dope sheet, B frames, B picked).png|420]]
-> Shown in: [[2026-10-21#🧩 Part animations in the pixel editor: the editor now, then the stage page (Zaviel)|2026-10-21 · 🧩 Part animations in the pixel editor: the editor now, then the stage page (Zaviel)]], [[Interaction|Interaction]]
+> Shown in: [[Interaction|Interaction]], [[2026-10-21#🧩 Part animations in the pixel editor: the editor now, then the stage page (Zaviel)|2026-10-21 · 🧩 Part animations in the pixel editor: the editor now, then the stage page (Zaviel)]]
 
 > [!success]+ ✅ current · Part animations in the editor, a Clawd on the swing (now, A dope sheet, B frames, B picked)
 > ![[2026-10-21 part animations in the editor, a Clawd on the swing (now, A dope sheet, B frames, B picked).png|420]]
-> Shown in: [[2026-10-21#🧩 Part animations in the pixel editor: the editor now, then the stage page (Zaviel)|2026-10-21 · 🧩 Part animations in the pixel editor: the editor now, then the stage page (Zaviel)]], [[Interaction|Interaction]]
+> Shown in: [[Interaction|Interaction]], [[2026-10-21#🧩 Part animations in the pixel editor: the editor now, then the stage page (Zaviel)|2026-10-21 · 🧩 Part animations in the pixel editor: the editor now, then the stage page (Zaviel)]]
 
 > [!failure]- ❌ not picked · Grow bar running Clawd, C1 C2 C3 (not picked)
 > ![[2026-10-21 grow bar running Clawd, C1 C2 C3 (not picked).png|420]]
@@ -59,7 +72,7 @@ Pictures of the debug overlay, the placer, the pixel editor, the gallery, newest
 
 > [!success]+ ✅ current · Editor timeline, onion skin and fill
 > ![[2026-10-20 editor timeline, onion skin and fill.png|420]]
-> Shown in: [[Test Checklist|Test Checklist]], [[2026-10-20#🎞️ The pixel editor edits animations; a fill tool (Zaviel)|2026-10-20 · 🎞️ The pixel editor edits animations; a fill tool (Zaviel)]], [[Interaction|Interaction]]
+> Shown in: [[Interaction|Interaction]], [[Test Checklist|Test Checklist]], [[2026-10-20#🎞️ The pixel editor edits animations; a fill tool (Zaviel)|2026-10-20 · 🎞️ The pixel editor edits animations; a fill tool (Zaviel)]]
 
 > [!success]+ ✅ current · Editor timeline divider dragged up a lot
 > ![[2026-10-20 editor timeline divider dragged up a lot.png|420]]
@@ -89,7 +102,7 @@ Pictures of the debug overlay, the placer, the pixel editor, the gallery, newest
 
 > [!success]+ ✅ current · Editor playing a Clawd at the room's speed
 > ![[2026-10-20 editor playing a Clawd at the room's speed.png|420]]
-> Shown in: [[Test Checklist|Test Checklist]], [[2026-10-20#🎞️ The pixel editor edits animations; a fill tool (Zaviel)|2026-10-20 · 🎞️ The pixel editor edits animations; a fill tool (Zaviel)]], [[Interaction|Interaction]]
+> Shown in: [[Interaction|Interaction]], [[Test Checklist|Test Checklist]], [[2026-10-20#🎞️ The pixel editor edits animations; a fill tool (Zaviel)|2026-10-20 · 🎞️ The pixel editor edits animations; a fill tool (Zaviel)]]
 
 > [!success]+ ✅ current · Editor picker with yours marked, reset buttons
 > ![[2026-10-20 editor picker with yours marked, reset buttons.png|420]]
@@ -167,7 +180,7 @@ Pictures of the debug overlay, the placer, the pixel editor, the gallery, newest
 > [!quote]- ♻️ replaced · Pixel editor with rooms
 > ![[2026-10-18 pixel editor with rooms.png|420]]
 > Replaced by: [[2026-10-18 pixel editor, new palette and help.png]]
-> Shown in: [[2026-10-18#🎨 Engine step 3: props as sprites, rooms as text files, the pixel editor|2026-10-18 · 🎨 Engine step 3: props as sprites, rooms as text files, the pixel editor]], [[Engine Design|Engine Design]]
+> Shown in: [[Engine Design|Engine Design]], [[2026-10-18#🎨 Engine step 3: props as sprites, rooms as text files, the pixel editor|2026-10-18 · 🎨 Engine step 3: props as sprites, rooms as text files, the pixel editor]]
 
 > [!quote]- ♻️ replaced · Gallery coffee (part)
 > ![[2026-10-18 gallery coffee (part).png|420]]
@@ -177,7 +190,7 @@ Pictures of the debug overlay, the placer, the pixel editor, the gallery, newest
 > [!quote]- ♻️ replaced · Debug overlay
 > ![[2026-10-18 debug overlay.png|420]]
 > Replaced by: [[2026-10-18 debug overlay with labels.png]]
-> Shown in: [[2026-10-18#🧱 Engine step 1: the scene, the overlap check, the gallery, the overlay|2026-10-18 · 🧱 Engine step 1: the scene, the overlap check, the gallery, the overlay]], [[Engine Design|Engine Design]]
+> Shown in: [[Engine Design|Engine Design]], [[2026-10-18#🧱 Engine step 1: the scene, the overlap check, the gallery, the overlay|2026-10-18 · 🧱 Engine step 1: the scene, the overlap check, the gallery, the overlay]]
 
 > [!success]+ ✅ current · Debug overlay with labels
 > ![[2026-10-18 debug overlay with labels.png|420]]

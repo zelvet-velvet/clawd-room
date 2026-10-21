@@ -168,3 +168,6 @@ Whether each picture in `Assets/Snapshots/` still shows how things are. `tools/v
 | 2026-10-21 grow bar figure, A B C D (C picked).png | replaced | [[2026-10-21 grow bar figure, the Clawd's own walk frames (picked).png]] |
 | 2026-10-21 grow bar running Clawd, C1 C2 C3 (not picked).png | not picked |  |
 | 2026-10-21 grow bar figure, the Clawd's own walk frames (picked).png | current |  |
+| 2026-10-21 stage page KEYS toggle, A B C D (to pick).png | current | not picked yet |
+| 2026-10-21 stage page, the panel with even gaps.png | current |  |
+| 2026-10-21 stage page, the panel and the timeline folded.png | current |  |

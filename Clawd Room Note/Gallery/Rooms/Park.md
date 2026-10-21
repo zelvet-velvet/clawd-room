@@ -23,7 +23,7 @@ Pictures of the park plaza and its buildings, newest first: ✅ current (open), 
 > [!quote]- ♻️ replaced · Style A built park
 > ![[2026-10-18 style A built park.png|420]]
 > Replaced by: [[2026-10-18 park playground at 45 degrees.png]]
-> Shown in: [[2026-10-18#🏛️ The rooms in perspective are built|2026-10-18 · 🏛️ The rooms in perspective are built]], [[Rooms and Art|Rooms and Art]]
+> Shown in: [[Rooms and Art|Rooms and Art]], [[2026-10-18#🏛️ The rooms in perspective are built|2026-10-18 · 🏛️ The rooms in perspective are built]]
 
 > [!quote]- ♻️ replaced · Park, sandstone neighbour
 > ![[2026-10-18 park, sandstone neighbour.png|420]]
