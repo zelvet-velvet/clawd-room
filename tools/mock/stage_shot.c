@@ -63,6 +63,7 @@ int main(int argc, char **argv) {
     snprintf(p, sizeof p, "%s/items.txt", dir); items = sprites_load(p);
     snprintf(p, sizeof p, "%s/props.txt", dir); props = sprites_load(p);
     theme_set_props(&props);
+    ui_watch(dir);
     draw_set_sprites(&frames, &items);
     char rd[700]; snprintf(rd, sizeof rd, "%s/../rooms", dir); theme_set_rooms_dir(rd);
     snprintf(rd, sizeof rd, "%s/../anims", dir); parts_set_dir(rd); parts_set_mine_dir("");

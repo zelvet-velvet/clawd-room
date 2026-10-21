@@ -277,7 +277,7 @@ with tempfile.TemporaryDirectory() as tmp:
     check("--edit list names the part animations (anims/swing)", r.returncode == 0 and "anims/swing" in r.stdout and "anims/brew" in r.stdout)
     r = subprocess.run(CMD + ["--edit-check", "anims/nope"], capture_output=True, text=True, env=dict(os.environ, **aenv))
     check("--edit anims/NAME with no such animation says so and names the ones there are", r.returncode == 1 and "anims/swing" in r.stderr)
-    keys = [(1.2 + i * 0.05, b"\x1b[C") for i in range(4)] + [(1.6, b"\x1b[<0;215;55M"), (1.7, b"\x1b[<0;215;55m"), (2.2, b"q"), (2.6, b"s")]  # (frame 5, a click at a tenth of the grow bar: the steps come in later)
+    keys = [(1.2 + i * 0.05, b"\x1b[C") for i in range(4)] + [(1.6, b"\x1b[<0;219;55M"), (1.7, b"\x1b[<0;219;55m"), (2.2, b"q"), (2.6, b"s")]  # (frame 5, a click at a tenth of the grow bar: the steps come in later)
     g0 = subprocess.run(CMD + ["--script", os.path.join(ROOT, "tools", "scenarios", "office-gates-appear.sc")], capture_output=True, text=True, env=dict(os.environ, **aenv))
     out, st = run(["--edit", "anims/gate-stairs"], keys, aenv, cols=300, rows=90)
     gmine = os.path.join(mine_a, "gate-stairs.txt")

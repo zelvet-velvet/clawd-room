@@ -332,10 +332,11 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
         button(cv, kx, L.ty + L.ah + 2, kl, !s->hide_keys, R_SKEYSHOW, 0);
     }
     if (s->pick >= 0 && s->pick < a->npart) { /* GROW: how much of the picked part has come in at this frame (a running figure, a bar; click or drag it) */
-        static const char *const RUN[9] = {"....ww...", "....ww...", "..wwww.w.", ".w.ww.w..", "...www...", "..w...w..", ".w.....w.", "w.......w", "........."};
-        int gx0 = L.px, gy0 = L.ty + L.ah + 2, bx0 = gx0 + 13, bw = L.fw - 13, g = (int)lround(parts_pose(a, s->pick, t).grow);
+        int gx0 = L.px, gy0 = L.ty + L.ah + 2, bx0 = gx0 + 17, bw = L.fw - 17, g = (int)lround(parts_pose(a, s->pick, t).grow);
         g = g < 0 ? 0 : g > 100 ? 100 : g;
-        for (int yy = 0; yy < 9; yy++) for (int xx = 0; xx < 9; xx++) if (RUN[yy][xx] == 'w') canvas_px(cv, gx0 + 1 + xx, gy0 + yy, s->growdrag ? C_YELLOW : RGB(170, 170, 190));
+        char fig[16]; /* (a Clawd from sprites/ui.txt: asleep, walking while the bar is dragged or PLAY runs) */
+        if (s->growdrag || s->playing) snprintf(fig, sizeof fig, "grow-walk-%d", 1 + (int)(wall * 8) % 4); else snprintf(fig, sizeof fig, "grow-sleep");
+        if (!ui_icon(cv, fig, gx0, gy0, 0)) canvas_rect(cv, gx0 + 3, gy0 + 2, 9, 5, C_CLAWD); /* (no such sprite: a plain block) */
         canvas_rect(cv, bx0, gy0 + 2, bw, 5, RGB(34, 34, 44));
         canvas_rect(cv, bx0, gy0 + 2, bw * g / 100, 5, C_YELLOW);
         frame(cv, bx0, gy0 + 2, bw, 5, RGB(60, 60, 76));
@@ -505,7 +506,7 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
         canvas_text(cv, bx + (w - text_width(b)) / 2, by + 14, b, C_WHITE);
     }
     if (s->help) { /* ?: the keys and the mouse, in a box over the stage; a window too short for it scrolls it (up / down, the wheel) */
-        static const char *const H[] = {"HELP  (UP DOWN SCROLLS)", "MOUSE", "CLICK A PART: PICK IT", "SELECT: DRAG A BORDER TO RESIZE", "MOVE / ROTATE: DRAG ON THE STAGE", "KEY: A KEY AT THIS FRAME, OR NONE", "< > BESIDE A VALUE: CHANGE IT", "THE BAR BY THE RUNNER: HOW MUCH HAS COME IN", "CLICK A FRAME: GO THERE", "WHEEL: ZOOM / SCROLL THE PANEL", "RIGHT DRAG: MOVE THE VIEW",
+        static const char *const H[] = {"HELP  (UP DOWN SCROLLS)", "MOUSE", "CLICK A PART: PICK IT", "SELECT: DRAG A BORDER TO RESIZE", "MOVE / ROTATE: DRAG ON THE STAGE", "KEY: A KEY AT THIS FRAME, OR NONE", "< > BESIDE A VALUE: CHANGE IT", "THE BAR BY THE SLEEPING CLAWD: HOW MUCH HAS COME IN", "CLICK A FRAME: GO THERE", "WHEEL: ZOOM / SCROLL THE PANEL", "RIGHT DRAG: MOVE THE VIEW",
                                         "KEYS", "LEFT RIGHT  FRAME", "UP DOWN  A VALUE", "< >  CHANGE IT", "+ -  ZOOM THE STAGE", "W A S D  MOVE THE VIEW", "0  ZOOM AS IT WAS, THE PART IN THE MIDDLE", "V  KEYS ON THE STAGE: ON / OFF", "SPACE  PLAY", "O  ONION SKIN (BEFORE RED, AFTER BLUE)", "[ ]  OTHER PART", "K  A KEY HERE OR NONE", "X  DELETE THE KEY", "E  KEY EASE", "U R  UNDO REDO", "Q  QUIT"};
         int n = (int)(sizeof H / sizeof *H), bw2 = 0;
         for (int i = 0; i < n; i++) if (text_width(H[i]) > bw2) bw2 = text_width(H[i]);
@@ -616,7 +617,7 @@ static void st_resize(Stage *s, const StLayout *L, int mx, int my) { /* the drag
     st_changed(s);
 }
 static void st_grow_to(Stage *s, const StLayout *L, int mx) { /* the grow bar: the picked part's grow at this frame where the pointer is (5% steps) */
-    int bx0 = L->px + 13, bw = L->fw - 13, k = st_ensure_key(s, s->pick, st_t(s->frame));
+    int bx0 = L->px + 17, bw = L->fw - 17, k = st_ensure_key(s, s->pick, st_t(s->frame));
     if (k < 0) return;
     double g = (double)(mx - bx0) * 100 / (bw - 1);
     g = 5 * lround(g / 5);
@@ -640,7 +641,6 @@ static void stage_dirs(const char *dir) { /* the folders of the animations: the 
 /* the stage page in a terminal that is already set up (the editor's sprite picker opens it too): until q; 1 if it cannot open */
 static int stage_loop(const char *dir, const char *name) {
     static Stage s;
-    (void)dir;
     if (stage_open(&s, name)) return 1;
     Cells prev = {0, 0, NULL};
     int quit = 0, cols = 0, rows = 0;
@@ -651,6 +651,7 @@ static int stage_loop(const char *dir, const char *name) {
         if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == 0 && ws.ws_col) { c = ws.ws_col; r = ws.ws_row; }
         if (c != cols || r != rows) { cols = c; rows = r; cells_free(&prev); prev.c = NULL; put("\x1b[H"); }
         double wall = wall_now();
+        ui_watch(dir); /* (the editor's own sprites, sprites/ui.txt: the grow bar's Clawd) */
         Canvas cv = canvas_new(cols, rows * 2, ST_BG);
         stage_draw(&s, &cv, wall);
         StLayout L = st_layout(&s, cv.w, cv.h);
@@ -662,7 +663,7 @@ static int stage_loop(const char *dir, const char *name) {
         cells_free(&prev); prev = cur;
         canvas_free(&cv);
         fd_set fs; FD_ZERO(&fs); FD_SET(STDIN_FILENO, &fs);
-        struct timeval tv = {0, s.playing ? 62500 : 200000};
+        struct timeval tv = {0, s.playing || s.growdrag ? 62500 : 200000}; /* (16 a second while something moves) */
         if (select(STDIN_FILENO + 1, &fs, NULL, NULL, &tv) <= 0) { if (nin == 1 && in[0] == 0x1b) { nin = 0; s.asking = 0; s.help = 0; } continue; }
         ssize_t k = read(STDIN_FILENO, in + nin, sizeof in - 1 - (size_t)nin);
         if (k <= 0) continue;
