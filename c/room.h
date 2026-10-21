@@ -149,6 +149,7 @@ const char *geo_role(const Geo *g, const Room *room, const Session *s);
 void room_init(Room *r);
 void room_order(Room *r);                            /* fills r->s (ordered) and r->guests (placed visitors) */
 void room_apply(Room *r, double t, const char *sid, const char *ev, const char *cwd, const char *tool);
+void room_emote(Room *r, const char *sid, const char *kind, double now, double dur);
 void room_prune(Room *r, double now);
 void room_step(Room *r, const Geo *geo, double now); /* move everybody a little (once per frame) */
 Session *room_add_guest(Room *r, const char *key, double now);

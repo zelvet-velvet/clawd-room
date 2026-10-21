@@ -6,7 +6,7 @@ bin="$here/c/clawd-room"
 stale=0
 [ -x "$bin" ] || stale=1
 if [ "$stale" = 0 ]; then
-  for f in "$here"/c/*.c "$here"/c/*.h "$here"/c/Makefile; do
+  for f in "$here"/c/*.c "$here"/c/*.h "$here"/c/*.inc "$here"/c/Makefile; do
     [ "$f" -nt "$bin" ] && { stale=1; break; }
   done
 fi

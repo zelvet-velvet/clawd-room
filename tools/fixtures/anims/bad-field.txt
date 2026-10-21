@@ -1,0 +1,3 @@
+anim t length 1 once
+part a
+key a 0.5 wobble=1

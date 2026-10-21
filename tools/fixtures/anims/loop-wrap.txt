@@ -1,0 +1,8 @@
+# a looping one wraps time; show hides at its key
+anim wrap length 1.0 loop
+part a
+part b group g
+key a 0.0 x=0
+key a 1.0 x=10
+key b 0.25 show=0
+key b 0.75 show=1 y=4

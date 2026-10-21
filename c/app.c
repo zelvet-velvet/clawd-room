@@ -17,6 +17,7 @@
 #include <time.h>
 #include <unistd.h>
 #include "art.h"
+#include "parts.h"
 #include "camera.h"
 #include "clawd.h"
 #include "link.h"
@@ -914,10 +915,12 @@ int app_main(int argc, char **argv) {
     props = sprites_load_layered(path, mine);
     theme_set_props(&props);
     sprites_watch(dir, &frames, &items, &props);
+    { char rd[600]; snprintf(rd, sizeof rd, "%s", dir); char *sl = strrchr(rd, '/'); if (sl) strcpy(sl, "/rooms"); else strcpy(rd, "../rooms"); theme_set_rooms_dir(rd); sl = strrchr(rd, '/'); strcpy(sl ? sl : rd, "/anims"); parts_set_dir(getenv("CLAWD_ANIMS") ? getenv("CLAWD_ANIMS") : rd); }
+    { char md[700]; const char *env = getenv("CLAWD_MY_ANIMS"), *ms = sprites_mine_dir(); snprintf(md, sizeof md, "%s", env ? env : ms); if (!env) { char *sl = strrchr(md, '/'); if (sl) strcpy(sl, "/anims"); } parts_set_mine_dir(md); } /* (yours: ~/.clawd-room/anims, next to your sprites) */ /* (rooms/ and anims/ next to sprites/) */
+    draw_set_sprites(&frames, &items); /* (the editor's stage draws rooms) */
     if (a.edit_check) { int which; int er = editor_find(dir, a.edit_check, &which); sprites_free(&frames); sprites_free(&items); sprites_free(&props); return er; } /* (clawd-room.sh, before it opens a window) */
     if (a.edit && !strcmp(a.edit, "list")) { int er = editor_list(dir); sprites_free(&frames); sprites_free(&items); sprites_free(&props); return er; } /* what --edit can open */
     if (a.edit) { int er = editor_run(dir, strcmp(a.edit, "-") ? a.edit : NULL); sprites_free(&frames); sprites_free(&items); sprites_free(&props); return er; } /* the pixel editor */
-    { char rd[600]; snprintf(rd, sizeof rd, "%s", dir); char *sl = strrchr(rd, '/'); if (sl) strcpy(sl, "/rooms"); else strcpy(rd, "../rooms"); theme_set_rooms_dir(rd); } /* (rooms/ next to sprites/) */
     int rc = 0;
     if (a.build_art || a.export_sprites) { /* the sprite files and the pictures made from them */
         char root[600], art[700];

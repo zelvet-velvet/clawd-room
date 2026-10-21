@@ -48,6 +48,8 @@ flowchart LR
 | `gallery.c` | `--check` (overlaps) and `--gallery DIR` (contact sheets) |
 | `place.c` | the placer: wall items by priority around what must stay clear |
 | `anim.c` | the animator: eased values (gates appearing, doors swinging) |
+| `stage.inc` | the pixel editor's stage page for part animations (`--edit anims/NAME`): the room with the thing on a stage, the picked part's values, the frames as pictures with the keys under them; included by `editor.c`; saves to `~/.clawd-room/anims/` as you go |
+| `parts.c` | part animations: loads and saves `anims/*.txt` (parts with keyframes: where, turn, shows, glow; the scene and the boxes the editor's stage shows) and says where each part is at a time (yours in `~/.clawd-room/anims/` first; read again when the file changes). The room moves a swinging Clawd by `anims/swing.txt`'s `clawd` part; nothing else uses it yet |
 | `editor.c` | the pixel editor (`--edit`) |
 | `theme.c` | the three rooms: backgrounds, workspaces, gates, signs |
 | `persp.c` | vanishing point, floor mapping, quads, boxes |
@@ -74,7 +76,7 @@ flowchart LR
     M --> Eye["👀 Test Checklist<br/>(Zaviel)"]
 ```
 
-- `make -C c test` compares with `c/tests/expected`: sprite frames, terminal strings, random numbers, fixture frames (`tools/fixtures/*.fx`), scripted scenes over time (`tools/scenarios/*.sc`), gate planning, `--dump` text frames.
+- `make -C c test` compares with `c/tests/expected`: sprite frames, terminal strings, random numbers, fixture frames (`tools/fixtures/*.fx`), scripted scenes over time (`tools/scenarios/*.sc`), part animations (`parts.txt`: `anims/*.txt` and the files in `tools/fixtures/anims/`, good and bad; `swing-file.txt`: the swing scene run with a bigger `swing.txt` from `tools/fixtures/anims-big/`, so the room is shown to use the file; `test.sh` also checks that the scene is the same with the file and without it: the file makes the motion `2 * sin(3.2 t)` it replaced; scenarios have an `emote T sid kind [seconds]` line), gate planning, `--dump` text frames.
 - `make -C c movesmoke`: two rooms in ptys, `m` + arrow moves a Clawd, the other room claims it in its heartbeat. `make -C c splitsmoke`: three rooms, a fourth opens, one freezes 7 s, the fourth closes: no other Clawd changes room.
 - `make -C c winsmoke` uses real Windows Terminal windows.
 - `clawd-room --check` (in `make test`, snapshot `overlap.txt`): items painting over each other across every room × gates × crowd × size.

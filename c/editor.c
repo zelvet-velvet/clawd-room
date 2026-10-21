@@ -22,6 +22,7 @@
 #include "canvas.h"
 #include "sprites.h"
 #include "term.h"
+#include "parts.h"
 
 #define MAXW 64
 #define MAXH 64
@@ -908,8 +909,15 @@ static void draw_timeline(Canvas *cv, const Ed *e, double now, int preview, int 
 
 /* ---- the sprite picker: every sprite and animation as a card with its picture (or as a list with the picked one big), by
  * file; type to find; Enter or a click opens it in the editor; l there brings the picker back --------------------------- */
-typedef struct { int file, sp, n, mine; char name[64]; } PickItem; /* (mine: one of its frames is yours) */
+typedef struct { int file, sp, n, mine; char name[64]; } PickItem; /* (mine: one of its frames is yours); file NFILES: a part animation, sp its index in g_anim */
 static File g_pf[NFILES];
+#define ANIMS NFILES /* the picker's last tab: the part animations (anims/NAME.txt), opened on the stage page (stage.inc) */
+static char g_anim[32][24];
+static int g_nanim, g_redraw; /* (g_redraw: the stage page had the terminal: draw everything again) */
+static void stage_dirs(const char *dir);
+static int stage_loop(const char *dir, const char *name);
+static void picker_anim(Canvas *cv, int ai, double t, int x, int y, int w, int h);
+static void anim_mine_path(char *out, size_t n, int ai) { snprintf(out, n, "%s/%s.txt", parts_mine_dir(), g_anim[ai]); }
 static PickItem g_pi[512];
 static int g_npi, g_pick_cols = 1;
 static void picker_gather(const char *dir) {
@@ -936,6 +944,18 @@ static void picker_gather(const char *dir) {
             g_npi++;
         }
     }
+    stage_dirs(dir);
+    g_nanim = parts_names(g_anim, 32);
+    for (int i = 0; i < g_nanim && g_npi < 512; i++) {
+        const PartAnim *a = parts_get(g_anim[i]);
+        char mp[700];
+        anim_mine_path(mp, sizeof mp, i);
+        int nf = a ? (int)lround(a->length * 16) + (a->loop ? 0 : 1) : 1;
+        g_pi[g_npi] = (PickItem){ANIMS, i, nf, parts_mine_dir()[0] && access(mp, R_OK) == 0, ""};
+        snprintf(g_pi[g_npi].name, sizeof g_pi[g_npi].name, "%s", g_anim[i]);
+        for (char *q = g_pi[g_npi].name; *q; q++) if (*q >= 'a' && *q <= 'z') *q -= 32;
+        g_npi++;
+    }
 }
 /* the items the picker shows, in order: matching what is typed; the cards only the file of their tab */
 static int picker_shown(const Ed *e, int *out) {
@@ -949,6 +969,7 @@ static int picker_shown(const Ed *e, int *out) {
 }
 /* a sprite of the picker's files, fitted into w x h (z at most), centred; frame k of its animation (playing: the picked one) */
 static void picker_sprite(Canvas *cv, const PickItem *it, int k, int x, int y, int w, int h, int z) {
+    if (it->file == ANIMS) { picker_anim(cv, it->sp, k * 0.3, x, y, w, h); return; } /* (a part animation: its room, the parts in the middle) */
     int fr[128], n = anim_frames(&g_pf[it->file], it->sp, fr, 128), sw, sh;
     static char g[MAXH][MAXW + 1];
     grid_of(&g_pf[it->file], fr[k % n], g, &sw, &sh);
@@ -979,10 +1000,10 @@ static void draw_picker(const Ed *e, Canvas *cv, double now) {
     canvas_text(cv, 4, 3, "OPEN A SPRITE", C_YELLOW);
     picker_view_button(cv, W - 4 - 24, 3, 0, e->pview == 0);
     picker_view_button(cv, W - 4 - 9, 3, 1, e->pview == 1);
-    static const char *TABS[NFILES] = {"PROPS", "ITEMS", "CLAWD", "UI"};
+    static const char *TABS[NFILES + 1] = {"PROPS", "ITEMS", "CLAWD", "UI", "ANIMS"};
     if (e->pview == 0) { /* cards: a tab per file, the search box, the cards */
         int tx = 4, ty = 14;
-        for (int f = 0; f < NFILES; f++) {
+        for (int f = 0; f <= ANIMS; f++) {
             int tw = text_width(TABS[f]) + 8;
             canvas_rect(cv, tx, ty, tw, 10, f == e->ptab ? RGB(52, 54, 70) : RGB(28, 28, 36));
             if (f == e->ptab) canvas_rect(cv, tx + 2, ty + 9, tw - 4, 1, C_YELLOW);
@@ -1060,13 +1081,14 @@ static void draw_picker(const Ed *e, Canvas *cv, double now) {
             if (ph < 20) ph = 20;
             checker(cv, px, 14, pw, ph);
             picker_sprite(cv, it, k, px, 14, pw, ph, 8);
-            static char g[MAXH][MAXW + 1]; int w, h;
-            grid_of(&g_pf[it->file], it->sp, g, &w, &h);
+            static char g[MAXH][MAXW + 1]; int w = 0, h = 0;
+            if (it->file != ANIMS) grid_of(&g_pf[it->file], it->sp, g, &w, &h);
             char info[96];
-            snprintf(info, sizeof info, "%s   %s   %dX%d   %d FRAME%s", it->name, FILES[it->file], w, h, it->n, it->n == 1 ? "" : "S");
+            if (it->file == ANIMS) { const PartAnim *a = parts_get(g_anim[it->sp]); snprintf(info, sizeof info, "%s   ANIMS/%s.TXT   %d PARTS   %d FRAMES", it->name, it->name, a ? a->npart : 0, it->n); }
+            else snprintf(info, sizeof info, "%s   %s   %dX%d   %d FRAME%s", it->name, FILES[it->file], w, h, it->n, it->n == 1 ? "" : "S");
             for (char *q = info; *q; q++) if (*q >= 'a' && *q <= 'z') *q -= 32;
             canvas_text(cv, px, 14 + ph + 4, info, C_YELLOW);
-            for (int f = 0, fx = px; f < it->n && fx + 32 <= W - 4; f++, fx += 35) { checker(cv, fx, 14 + ph + 13, 32, 22); picker_sprite(cv, it, f, fx, 14 + ph + 13, 32, 22, 2); }
+            for (int f = 0, fx = px; f < it->n && fx + 32 <= W - 4; f += it->file == ANIMS ? 4 : 1, fx += 35) { checker(cv, fx, 14 + ph + 13, 32, 22); picker_sprite(cv, it, f, fx, 14 + ph + 13, 32, 22, 2); }
         }
     }
     if (!n) { char t[64]; snprintf(t, sizeof t, "NOTHING CALLED %s", e->find); canvas_text(cv, (W - text_width(t)) / 2, H / 2, t, C_GREY); }
@@ -1090,7 +1112,7 @@ static void draw_picker(const Ed *e, Canvas *cv, double now) {
         }
     }
     canvas_rect(cv, 0, H - 10, W, 1, RGB(40, 40, 52));
-    canvas_text(cv, 4, H - 7, e->pview == 0 ? "ARROWS PICK  ENTER OPEN  TAB FILE  \\ LIST  Q QUIT" : "UP DOWN PICK  ENTER OPEN  \\ CARDS  Q QUIT", RGB(150, 150, 170));
+    canvas_text(cv, 4, H - 7, e->pview == 0 ? "ARROWS PICK  ENTER OPEN  TAB NEXT TAB  \\ LIST  Q QUIT" : "UP DOWN PICK  ENTER OPEN  \\ CARDS  Q QUIT", RGB(150, 150, 170));
 }
 /* the picker opens: the items again, the open sprite's animation picked */
 static void picker_open(Ed *e, const char *dir, int from_edit) {
@@ -1109,7 +1131,7 @@ static void picker_open(Ed *e, const char *dir, int from_edit) {
 /* what is typed changed: the first match picked (the cards: on the first tab that has one) */
 static void picker_refind(Ed *e) {
     int sh[512];
-    if (e->pview == 0 && !picker_shown(e, sh)) for (int f = 0; f < NFILES; f++) { e->ptab = f; if (picker_shown(e, sh)) break; }
+    if (e->pview == 0 && !picker_shown(e, sh)) for (int f = 0; f <= ANIMS; f++) { e->ptab = f; if (picker_shown(e, sh)) break; }
     int n = picker_shown(e, sh);
     if (n) e->psel = sh[0];
     e->pscroll = 0;
@@ -1147,6 +1169,7 @@ static void visit_discard(Ed *e, const char *dir) { /* (D when leaving a sprite:
 static void picker_reset(Ed *e, const char *dir) {
     if (e->psel < 0 || e->psel >= g_npi) return;
     const PickItem *it = &g_pi[e->psel];
+    if (it->file == ANIMS) { char mp[700]; anim_mine_path(mp, sizeof mp, it->sp); remove(mp); picker_gather(dir); snprintf(e->msg, sizeof e->msg, "RESET"); return; } /* (a part animation: yours goes) */
     File *f = &g_pf[it->file];
     static File d;
     if (file_load(&d, f->path) != 0) d.nsprite = 0;
@@ -1169,6 +1192,7 @@ static void picker_reset(Ed *e, const char *dir) {
 }
 static void picker_reset_all(Ed *e, const char *dir) { /* RESET ALL: every file of yours goes */
     for (int f = 0; f < NFILES; f++) put_back(f, NULL);
+    for (int i = 0; i < g_nanim; i++) { char mp[700]; anim_mine_path(mp, sizeof mp, i); remove(mp); } /* (and your part animations) */
     picker_gather(dir);
     (void)e;
 }
@@ -1176,6 +1200,18 @@ static void picker_reset_all(Ed *e, const char *dir) { /* RESET ALL: every file 
 static void picker_make_default(Ed *e, const char *dir) {
     if (e->psel < 0 || e->psel >= g_npi) return;
     int fi = g_pi[e->psel].file;
+    if (fi == ANIMS) { /* a part animation: yours is copied over the default, then goes */
+        char mp[700], dp[700];
+        anim_mine_path(mp, sizeof mp, g_pi[e->psel].sp);
+        snprintf(dp, sizeof dp, "%s/%s.txt", parts_default_dir(), g_anim[g_pi[e->psel].sp]);
+        char *t = slurp(mp);
+        if (!t) return;
+        FILE *o = fopen(dp, "w");
+        if (o) { fputs(t, o); fclose(o); remove(mp); }
+        free(t);
+        picker_gather(dir);
+        return;
+    }
     File *f = &g_pf[fi];
     char tmp[720];
     snprintf(tmp, sizeof tmp, "%s.edit", f->path);
@@ -1190,6 +1226,15 @@ static void picker_make_default(Ed *e, const char *dir) {
 /* the picked one opens in the editor */
 static void picker_pick(Ed *e, const char *dir) {
     if (e->psel < 0 || e->psel >= g_npi) return;
+    if (g_pi[e->psel].file == ANIMS) { /* the stage page, in this window; q there comes back here */
+        char nm[24];
+        snprintf(nm, sizeof nm, "%s", g_anim[g_pi[e->psel].sp]);
+        if (stage_loop(dir, nm)) snprintf(e->msg, sizeof e->msg, "CANNOT OPEN ANIMS/%s", g_pi[e->psel].name);
+        g_redraw = 1;
+        picker_gather(dir);
+        for (int i = 0; i < g_npi; i++) if (g_pi[i].file == ANIMS && !strcmp(g_anim[g_pi[i].sp], nm)) e->psel = i;
+        return;
+    }
     char nm[64];
     sprite_name(&g_pf[g_pi[e->psel].file], g_pi[e->psel].sp, nm, sizeof nm);
     file_open(e, dir, g_pi[e->psel].file, nm);
@@ -1201,8 +1246,8 @@ static void picker_pick(Ed *e, const char *dir) {
 static void draw_asking(Canvas *cv, const Ed *e) {
     char a[96];
     const char *b = "S SAVE    D DISCARD    ESC BACK";
-    if (e->asking == 3) { int n = 0; for (int i = 0; i < g_npi; i++) n += g_pi[i].mine; snprintf(a, sizeof a, "RESET %d SPRITE%s TO THE DEFAULT?", n, n == 1 ? "" : "S"); b = "Y RESET    N KEEP THEM"; }
-    else if (e->asking == 4) { snprintf(a, sizeof a, "MAKE YOURS IN %s THE DEFAULT?", e->psel >= 0 && e->psel < g_npi ? FILES[g_pi[e->psel].file] : ""); for (char *q = a; *q; q++) if (*q >= 'a' && *q <= 'z') *q -= 32; b = "Y MAKE IT THE DEFAULT    N NOT NOW"; }
+    if (e->asking == 3) { int n = 0; for (int i = 0; i < g_npi; i++) n += g_pi[i].mine; snprintf(a, sizeof a, "RESET %d OF YOURS TO THE DEFAULT?", n); b = "Y RESET    N KEEP THEM"; }
+    else if (e->asking == 4) { if (e->psel >= 0 && e->psel < g_npi && g_pi[e->psel].file == ANIMS) snprintf(a, sizeof a, "MAKE YOUR ANIMS/%s.TXT THE DEFAULT?", g_pi[e->psel].name); else snprintf(a, sizeof a, "MAKE YOURS IN %s THE DEFAULT?", e->psel >= 0 && e->psel < g_npi ? FILES[g_pi[e->psel].file] : ""); for (char *q = a; *q; q++) if (*q >= 'a' && *q <= 'z') *q -= 32; b = "Y MAKE IT THE DEFAULT    N NOT NOW"; }
     else if (e->asking == 2) { snprintf(a, sizeof a, "SAVE THE CHANGES TO %s?", e->name); for (char *q = a; *q; q++) if (*q >= 'a' && *q <= 'z') *q -= 32; }
     else snprintf(a, sizeof a, "SAVE THE CHANGES?");
     int w = (text_width(b) > text_width(a) ? text_width(b) : text_width(a)) + 12, h = 24, bx = (cv->w - w) / 2, by = (cv->h - h) / 2;
@@ -1473,8 +1518,10 @@ static void tty_on(void) {
 }
 static void tty_off(void) { put("\x1b[?1006l\x1b[?1003l\x1b[?1000l\x1b[0m\x1b[?7h\x1b[?25h\x1b[?1049l"); tcsetattr(STDIN_FILENO, TCSADRAIN, &g_old); }
 #include <sys/ioctl.h>
+#include "stage.inc"
 int editor_find(const char *dir, const char *name, int *which);
 int editor_run(const char *dir, const char *name) {
+    if (name && !strncmp(name, "anims/", 6)) return stage_run(dir, name + 6); /* (a part animation: the stage page) */
     static Ed e;
     memset(&e, 0, sizeof e);
     e.pk = 1; e.pi = 0; e.hx = e.hy = -1; e.drag = -1; e.last_pk = 1; e.speed = 1; e.onion = 1; e.del_ask = -1;
@@ -1493,7 +1540,7 @@ int editor_run(const char *dir, const char *name) {
         struct winsize ws;
         int c = 120, r = 40;
         if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == 0 && ws.ws_col) { c = ws.ws_col; r = ws.ws_row; }
-        if (c != cols || r != rows) { cols = c; rows = r; cells_free(&prev); prev.c = NULL; put("\x1b[H"); }
+        if (c != cols || r != rows || g_redraw) { cols = c; rows = r; cells_free(&prev); prev.c = NULL; put("\x1b[H"); g_redraw = 0; }
         ui_watch(dir); /* (the editor's own icons, sprites/ui.txt: edited, they change at once) */
         if (e.sizing && wall_now() > e.sizing_until) { e.sizing = 0; if (strstr(e.msg, "ARROW")) e.msg[0] = 0; } /* (w / n let go) */
         Canvas cv = canvas_new(cols, rows * 2, RGB(18, 18, 24));
@@ -1677,7 +1724,7 @@ int editor_run(const char *dir, const char *name) {
             if (e.page && !e.asking) { /* the picker: type to find, Backspace, Enter opens, Tab the next file, \ the view */
                 size_t fl = strlen(e.find);
                 if (ch == '\r' || ch == '\n') picker_pick(&e, dir);
-                else if (ch == '\t') { e.ptab = (e.ptab + 1) % NFILES; e.pscroll = 0; int sh[512]; if (picker_shown(&e, sh)) e.psel = sh[0]; }
+                else if (ch == '\t') { e.ptab = (e.ptab + 1) % (ANIMS + 1); e.pscroll = 0; int sh[512]; if (picker_shown(&e, sh)) e.psel = sh[0]; }
                 else if (ch == '\\') { e.pview = !e.pview; e.pscroll = 0; } /* (\: the other view; Ctrl+V is Windows Terminal's paste) */
                 else if (ch == 0x03 || ((ch == 'q' || ch == 'Q') && !fl)) quit = 1; /* (q, the search empty, or Ctrl+C: quit) */
                 else if ((ch == 127 || ch == 8) && fl) { e.find[fl - 1] = 0; picker_refind(&e); }
@@ -1794,6 +1841,16 @@ static int edit_distance(const char *a, const char *b) {
 }
 /* 0 if the sprites have a sprite or an animation called NAME (the file it is in in *which); else the error is printed */
 int editor_find(const char *dir, const char *name, int *which) {
+    if (!strncmp(name, "anims/", 6)) { /* a part animation of anims/ (yours or the default) */
+        if (which) *which = -1;
+        if (parts_get(name + 6)) return 0;
+        char names[32][24];
+        int n = parts_names(names, 32);
+        fprintf(stderr, "clawd-room --edit: no part animation called %s\n  there are:", name + 6);
+        for (int i = 0; i < n; i++) fprintf(stderr, " anims/%s", names[i]);
+        fprintf(stderr, "%s\n", n ? "" : " none");
+        return 1;
+    }
     char best[3][64] = {"", "", ""}, n2[64], b2[64];
     int bd[3] = {99, 99, 99}, num;
     for (int pass = 0; pass < 2; pass++)
@@ -1874,6 +1931,8 @@ int editor_list(const char *dir) {
         printf("\n");
         file_free(&tf);
     }
+    { char names[32][24]; int n = parts_names(names, 32); /* the part animations: opened with their folder, anims/NAME */
+      if (n) { printf("[ anims ] %d part animation%s\n", n, n == 1 ? "" : "s"); printf("  "); for (int i = 0; i < n; i++) printf("%sanims/%s", i ? "    " : "", names[i]); printf("\n\n"); } }
     printf("open one: ./clawd-room.sh --edit NAME\n");
     return 0;
 }
