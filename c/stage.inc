@@ -27,7 +27,8 @@ typedef struct {
     PartAnim a, undo[ST_UNDO];
     int nundo, nredo;
     char name[24];
-    int pick, row, frame, tool, playing, first, help, vx, vy; /* (vx, vy: the room pixel at the stage's top left, as last drawn) */
+    int pick, row, frame, tool, playing, first, help, vx, vy, asking, changed;
+    char *orig; /* your file as it was when the page opened (NULL: you had none), for a discard */ /* (vx, vy: the room pixel at the stage's top left, as last drawn) */
     double play_t0, speed;
     int drag; double px0, py0; PartPose dpose; /* dragging the picked part: where the mouse and the key were */
     char msg[96];
@@ -68,13 +69,21 @@ static void st_crop(Canvas *dst, const Canvas *src, int sx, int sy, int w, int h
 
 /* ---- editing ---------------------------------------------------------------------------------------------------------- */
 static void st_msg(Stage *s, const char *m) { snprintf(s->msg, sizeof s->msg, "%s", m); }
+static void st_msg_up(Stage *s, const char *m) { st_msg(s, m); for (char *q = s->msg; *q; q++) if (*q >= 'a' && *q <= 'z') *q -= 32; } /* (the font has capitals only) */
 static void st_changed(Stage *s) { memset(s->thumb_ok, 0, sizeof s->thumb_ok); }
 static int st_save(Stage *s) {
     char path[700];
     if (!parts_mine_dir()[0]) { st_msg(s, "NOWHERE TO SAVE"); return -1; }
     snprintf(path, sizeof path, "%s/%s.txt", parts_mine_dir(), s->name);
     if (parts_save(&s->a, path)) { st_msg(s, "COULD NOT SAVE"); return -1; }
+    s->changed = 1;
     return 0;
+}
+static void st_discard(Stage *s) { /* your file back as it was when the page opened (none: gone) */
+    char path[700];
+    snprintf(path, sizeof path, "%s/%s.txt", parts_mine_dir(), s->name);
+    if (s->orig) { FILE *f = fopen(path, "w"); if (f) { fputs(s->orig, f); fclose(f); } }
+    else unlink(path);
 }
 static void st_push(Stage *s) { /* (before a change: undo goes back to here) */
     if (s->nundo == ST_UNDO) { memmove(s->undo, s->undo + 1, sizeof s->undo[0] * (ST_UNDO - 1)); s->nundo--; }
@@ -113,9 +122,10 @@ static void st_change(Stage *s, int row, int delta) { /* the value of the picked
 }
 static void st_add_key(Stage *s) {
     Part *p = &s->a.part[s->pick];
-    if (st_key_at(p, st_t(s->frame)) >= 0) { st_msg(s, "A KEY IS HERE ALREADY"); return; }
+    char m[96];
+    if (st_key_at(p, st_t(s->frame)) >= 0) { snprintf(m, sizeof m, "%s ALREADY HAS A KEY AT FRAME %d", p->name, s->frame + 1); st_msg_up(s, m); return; }
     st_push(s);
-    if (st_ensure_key(s, s->pick, st_t(s->frame)) >= 0) { st_changed(s); st_save(s); }
+    if (st_ensure_key(s, s->pick, st_t(s->frame)) >= 0) { st_changed(s); st_save(s); snprintf(m, sizeof m, "KEY ADDED: %s AT FRAME %d", p->name, s->frame + 1); st_msg_up(s, m); }
 }
 static void st_del_key(Stage *s) {
     Part *p = &s->a.part[s->pick];
@@ -187,7 +197,7 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
     snprintf(buf, sizeof buf, "EDIT %s  ANIMS/%s.TXT  %d PARTS", a->name, s->name, a->npart);
     for (char *p = buf; *p; p++) if (*p >= 'a' && *p <= 'z') *p -= 32;
     canvas_text(cv, 4, 3, buf, C_YELLOW);
-    if (s->msg[0]) canvas_text(cv, cv->w - 16 - text_width(s->msg) - 4, 3, s->msg, C_GREY);
+    if (s->msg[0]) canvas_text(cv, cv->w - 6 - text_width(s->msg), 3, s->msg, C_YELLOW);
     /* the stage: the room at this time, a crop of it, every part outlined (the picked one yellow), the picked part's path dotted */
     Canvas shot = st_shot(a, t);
     int vw = L.cw / L.z, vh = L.ah / L.z;
@@ -204,7 +214,17 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
         if (!p->has_box) continue;
         int bx, by, bw, bh;
         st_box(p, parts_pose(a, i, t), &bx, &by, &bw, &bh);
-        frame(cv, L.gx + (bx - vx) * L.z, L.ty + (by - vy) * L.z, bw * L.z, bh * L.z, i == s->pick ? C_YELLOW : RGB(95, 105, 135));
+        Rgb oc = i == s->pick ? C_YELLOW : RGB(95, 105, 135);
+        double turn = parts_pose(a, i, t).turn;
+        if (fabs(turn) < 0.5) frame(cv, L.gx + (bx - vx) * L.z, L.ty + (by - vy) * L.z, bw * L.z, bh * L.z, oc);
+        else { /* turned: the outline turned about its middle, and a mark on its top edge */
+            double cxp = L.gx + (bx - vx + bw / 2.0) * L.z, cyp = L.ty + (by - vy + bh / 2.0) * L.z, w2 = bw * L.z / 2.0 + 1, h2 = bh * L.z / 2.0 + 1, ca = cos(turn * M_PI / 180), sa = sin(turn * M_PI / 180);
+            double cx4[4] = {-w2, w2, w2, -w2}, cy4[4] = {-h2, -h2, h2, h2};
+            int px4[4], py4[4];
+            for (int k = 0; k < 4; k++) { px4[k] = (int)lround(cxp + cx4[k] * ca - cy4[k] * sa); py4[k] = (int)lround(cyp + cx4[k] * sa + cy4[k] * ca); }
+            for (int k = 0; k < 4; k++) canvas_line(cv, px4[k], py4[k], px4[(k + 1) % 4], py4[(k + 1) % 4], oc);
+            canvas_line(cv, (px4[0] + px4[1]) / 2, (py4[0] + py4[1]) / 2, (int)lround(cxp), (int)lround(cyp), oc); /* (top middle to the middle: which way is up) */
+        }
     }
     if (s->pick < a->npart && a->part[s->pick].has_box) { /* the path of the picked part: where it is at each frame, dotted */
         const Part *p = &a->part[s->pick];
@@ -297,6 +317,11 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
         int ty = ly + 12, ah = L.th - 15, aw = lw - 16;
         st_crop(cv, &shot, vx, vy, aw, ah > 40 ? 40 : ah, 4, ty, 1); /* the thing as in the room, 1x */
         frame(cv, 4, ty, aw, ah > 40 ? 40 : ah, RGB(70, 70, 92));
+        int cap = (sx1 - sx0 + 6) / (ST_TW + 6);
+        if (cap < 1) cap = 1;
+        if (cur < s->first) s->first = cur; /* (the strip keeps the open frame in view) */
+        if (cur >= s->first + cap) s->first = cur - cap + 1;
+        if (s->first < 0) s->first = 0;
         int tx = sx0, shown = 0;
         region(R_STRIP, 0, sx0, ty - 1, sx1 - sx0, ST_TH + 12, RGB(0, 0, 0));
         if (s->thumb_pick != s->pick) { memset(s->thumb_ok, 0, sizeof s->thumb_ok); s->thumb_pick = s->pick; }
@@ -326,6 +351,15 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
             canvas_rect(cv, k0, by, k1 - k0 > 4 ? k1 - k0 : 4, 2, RGB(140, 140, 160));
         }
     }
+    if (s->asking) { /* q with changes: keep or discard */
+        static const char *const Q[] = {"KEEP YOUR CHANGES?", "", "S  KEEP THEM", "D  DISCARD: THE FILE GOES BACK", "    TO HOW IT WAS", "ESC  KEEP EDITING"};
+        int n = (int)(sizeof Q / sizeof *Q), bw2 = 0;
+        for (int i = 0; i < n; i++) if (text_width(Q[i]) > bw2) bw2 = text_width(Q[i]);
+        int hh = n * 7 + 8, hx = L.gx + (L.cw - bw2 - 12) / 2, hy = L.ty + (L.ah - hh) / 2;
+        if (hy < L.ty) hy = L.ty;
+        canvas_rect(cv, hx, hy, bw2 + 12, hh, RGB(26, 26, 36)); frame(cv, hx, hy, bw2 + 12, hh, C_YELLOW);
+        for (int i = 0; i < n; i++) canvas_text(cv, hx + 6, hy + 4 + i * 7, Q[i], i == 0 ? C_YELLOW : C_WHITE);
+    }
     if (s->help) { /* ?: the keys and the mouse, in a box over the stage */
         static const char *const H[] = {"MOUSE", "CLICK A PART: PICK IT", "MOVE / TURN: DRAG ON THE STAGE", "KEY: CLICK TO ADD A KEY", "< > BESIDE A VALUE: CHANGE IT", "CLICK A FRAME: GO THERE",
                                         "KEYS", "LEFT RIGHT  FRAME", "UP DOWN  A VALUE", "+ -  CHANGE IT", "SPACE  PLAY", "[ ]  OTHER PART", "K  ADD A KEY", "X  DELETE THE KEY", "E  KEY EASE", "U R  UNDO REDO", "Q  QUIT"};
@@ -346,6 +380,7 @@ static int stage_open(Stage *s, const char *name) {
     s->speed = 1; s->row = 1; s->thumb_pick = -1;
     char path[700];
     snprintf(path, sizeof path, "%s/%s.txt", parts_mine_dir(), name);
+    s->orig = parts_mine_dir()[0] ? slurp(path) : NULL;
     if (!parts_mine_dir()[0] || access(path, R_OK)) snprintf(path, sizeof path, "%s/%s.txt", parts_default_dir(), name);
     if (parts_load(&s->a, path)) return 1;
     if (!s->a.npart) { fprintf(stderr, "%s: no parts\n", path); return 1; }
@@ -393,7 +428,7 @@ static int stage_run(const char *dir, const char *name) {
         canvas_free(&cv);
         fd_set fs; FD_ZERO(&fs); FD_SET(STDIN_FILENO, &fs);
         struct timeval tv = {0, s.playing ? 62500 : 200000};
-        if (select(STDIN_FILENO + 1, &fs, NULL, NULL, &tv) <= 0) { if (nin == 1 && in[0] == 0x1b) nin = 0; continue; }
+        if (select(STDIN_FILENO + 1, &fs, NULL, NULL, &tv) <= 0) { if (nin == 1 && in[0] == 0x1b) { nin = 0; s.asking = 0; } continue; }
         ssize_t k = read(STDIN_FILENO, in + nin, sizeof in - 1 - (size_t)nin);
         if (k <= 0) continue;
         nin += (int)k; in[nin] = 0;
@@ -407,6 +442,7 @@ static int stage_run(const char *dir, const char *name) {
                     char fin;
                     if (sscanf(in + i, "\x1b[<%d;%d;%d%c%n", &b, &x, &y, &fin, &used) < 4 || !used) { if (strchr(in + i, 'M') || strchr(in + i, 'm')) { i++; continue; } break; }
                     i += used;
+                    if (s.asking) continue;
                     int px = x - 1, py = (y - 1) * 2, btn = b & 3, motion = b & 32, release = fin == 'm';
                     const Region *rg = hit(px, py);
                     if (b & 64) { if (rg && (rg->kind == R_STRIP || rg->kind == R_FRAME)) s.first += (b & 3) == 0 || (b & 3) == 2 ? -1 : 1; if (s.first < 0) s.first = 0; if (s.first > nf - 1) s.first = nf - 1; continue; }
@@ -425,7 +461,8 @@ static int stage_run(const char *dir, const char *name) {
                     s.msg[0] = 0;
                     if (rg->kind == R_SSTAGE) {
                         s.playing = 0;
-                        if (s.tool == 0) st_pick_at(&s, st_t(s.frame), px, py, &L);
+                        st_pick_at(&s, st_t(s.frame), px, py, &L); /* (the part pressed on is the one the tool works on) */
+                        if (s.tool == 0) {}
                         else if (s.tool == 3) st_add_key(&s);
                         else { /* MOVE / TURN: a drag on the stage changes the picked part at this frame */
                             st_push(&s);
@@ -453,12 +490,14 @@ static int stage_run(const char *dir, const char *name) {
                     continue;
                 }
                 if (in[i + 1] == '[' && i + 2 < nin) { i += 3; continue; }
+                s.asking = 0; /* (a lone Esc: back to editing) */
                 i += 1; continue;
             }
             char ch = in[i++];
             s.msg[0] = 0;
             if (ch == '?') s.help = !s.help;
-            else if (ch == 0x03 || ch == 'q' || ch == 'Q') quit = 1;
+            else if (s.asking) { if (ch == 's' || ch == 'S' || ch == 'y' || ch == 'Y') quit = 1; else if (ch == 'd' || ch == 'D' || ch == 'n' || ch == 'N') { st_discard(&s); quit = 1; } else s.asking = 0; }
+            else if (ch == 0x03 || ch == 'q' || ch == 'Q') { if (s.changed) s.asking = 1; else quit = 1; }
             else if (ch == ' ') { s.playing = !s.playing; s.play_t0 = wall_now() - st_t(s.frame) / s.speed; }
             else if (ch == '.' || ch == '>') { s.playing = 0; s.frame = (s.frame + 1) % nf; }
             else if (ch == ',' || ch == '<') { s.playing = 0; s.frame = (s.frame + nf - 1) % nf; }
@@ -478,5 +517,6 @@ static int stage_run(const char *dir, const char *name) {
     tty_off();
     cells_free(&prev);
     for (int f = 0; f < ST_MAXF; f++) if (s.thumb[f].p) canvas_free(&s.thumb[f]);
+    free(s.orig);
     return 0;
 }
