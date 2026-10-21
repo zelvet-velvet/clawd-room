@@ -9,10 +9,9 @@ sticker: lucide//activity
 > Read [[LLM Guide]] before any `CMD_` or status update. This note is kept by `CMD_SYNC` / `CMD_ROLLOVER` / `CMD_NOTES_SYNC`; the day notes in `Review/Log/` by `CMD_JOURNAL`.
 
 ## 🚀 Today's Progress (2026-10-21)
-- **Editor Animation Tests Pass**: T24 – T30 pass on WSL (timeline, play, onion skin, fill, frames of props), so the whole queue T1 – T30 passes.
 
 ## 📅 Yesterday's Progress (2026-10-20)
-- **WSL Test Queue Done**: T16 – T23 pass, so all of [[Test Checklist]]'s queue (T1 – T23) passes on WSL.
+- **WSL Test Queue Done**: T16 – T30 pass (the pixel editor, its animations and fill), so all of [[Test Checklist]]'s queue (T1 – T30) passes on WSL.
 - **Pull Requests**: #6 (WSL work), #7 (vault layout), #9 (mockups), #10 (editor), #11 (test names) and #12 (PR icon) merged.
 - **Pixel Editor Animates**: A timeline of an animation's frames, play at the room's speed, onion skin, a fill tool, `--edit list` by animation (#10).
 - **Made-Up Test Names**: The simulator and its test data used real work folder names; now made up (`web-shop`, `api-server` …). Rule added: nothing private in the repo, notes or pictures.
