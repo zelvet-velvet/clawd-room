@@ -1,5 +1,6 @@
 ---
 up: "[[_Meta]]"
+sticker: lucide//info
 ---
 Whether each picture in `Assets/Snapshots/` still shows how things are. `tools/vault_gallery.py` reads this table for the notes in `Gallery/`; edit a row to change a status, add a row for a new picture (a picture without a row is shown as **current**).
 

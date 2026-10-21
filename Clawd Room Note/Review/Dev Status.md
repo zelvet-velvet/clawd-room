@@ -9,6 +9,9 @@ sticker: lucide//activity
 > Read [[LLM Guide]] before any `CMD_` or status update. This note is kept by `CMD_SYNC` / `CMD_ROLLOVER` / `CMD_NOTES_SYNC`; the day notes in `Review/Log/` by `CMD_JOURNAL`.
 
 ## 🚀 Today's Progress (2026-10-21)
+- **Part Animations**: A file per animation, the swing's Clawd moved by it, and the editor's stage page to edit one (`--edit anims/swing`) (#19).
+- **README**: A short front page with screenshots; the details in `docs/` (#20).
+- **Pictures in Notes**: As wide as the note; the size rule is in the LLM Guide (#20).
 
 ## 📅 Yesterday's Progress (2026-10-20)
 - **WSL Test Queue Done**: T16 – T30 pass (the pixel editor, its animations and fill), so all of [[Test Checklist]]'s queue (T1 – T30) passes on WSL.
@@ -24,7 +27,7 @@ sticker: lucide//activity
 ### 🎨 Rooms and art
 - [ ] **Railed Stair Well**: Build design A (a bigger opening, steps right to left, a guard rail); no big tree in the park when it has a way up ([[2026-10-20]]).
 - [ ] **Gates Appear**: A setting: simple (the parts in turn, nothing popping in at the end) or construct (real parts fly into a blue outline, 1.4 s).
-- [ ] **Docs Look**: `README.md` is a short front page now (`docs/` has the details, #15); `docs/Linked-Rooms.md` and `docs/Platforms.md` still describe the old flat look in places (banner, gates at the window edge).
+- [ ] **Docs Look**: `README.md` is a short front page now (`docs/` has the details, #20); `docs/Linked-Rooms.md` and `docs/Platforms.md` still describe the old flat look in places (banner, gates at the window edge).
 
 ### 🎮 Interaction
 - [ ] **Picked Clawd**: Yellow corners and a spotlight (60 in 100) that fade in and out on Tab.
@@ -39,11 +42,11 @@ sticker: lucide//activity
 
 ### ⚙️ Engine and tools
 - [>] **Animations**: `--build-art` to record room animations (packing, carrying, unpacking, doors, stairs, the well, each room) as GIFs, in category folders, with Gallery notes. Started (GIF colour rounding, category folders), parked in a stash.
-- [ ] **Part Animations in the Editor**: Gates, the swing, the barista's brewing and more as parts with keyframes, made in the current pixel editor without code; a plan and a mockup to pick from, not built (#16; [[Interaction]]).
+- [>] **Part Animations in the Editor**: The file, the swing driven by it and the editor's stage page are built (#19, layout B); not yet: a tab in the sprite picker, onion skin, rotation drawn in the room (parked), the barista's brewing in the room ([[Interaction]]).
 - [ ] **Less CPU**: Skip frames when nothing moves; stop drawing (FPS 0) when the window is covered, minimised or on another desktop; later dirty rects. (The terminal output is already diffed and written once per frame.)
 
 ### 🗂️ Repo and vault
-- [>] **Pull Requests**: #16 (part animations in the editor: the plan and a mockup) and #15 (README and docs) waiting for Zaviel; #1 – #12 merged; #13 closed (became #16).
+- [>] **Pull Requests**: #19 (part animations: the code) and #20 (the vault, the README and docs, the part-animation plan) waiting for Zaviel; #1 – #12 merged; #13 – #18 closed into #19 and #20.
 - [ ] **Go Public** (decided 2026-10-20: code and notes public together): at a quiet moment with no open PRs, look at the six `(Zaviel)` screenshots; rewrite the old fixture names out of the history (`git filter-repo`; everyone re-clones once); add a `LICENSE` (MIT) and an unofficial-fan-project line to the README (Clawd is Anthropic's character); make the repo public; then **restrict merging**: protect `main` (no direct pushes, changes only through a pull request, Zaviel's approval to merge).
 - [ ] **William's Setup**: Accept the invite, clone, Templater settings ([[Collaboration]]).
 
