@@ -3,7 +3,7 @@
  * picked part and its values at this frame; the timeline shows the frames as pictures with a diamond under each keyframe of the
  * picked part. Included by editor.c (it uses the editor's drawing helpers and its terminal code); what you change is saved as you go
  * to ~/.clawd-room/anims/NAME.txt (yours over the default), and a running room reads it again.
- *   mouse: a part on the stage or in the list picks it; SELECT / MOVE / TURN / KEY tools: MOVE drags the picked part, TURN drags
+ *   mouse: a part on the stage or in the list picks it; SELECT / MOVE / ROTATE / KEY tools: MOVE drags the picked part, ROTATE drags
  *          its angle, KEY adds a key at this frame; < > beside a value change it at this frame (a key is made if there is none)
  *   keys:  left / right frame, Space play, up / down value, + - change it, [ ] part, k add key, x delete key, e ease of the key,
  *          u / r undo / redo, q quit */
@@ -20,7 +20,7 @@ enum { R_SSTAGE = 64, R_SVAL, R_SPART, R_SKEY, R_SKEYDEL, R_SEASE, R_STOOL, R_SP
 #define ST_TH 26
 #define ST_BG RGB(18, 18, 24)
 #define ST_ROWS 5          /* the values: move x, move y, turn, show, glow */
-static const char *const ST_ROW[ST_ROWS] = {"MOVE X", "MOVE Y", "TURN", "SHOW", "GLOW"};
+static const char *const ST_ROW[ST_ROWS] = {"MOVE X", "MOVE Y", "ROTATE", "SHOW", "GLOW"};
 static const char *const ST_EASE[] = {"LINEAR", "OUT", "IN OUT", "BACK", "IN", "SINE", "SINE OUT", "SINE IN"};
 
 typedef struct {
@@ -156,7 +156,7 @@ static void st_ease(Stage *s) {
 static const char *const STAGE_ICON[4][9] = {
     {"k........", "kwk......", "kwwk.....", "kwwwk....", "kwwwwk...", "kwwkkk...", "kwkwk....", "kk.kwk...", "....kk..."}, /* SELECT: a pointer */
     {"....w....", "...www...", "....w....", ".w..w..w.", "wwwwwwwww", ".w..w..w.", "....w....", "...www...", "....w...."}, /* MOVE: four arrows */
-    {"..bbbbb..", ".b.....b.", "b.......b", "b.......b", "b......bbb", ".b......b.", "..bbbbb.b.", ".......b..", "........."},  /* TURN: an arrow round */
+    {"..bbbbb..", ".b.....b.", "b.......b", "b.......b", "b......bbb", ".b......b.", "..bbbbb.b.", ".......b..", "........."},  /* ROTATE: an arrow round */
     {"....y....", "...yyy...", "..yyyyy..", ".yyyyyyy.", "yyyyyyyyy", ".yyyyyyy.", "..yyyyy..", "...yyy...", "....y...."},  /* KEY: a diamond */
 };
 static void stage_tool(Canvas *cv, int x, int y, int which, int on) { /* the editor's key caps (tool_button), with the stage's icons */
@@ -263,7 +263,7 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
     }
     /* the panel: the tools, the picked part, its values at this frame, the keys' buttons, the parts */
     int x = L.px, y = L.ty, fw = L.fw, pbot = L.ty + L.ah;
-    static const char *TOOL[4] = {"SELECT", "MOVE", "TURN", "KEY"};
+    static const char *TOOL[4] = {"SELECT", "MOVE", "ROTATE", "KEY"};
     int roww = 0;
     for (int i = 0; i < 4; i++) roww += text_width(TOOL[i]) > 13 ? text_width(TOOL[i]) : 13;
     for (int i = 0, used = 0; i < 4; i++) {
@@ -415,7 +415,7 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
         canvas_text(cv, bx + (w - text_width(b)) / 2, by + 14, b, C_WHITE);
     }
     if (s->help) { /* ?: the keys and the mouse, in a box over the stage; a window too short for it scrolls it (up / down, the wheel) */
-        static const char *const H[] = {"HELP  (UP DOWN SCROLLS)", "MOUSE", "CLICK A PART: PICK IT", "SELECT: DRAG A BORDER TO RESIZE", "MOVE / TURN: DRAG ON THE STAGE", "KEY: CLICK TO ADD A KEY", "< > BESIDE A VALUE: CHANGE IT", "CLICK A FRAME: GO THERE", "WHEEL: ZOOM / SCROLL THE PANEL", "RIGHT DRAG: MOVE THE VIEW",
+        static const char *const H[] = {"HELP  (UP DOWN SCROLLS)", "MOUSE", "CLICK A PART: PICK IT", "SELECT: DRAG A BORDER TO RESIZE", "MOVE / ROTATE: DRAG ON THE STAGE", "KEY: CLICK TO ADD A KEY", "< > BESIDE A VALUE: CHANGE IT", "CLICK A FRAME: GO THERE", "WHEEL: ZOOM / SCROLL THE PANEL", "RIGHT DRAG: MOVE THE VIEW",
                                         "KEYS", "LEFT RIGHT  FRAME", "UP DOWN  A VALUE", "< >  CHANGE IT", "+ -  ZOOM THE STAGE", "W A S D  MOVE THE VIEW", "0  VIEW AS IT WAS", "SPACE  PLAY", "[ ]  OTHER PART", "K  ADD A KEY", "X  DELETE THE KEY", "E  KEY EASE", "U R  UNDO REDO", "Q  QUIT"};
         int n = (int)(sizeof H / sizeof *H), bw2 = 0;
         for (int i = 0; i < n; i++) if (text_width(H[i]) > bw2) bw2 = text_width(H[i]);
@@ -576,7 +576,7 @@ static int stage_run(const char *dir, const char *name) {
                         continue;
                     }
                     if (btn == 2 && !motion && !release && rg && rg->kind == R_SSTAGE) { s.pan = 1; s.pan_x0 = px; s.pan_y0 = py; s.pan_vx = s.vx; s.pan_vy = s.vy; continue; }
-                    if (s.drag && (motion || release)) { /* dragging the picked part: MOVE moves it, TURN turns it */
+                    if (s.drag && (motion || release)) { /* dragging the picked part: MOVE moves it, ROTATE rotates it */
                         if (release) { s.drag = 0; st_save(&s); continue; }
                         int k2 = st_ensure_key(&s, s.pick, st_t(s.frame));
                         if (k2 >= 0) {
@@ -614,7 +614,7 @@ static int stage_run(const char *dir, const char *name) {
                         st_pick_at(&s, st_t(s.frame), px, py, &L); /* (the part pressed on is the one the tool works on) */
                         if (s.tool == 0) {}
                         else if (s.tool == 3) st_add_key(&s);
-                        else { /* MOVE / TURN: a drag on the stage changes the picked part at this frame */
+                        else { /* MOVE / ROTATE: a drag on the stage changes the picked part at this frame */
                             st_push(&s);
                             int k2 = st_ensure_key(&s, s.pick, st_t(s.frame));
                             if (k2 >= 0) { s.drag = 1; s.px0 = px; s.py0 = py; s.dpose = s.a.part[s.pick].key[k2].pose; }
