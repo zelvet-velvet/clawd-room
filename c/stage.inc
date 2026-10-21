@@ -12,15 +12,15 @@
 
 Canvas render(int cols, int rows, Room *room, double now, double t, char *note, size_t note_n); /* draw.c */
 
-enum { R_SSTAGE = 64, R_SVAL, R_SPART, R_SKEY, R_SKEYDEL, R_SEASE, R_STOOL, R_SPANEL, R_SSCROLL, R_SKEYSHOW };
+enum { R_SSTAGE = 64, R_SVAL, R_SPART, R_SKEY, R_SKEYDEL, R_SEASE, R_STOOL, R_SPANEL, R_SSCROLL, R_SKEYSHOW, R_SGROW };
 #define ST_UNDO 24
 #define ST_FPS 16          /* the frames: 16 a second, like the room */
 #define ST_MAXF 300
 #define ST_TW 44           /* a frame as a picture */
 #define ST_TH 26
 #define ST_BG RGB(18, 18, 24)
-#define ST_ROWS 6          /* the values: move x, move y, rotate, show, glow, grow */
-static const char *const ST_ROW[ST_ROWS] = {"MOVE X", "MOVE Y", "ROTATE", "SHOW", "GLOW", "GROW"};
+#define ST_ROWS 5          /* the values: move x, move y, rotate, show, glow (grow is the bar under the panel) */
+static const char *const ST_ROW[ST_ROWS] = {"MOVE X", "MOVE Y", "ROTATE", "SHOW", "GLOW"};
 static const char *const ST_EASE[] = {"LINEAR", "OUT", "IN OUT", "BACK", "IN", "SINE", "SINE OUT", "SINE IN"};
 
 typedef struct {
@@ -31,6 +31,7 @@ typedef struct {
     int onion;                /* o / ONION: the frame before shows faintly red, the one after blue, where they differ (not while playing) */
     int hide_keys;            /* the keys' marks on the stage are hidden (v, or the KEYS button under the stage) */
     int hscroll;              /* the help box scrolls when the window is too short for it */
+    int growdrag;             /* dragging the grow bar */
     int focus;                /* the view goes to the picked part (put in the middle) at the next drawing */
     int zoom;                 /* the stage's zoom (0: as the window fits); vx, vy: the room pixel at its top left (vw, vh: what it shows) */
     int pscroll, pfollow;     /* the panel scrolls: how far, and whether it should bring the picked value into view */
@@ -126,8 +127,7 @@ static void st_value(PartPose *q, int row, int delta) {
     else if (row == 1) q->y += delta;
     else if (row == 2) q->turn += delta * 5;
     else if (row == 3) q->show = !q->show;
-    else if (row == 4) { q->glow += delta * 10; q->glow = q->glow < 0 ? 0 : q->glow > 100 ? 100 : q->glow; }
-    else { q->grow += delta * 10; q->grow = q->grow < 0 ? 0 : q->grow > 100 ? 100 : q->grow; }
+    else { q->glow += delta * 10; q->glow = q->glow < 0 ? 0 : q->glow > 100 ? 100 : q->glow; }
 }
 static void st_change(Stage *s, int row, int delta) { /* the value of the picked part at this frame, one step (a key is made if there is none) */
     if (row == 2 && s->a.part[s->pick].sprite) { st_msg(s, "A SPRITE MOVES, IT DOES NOT ROTATE"); return; }
@@ -331,6 +331,16 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
         canvas_text(cv, L.gx, L.ty + L.ah + 4, line, s->msg[0] ? C_YELLOW : C_GREY);
         button(cv, kx, L.ty + L.ah + 2, kl, !s->hide_keys, R_SKEYSHOW, 0);
     }
+    if (s->pick >= 0 && s->pick < a->npart) { /* GROW: how much of the picked part has come in at this frame (a running figure, a bar; click or drag it) */
+        static const char *const RUN[9] = {"....ww...", "....ww...", "..wwww.w.", ".w.ww.w..", "...www...", "..w...w..", ".w.....w.", "w.......w", "........."};
+        int gx0 = L.px, gy0 = L.ty + L.ah + 2, bx0 = gx0 + 13, bw = L.fw - 13, g = (int)lround(parts_pose(a, s->pick, t).grow);
+        g = g < 0 ? 0 : g > 100 ? 100 : g;
+        for (int yy = 0; yy < 9; yy++) for (int xx = 0; xx < 9; xx++) if (RUN[yy][xx] == 'w') canvas_px(cv, gx0 + 1 + xx, gy0 + yy, s->growdrag ? C_YELLOW : RGB(170, 170, 190));
+        canvas_rect(cv, bx0, gy0 + 2, bw, 5, RGB(34, 34, 44));
+        canvas_rect(cv, bx0, gy0 + 2, bw * g / 100, 5, C_YELLOW);
+        frame(cv, bx0, gy0 + 2, bw, 5, RGB(60, 60, 76));
+        region(R_SGROW, 0, bx0 - 2, gy0, bw + 4, 9, RGB(0, 0, 0));
+    }
     /* the panel: the tools, the picked part, its values at this frame, the keys' buttons, the parts */
     int x = L.px, y = L.ty, fw = L.fw, pbot = L.ty + L.ah;
     static const char *LONG[4] = {"SELECT", "MOVE", "ROTATE", "KEY"}, *SHORT[4] = {"SEL", "MOVE", "ROT", "KEY"};
@@ -367,7 +377,7 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
         py += 11;
         canvas_text(&pc, 0, py, kat >= 0 ? "AT THIS FRAME  (A KEY)" : "AT THIS FRAME", RGB(84, 84, 104)); canvas_rect(&pc, 0, py + 7, fw, 1, RGB(40, 40, 52));
         py += 12;
-        double vals[ST_ROWS] = {q.x, q.y, q.turn, q.show, q.glow, q.grow};
+        double vals[ST_ROWS] = {q.x, q.y, q.turn, q.show, q.glow};
         for (int i = 0; i < ST_ROWS; i++, py += 9) {
             int on = i == s->row, off = i == 2 && pp->sprite;
             row_y[i] = py;
@@ -495,7 +505,7 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
         canvas_text(cv, bx + (w - text_width(b)) / 2, by + 14, b, C_WHITE);
     }
     if (s->help) { /* ?: the keys and the mouse, in a box over the stage; a window too short for it scrolls it (up / down, the wheel) */
-        static const char *const H[] = {"HELP  (UP DOWN SCROLLS)", "MOUSE", "CLICK A PART: PICK IT", "SELECT: DRAG A BORDER TO RESIZE", "MOVE / ROTATE: DRAG ON THE STAGE", "KEY: A KEY AT THIS FRAME, OR NONE", "< > BESIDE A VALUE: CHANGE IT", "CLICK A FRAME: GO THERE", "WHEEL: ZOOM / SCROLL THE PANEL", "RIGHT DRAG: MOVE THE VIEW",
+        static const char *const H[] = {"HELP  (UP DOWN SCROLLS)", "MOUSE", "CLICK A PART: PICK IT", "SELECT: DRAG A BORDER TO RESIZE", "MOVE / ROTATE: DRAG ON THE STAGE", "KEY: A KEY AT THIS FRAME, OR NONE", "< > BESIDE A VALUE: CHANGE IT", "THE BAR BY THE RUNNER: HOW MUCH HAS COME IN", "CLICK A FRAME: GO THERE", "WHEEL: ZOOM / SCROLL THE PANEL", "RIGHT DRAG: MOVE THE VIEW",
                                         "KEYS", "LEFT RIGHT  FRAME", "UP DOWN  A VALUE", "< >  CHANGE IT", "+ -  ZOOM THE STAGE", "W A S D  MOVE THE VIEW", "0  ZOOM AS IT WAS, THE PART IN THE MIDDLE", "V  KEYS ON THE STAGE: ON / OFF", "SPACE  PLAY", "O  ONION SKIN (BEFORE RED, AFTER BLUE)", "[ ]  OTHER PART", "K  A KEY HERE OR NONE", "X  DELETE THE KEY", "E  KEY EASE", "U R  UNDO REDO", "Q  QUIT"};
         int n = (int)(sizeof H / sizeof *H), bw2 = 0;
         for (int i = 0; i < n; i++) if (text_width(H[i]) > bw2) bw2 = text_width(H[i]);
@@ -605,6 +615,14 @@ static void st_resize(Stage *s, const StLayout *L, int mx, int my) { /* the drag
     p->box[0] = l - s->rsz_off[0]; p->box[1] = t0 - s->rsz_off[1]; p->box[2] = r - l; p->box[3] = b - t0;
     st_changed(s);
 }
+static void st_grow_to(Stage *s, const StLayout *L, int mx) { /* the grow bar: the picked part's grow at this frame where the pointer is (5% steps) */
+    int bx0 = L->px + 13, bw = L->fw - 13, k = st_ensure_key(s, s->pick, st_t(s->frame));
+    if (k < 0) return;
+    double g = (double)(mx - bx0) * 100 / (bw - 1);
+    g = 5 * lround(g / 5);
+    s->a.part[s->pick].key[k].pose.grow = g < 0 ? 0 : g > 100 ? 100 : g;
+    st_changed(s);
+}
 static void st_zoom(Stage *s, const StLayout *L, int d) { /* the stage's zoom one step, about the middle of what it shows */
     int z = L->z + d;
     if (z < 1) z = 1;
@@ -675,6 +693,7 @@ static int stage_loop(const char *dir, const char *name) {
                         else if (motion && s.sb_w > 0) { s.first = (int)((long)(px - s.sb_x0) * nf / s.sb_w) - s.cap / 2; if (s.first > nf - s.cap) s.first = nf - s.cap; if (s.first < 0) s.first = 0; }
                         continue;
                     }
+                    if (s.growdrag) { if (release) { s.growdrag = 0; st_save(&s); } else if (motion) st_grow_to(&s, &L, px); continue; } /* (dragging the grow bar) */
                     if (s.rsz && (motion || release)) { /* dragging a border of the picked part */
                         if (release) { s.rsz = 0; st_save(&s); } else st_resize(&s, &L, px, py);
                         continue;
@@ -707,6 +726,7 @@ static int stage_loop(const char *dir, const char *name) {
                     }
                     if (release || motion || btn != 0 || !rg) continue;
                     s.msg[0] = 0;
+                    if (rg->kind == R_SGROW) { s.playing = 0; st_push(&s); s.growdrag = 1; st_grow_to(&s, &L, px); continue; }
                     if (rg->kind == R_SSCROLL) { s.sbdrag = 1; s.first = (int)((long)(px - s.sb_x0) * nf / s.sb_w) - s.cap / 2; if (s.first > nf - s.cap) s.first = nf - s.cap; if (s.first < 0) s.first = 0; continue; }
                     if (rg->kind == R_SSTAGE) {
                         s.playing = 0;
