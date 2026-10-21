@@ -178,6 +178,18 @@ void parts_set_dir(const char *dir) { snprintf(g_dir, sizeof g_dir, "%s", dir ? 
 void parts_set_mine_dir(const char *dir) { snprintf(g_mine, sizeof g_mine, "%s", dir ? dir : ""); }
 const char *parts_mine_dir(void) { return g_mine; }
 const char *parts_default_dir(void) { return g_dir; }
+void parts_inherit(PartAnim *a, const char *name) {
+    char path[700];
+    if (!g_dir[0]) return;
+    snprintf(path, sizeof path, "%s/%s.txt", g_dir, name);
+    static PartAnim d;
+    FILE *f = fopen(path, "r");
+    if (!f) return;
+    fclose(f);
+    if (parts_load(&d, path)) return;
+    for (int i = 0; i < a->npart; i++) { int j = parts_find(&d, a->part[i].name); if (j >= 0 && d.part[j].sprite) a->part[i].sprite = 1; }
+}
+
 #define NAMED 8
 const PartAnim *parts_get(const char *name) {
     static struct { char name[24], path[700]; PartAnim a; time_t mt; int ok, tried; } C[NAMED];
@@ -192,7 +204,7 @@ const PartAnim *parts_get(const char *name) {
     if (!C[k].tried || st.st_mtime != C[k].mt || strcmp(path, C[k].path)) { /* (new, or the file changed: a file with a mistake keeps the last good one) */
         static PartAnim fresh;
         C[k].tried = 1; C[k].mt = st.st_mtime; snprintf(C[k].name, sizeof C[k].name, "%s", name); snprintf(C[k].path, sizeof C[k].path, "%s", path);
-        if (parts_load(&fresh, path) == 0) { C[k].a = fresh; C[k].ok = 1; }
+        if (parts_load(&fresh, path) == 0) { parts_inherit(&fresh, name); C[k].a = fresh; C[k].ok = 1; }
     }
     return C[k].ok ? &C[k].a : NULL;
 }

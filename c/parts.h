@@ -27,7 +27,8 @@ void parts_set_mine_dir(const char *dir);                         /* ... and you
 const char *parts_mine_dir(void);
 const char *parts_default_dir(void);
 const PartAnim *parts_get(const char *name);                       /* anims/NAME.txt (yours first), loaded and read again when it changes; NULL if there is none */
-int parts_names(char names[][24], int max);                        /* the animations there are: the names of the files in both folders, sorted */
+int parts_names(char names[][24], int max);
+void parts_inherit(PartAnim *a, const char *name);                 /* a part the default anims/NAME.txt marks `sprite` is one in yours too (yours may be older than the mark) */                        /* the animations there are: the names of the files in both folders, sorted */
 int parts_find(const PartAnim *a, const char *part);              /* the part's index, or -1 */
 PartPose parts_pose(const PartAnim *a, int part, double t);       /* where it is at time t seconds (a looping animation wraps t) */
 #endif

@@ -534,6 +534,7 @@ static int stage_open(Stage *s, const char *name) {
     s->orig = parts_mine_dir()[0] ? slurp(path) : NULL;
     if (!parts_mine_dir()[0] || access(path, R_OK)) snprintf(path, sizeof path, "%s/%s.txt", parts_default_dir(), name);
     if (parts_load(&s->a, path)) return 1;
+    parts_inherit(&s->a, name);
     if (!s->a.npart) { fprintf(stderr, "%s: no parts\n", path); return 1; }
     s->vx = s->a.view_x; s->vy = s->a.view_y;
     if (!s->a.nscene) { fprintf(stderr, "%s: no scene lines: the editor's stage has nothing to show\n", path); return 1; }
