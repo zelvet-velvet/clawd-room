@@ -18,10 +18,9 @@ Pictures of the debug overlay, the placer, the pixel editor, the gallery, newest
 > ![[2026-10-21 stage page, the panel and the timeline folded.png|420]]
 > Shown in: [[2026-10-21#🗂️ The stage page folds like the editor; the picker's search lets go (Zaviel)|2026-10-21 · 🗂️ The stage page folds like the editor; the picker's search lets go (Zaviel)]]
 
-> [!success]+ ✅ current · Stage page KEYS toggle, A B C D (to pick)
-> ![[2026-10-21 stage page KEYS toggle, A B C D (to pick).png|420]]
-> Replaced by: [[not picked yet]]
-> Shown in: [[Interaction|Interaction]], [[2026-10-21#🗂️ The stage page folds like the editor; the picker's search lets go (Zaviel)|2026-10-21 · 🗂️ The stage page folds like the editor; the picker's search lets go (Zaviel)]]
+> [!success]+ ✅ current · Stage page KEYS toggle, A B C D (A picked)
+> ![[2026-10-21 stage page KEYS toggle, A B C D (A picked).png|420]]
+> Shown in: not in a note yet
 
 > [!success]+ ✅ current · Part animations in the editor, the barista brewing (now, A dope sheet, B frames, B picked)
 > ![[2026-10-21 part animations in the editor, the barista brewing (now, A dope sheet, B frames, B picked).png|420]]
