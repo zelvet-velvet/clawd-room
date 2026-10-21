@@ -74,7 +74,7 @@ A part animation is a thing of the room made of parts with keys (a key: a part's
 | click a part (stage or list), `[` `]` | pick a part |
 | SELECT, drag a handle | resize the part's box |
 | MOVE / ROTATE, drag on the stage | move / turn the part pressed on, at this frame (a sprite does not turn) |
-| KEY, `k` / `x` / `e` | add a key / delete it / its ease |
+| KEY (tool or button), `k` / `x` / `e` | a key at this frame or none (lit: there is one) / delete it / its ease |
 | left / right, click a frame | the frame |
 | up / down, `<` `>` | pick a value, change it |
 | `+ -`, wheel; `W A S D`, right drag; `0` | zoom; move the view; as it was |
