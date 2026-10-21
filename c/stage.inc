@@ -352,8 +352,9 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
         }
     }
     if (s->asking) { /* q with changes: keep or discard */
-        static const char *const Q[] = {"KEEP YOUR CHANGES?", "", "S  KEEP THEM", "D  DISCARD: THE FILE GOES BACK", "    TO HOW IT WAS", "ESC  KEEP EDITING"};
-        int n = (int)(sizeof Q / sizeof *Q), bw2 = 0;
+        static const char *const Q1[] = {"KEEP YOUR CHANGES?", "", "S  KEEP THEM", "D  DISCARD: THE FILE GOES BACK", "    TO HOW IT WAS", "ESC  KEEP EDITING"}, *const Q0[] = {"QUIT THE EDITOR?", "", "NOTHING WAS CHANGED", "", "S  QUIT", "ESC  KEEP EDITING"};
+        const char *const *Q = s->changed ? Q1 : Q0;
+        int n = 6, bw2 = 0;
         for (int i = 0; i < n; i++) if (text_width(Q[i]) > bw2) bw2 = text_width(Q[i]);
         int hh = n * 7 + 8, hx = L.gx + (L.cw - bw2 - 12) / 2, hy = L.ty + (L.ah - hh) / 2;
         if (hy < L.ty) hy = L.ty;
@@ -496,8 +497,8 @@ static int stage_run(const char *dir, const char *name) {
             char ch = in[i++];
             s.msg[0] = 0;
             if (ch == '?') s.help = !s.help;
-            else if (s.asking) { if (ch == 's' || ch == 'S' || ch == 'y' || ch == 'Y') quit = 1; else if (ch == 'd' || ch == 'D' || ch == 'n' || ch == 'N') { st_discard(&s); quit = 1; } else s.asking = 0; }
-            else if (ch == 0x03 || ch == 'q' || ch == 'Q') { if (s.changed) s.asking = 1; else quit = 1; }
+            else if (s.asking) { if (ch == 's' || ch == 'S' || ch == 'y' || ch == 'Y') quit = 1; else if (ch == 'd' || ch == 'D' || ch == 'n' || ch == 'N') { if (s.changed) st_discard(&s); quit = 1; } else s.asking = 0; }
+            else if (ch == 0x03 || ch == 'q' || ch == 'Q') s.asking = 1; /* (always: keep or discard if you changed something, else just quit) */
             else if (ch == ' ') { s.playing = !s.playing; s.play_t0 = wall_now() - st_t(s.frame) / s.speed; }
             else if (ch == '.' || ch == '>') { s.playing = 0; s.frame = (s.frame + 1) % nf; }
             else if (ch == ',' || ch == '<') { s.playing = 0; s.frame = (s.frame + nf - 1) % nf; }
