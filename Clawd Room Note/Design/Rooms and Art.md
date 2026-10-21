@@ -48,7 +48,11 @@ flowchart TB
 > [!tip] Same thing every time
 > The device, drink or park thing for a session is picked from a hash of its id, so a session keeps it.
 
-![[2026-10-18 style A built office.png|260]] ![[2026-10-18 style A built coffee.png|261]] ![[2026-10-18 style A built park.png|260]]
+![[2026-10-18 style A built office.png|660]]
+
+![[2026-10-18 style A built coffee.png|660]]
+
+![[2026-10-18 style A built park.png|660]]
 
 ---
 ## 📏 Layout
