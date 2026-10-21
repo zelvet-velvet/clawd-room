@@ -10,13 +10,108 @@ Pictures of the debug overlay, the placer, the pixel editor, the gallery, newest
 
 ## 2026-10-21
 
-> [!success]+ ✅ current · Part animations, the barista brewing, A dope sheet and B one track
-> ![[2026-10-21 part animations, the barista brewing, A dope sheet and B one track.png|420]]
+> [!success]+ ✅ current · Part animations in the editor, the barista brewing (now, A dope sheet, B frames)
+> ![[2026-10-21 part animations in the editor, the barista brewing (now, A dope sheet, B frames).png|420]]
 > Shown in: [[Interaction|Interaction]]
 
-> [!success]+ ✅ current · Part animations, a Clawd on the swing, A dope sheet and B one track
-> ![[2026-10-21 part animations, a Clawd on the swing, A dope sheet and B one track.png|420]]
+> [!success]+ ✅ current · Part animations in the editor, a Clawd on the swing (now, A dope sheet, B frames)
+> ![[2026-10-21 part animations in the editor, a Clawd on the swing (now, A dope sheet, B frames).png|420]]
 > Shown in: [[Interaction|Interaction]]
+
+## 2026-10-20
+
+> [!quote]- ♻️ replaced · Editor your sprites mockup, A B C (B picked)
+> ![[2026-10-20 editor your sprites mockup, A B C (B picked).png|420]]
+> Replaced by: [[2026-10-20 editor picker with yours marked, reset buttons.png]]
+> Shown in: not in a note yet
+
+> [!quote]- ♻️ replaced · Editor tool icons, key caps bigger · picked
+> ![[2026-10-20 editor tool icons, key caps bigger (picked).png|420]]
+> Replaced by: [[2026-10-20 editor timeline, onion skin and fill.png]]
+> Shown in: not in a note yet
+
+> [!quote]- ♻️ replaced · Editor tool icons, four tiles (B1 picked)
+> ![[2026-10-20 editor tool icons, four tiles (B1 picked).png|420]]
+> Replaced by: [[2026-10-20 editor timeline, onion skin and fill.png]]
+> Shown in: not in a note yet
+
+> [!quote]- ♻️ replaced · Editor tool icons, A B C (B picked)
+> ![[2026-10-20 editor tool icons, A B C (B picked).png|420]]
+> Replaced by: [[2026-10-20 editor timeline, onion skin and fill.png]]
+> Shown in: not in a note yet
+
+> [!success]+ ✅ current · Editor timeline, onion skin and fill
+> ![[2026-10-20 editor timeline, onion skin and fill.png|420]]
+> Shown in: [[Test Checklist|Test Checklist]], [[2026-10-20#🎞️ The pixel editor edits animations; a fill tool (Zaviel)|2026-10-20 · 🎞️ The pixel editor edits animations; a fill tool (Zaviel)]], [[Interaction|Interaction]]
+
+> [!success]+ ✅ current · Editor timeline divider dragged up a lot
+> ![[2026-10-20 editor timeline divider dragged up a lot.png|420]]
+> Shown in: not in a note yet
+
+> [!success]+ ✅ current · Editor timeline divider dragged up a little
+> ![[2026-10-20 editor timeline divider dragged up a little.png|420]]
+> Shown in: not in a note yet
+
+> [!quote]- ♻️ replaced · Editor timeline before the divider, a prop's frames hidden
+> ![[2026-10-20 editor timeline before the divider, a prop's frames hidden.png|420]]
+> Replaced by: [[2026-10-20 editor timeline divider dragged up a little.png]]
+> Shown in: not in a note yet
+
+> [!success]+ ✅ current · Editor sprite picker, list
+> ![[2026-10-20 editor sprite picker, list.png|420]]
+> Shown in: not in a note yet
+
+> [!success]+ ✅ current · Editor sprite picker, cards
+> ![[2026-10-20 editor sprite picker, cards.png|420]]
+> Shown in: not in a note yet
+
+> [!quote]- ♻️ replaced · Editor sprite picker mockup, cards and list (both, a view switch)
+> ![[2026-10-20 editor sprite picker mockup, cards and list (both, a view switch).png|420]]
+> Replaced by: [[2026-10-20 editor sprite picker, cards.png]]
+> Shown in: not in a note yet
+
+> [!success]+ ✅ current · Editor playing a Clawd at the room's speed
+> ![[2026-10-20 editor playing a Clawd at the room's speed.png|420]]
+> Shown in: [[Test Checklist|Test Checklist]], [[2026-10-20#🎞️ The pixel editor edits animations; a fill tool (Zaviel)|2026-10-20 · 🎞️ The pixel editor edits animations; a fill tool (Zaviel)]], [[Interaction|Interaction]]
+
+> [!success]+ ✅ current · Editor picker with yours marked, reset buttons
+> ![[2026-10-20 editor picker with yours marked, reset buttons.png|420]]
+> Shown in: not in a note yet
+
+> [!success]+ ✅ current · Editor panel and timeline folded
+> ![[2026-10-20 editor panel and timeline folded.png|420]]
+> Shown in: not in a note yet
+
+> [!success]+ ✅ current · Editor nine frames in the timeline
+> ![[2026-10-20 editor nine frames in the timeline.png|420]]
+> Shown in: not in a note yet
+
+> [!success]+ ✅ current · Editor new colour slot, a new colour, a file colour being changed
+> ![[2026-10-20 editor new colour slot, a new colour, a file colour being changed.png|420]]
+> Shown in: not in a note yet
+
+> [!quote]- ♻️ replaced · Editor new colour slot mockup, A and B (A picked)
+> ![[2026-10-20 editor new colour slot mockup, A and B (A picked).png|420]]
+> Replaced by: [[2026-10-20 editor new colour slot, a new colour, a file colour being changed.png]]
+> Shown in: not in a note yet
+
+> [!quote]- ♻️ replaced · Editor colour titles and the chosen colour, A B C (A picked)
+> ![[2026-10-20 editor colour titles and the chosen colour, A B C (A picked).png|420]]
+> Replaced by: [[2026-10-20 editor timeline, onion skin and fill.png]]
+> Shown in: not in a note yet
+
+> [!success]+ ✅ current · Editor colour panel folded to a ribbon
+> ![[2026-10-20 editor colour panel folded to a ribbon.png|420]]
+> Shown in: not in a note yet
+
+> [!quote]- ♻️ replaced · Editor animation mockup A and B (A picked)
+> ![[2026-10-20 editor animation mockup A and B (A picked).png|420]]
+> Replaced by: [[2026-10-20 editor timeline, onion skin and fill.png]]
+> Shown in: [[2026-10-20#🎞️ The pixel editor edits animations; a fill tool (Zaviel)|2026-10-20 · 🎞️ The pixel editor edits animations; a fill tool (Zaviel)]]
+
+> [!success]+ ✅ current · Editor FILL ALL on a prop
+> ![[2026-10-20 editor FILL ALL on a prop.png|420]]
+> Shown in: not in a note yet
 
 ## 2026-10-19
 

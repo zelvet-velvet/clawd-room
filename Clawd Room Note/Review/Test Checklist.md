@@ -99,6 +99,22 @@ What to test next, one `[!example] Group X · …` callout per group. Each test 
 > > 4. `q`, then `D`: the window is back as before.
 > > 5. T18–T22: the new colour panel (like Figma). Compare with ![[2026-10-19 pixel editor, colour field palette.png|300]]
 
+> [!example] Group F · WSL: the pixel editor, animations and fill (T24–T30, PR #10)
+> - [ ] **T24** `./clawd-room.sh --edit list` → each animation once with its frame count (`walk 4`, `think 9`), in columns, no name cut across two lines.
+> - [ ] **T25** `./clawd-room.sh --edit walk` → `walk-1` opens; the timeline shows four frames; clicking a frame or `<` `>` opens it; `[` `]` go to the next animation.
+> - [ ] **T26** Space → the real-size view plays the walk as in the room (legs and arms in turn); **1X** → 2x, 0.5x; Space stops. Try `cheer` (it bounces) and `wait`.
+> - [ ] **T27** **ONION** on → where the frame is empty, the frame before shows faintly red and the one after blue; `o` turns it off.
+> - [ ] **T28** **FILL** → the area under the pointer is outlined in dashes; a click fills it (a closed gap between the legs stays); right click erases it; click FILL again → **FILL ALL** fills every pixel of that colour; Ctrl+Z undoes.
+> - [ ] **T29** `--edit window` → `f` adds `WINDOW~2` (a copy); paint it → a running room animates the window; `x` `x` deletes it; on the first frame `x` `x` says it is the prop and does nothing.
+> - [ ] **T30** On a Clawd frame `f` or `x` → "PROPS ONLY" and nothing changes; `q` → `D` puts everything back.
+>
+> > [!tip]- T24–T30 · how to run them
+> > 1. Until PR #10 is merged the editor is on branch `feat/editor-animation`: `git switch feat/editor-animation` in the repo first (after the merge: `main` as usual).
+> > 2. Start a room (`./clawd-room.sh --try`), so you can see edits arrive.
+> > 3. In a WSL shell: the `--edit` commands above (the editor opens in its own window).
+> > 4. When done, `q` then `D` (discard) unless you mean to keep a drawing.
+> > 5. Compare with ![[2026-10-20 editor timeline, onion skin and fill.png|300]] and ![[2026-10-20 editor playing a Clawd at the room's speed.png|300]]
+
 ## Rooms and art ([[Rooms and Art]])
 - [x] Each room (office, coffee shop, park) looks like the mockups at your window size
 - [x] Seated Clawds show behind their desk / table / bench; the barista behind the bar

@@ -3,7 +3,7 @@
 
     python3 tools/pty_smoke.py
 
-Checks: it starts and draws, shows a new event, answers p ? [ ] arrows tab c z r (room size list) g f, quits on q, restores the terminal. Also the start menu.
+Checks: it starts and draws, shows a new event, answers p ? [ ] arrows tab c z r (room size list) g f, quits on q, restores the terminal. Also the start menu, and the pixel editor (fill, prop frames, an animation by its name, --edit list) on a copy of the sprites.
 """
 import fcntl
 import json
@@ -131,5 +131,38 @@ with tempfile.TemporaryDirectory() as tmp:
     import subprocess
     r = subprocess.run(CMD + ["--theme", "office"], capture_output=True, text=True, stdin=subprocess.DEVNULL)
     check("without a terminal it says so and fails", r.returncode != 0 and "terminal" in r.stderr + r.stdout)
+    # 6. the pixel editor, on a copy of the sprites: FILL, frames of a prop, an animation by its name, --edit list
+    import shutil
+    spr = tempfile.mkdtemp(prefix="clawd-smoke-sprites-")
+    for f in ("props.txt", "items.txt", "clawd.txt"):
+        shutil.copy(os.path.join(ROOT, "sprites", f), spr)
+    mine = tempfile.mkdtemp(prefix="clawd-smoke-mine-")  # (your own sprites: the editor writes only there)
+    env = {"CLAWD_SPRITES": spr, "CLAWD_MY_SPRITES": mine}
+    def read(f, where=None):
+        path = os.path.join(where or spr, f)
+        if not os.path.exists(path):
+            return ""
+        with open(path) as fh:
+            return fh.read()
+    clawd0 = read("clawd.txt")
+    click = lambda c, r: [b"\x1b[<0;%d;%dM" % (c, r), b"\x1b[<0;%d;%dm" % (c, r)]  # (a left click on a cell, 1-based)
+    # (FILL clicks down the canvas's left column, wherever the canvas sits: every pixel there is outside the Clawd)
+    clicks = [k for row in range(7, 31) for k in click(6, row)]
+    keys = [(0.7, b"p"), (0.8, b"#"), (1.0, b"FF0000\r"), (1.3, b"b")] + [(1.6 + i * 0.02, k) for i, k in enumerate(clicks)] + [(3.0, b"q"), (3.3, b"s"), (3.7, b"q")]  # (p: the colour panel unfolded, the canvas at the left; q: keep or discard, s: keep; q in the picker: quit)
+    out, st = run(["--edit", "walk-1"], keys, env, cols=150, rows=50)
+    walk = (read("clawd.txt", mine).split("@ walk-1")[1:] or [""])[0].split("@")[0]
+    check("editor: FILL fills the touching see-through pixels, not the closed ones (in your file; the default stays)", st == 0 and walk.count("a") > 40 and ".." in walk and read("clawd.txt") == clawd0)
+    props0 = read("props.txt")
+    out, st = run(["--edit", "window"], [(0.8, b"f"), (1.0, b"f"), (1.4, b"x"), (1.6, b"x"), (1.9, b"q"), (2.2, b"s"), (2.6, b"q")], env, cols=150, rows=50)
+    heads = [l for l in read("props.txt", mine).splitlines() if l.startswith("@ window")]
+    check("editor: f adds prop frames (yours), x x deletes your last one (q asks, s keeps)", st == 0 and heads == ["@ window~2 | window~2"] and read("props.txt") == props0)
+    out, st = run(["--edit", "walk"], [(0.8, b" "), (1.6, b">"), (1.9, b"o"), (2.2, b" "), (2.5, b"f"), (2.8, b"q"), (3.1, b"q")], env, cols=150, rows=50)
+    check("editor: opens an animation by its name, plays, steps frames; f leaves Clawd frames alone", st == 0 and b"Clawd Room pixel editor" in out and read("clawd.txt").count("@ walk-") == clawd0.count("@ walk-"))
+    out, st = run(["--edit", "-"], [(0.8, b"W"), (0.9, b"A"), (1.0, b"L"), (1.3, b"\r"), (1.7, b"q"), (2.1, b"\x1b")], env, cols=150, rows=50)
+    check("editor: the sprite picker opens with no name, finds by typing, Enter opens, q goes back to it, a lone Esc there quits (the search empty)", st == 0 and b"Clawd Room pixel editor" in out)
+    r = subprocess.run(CMD + ["--edit", "list"], capture_output=True, text=True, env=dict(os.environ, **env))
+    import re
+    check("--edit list shows animations with their frame counts", r.returncode == 0 and re.search(r"walk +4\b", r.stdout) and re.search(r"think +9\b", r.stdout) and "window" in r.stdout)
+    shutil.rmtree(spr, ignore_errors=True)
 print("%d failed" % len(fails) if fails else "all passed")
 sys.exit(1 if fails else 0)

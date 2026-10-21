@@ -8,6 +8,7 @@ cd "$(dirname "$0")/.." || exit 1
 bin=c/clawd-room
 exp=c/tests/expected
 export CLAWD_SPRITES=sprites
+export CLAWD_MY_SPRITES=/nonexistent-clawd-my-sprites # (the defaults only: your own sprites never change the snapshots)
 mode=compare
 [ "$1" = "--update" ] && mode=update
 fail=0
