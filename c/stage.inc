@@ -351,15 +351,16 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
             canvas_rect(cv, k0, by, k1 - k0 > 4 ? k1 - k0 : 4, 2, RGB(140, 140, 160));
         }
     }
-    if (s->asking) { /* q with changes: keep or discard */
-        static const char *const Q1[] = {"KEEP YOUR CHANGES?", "", "S  KEEP THEM", "D  DISCARD: THE FILE GOES BACK", "    TO HOW IT WAS", "ESC  KEEP EDITING"}, *const Q0[] = {"QUIT THE EDITOR?", "", "NOTHING WAS CHANGED", "", "S  QUIT", "ESC  KEEP EDITING"};
-        const char *const *Q = s->changed ? Q1 : Q0;
-        int n = 6, bw2 = 0;
-        for (int i = 0; i < n; i++) if (text_width(Q[i]) > bw2) bw2 = text_width(Q[i]);
-        int hh = n * 7 + 8, hx = L.gx + (L.cw - bw2 - 12) / 2, hy = L.ty + (L.ah - hh) / 2;
-        if (hy < L.ty) hy = L.ty;
-        canvas_rect(cv, hx, hy, bw2 + 12, hh, RGB(26, 26, 36)); frame(cv, hx, hy, bw2 + 12, hh, C_YELLOW);
-        for (int i = 0; i < n; i++) canvas_text(cv, hx + 6, hy + 4 + i * 7, Q[i], i == 0 ? C_YELLOW : C_WHITE);
+    if (s->asking) { /* q: the editor's own window (draw_asking): save or discard if something changed, else just quit */
+        char a[96];
+        snprintf(a, sizeof a, s->changed ? "SAVE THE CHANGES TO %s?" : "NOTHING CHANGED IN %s: QUIT?", s->name);
+        for (char *q = a; *q; q++) if (*q >= 'a' && *q <= 'z') *q -= 32;
+        const char *b = s->changed ? "S SAVE    D DISCARD    ESC BACK" : "S QUIT    ESC BACK";
+        int w = (text_width(b) > text_width(a) ? text_width(b) : text_width(a)) + 12, h = 24, bx = (cv->w - w) / 2, by = (cv->h - h) / 2;
+        canvas_rect(cv, bx - 1, by - 1, w + 2, h + 2, C_GREY);
+        canvas_rect(cv, bx, by, w, h, RGB(20, 20, 28));
+        canvas_text(cv, bx + (w - text_width(a)) / 2, by + 4, a, C_YELLOW);
+        canvas_text(cv, bx + (w - text_width(b)) / 2, by + 14, b, C_WHITE);
     }
     if (s->help) { /* ?: the keys and the mouse, in a box over the stage */
         static const char *const H[] = {"MOUSE", "CLICK A PART: PICK IT", "MOVE / TURN: DRAG ON THE STAGE", "KEY: CLICK TO ADD A KEY", "< > BESIDE A VALUE: CHANGE IT", "CLICK A FRAME: GO THERE",
