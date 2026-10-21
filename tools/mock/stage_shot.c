@@ -21,6 +21,25 @@ static void shot_sized(const char *dir, const char *name, int frame, int pick, i
     canvas_free(&cv);
     (void)dir;
 }
+static void sizes_shot(const char *dir, const char *out) { /* the page at window sizes from small to big, a message showing: nothing may touch */
+    static const int WH[6][2] = {{160, 120}, {200, 150}, {240, 170}, {300, 215}, {360, 240}, {443, 265}};
+    Canvas sheet = canvas_new(443 + 8, 120 + 150 + 170 + 215 + 240 + 265 + 6 * 6, RGB(60, 60, 76));
+    int y = 2;
+    for (int k = 0; k < 6; k++) {
+        static Stage s;
+        if (stage_open(&s, "swing")) return;
+        s.frame = 3; s.pick = 4; s.tool = 2;
+        snprintf(s.msg, sizeof s.msg, "A SPRITE MOVES, IT DOES NOT ROTATE");
+        Canvas cv = canvas_new(WH[k][0], WH[k][1], ST_BG);
+        stage_draw(&s, &cv, 0);
+        canvas_blit(&sheet, &cv, 4, y);
+        y += WH[k][1] + 6;
+        canvas_free(&cv);
+    }
+    png_write(out, &sheet, 2);
+    fprintf(stderr, "wrote %s\n", out);
+    (void)dir;
+}
 static void picker_shot(const char *dir, int view, const char *out) { /* the sprite picker on its ANIMS tab */
     static Ed E2;
     memset(&E2, 0, sizeof E2);
@@ -53,6 +72,7 @@ int main(int argc, char **argv) {
     snprintf(p, sizeof p, "%s/stage-turn.png", o); shot(dir, "swing", 0, 3, 2, 0, 2, p);
     snprintf(p, sizeof p, "%s/stage-wide.png", o); shot_sized(dir, "swing", 6, 4, 1, 0, 0, 443, 265, 0, p);
     snprintf(p, sizeof p, "%s/stage-wide-scrolled.png", o); shot_sized(dir, "swing", 6, 4, 1, 0, 0, 330, 175, 45, p);
+    snprintf(p, sizeof p, "%s/stage-sizes.png", o); sizes_shot(dir, p);
     snprintf(p, sizeof p, "%s/picker-anims.png", o); picker_shot(dir, 0, p);
     snprintf(p, sizeof p, "%s/picker-anims-list.png", o); picker_shot(dir, 1, p);
     return 0;

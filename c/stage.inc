@@ -77,7 +77,6 @@ static void st_crop(Canvas *dst, const Canvas *src, int sx, int sy, int w, int h
 
 /* ---- editing ---------------------------------------------------------------------------------------------------------- */
 static void st_msg(Stage *s, const char *m) { snprintf(s->msg, sizeof s->msg, "%s", m); }
-static void st_msg_up(Stage *s, const char *m) { st_msg(s, m); for (char *q = s->msg; *q; q++) if (*q >= 'a' && *q <= 'z') *q -= 32; } /* (the font has capitals only) */
 static void st_changed(Stage *s) { memset(s->thumb_ok, 0, sizeof s->thumb_ok); }
 static int st_save(Stage *s) {
     char path[700];
@@ -131,10 +130,9 @@ static void st_change(Stage *s, int row, int delta) { /* the value of the picked
 }
 static void st_add_key(Stage *s) {
     Part *p = &s->a.part[s->pick];
-    char m[96];
-    if (st_key_at(p, st_t(s->frame)) >= 0) { snprintf(m, sizeof m, "%s ALREADY HAS A KEY AT FRAME %d", p->name, s->frame + 1); st_msg_up(s, m); return; }
+    if (st_key_at(p, st_t(s->frame)) >= 0) return;
     st_push(s);
-    if (st_ensure_key(s, s->pick, st_t(s->frame)) >= 0) { st_changed(s); st_save(s); snprintf(m, sizeof m, "KEY ADDED: %s AT FRAME %d", p->name, s->frame + 1); st_msg_up(s, m); }
+    if (st_ensure_key(s, s->pick, st_t(s->frame)) >= 0) { st_changed(s); st_save(s); } /* (no message: the KEY cap shows it) */
 }
 static void st_del_key(Stage *s) {
     Part *p = &s->a.part[s->pick];
@@ -148,9 +146,7 @@ static void st_del_key(Stage *s) {
 }
 static void st_toggle_key(Stage *s) { /* KEY: a key at this frame for the picked part, or none (a part keeps one) */
     if (st_key_at(&s->a.part[s->pick], st_t(s->frame)) >= 0) {
-        char m[96];
         st_del_key(s);
-        if (st_key_at(&s->a.part[s->pick], st_t(s->frame)) < 0) { snprintf(m, sizeof m, "KEY TAKEN AWAY: %s AT FRAME %d", s->a.part[s->pick].name, s->frame + 1); st_msg_up(s, m); }
     } else st_add_key(s);
 }
 static void st_ease(Stage *s) {
@@ -230,7 +226,6 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
     snprintf(buf, sizeof buf, "EDIT %s  ANIMS/%s.TXT  %d PARTS", a->name, s->name, a->npart);
     for (char *p = buf; *p; p++) if (*p >= 'a' && *p <= 'z') *p -= 32;
     canvas_text(cv, 4, 3, buf, C_YELLOW);
-    if (s->msg[0]) canvas_text(cv, cv->w - 6 - text_width(s->msg), 3, s->msg, C_YELLOW);
     /* the stage: the room at this time, a crop of it, every part outlined (the picked one yellow), the picked part's keys */
     Canvas shot = st_shot(a, t);
     if (s->onion && !s->playing) { /* onion skin: where the frame before / after differs from this one, it shows faintly red / blue */
@@ -304,15 +299,23 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
         PartPose q = parts_pose(a, s->pick, t);
         snprintf(buf, sizeof buf, "PART %s  X %d  Y %d", a->part[s->pick].name, a->part[s->pick].box[0] + (int)lround(q.x), a->part[s->pick].box[1] + (int)lround(q.y));
         for (char *p = buf; *p; p++) if (*p >= 'a' && *p <= 'z') *p -= 32;
-        canvas_text(cv, L.gx, L.ty + L.ah + 4, buf, C_GREY);
-        if (s->msg[0]) canvas_text(cv, L.gx + text_width(buf) + 10, L.ty + L.ah + 4, s->msg, C_YELLOW);
     }
-    { const char *kl = s->hide_keys ? "KEYS OFF" : "KEYS ON"; button(cv, L.gx + L.cw - text_width(kl) - 6, L.ty + L.ah + 2, kl, !s->hide_keys, R_SKEYSHOW, 0); } /* (the marks of the keys on the stage: on / off) */
+    { /* the line under the stage: the part and where it is, or a message in its place; KEYS ON / OFF at the right (the text cut short so they never touch) */
+        const char *kl = s->hide_keys ? "KEYS OFF" : "KEYS ON";
+        int kx = L.gx + L.cw - text_width(kl) - 6, room = kx - 8 - L.gx;
+        char line[160];
+        snprintf(line, sizeof line, "%s", s->msg[0] ? s->msg : s->pick < a->npart ? buf : "");
+        while (line[0] && text_width(line) > room) line[strlen(line) - 1] = 0;
+        canvas_text(cv, L.gx, L.ty + L.ah + 4, line, s->msg[0] ? C_YELLOW : C_GREY);
+        button(cv, kx, L.ty + L.ah + 2, kl, !s->hide_keys, R_SKEYSHOW, 0);
+    }
     /* the panel: the tools, the picked part, its values at this frame, the keys' buttons, the parts */
     int x = L.px, y = L.ty, fw = L.fw, pbot = L.ty + L.ah;
-    static const char *TOOL[4] = {"SELECT", "MOVE", "ROTATE", "KEY"};
+    static const char *LONG[4] = {"SELECT", "MOVE", "ROTATE", "KEY"}, *SHORT[4] = {"SEL", "MOVE", "ROT", "KEY"};
+    const char *const *TOOL = LONG;
     int roww = 0;
     for (int i = 0; i < 4; i++) roww += text_width(TOOL[i]) > 13 ? text_width(TOOL[i]) : 13;
+    if (roww + 3 * 4 > fw) { TOOL = SHORT; roww = 0; for (int i = 0; i < 4; i++) roww += text_width(TOOL[i]) > 13 ? text_width(TOOL[i]) : 13; } /* (a narrow window: the names never touch) */
     for (int i = 0, used = 0; i < 4; i++) {
         int cw = text_width(TOOL[i]) > 13 ? text_width(TOOL[i]) : 13, tx = x + used + (fw - roww) * i / 3;
         used += cw;
@@ -400,11 +403,13 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
     int lw = text_width(sh) + 16, sx0 = lw, sx1 = cv->w - 4;
     canvas_rect(cv, sx0 - 8, ty0 + 1, 1, L.th - 1, RGB(40, 40, 52));
     canvas_text(cv, 4, ly + 2, sh, RGB(150, 150, 170));
-    snprintf(buf, sizeof buf, "[ %s ]  FRAME %d OF %d   %.1f S", a->name, cur + 1, nf, a->length);
-    for (char *p = buf; *p; p++) if (*p >= 'a' && *p <= 'z') *p -= 32;
-    canvas_text(cv, sx0, ly + 2, buf, C_YELLOW);
     const char *spd = s->speed < 0.75 ? "0.5X" : s->speed > 1.5 ? "2X" : "1X", *play = s->playing ? "STOP" : "PLAY";
     int bw = text_width("ONION") + 9 + text_width(spd) + 9 + text_width(play) + 6, bx = sx1 - bw;
+    snprintf(buf, sizeof buf, "[ %s ]  FRAME %d OF %d   %.1f S", a->name, cur + 1, nf, a->length);
+    if (sx0 + text_width(buf) + 8 > bx) snprintf(buf, sizeof buf, "[ %s ] %d/%d", a->name, cur + 1, nf); /* (no room: the short way, like the editor) */
+    while (buf[0] && sx0 + text_width(buf) + 8 > bx) buf[strlen(buf) - 1] = 0;
+    for (char *p = buf; *p; p++) if (*p >= 'a' && *p <= 'z') *p -= 32;
+    canvas_text(cv, sx0, ly + 2, buf, C_YELLOW);
     button(cv, bx, ly, "ONION", s->onion, R_ONION, 0); bx += text_width("ONION") + 9;
     button(cv, bx, ly, spd, 0, R_SPEED, 0); bx += text_width(spd) + 9;
     button(cv, bx, ly, play, s->playing, R_PLAY, 0);
