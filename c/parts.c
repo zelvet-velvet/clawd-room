@@ -74,17 +74,18 @@ static int parse_anim(PartAnim *a, char **save, const char *path, int line) {
     if (a->length <= 0) { fprintf(stderr, "%s:%d: the length must be above 0\n", path, line); return -1; }
     return 0;
 }
-/* part NAME [group GROUP] [box X Y W H] */
+/* part NAME [group GROUP] [box X Y W H] [sprite] */
 static int parse_part(PartAnim *a, char **save, const char *path, int line) {
     char *name = strtok_r(NULL, " \t", save);
     Part *p = name ? add_part(a, name) : NULL;
     if (!p) { fprintf(stderr, "%s:%d: part needs a name (at most %d parts)\n", path, line, PARTS_MAX); return -1; }
     for (char *w = strtok_r(NULL, " \t", save); w; w = strtok_r(NULL, " \t", save)) {
         if (!strcmp(w, "group")) { char *g = strtok_r(NULL, " \t", save); if (!g) { fprintf(stderr, "%s:%d: group needs a name\n", path, line); return -1; } snprintf(p->group, sizeof p->group, "%s", g); }
+        else if (!strcmp(w, "sprite")) p->sprite = 1;
         else if (!strcmp(w, "box")) {
             for (int i = 0; i < 4; i++) { char *v = strtok_r(NULL, " \t", save); if (!v) { fprintf(stderr, "%s:%d: box needs X Y W H\n", path, line); return -1; } p->box[i] = atoi(v); }
             p->has_box = 1;
-        } else { fprintf(stderr, "%s:%d: part NAME [group GROUP] [box X Y W H]\n", path, line); return -1; }
+        } else { fprintf(stderr, "%s:%d: part NAME [group GROUP] [box X Y W H] [sprite]\n", path, line); return -1; }
     }
     return 0;
 }
@@ -155,6 +156,7 @@ int parts_save(const PartAnim *a, const char *path) {
         fprintf(f, "part %s", p->name);
         if (p->group[0]) fprintf(f, " group %s", p->group);
         if (p->has_box) fprintf(f, " box %d %d %d %d", p->box[0], p->box[1], p->box[2], p->box[3]);
+        if (p->sprite) fprintf(f, " sprite");
         fprintf(f, "\n");
     }
     for (int i = 0; i < a->npart; i++) {

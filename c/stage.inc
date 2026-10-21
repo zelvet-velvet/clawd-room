@@ -120,6 +120,7 @@ static void st_value(PartPose *q, int row, int delta) {
     else { q->glow += delta * 10; q->glow = q->glow < 0 ? 0 : q->glow > 100 ? 100 : q->glow; }
 }
 static void st_change(Stage *s, int row, int delta) { /* the value of the picked part at this frame, one step (a key is made if there is none) */
+    if (row == 2 && s->a.part[s->pick].sprite) { st_msg(s, "A SPRITE MOVES, IT DOES NOT ROTATE"); return; }
     st_push(s);
     int k = st_ensure_key(s, s->pick, st_t(s->frame));
     if (k < 0) return;
@@ -192,6 +193,9 @@ static StLayout st_layout(const Stage *s, int W, int H) {
     return L;
 }
 
+static void st_dim(Canvas *cv, int x, int y, int w, int h) { /* greyed out: every pixel halfway to the ground */
+    for (int yy = y; yy < y + h; yy++) for (int xx = x; xx < x + w; xx++) if (xx >= 0 && yy >= 0 && xx < cv->w && yy < cv->h) { Rgb c = cv->p[yy * cv->w + xx]; cv->p[yy * cv->w + xx] = RGB((c.r + 18) / 2, (c.g + 18) / 2, (c.b + 24) / 2); }
+}
 static void st_mark(Canvas *cv, int x, int y, Rgb k) { /* a key's mark: a small plus with a dark edge, readable on any ground */
     Rgb d = RGB(20, 20, 28);
     canvas_rect(cv, x - 2, y - 1, 5, 3, d); canvas_rect(cv, x - 1, y - 2, 3, 5, d);
@@ -288,8 +292,10 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
     for (int i = 0, used = 0; i < 4; i++) {
         int cw = text_width(TOOL[i]) > 13 ? text_width(TOOL[i]) : 13, tx = x + used + (fw - roww) * i / 3;
         used += cw;
-        stage_tool(cv, tx + (cw - 13) / 2, y, i, s->tool == i);
-        canvas_text(cv, tx + (cw - text_width(TOOL[i])) / 2, y + 16, TOOL[i], s->tool == i ? C_WHITE : C_GREY);
+        int off = i == 2 && s->pick < a->npart && a->part[s->pick].sprite; /* (a sprite does not rotate) */
+        stage_tool(cv, tx + (cw - 13) / 2, y, i, s->tool == i && !off);
+        if (off) st_dim(cv, tx + (cw - 13) / 2, y, 13, 15);
+        canvas_text(cv, tx + (cw - text_width(TOOL[i])) / 2, y + 16, TOOL[i], off ? RGB(70, 70, 86) : s->tool == i ? C_WHITE : C_GREY);
         region(R_STOOL, i, tx, y, cw, 21, RGB(0, 0, 0));
     }
     int top = L.ty + 27, pvis = pbot - top;
@@ -313,13 +319,14 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
         py += 12;
         double vals[ST_ROWS] = {q.x, q.y, q.turn, q.show, q.glow};
         for (int i = 0; i < ST_ROWS; i++, py += 9) {
-            int on = i == s->row;
+            int on = i == s->row, off = i == 2 && pp->sprite;
             row_y[i] = py;
-            canvas_text(&pc, 0, py + 1, ST_ROW[i], on ? C_WHITE : C_GREY);
+            canvas_text(&pc, 0, py + 1, ST_ROW[i], off ? RGB(70, 70, 86) : on ? C_WHITE : C_GREY);
             char v[16];
             if (i == 3) snprintf(v, sizeof v, "%s", q.show ? "YES" : "NO"); else snprintf(v, sizeof v, "%d", (int)lround(vals[i]));
             int vw2 = fw >= 96 ? 26 : 22, vbx = fw - vw2 - 8;
             st_value_box(&pc, vbx, py, vw2, v, on);
+            if (off) { st_dim(&pc, vbx, py, vw2, 7); continue; } /* (a sprite: no rotation, no buttons) */
             region(R_SVAL, i * 3, vbx, py, vw2, 7, RGB(0, 0, 0));
             canvas_text(&pc, vbx - 6, py + 1, "<", on ? C_YELLOW : RGB(84, 84, 104)); region(R_SVAL, i * 3 + 1, vbx - 7, py, 7, 7, RGB(0, 0, 0));
             canvas_text(&pc, vbx + vw2 + 2, py + 1, ">", on ? C_YELLOW : RGB(84, 84, 104)); region(R_SVAL, i * 3 + 2, vbx + vw2 + 1, py, 7, 7, RGB(0, 0, 0));
@@ -633,6 +640,7 @@ static int stage_run(const char *dir, const char *name) {
                         st_pick_at(&s, st_t(s.frame), px, py, &L); /* (the part pressed on is the one the tool works on) */
                         if (s.tool == 0) {}
                         else if (s.tool == 3) st_add_key(&s);
+                        else if (s.tool == 2 && s.a.part[s.pick].sprite) st_msg(&s, "A SPRITE MOVES, IT DOES NOT ROTATE");
                         else { /* MOVE / ROTATE: a drag on the stage changes the picked part at this frame */
                             st_push(&s);
                             int k2 = st_ensure_key(&s, s.pick, st_t(s.frame));

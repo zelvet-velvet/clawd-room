@@ -9,6 +9,7 @@
 #                sine (a half wave: slow, fast, slow), sine-out (a quarter wave, fast then slowing), sine-in (slow then fast)
 #   A field a key leaves out stays as the part's key before it had it (the first key starts at 0 and shown).
 #   part NAME ... box X Y W H     where the part is at rest, in room pixels: the editor outlines it on its stage
+#   part NAME ... sprite          a drawn sprite (a Clawd): it moves, but it does not rotate (a turned pixel drawing breaks up)
 #   scene LINE                    a line of a fixture (tools/fixtures/*.fx): the room the editor's stage shows; a line `scene emote SID KIND`
 #                                 starts that emote on that Clawd when the animation begins, so the stage is at the frame you are on
 #   view X Y                      the room pixel at the top left of the stage
@@ -27,7 +28,7 @@ part bar     group frame box 29 63 27 2
 part chain-l group swing box 35 65 2 12
 part chain-r group swing box 47 65 2 12
 part seat    group swing box 35 77 15 2
-part clawd   group swing box 35 69 14 8
+part clawd   group swing box 35 69 14 8 sprite
 key bar      0.0
 key bar      1.9635
 key chain-l  0.0 turn=0
