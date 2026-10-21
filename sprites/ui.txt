@@ -1,6 +1,6 @@
 # The pixel editor's own icons: the tools and the colour panel's fold button (./clawd-room.sh --edit fold-open, or Tab to this file).
 # Edit them like any sprite; the editor reads this file again when it changes. A sprite left out: the built-in drawing.
-# The fold button is drawn dim; the editor brightens it under the pointer.
+# The fold button is drawn dim; the editor brightens it under the pointer. eye-open / eye-shut: the stage page's KEYS button (the key marks shown / hidden).
 : k = 16,16,22
 : w = 236,236,244
 : y = 240,196,90
@@ -17,6 +17,7 @@
 : C = 205,110,88
 : Q = 250,200,216
 : G = 242,190,168
+: E = 150,150,172
 
 @ tool-paint | tool-paint
 ......kk.
@@ -154,3 +155,17 @@ ddd.dd.dd
 ...CCCCCCCC....
 ...C.C..C.C....
 ...C....C......
+
+@ eye-open | eye-open
+..yyyyy..
+.y..y..y.
+y..yyy..y
+.y..y..y.
+..yyyyy..
+
+@ eye-shut | eye-shut
+.........
+.........
+E.......E
+.EEEEEEE.
+..E.E.E..

@@ -327,14 +327,22 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
         snprintf(buf, sizeof buf, "PART %s  X %d  Y %d", a->part[s->pick].name, a->part[s->pick].box[0] + (int)lround(q.x), a->part[s->pick].box[1] + (int)lround(q.y));
         for (char *p = buf; *p; p++) if (*p >= 'a' && *p <= 'z') *p -= 32;
     }
-    { /* the line under the stage: the part and where it is, or a message in its place; KEYS ON / OFF at the right (the text cut short so they never touch) */
-        const char *kl = s->hide_keys ? "KEYS OFF" : "KEYS ON";
-        int kx = L.gx + L.cw - text_width(kl) - 6, room = kx - 8 - L.gx;
+    { /* the line under the stage: the part and where it is, or a message in its place; at the right the eye + KEYS button (the key marks
+         on the stage: open eye shown, shut eye hidden; the text cut short so they never touch) */
+        int kw = 3 + 9 + 3 + text_width("KEYS") + 4, kx = L.gx + L.cw - kw, room = kx - 8 - L.gx;
         char line[160];
         snprintf(line, sizeof line, "%s", s->msg[0] ? s->msg : s->pick < a->npart ? buf : "");
         while (line[0] && text_width(line) > room) line[strlen(line) - 1] = 0;
         canvas_text(cv, L.gx, L.ty + L.ah + 4, line, s->msg[0] ? C_YELLOW : C_GREY);
-        button(cv, kx, L.ty + L.ah + 2, kl, !s->hide_keys, R_SKEYSHOW, 0);
+        int on = !s->hide_keys, ky = L.ty + L.ah + 2;
+        canvas_rect(cv, kx, ky, kw, 9, on ? RGB(90, 90, 120) : RGB(34, 34, 44));
+        if (on) frame(cv, kx, ky, kw, 9, C_YELLOW);
+        if (!ui_icon(cv, on ? "eye-open" : "eye-shut", kx + 3, ky + 2, 0)) { /* (no such sprite in sprites/ui.txt: the built-in eye) */
+            static const char *const EYE[2][5] = {{".........", ".........", "e.......e", ".eeeeeee.", "..e.e.e.."}, {"..yyyyy..", ".y..y..y.", "y..yyy..y", ".y..y..y.", "..yyyyy.."}};
+            for (int r = 0; r < 5; r++) for (int c = 0; c < 9; c++) if (EYE[on][r][c] != '.') canvas_px(cv, kx + 3 + c, ky + 2 + r, on ? C_YELLOW : RGB(150, 150, 172));
+        }
+        canvas_text(cv, kx + 15, ky + 2, "KEYS", on ? C_WHITE : C_GREY);
+        region(R_SKEYSHOW, 0, kx, ky, kw, 9, RGB(0, 0, 0));
     }
     if (!s->folded && s->pick >= 0 && s->pick < a->npart) { /* GROW: how much of the picked part has come in at this frame (a running figure, a bar; click or drag it) */
         int gx0 = L.px, gy0 = L.ty + L.ah + 2, bx0 = gx0 + 17, bw = L.fw - 17, g = (int)lround(parts_pose(a, s->pick, t).grow);
