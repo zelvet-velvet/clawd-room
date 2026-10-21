@@ -10,6 +10,10 @@ double ease(int kind, double x) {
     case EASE_OUT: return 1 - (1 - x) * (1 - x);
     case EASE_IN_OUT: return x < 0.5 ? 2 * x * x : 1 - 2 * (1 - x) * (1 - x);
     case EASE_BACK: { const double c = 1.6; double y = x - 1; return 1 + (c + 1) * y * y * y + c * y * y; }
+    case EASE_IN: return x * x;
+    case EASE_SINE: return 0.5 - 0.5 * cos(M_PI * x);
+    case EASE_SINE_OUT: return sin(M_PI / 2 * x);
+    case EASE_SINE_IN: return 1 - cos(M_PI / 2 * x);
     default: return x;
     }
 }

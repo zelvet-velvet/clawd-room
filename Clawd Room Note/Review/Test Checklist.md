@@ -115,6 +115,23 @@ What to test next, one `[!example] Group X · …` callout per group. Each test 
 > > 4. When done, `q` then `D` (discard) unless you mean to keep a drawing.
 > > 5. Compare with ![[2026-10-20 editor timeline, onion skin and fill.png|300]] and ![[2026-10-20 editor playing a Clawd at the room's speed.png|300]]
 
+> [!done]- Group G · WSL: the stage page for part animations (T31–T38, PR #19)
+> - [x] **T31** `./clawd-room.sh --edit anims/swing` → the stage page opens: the park with the Clawd on the swing, the parts outlined, the panel, the frames as pictures; `?` shows the keys (and scrolls in a short window).
+> - [x] **T32** Click the seat, then the Clawd, then a name in PARTS → that part is picked (yellow); SELECT shows handles; drag one → the outline resizes.
+> - [x] **T33** MOVE: drag the part pressed on → it moves and stops at the edge of the stage; ROTATE: drag the seat → its outline turns; on the Clawd, ROTATE is greyed and cannot be picked; with ROTATE on, pressing on the Clawd picks nothing and turns nothing.
+> - [x] **T34** Go to frame 8 (right arrow or a frame picture): the KEY cap is not pressed in; KEY or `k` → "KEY ADDED", the cap pressed in, a diamond under frame 8 and a mark on the stage; KEY again → gone; `e` changes a key's ease.
+> - [x] **T35** `+ -` and the wheel zoom the stage, `W A S D` and a right drag move the view, `0` puts it back; `o` onion skin, `v` the key marks.
+> - [x] **T36** The panel and the frame strip scroll (the wheel, the strip's scroll bar); the strip follows the frame when it changes.
+> - [-] **T37** A room with a swinging Clawd (the park) follows an edit of the clawd part's MOVE Y while it runs.
+> - [x] **T38** `q` → "SAVE THE CHANGES TO SWING?" (S, D, Esc); D puts your file back. From the picker (`--edit`, Tab to ANIMS, Enter) `q` comes back to the picker.
+> ✅ 2026-10-21: T31 – T36 and T38 pass on WSL (Zaviel); T37 skipped (nothing makes a Clawd swing on demand).
+>
+> > [!tip]- T31–T38 · how to run them
+> > 1. Until PR #19 is merged: `git switch feat/stage-page` in the repo.
+> > 2. Start a room in the park (`./clawd-room.sh --room park`) to see a Clawd swing (or wait for one to play).
+> > 3. In a WSL shell: `./clawd-room.sh --edit anims/swing` (the editor opens in its own window).
+> > 4. Your edits are in `~/.clawd-room/anims/`; delete `swing.txt` there (or RESET in the picker) to go back to the default.
+
 ## Rooms and art ([[Rooms and Art]])
 - [x] Each room (office, coffee shop, park) looks like the mockups at your window size
 - [x] Seated Clawds show behind their desk / table / bench; the barista behind the bar

@@ -34,9 +34,7 @@ static void set_field(Session *s, const char *kv) {
     else if (!strcmp(k, "walk_phase")) s->walk_phase = atof(v);
 }
 
-int fixture_load(Fixture *f, const char *path) {
-    FILE *fp = fopen(path, "r");
-    if (!fp) return 1;
+static int load_fp(Fixture *f, FILE *fp) {
     memset(f, 0, sizeof *f);
     Room *r = &f->room;
     room_init(r);
@@ -84,4 +82,15 @@ int fixture_load(Fixture *f, const char *path) {
     }
     fclose(fp);
     return 0;
+}
+
+int fixture_load(Fixture *f, const char *path) {
+    FILE *fp = fopen(path, "r");
+    if (!fp) return 1;
+    return load_fp(f, fp);
+}
+int fixture_load_text(Fixture *f, const char *text) {
+    FILE *fp = fmemopen((void *)text, strlen(text), "r");
+    if (!fp) return 1;
+    return load_fp(f, fp);
 }

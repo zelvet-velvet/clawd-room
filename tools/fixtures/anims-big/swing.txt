@@ -1,0 +1,36 @@
+# The park's swing: a Clawd on it swinging towards us and back. A part animation (c/parts.c; the editor makes and changes these).
+# The room moves the Clawd by this file's clawd part (its y); the other parts are for the editor and the look to come.
+#   anim NAME length SECONDS [loop | once]     a looping one wraps time; put a key at the length so it ends where it began
+#   part NAME [group GROUP]                    a part of the thing; a group is edited together
+#   key PART TIME [x=] [y=] [turn=] [glow=] [show=] [ease=]
+#        x y     where the part is from its rest place, in room pixels (y down)
+#        turn    degrees, glow 0..100, show 0 or 1 (it shows or hides at the key, not in between)
+#        ease    how the part gets to this key from the one before: linear (default), in, out, in-out, back,
+#                sine (a half wave: slow, fast, slow), sine-out (a quarter wave, fast then slowing), sine-in (slow then fast)
+#   A field a key leaves out stays as the part's key before it had it (the first key starts at 0 and shown).
+# 3.2 radians a second, as the room always swung: a period of 2 pi / 3.2 = 1.9635 s, a quarter of it 0.4909 s. The keys are the
+# swing's farthest points; the sine eases between them make the same motion as 2 * sin(3.2 t).
+anim swing length 1.9635 loop
+part bar     group frame
+part chain-l group swing
+part chain-r group swing
+part seat    group swing
+part clawd   group swing
+key bar      0.0
+key bar      1.9635
+key chain-l  0.0 turn=0
+key chain-l  0.4909 turn=8 ease=sine-out
+key chain-l  1.4726 turn=-8 ease=sine
+key chain-l  1.9635 turn=0 ease=sine-in
+key chain-r  0.0 turn=0
+key chain-r  0.4909 turn=8 ease=sine-out
+key chain-r  1.4726 turn=-8 ease=sine
+key chain-r  1.9635 turn=0 ease=sine-in
+key seat     0.0 y=0
+key seat     0.4909 y=2 ease=sine-out
+key seat     1.4726 y=-4 ease=sine
+key seat     1.9635 y=0 ease=sine-in
+key clawd    0.0 y=0
+key clawd    0.4909 y=4 ease=sine-out
+key clawd    1.4726 y=-4 ease=sine
+key clawd    1.9635 y=0 ease=sine-in

@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "parts.h"
 #include "canvas.h"
 #include "theme.h"
 #include "clawd.h"
@@ -268,7 +269,24 @@ static int golden_win(void) {
     return 0;
 }
 
+/* where each part of the part animations in FILES is at some times (parts.c); a file that does not load says so */
+static int golden_parts(int nfiles, char **files) {
+    static const double T[] = {-0.1, 0, 0.2, 0.4, 0.8, 1.2, 1.6, 1.7, 2.5};
+    for (int f = 0; f < nfiles; f++) {
+        static PartAnim a;
+        const char *base = strrchr(files[f], '/') ? strrchr(files[f], '/') + 1 : files[f];
+        if (parts_load(&a, files[f])) { printf("%s: error\n", base); continue; }
+        printf("%s: %s length %.2f %s parts %d\n", base, a.name, a.length, a.loop ? "loop" : "once", a.npart);
+        for (int p = 0; p < a.npart; p++) for (size_t i = 0; i < sizeof T / sizeof *T; i++) {
+            PartPose q = parts_pose(&a, p, T[i]);
+            printf("  %-8s %-8s t=%5.2f x=%6.2f y=%6.2f turn=%7.2f glow=%6.2f show=%d\n", a.part[p].name, a.part[p].group, T[i], q.x + 0.0, q.y + 0.0, q.turn + 0.0, q.glow + 0.0, q.show); /* (+ 0.0: no "-0.00") */
+        }
+    }
+    return 0;
+}
+
 int main(int argc, char **argv) {
+    if (argc > 2 && !strcmp(argv[1], "--golden-parts")) return golden_parts(argc - 2, argv + 2);
     if (argc > 2 && !strcmp(argv[1], "--link-demo")) return link_demo(argv[2], argc > 3 ? atof(argv[3]) : 0);
     if (!(argc > 1 && (!strncmp(argv[1], "--golden", 8) || !strcmp(argv[1], "--fixture") || !strcmp(argv[1], "--script") || !strcmp(argv[1], "--check") || !strcmp(argv[1], "--gallery")))) return app_main(argc, argv);
     const char *dir = getenv("CLAWD_SPRITES") ? getenv("CLAWD_SPRITES") : "../sprites";
@@ -281,6 +299,7 @@ int main(int argc, char **argv) {
     SpriteFile props = sprites_load(path);
     theme_set_props(&props);
     { char rd[600]; snprintf(rd, sizeof rd, "%s", dir); char *sl = strrchr(rd, '/'); if (sl) strcpy(sl, "/rooms"); else snprintf(rd, sizeof rd, "rooms"); theme_set_rooms_dir(getenv("CLAWD_ROOMS") ? getenv("CLAWD_ROOMS") : rd); }
+    { char ad[600]; snprintf(ad, sizeof ad, "%s", dir); char *sl = strrchr(ad, '/'); if (sl) strcpy(sl, "/anims"); else snprintf(ad, sizeof ad, "anims"); parts_set_dir(getenv("CLAWD_ANIMS") ? getenv("CLAWD_ANIMS") : ad); parts_set_mine_dir(getenv("CLAWD_MY_ANIMS")); } /* (the tests use none of yours) */
     int rc = 0;
     if (argc > 1 && !strcmp(argv[1], "--golden")) rc = golden(argc > 2 && !strcmp(argv[2], "--code") ? NULL : &frames);
     else if (argc > 2 && !strcmp(argv[1], "--fixture")) rc = run_fixtures(argc - 2, argv + 2, &frames, &items);

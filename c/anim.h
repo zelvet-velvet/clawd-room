@@ -3,7 +3,8 @@
 #ifndef ANIM_H
 #define ANIM_H
 
-enum { EASE_LINEAR, EASE_OUT, EASE_IN_OUT, EASE_BACK }; /* steady / fast then slowing / slow, fast, slow / a little past, then back */
+enum { EASE_LINEAR, EASE_OUT, EASE_IN_OUT, EASE_BACK, /* steady / fast then slowing / slow, fast, slow / a little past, then back */
+       EASE_IN, EASE_SINE, EASE_SINE_OUT, EASE_SINE_IN }; /* slow then fast / a sine's half wave, slow-fast-slow / its quarter wave, fast then slowing / slow then fast */
 
 typedef struct { char key[16]; double from, to, t0, len; int ease, used; } Tween;
 #define MAX_TWEENS 24

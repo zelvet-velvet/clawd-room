@@ -1,0 +1,80 @@
+/* A picture of the editor's stage page (c/stage.inc), drawn by its own stage_draw(): the swing and the barista, at a frame.
+ *   stage_shot OUT_DIR SPRITES_DIR   (writes stage-swing.png, stage-barista.png) */
+#include "editor.c"
+#include "art.h"
+
+static void shot_sized(const char *dir, const char *name, int frame, int pick, int tool, int help, int asking, int W, int H, int pscroll, const char *out);
+static void shot(const char *dir, const char *name, int frame, int pick, int tool, int help, int asking, const char *out) {
+    shot_sized(dir, name, frame, pick, tool, help, asking, 300, 215, 0, out);
+}
+static void shot_sized(const char *dir, const char *name, int frame, int pick, int tool, int help, int asking, int W, int H, int pscroll, const char *out) {
+    static Stage s;
+    if (stage_open(&s, name)) { fprintf(stderr, "no %s\n", name); return; }
+    s.frame = frame; s.pick = pick; s.tool = tool; s.help = help; s.asking = asking;
+    if (asking == 2) { s.asking = 0; s.a.part[3].key[0].pose.turn = 25; s.a.part[4].key[0].pose.turn = -15; }
+    if (asking == 2) snprintf(s.msg, sizeof s.msg, "KEY ADDED: SEAT AT FRAME 1");
+    s.pscroll = pscroll;
+    Canvas cv = canvas_new(W, H, ST_BG);
+    stage_draw(&s, &cv, 0);
+    png_write(out, &cv, 3);
+    fprintf(stderr, "wrote %s\n", out);
+    canvas_free(&cv);
+    (void)dir;
+}
+static void sizes_shot(const char *dir, const char *out) { /* the page at window sizes from small to big, a message showing: nothing may touch */
+    static const int WH[6][2] = {{160, 120}, {200, 150}, {240, 170}, {300, 215}, {360, 240}, {443, 265}};
+    Canvas sheet = canvas_new(443 + 8, 120 + 150 + 170 + 215 + 240 + 265 + 6 * 6, RGB(60, 60, 76));
+    int y = 2;
+    for (int k = 0; k < 6; k++) {
+        static Stage s;
+        if (stage_open(&s, "swing")) return;
+        s.frame = 3; s.pick = 4; s.tool = 2;
+        snprintf(s.msg, sizeof s.msg, "A SPRITE MOVES, IT DOES NOT ROTATE");
+        Canvas cv = canvas_new(WH[k][0], WH[k][1], ST_BG);
+        stage_draw(&s, &cv, 0);
+        canvas_blit(&sheet, &cv, 4, y);
+        y += WH[k][1] + 6;
+        canvas_free(&cv);
+    }
+    png_write(out, &sheet, 2);
+    fprintf(stderr, "wrote %s\n", out);
+    (void)dir;
+}
+static void picker_shot(const char *dir, int view, const char *out) { /* the sprite picker on its ANIMS tab */
+    static Ed E2;
+    memset(&E2, 0, sizeof E2);
+    E2.pk = 1; E2.hx = E2.hy = -1; E2.drag = -1; E2.speed = 1; E2.del_ask = -1;
+    file_open(&E2, dir, 2, "walk-1");
+    picker_open(&E2, dir, 0);
+    E2.ptab = ANIMS; E2.pview = view;
+    for (int i = 0; i < g_npi; i++) if (g_pi[i].file == ANIMS) { E2.psel = i; break; }
+    Canvas cv = canvas_new(300, 200, ST_BG);
+    draw(&E2, &cv);
+    png_write(out, &cv, 3);
+    fprintf(stderr, "wrote %s\n", out);
+    canvas_free(&cv);
+}
+int main(int argc, char **argv) {
+    const char *o = argc > 1 ? argv[1] : "out/18-stage", *dir = argc > 2 ? argv[2] : "sprites";
+    char p[700];
+    snprintf(p, sizeof p, "%s/clawd.txt", dir); static SpriteFile frames, items, props;
+    frames = sprites_load(p);
+    snprintf(p, sizeof p, "%s/items.txt", dir); items = sprites_load(p);
+    snprintf(p, sizeof p, "%s/props.txt", dir); props = sprites_load(p);
+    theme_set_props(&props);
+    draw_set_sprites(&frames, &items);
+    char rd[700]; snprintf(rd, sizeof rd, "%s/../rooms", dir); theme_set_rooms_dir(rd);
+    snprintf(rd, sizeof rd, "%s/../anims", dir); parts_set_dir(rd); parts_set_mine_dir("");
+    snprintf(p, sizeof p, "%s/stage-swing.png", o); shot(dir, "swing", 14, 3, 0, 0, 0, p);
+    snprintf(p, sizeof p, "%s/stage-barista.png", o); shot(dir, "brew", 9, 1, 0, 0, 0, p);
+    snprintf(p, sizeof p, "%s/stage-help.png", o); shot_sized(dir, "swing", 6, 4, 1, 1, 0, 300, 120, 0, p);
+    snprintf(p, sizeof p, "%s/stage-asking.png", o); shot(dir, "swing", 0, 3, 1, 0, 1, p);
+    snprintf(p, sizeof p, "%s/stage-turn.png", o); shot(dir, "swing", 0, 3, 2, 0, 2, p);
+    snprintf(p, sizeof p, "%s/stage-wide.png", o); shot_sized(dir, "swing", 6, 4, 1, 0, 0, 443, 265, 0, p);
+    snprintf(p, sizeof p, "%s/stage-wide-scrolled.png", o); shot_sized(dir, "swing", 6, 4, 1, 0, 0, 330, 175, 45, p);
+    snprintf(p, sizeof p, "%s/stage-rotate-list.png", o); shot_sized(dir, "swing", 6, 3, 2, 0, 0, 443, 265, 0, p);
+    snprintf(p, sizeof p, "%s/stage-sizes.png", o); sizes_shot(dir, p);
+    snprintf(p, sizeof p, "%s/picker-anims.png", o); picker_shot(dir, 0, p);
+    snprintf(p, sizeof p, "%s/picker-anims-list.png", o); picker_shot(dir, 1, p);
+    return 0;
+}

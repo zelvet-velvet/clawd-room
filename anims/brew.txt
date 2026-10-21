@@ -1,0 +1,29 @@
+# The coffee shop: the barista brews. The cup rises to the machine, steam puffs, the cup comes down again. See anims/swing.txt
+# for the file format.
+anim brew length 1.7 once
+scene theme coffee
+scene title brew
+scene terminal 120 40
+scene time 1000.0 3.4
+scene scale 1
+scene session s00 name=api created=900 last=999 state=work tool=Bash hold=100000
+scene session s01 name=web created=910 last=999 state=think tool=Edit hold=100000
+view 10 22
+part machine group machine box 42 36 10 8
+part cup     group machine box 44 40 4 3
+part steam   group machine box 44 31 6 4
+part clawd   group barista box 25 29 12 12 sprite
+key machine 0.0
+key machine 0.4 y=-1 ease=out
+key machine 0.8 y=0 ease=in-out
+key cup     0.0 y=0
+key cup     0.5 y=-5 ease=out
+key cup     1.1 y=-5 glow=20
+key cup     1.7 y=0 glow=0 ease=in-out
+key steam   0.5 show=0
+key steam   0.6 show=1 y=0 glow=0
+key steam   1.1 y=-6 glow=40 ease=out
+key steam   1.4 y=-9 glow=0 ease=out
+key clawd   0.0 x=0
+key clawd   0.4 x=2 ease=in-out
+key clawd   1.7 x=0 ease=in-out
