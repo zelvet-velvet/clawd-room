@@ -15,7 +15,7 @@ sticker: lucide//palette
 > [!info] Picked by Zaviel on 2026-10-18
 > From three rendered options: **A perspective** (chosen), B 3/4 top-down, C isometric.
 
-![[2026-10-18 style options A perspective.png|300]]
+![[2026-10-18 style options A perspective.png|774]]
 
 - The **back wall** sits in the middle, the **side walls** slant in towards it, the **ceiling** is a stylised band.
 - The **floor and everything on it** come from one vanishing point above the picture (`c/persp.c`).
@@ -48,7 +48,7 @@ flowchart TB
 > [!tip] Same thing every time
 > The device, drink or park thing for a session is picked from a hash of its id, so a session keeps it.
 
-![[2026-10-18 style A built office.png|260]] ![[2026-10-18 style A built coffee.png|260]] ![[2026-10-18 style A built park.png|260]]
+![[2026-10-18 style A built office.png|260]] ![[2026-10-18 style A built coffee.png|261]] ![[2026-10-18 style A built park.png|260]]
 
 ---
 ## 📏 Layout

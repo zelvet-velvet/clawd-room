@@ -14,7 +14,7 @@ Every frame a Clawd can show, and the items it carries. All pictures are drawn b
 > 3. `clawd-room --build-art` (or `c/clawd-room --build-art`) redraws the pictures below. The room reads the same files when it starts, so a restart shows your edit.
 > 4. A frame missing from the file is drawn by the code, so you can delete a frame to go back to the original. `clawd-room --export-sprites --force` rewrites the files from the code (**throws away your edits**); `--export-sprites --add` only appends frames a file lacks.
 
-![[sheet.png]]
+![[sheet.png|774]]
 
 Frame names in the sheet are the names in `sprites/clawd.txt`. A frame shared by two actions has the name of the first one. The body bob (up and down) is not part of a frame: it moves the whole sprite.
 
@@ -52,7 +52,7 @@ The poses are sampled from the pose code with a stand-in Session (`c/actions.c`)
 
 ## Items
 
-![[items.png]]
+![[items.png|774]]
 
 Files: `sprites/items.txt`. Speech bubbles (`bubble-dots-0..3`, `bubble-excl`, `bubble-ques`, `bubble-cup`), the carried cup (`cup-held`; its steam is drawn by the code) and the "need your OK" sign (`sign-wait`).
 

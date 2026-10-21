@@ -76,7 +76,9 @@ sticker: lucide//gamepad-2
 | `?` | the shortcuts in a box (a short window shows only `? SHORTCUTS  Q QUIT`; a very short one has no timeline) |
 | Esc in the picker, Ctrl+C | quit: with changes it asks **S** save, **D** discard (the files go back to how they were when you opened them), **Esc** back |
 
-![[2026-10-20 editor timeline, onion skin and fill.png|300]] ![[2026-10-20 editor playing a Clawd at the room's speed.png|300]]
+![[2026-10-20 editor timeline, onion skin and fill.png|774]]
+
+![[2026-10-20 editor playing a Clawd at the room's speed.png|774]]
 
 ## 📐 Room size and resizing
 
