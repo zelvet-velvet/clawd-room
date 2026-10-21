@@ -31,6 +31,7 @@ typedef struct {
     int onion;                /* o / ONION: the frame before shows faintly red, the one after blue, where they differ (not while playing) */
     int hide_keys;            /* the keys' marks on the stage are hidden (v, or the KEYS button under the stage) */
     int hscroll;              /* the help box scrolls when the window is too short for it */
+    int focus;                /* the view goes to the picked part (put in the middle) at the next drawing */
     int zoom;                 /* the stage's zoom (0: as the window fits); vx, vy: the room pixel at its top left (vw, vh: what it shows) */
     int pscroll, pfollow;     /* the panel scrolls: how far, and whether it should bring the picked value into view */
     int pan; double pan_x0, pan_y0; int pan_vx, pan_vy; /* dragging the view with the right button */
@@ -254,11 +255,18 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
         }
     }
     int vw = L.cw / L.z, vh = L.ah / L.z;
-    int vx = s->vx, vy = s->vy; /* (the piece of the room shown stays inside it) */
-    if (vx + vw > shot.w) vx = shot.w - vw;
-    if (vy + vh > shot.h) vy = shot.h - vh;
-    if (vx < 0) vx = 0;
-    if (vy < 0) vy = 0;
+    if (s->focus && s->pick >= 0 && s->pick < a->npart && a->part[s->pick].has_box) { /* the picked part in the middle of the stage (as far as the room lets it) */
+        const Part *fp = &a->part[s->pick];
+        PartPose fq = parts_pose(a, s->pick, t);
+        s->vx = fp->box[0] + (int)lround(fq.x) + fp->box[2] / 2 - vw / 2;
+        s->vy = fp->box[1] + (int)lround(fq.y) + fp->box[3] / 2 - vh / 2;
+    }
+    s->focus = 0;
+    int vx = s->vx, vy = s->vy; /* (the view may go past the room's edge by half of itself, so any part can be in its middle) */
+    if (vx + vw / 2 > shot.w) vx = shot.w - vw / 2;
+    if (vy + vh / 2 > shot.h) vy = shot.h - vh / 2;
+    if (vx < -vw / 2) vx = -vw / 2;
+    if (vy < -vh / 2) vy = -vh / 2;
     s->vx = vx; s->vy = vy; s->vw = vw; s->vh = vh;
     canvas_rect(cv, L.gx, L.ty, L.cw, L.ah, ST_BG);
     st_crop(cv, &shot, vx, vy, vw, vh, L.gx, L.ty, L.z);
@@ -488,7 +496,7 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
     }
     if (s->help) { /* ?: the keys and the mouse, in a box over the stage; a window too short for it scrolls it (up / down, the wheel) */
         static const char *const H[] = {"HELP  (UP DOWN SCROLLS)", "MOUSE", "CLICK A PART: PICK IT", "SELECT: DRAG A BORDER TO RESIZE", "MOVE / ROTATE: DRAG ON THE STAGE", "KEY: A KEY AT THIS FRAME, OR NONE", "< > BESIDE A VALUE: CHANGE IT", "CLICK A FRAME: GO THERE", "WHEEL: ZOOM / SCROLL THE PANEL", "RIGHT DRAG: MOVE THE VIEW",
-                                        "KEYS", "LEFT RIGHT  FRAME", "UP DOWN  A VALUE", "< >  CHANGE IT", "+ -  ZOOM THE STAGE", "W A S D  MOVE THE VIEW", "0  VIEW AS IT WAS", "V  KEYS ON THE STAGE: ON / OFF", "SPACE  PLAY", "O  ONION SKIN (BEFORE RED, AFTER BLUE)", "[ ]  OTHER PART", "K  A KEY HERE OR NONE", "X  DELETE THE KEY", "E  KEY EASE", "U R  UNDO REDO", "Q  QUIT"};
+                                        "KEYS", "LEFT RIGHT  FRAME", "UP DOWN  A VALUE", "< >  CHANGE IT", "+ -  ZOOM THE STAGE", "W A S D  MOVE THE VIEW", "0  ZOOM AS IT WAS, THE PART IN THE MIDDLE", "V  KEYS ON THE STAGE: ON / OFF", "SPACE  PLAY", "O  ONION SKIN (BEFORE RED, AFTER BLUE)", "[ ]  OTHER PART", "K  A KEY HERE OR NONE", "X  DELETE THE KEY", "E  KEY EASE", "U R  UNDO REDO", "Q  QUIT"};
         int n = (int)(sizeof H / sizeof *H), bw2 = 0;
         for (int i = 0; i < n; i++) if (text_width(H[i]) > bw2) bw2 = text_width(H[i]);
         int vis = (cv->h - 12 - 4 - 8) / 7, w = bw2 + 14; /* (as many lines as the window has room for) */
@@ -552,7 +560,7 @@ static int stage_open(Stage *s, const char *name) {
     if (parts_load(&s->a, path)) return 1;
     parts_inherit(&s->a, name);
     if (!s->a.npart) { fprintf(stderr, "%s: no parts\n", path); return 1; }
-    s->vx = s->a.view_x; s->vy = s->a.view_y;
+    s->vx = s->a.view_x; s->vy = s->a.view_y; s->focus = 1; /* (it opens on its first part, in the middle) */
     if (!s->a.nscene) { fprintf(stderr, "%s: no scene lines: the editor's stage has nothing to show\n", path); return 1; }
     return 0;
 }
@@ -724,7 +732,7 @@ static int stage_loop(const char *dir, const char *name) {
                     }
                     else if (rg->kind == R_STOOL) { if (rg->i == 3) { s.playing = 0; st_toggle_key(&s); } else if (rg->i == 2 && s.a.part[s.pick].sprite) st_msg(&s, "A SPRITE MOVES, IT DOES NOT ROTATE"); else s.tool = rg->i; } /* (KEY: a key here or none; ROTATE greyed for a sprite: not picked) */
                     else if (rg->kind == R_SKEYSHOW) s.hide_keys = !s.hide_keys;
-                    else if (rg->kind == R_SPART) s.pick = rg->i;
+                    else if (rg->kind == R_SPART) { s.pick = rg->i; s.focus = 1; }
                     else if (rg->kind == R_SVAL) { s.row = rg->i / 3; if (rg->i % 3) { s.playing = 0; st_change(&s, s.row, rg->i % 3 == 2 ? 1 : -1); } }
                     else if (rg->kind == R_SKEY) { s.playing = 0; st_toggle_key(&s); }
                     else if (rg->kind == R_SEASE) { s.playing = 0; st_ease(&s); }
@@ -759,13 +767,14 @@ static int stage_loop(const char *dir, const char *name) {
             else if (ch == '-') st_zoom(&s, &L, -1);
             else if (ch == 'v' || ch == 'V') s.hide_keys = !s.hide_keys;
             else if (ch == 'o' || ch == 'O') s.onion = !s.onion;
-            else if (ch == '0') { s.zoom = 0; s.vx = s.a.view_x; s.vy = s.a.view_y; }
+            else if (ch == '0') { s.zoom = 0; s.vx = s.a.view_x; s.vy = s.a.view_y; s.focus = 1; } /* (the zoom as it was, the picked part in the middle) */
             else if (ch == 'w' || ch == 'W') st_pan(&s, 0, -1);
             else if (ch == 's' || ch == 'S') st_pan(&s, 0, 1);
             else if (ch == 'a' || ch == 'A') st_pan(&s, -1, 0);
             else if (ch == 'd' || ch == 'D') st_pan(&s, 1, 0);
             else if (ch == ']' || ch == '[') { /* the next / last part (ROTATE: the sprites are skipped) */
                 for (int n = 0; n < s.a.npart; n++) { s.pick = (s.pick + (ch == ']' ? 1 : s.a.npart - 1)) % s.a.npart; if (!(s.tool == 2 && s.a.part[s.pick].sprite)) break; }
+                s.focus = 1;
             }
             else if (ch == 'k' || ch == 'K') st_toggle_key(&s);
             else if (ch == 'x' || ch == 'X') st_del_key(&s);
@@ -775,7 +784,7 @@ static int stage_loop(const char *dir, const char *name) {
         }
         memmove(in, in + i, (size_t)(nin - i)); nin -= i;
         (void)t;
-        if (getenv("CLAWD_STAGE_LOG")) { FILE *lg = fopen(getenv("CLAWD_STAGE_LOG"), "a"); if (lg) { fprintf(lg, "tool=%d pick=%s frame=%d keyed=%d\n", s.tool, s.a.part[s.pick].name, s.frame, st_key_at(&s.a.part[s.pick], st_t(s.frame)) >= 0); fclose(lg); } } /* (for the tests: what the page is on after each input) */
+        if (getenv("CLAWD_STAGE_LOG")) { FILE *lg = fopen(getenv("CLAWD_STAGE_LOG"), "a"); if (lg) { fprintf(lg, "tool=%d view=%d,%d,%d pick=%s frame=%d keyed=%d\n", s.tool, s.vx, s.vy, L.z, s.a.part[s.pick].name, s.frame, st_key_at(&s.a.part[s.pick], st_t(s.frame)) >= 0); fclose(lg); } } /* (for the tests: what the page is on after each input) */
     }
     cells_free(&prev);
     for (int f = 0; f < ST_MAXF; f++) if (s.thumb[f].p) canvas_free(&s.thumb[f]);
