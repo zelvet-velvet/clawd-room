@@ -20,6 +20,7 @@
 #include <sys/time.h>
 #include "actions.h"
 #include "canvas.h"
+#include "art.h"
 #include "sprites.h"
 #include "term.h"
 #include "parts.h"

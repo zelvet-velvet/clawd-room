@@ -263,6 +263,9 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
     if (s->focus && s->pick >= 0 && s->pick < a->npart && a->part[s->pick].has_box) { /* the picked part in the middle of the stage (as far as the room lets it) */
         const Part *fp = &a->part[s->pick];
         PartPose fq = parts_pose(a, s->pick, t);
+        int fz = L.z; /* a part bigger than the stage (with its yellow frame, a pixel round it) zooms out until it fits whole */
+        while (fz > 1 && ((fp->box[2] + 6) * fz > L.cw || (fp->box[3] + 6) * fz > L.ah)) fz--;
+        if (fz < L.z) { L.z = fz; s->zoom = fz; vw = L.cw / L.z; vh = L.ah / L.z; }
         s->vx = fp->box[0] + (int)lround(fq.x) + fp->box[2] / 2 - vw / 2;
         s->vy = fp->box[1] + (int)lround(fq.y) + fp->box[3] / 2 - vh / 2;
     }
@@ -421,15 +424,15 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
     }
     canvas_text(&pc, 0, py, "PARTS", RGB(84, 84, 104)); canvas_rect(&pc, 0, py + 7, fw, 1, RGB(40, 40, 52));
     py += 12;
-    for (int i = 0, bx = 0; i < a->npart && py + 9 < pc.h; i++) {
+    for (int i = 0, bx = 1; i < a->npart && py + 9 < pc.h; i++) { /* (from 1: the picked one's yellow frame is a pixel outside its box) */
         snprintf(buf, sizeof buf, "%s", a->part[i].name); for (char *p = buf; *p; p++) if (*p >= 'a' && *p <= 'z') *p -= 32;
         int bw = text_width(buf) + 6;
-        if (bx + bw > fw) { bx = 0; py += 11; }
+        if (bx + bw + 1 > fw && bx > 1) { bx = 1; py += 12; }
         if (s->tool == 2 && a->part[i].sprite) { canvas_rect(&pc, bx, py, bw, 9, RGB(28, 28, 36)); canvas_text(&pc, bx + 3, py + 2, buf, RGB(70, 70, 86)); } /* (ROTATE: a sprite cannot be picked) */
         else button(&pc, bx, py, buf, i == s->pick, R_SPART, i);
         bx += bw + 3;
     }
-    py += 11;
+    py += 12;
     int most = py > pvis ? py - pvis : 0; /* how far it can scroll */
     if (s->pfollow && pp) { /* (a value picked with the arrows: scrolled into view) */
         if (row_y[s->row] - 14 < s->pscroll) s->pscroll = row_y[s->row] - 14;
@@ -683,6 +686,7 @@ static int stage_loop(const char *dir, const char *name) {
         Canvas cv = canvas_new(cols, rows * 2, ST_BG);
         stage_draw(&s, &cv, wall);
         StLayout L = st_layout(&s, cv.w, cv.h);
+        if (getenv("CLAWD_STAGE_PNG") && !s.asking) png_write(getenv("CLAWD_STAGE_PNG"), &cv, 4); /* (a picture of the page, to look at) */
         Cells cur = cells_from_canvas(&cv, NULL);
         size_t len;
         char *out = diff_frame(&cur, prev.c ? &prev : NULL, &len);
