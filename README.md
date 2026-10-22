@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/images/four-rooms.png" width="820" alt="Four linked rooms: office, coffee shop, park, office">
+  <img src="docs/images/four-rooms.png" width="100%" alt="Four linked rooms: office, coffee shop, park, office">
 </p>
 
 ## Contents
@@ -39,13 +39,14 @@
 
 ## Screenshots
 
-<table>
-  <tr>
-    <td align="center"><img src="docs/images/office.png" alt="Office"><br><sub>Office</sub></td>
-    <td align="center"><img src="docs/images/coffee.png" alt="Coffee shop"><br><sub>Coffee shop</sub></td>
-    <td align="center"><img src="docs/images/park.png" alt="Park"><br><sub>Park</sub></td>
-  </tr>
-</table>
+<p align="center"><img src="docs/images/office.png" width="100%" alt="The office: Clawds at their desks, one waiting for an answer"></p>
+<p align="center"><sub><b>Office.</b> Busy ones type at their desk (the monitor shows the tool); the one in front holds up a sign: it needs your OK.</sub></p>
+
+<p align="center"><img src="docs/images/coffee.png" width="100%" alt="The coffee shop: the barista behind the bar, Clawds at the tables"></p>
+<p align="center"><sub><b>Coffee shop.</b> The barista works behind the bar; the others sit at the tables.</sub></p>
+
+<p align="center"><img src="docs/images/park.png" width="100%" alt="The park: a swing, benches, a building with stairs"></p>
+<p align="center"><sub><b>Park.</b> A swing, benches, and a building with a stoop that is the way up.</sub></p>
 
 **Moving a Clawd to the next room:** it packs its desk into a box and carries it out.
 
