@@ -1153,10 +1153,11 @@ static void draw_theme_cards(const Ed *e, Canvas *cv, int y0, const int *sh, int
         if (on) frame(cv, cx, cy, bw, bh, C_YELLOW);
         region(R_PITEM, sh[j], cx, cy, bw, bh, RGB(0, 0, 0));
     }
-    int rows = (n + cols - 1) / cols, bx = 4, live = picked >= 0;
+    int rows = (n + cols - 1) / cols, live = picked >= 0;
     int is_on = live && !strcmp(g_theme[picked], parts_gate_theme()), is_simple = live && !strcmp(g_theme[picked], "simple");
-    theme_button(cv, &bx, by + 1, is_on ? "MAKE INACTIVE" : "MAKE ACTIVE", live && !(is_on && is_simple), R_PUSE); /* (the active one: back to simple) */
-    theme_button(cv, &bx, by + 1, "OPEN", live, R_POPEN);
+    const char *bl = is_on ? "MAKE INACTIVE" : "MAKE ACTIVE"; /* (the active one: back to simple); at the right, opening is Enter or a click on the picked card */
+    int bx = W - 4 - (text_width(bl) + 8);
+    theme_button(cv, &bx, by + 1, bl, live && !(is_on && is_simple), R_PUSE);
     int ty = y0 + (rows < vis ? rows : vis) * (bh + gap) + 2; /* (what a theme is, when there is room for it between the cards and the buttons) */
     if (ty + 8 <= by - 2) canvas_text(cv, 4, ty, "A THEME IS A FOLDER OF GATE FILES: HOW A GATE APPEARS.", RGB(110, 110, 130));
     if (ty + 17 <= by - 2) canvas_text(cv, 4, ty + 9, "YOURS GO TO ~/.CLAWD-ROOM.", RGB(110, 110, 130));
@@ -1871,7 +1872,6 @@ int editor_run(const char *dir, const char *name) {
                         if (motion || release || btn != 0 || !r) continue;
                         if (r->kind == R_PITEM) { if (r->i == e.psel) picker_pick(&e, dir); else e.psel = r->i; }
                         else if (r->kind == R_PUSE) theme_use(&e, dir);
-                        else if (r->kind == R_POPEN) { theme_open(&e); }
                         else if (r->kind == R_PBACK) theme_close(&e);
                         else if (r->kind == R_PTAB) { e.ptab = r->i; g_theme_open[0] = 0; e.pscroll = 0; int sh[512]; if (picker_shown(&e, sh)) e.psel = sh[0]; }
                         else if (r->kind == R_PVIEW) { e.pview = r->i; e.pscroll = 0; }
