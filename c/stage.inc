@@ -48,6 +48,7 @@ typedef struct {
     Canvas thumb[ST_MAXF]; unsigned char thumb_ok[ST_MAXF]; int thumb_pick; /* the frame pictures, drawn when they are first seen */
 } Stage;
 
+#define ST_HAS(s) ((s)->pick >= 0 && (s)->pick < (s)->a.npart) /* a part is picked (Esc: none) */
 static int st_nf(const PartAnim *a) { int n = (int)lround(a->length * ST_FPS); if (n < 1) n = 1; n = a->loop ? n : n + 1; return n > ST_MAXF ? ST_MAXF : n; }
 static double st_t(int f) { return (double)f / ST_FPS; }
 static double st_now_t(const Stage *s, double wall) { return s->playing ? fmod((wall - s->play_t0) * s->speed, s->a.length) : st_t(s->frame); }
@@ -133,6 +134,7 @@ static void st_value(PartPose *q, int row, int delta) {
     else { q->glow += delta * 10; q->glow = q->glow < 0 ? 0 : q->glow > 100 ? 100 : q->glow; }
 }
 static void st_change(Stage *s, int row, int delta) { /* the value of the picked part at this frame, one step (a key is made if there is none) */
+    if (!ST_HAS(s)) { st_msg(s, "PICK A PART FIRST"); return; }
     if (row == 2 && s->a.part[s->pick].sprite) { st_msg(s, "A SPRITE MOVES, IT DOES NOT ROTATE"); return; }
     st_push(s);
     int k = st_ensure_key(s, s->pick, st_t(s->frame));
@@ -142,12 +144,14 @@ static void st_change(Stage *s, int row, int delta) { /* the value of the picked
     st_save(s);
 }
 static void st_add_key(Stage *s) {
+    if (!ST_HAS(s)) { st_msg(s, "PICK A PART FIRST"); return; }
     Part *p = &s->a.part[s->pick];
     if (st_key_at(p, st_t(s->frame)) >= 0) return;
     st_push(s);
     if (st_ensure_key(s, s->pick, st_t(s->frame)) >= 0) { st_changed(s); st_save(s); } /* (no message: the KEY cap shows it) */
 }
 static void st_del_key(Stage *s) {
+    if (!ST_HAS(s)) { st_msg(s, "PICK A PART FIRST"); return; }
     Part *p = &s->a.part[s->pick];
     int k = st_key_at(p, st_t(s->frame));
     if (k < 0) { st_msg(s, "NO KEY HERE"); return; }
@@ -158,11 +162,13 @@ static void st_del_key(Stage *s) {
     st_changed(s); st_save(s);
 }
 static void st_toggle_key(Stage *s) { /* KEY: a key at this frame for the picked part, or none (a part keeps one) */
+    if (!ST_HAS(s)) { st_msg(s, "PICK A PART FIRST"); return; }
     if (st_key_at(&s->a.part[s->pick], st_t(s->frame)) >= 0) {
         st_del_key(s);
     } else st_add_key(s);
 }
 static void st_ease(Stage *s) {
+    if (!ST_HAS(s)) { st_msg(s, "PICK A PART FIRST"); return; }
     Part *p = &s->a.part[s->pick];
     int k = st_key_at(p, st_t(s->frame));
     if (k < 0) { st_msg(s, "NO KEY HERE"); return; }
@@ -297,14 +303,14 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
             st_line_in(cv, (px4[0] + px4[1]) / 2, (py4[0] + py4[1]) / 2, (int)lround(cxp), (int)lround(cyp), oc, cx0, cy0, cx1, cy1); /* (top middle to the middle: which way is up) */
         }
     }
-    if (s->tool == 0 && s->pick < a->npart && a->part[s->pick].has_box) { /* SELECT: handles on the picked part's border (drag one to resize it) */
+    if (s->tool == 0 && ST_HAS(s) && a->part[s->pick].has_box) { /* SELECT: handles on the picked part's border (drag one to resize it) */
         int bx, by, bw, bh;
         st_box(&a->part[s->pick], parts_pose(a, s->pick, t), &bx, &by, &bw, &bh);
         int x0 = L.gx + (bx - vx) * L.z, y0 = L.ty + (by - vy) * L.z, x1 = x0 + bw * L.z, y1 = y0 + bh * L.z, xm = (x0 + x1) / 2, ym = (y0 + y1) / 2;
         int hx[8] = {x0, xm, x1, x0, x1, x0, xm, x1}, hy[8] = {y0, y0, y0, ym, ym, y1, y1, y1};
         for (int k = 0; k < 8; k++) if (hx[k] > L.gx && hx[k] < L.gx + L.cw - 1 && hy[k] > L.ty && hy[k] < L.ty + L.ah - 1) { canvas_rect(cv, hx[k] - 1, hy[k] - 1, 3, 3, C_YELLOW); canvas_px(cv, hx[k], hy[k], ST_BG); }
     }
-    if (!s->hide_keys && s->pick < a->npart && a->part[s->pick].has_box) { /* the keys of the picked part: a line through where it is at each, in time order, and a small mark on each */
+    if (!s->hide_keys && ST_HAS(s) && a->part[s->pick].has_box) { /* the keys of the picked part: a line through where it is at each, in time order, and a small mark on each */
         const Part *p = &a->part[s->pick];
         int kx[PARTS_MAX_KEYS], ky[PARTS_MAX_KEYS];
         for (int k = 0; k < p->nkey; k++) {
@@ -322,7 +328,7 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
     }
     frame(cv, L.gx, L.ty, L.cw, L.ah, RGB(90, 90, 110));
     region(R_SSTAGE, 0, L.gx, L.ty, L.cw, L.ah, RGB(0, 0, 0));
-    if (s->pick < a->npart) {
+    if (ST_HAS(s)) {
         PartPose q = parts_pose(a, s->pick, t);
         snprintf(buf, sizeof buf, "PART %s  X %d  Y %d", a->part[s->pick].name, a->part[s->pick].box[0] + (int)lround(q.x), a->part[s->pick].box[1] + (int)lround(q.y));
         for (char *p = buf; *p; p++) if (*p >= 'a' && *p <= 'z') *p -= 32;
@@ -331,7 +337,7 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
          on the stage: open eye shown, shut eye hidden; the text cut short so they never touch) */
         int kw = 3 + 9 + 3 + text_width("KEYS") + 4, kx = L.gx + L.cw - kw, room = kx - 8 - L.gx;
         char line[160];
-        snprintf(line, sizeof line, "%s", s->msg[0] ? s->msg : s->pick < a->npart ? buf : "");
+        snprintf(line, sizeof line, "%s", s->msg[0] ? s->msg : ST_HAS(s) ? buf : "");
         while (line[0] && text_width(line) > room) line[strlen(line) - 1] = 0;
         canvas_text(cv, L.gx, L.ty + L.ah + 4, line, s->msg[0] ? C_YELLOW : C_GREY);
         int on = !s->hide_keys, ky = L.ty + L.ah + 2;
@@ -366,20 +372,20 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
         int cw = text_width(TOOL[i]) > 13 ? text_width(TOOL[i]) : 13, tx = x + used + (fw - roww) * i / 3;
         used += cw;
         if (s->folded) { /* folded: a ribbon, the tools one over another (no names) */
-            int ry = y + i * 17, off = i == 2 && s->pick < a->npart && a->part[s->pick].sprite, keyed = i == 3 && s->pick < a->npart && st_key_at(&a->part[s->pick], st_t(cur)) >= 0;
+            int ry = y + i * 17, off = i == 2 && ST_HAS(s) && a->part[s->pick].sprite, keyed = i == 3 && ST_HAS(s) && st_key_at(&a->part[s->pick], st_t(cur)) >= 0;
             stage_tool(cv, x, ry, i, i == 3 ? keyed : s->tool == i && !off);
             if (off) st_dim(cv, x, ry, 13, 15);
             region(R_STOOL, i, x, ry, 13, 15, RGB(0, 0, 0));
             continue;
         }
-        int off = i == 2 && s->pick < a->npart && a->part[s->pick].sprite; /* (a sprite does not rotate) */
-        int keyed = i == 3 && s->pick < a->npart && st_key_at(&a->part[s->pick], st_t(cur)) >= 0; /* (KEY is not a tool: a toggle, pressed in when this frame is a key of the picked part) */
+        int off = i == 2 && ST_HAS(s) && a->part[s->pick].sprite; /* (a sprite does not rotate) */
+        int keyed = i == 3 && ST_HAS(s) && st_key_at(&a->part[s->pick], st_t(cur)) >= 0; /* (KEY is not a tool: a toggle, pressed in when this frame is a key of the picked part) */
         stage_tool(cv, tx + (cw - 13) / 2, y, i, i == 3 ? keyed : s->tool == i && !off);
         if (off) st_dim(cv, tx + (cw - 13) / 2, y, 13, 15);
         canvas_text(cv, tx + (cw - text_width(TOOL[i])) / 2, y + 16, TOOL[i], off ? RGB(70, 70, 86) : keyed ? C_YELLOW : i != 3 && s->tool == i ? C_WHITE : C_GREY);
         region(R_STOOL, i, tx, y, cw, 21, RGB(0, 0, 0));
     }
-    const Part *pp = s->pick < a->npart ? &a->part[s->pick] : NULL;
+    const Part *pp = ST_HAS(s) ? &a->part[s->pick] : NULL;
     if (!s->folded) { /* (the rest of the panel: not while it is folded) */
     int top = L.ty + 27, pvis = pbot - top;
     if (pvis < 16) pvis = 16;
@@ -535,7 +541,7 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
     }
     if (s->help) { /* ?: the keys and the mouse, in a box over the stage; a window too short for it scrolls it (up / down, the wheel) */
         static const char *const H[] = {"HELP  (UP DOWN SCROLLS)", "MOUSE", "CLICK A PART: PICK IT", "SELECT: DRAG A BORDER TO RESIZE", "MOVE / ROTATE: DRAG ON THE STAGE", "KEY: A KEY AT THIS FRAME, OR NONE", "< > BESIDE A VALUE: CHANGE IT", "THE BAR BY THE RUNNING CLAWD: HOW MUCH HAS COME IN", "CLICK A FRAME: GO THERE", "WHEEL: ZOOM / SCROLL THE PANEL", "RIGHT DRAG: MOVE THE VIEW", "DRAG THE LINE ABOVE THE FRAMES: FOLD THEM", "THE BUTTON TOP RIGHT: FOLD THE PANEL",
-                                        "KEYS", "LEFT RIGHT  FRAME", "UP DOWN  A VALUE", "< >  CHANGE IT", "+ -  ZOOM THE STAGE", "W A S D  MOVE THE VIEW", "0  ZOOM AS IT WAS, THE PART IN THE MIDDLE", "V  KEYS ON THE STAGE: ON / OFF", "P  FOLD THE PANEL", "SPACE  PLAY", "O  ONION SKIN (BEFORE RED, AFTER BLUE)", "[ ]  OTHER PART", "K  A KEY HERE OR NONE", "X  DELETE THE KEY", "E  KEY EASE", "U R  UNDO REDO", "Q  QUIT"};
+                                        "KEYS", "LEFT RIGHT  FRAME", "UP DOWN  A VALUE", "< >  CHANGE IT", "+ -  ZOOM THE STAGE", "W A S D  MOVE THE VIEW", "0  ZOOM AS IT WAS, THE PART IN THE MIDDLE", "ESC  NOTHING PICKED", "V  KEYS ON THE STAGE: ON / OFF", "P  FOLD THE PANEL", "SPACE  PLAY", "O  ONION SKIN (BEFORE RED, AFTER BLUE)", "[ ]  OTHER PART", "K  A KEY HERE OR NONE", "X  DELETE THE KEY", "E  KEY EASE", "U R  UNDO REDO", "Q  QUIT"};
         int n = (int)(sizeof H / sizeof *H), bw2 = 0;
         for (int i = 0; i < n; i++) if (text_width(H[i]) > bw2) bw2 = text_width(H[i]);
         int vis = (cv->h - 12 - 4 - 8) / 7, w = bw2 + 14; /* (as many lines as the window has room for) */
@@ -618,7 +624,7 @@ static int st_part_at(const Stage *s, double t, int mx, int my, const StLayout *
 }
 /* which borders of the picked part the pointer is on (1 left, 2 right, 4 top, 8 bottom; two for a corner), 0 if none */
 static int st_edge_at(const Stage *s, const StLayout *L, double t, int mx, int my) {
-    if (s->pick >= s->a.npart || !s->a.part[s->pick].has_box) return 0;
+    if (!ST_HAS(s) || !s->a.part[s->pick].has_box) return 0;
     int bx, by, bw, bh;
     st_box(&s->a.part[s->pick], parts_pose(&s->a, s->pick, t), &bx, &by, &bw, &bh);
     int x0 = L->gx + (bx - s->vx) * L->z, y0 = L->ty + (by - s->vy) * L->z, x1 = x0 + bw * L->z, y1 = y0 + bh * L->z, r = 3, m = 0;
@@ -692,7 +698,7 @@ static int stage_loop(const char *dir, const char *name) {
         canvas_free(&cv);
         fd_set fs; FD_ZERO(&fs); FD_SET(STDIN_FILENO, &fs);
         struct timeval tv = {0, s.playing || s.growdrag ? 62500 : 200000}; /* (16 a second while something moves) */
-        if (select(STDIN_FILENO + 1, &fs, NULL, NULL, &tv) <= 0) { if (nin == 1 && in[0] == 0x1b) { nin = 0; s.asking = 0; s.help = 0; } continue; }
+        if (select(STDIN_FILENO + 1, &fs, NULL, NULL, &tv) <= 0) { if (nin == 1 && in[0] == 0x1b) { nin = 0; if (s.asking) s.asking = 0; else if (s.help) s.help = 0; else s.pick = -1; } continue; }
         ssize_t k = read(STDIN_FILENO, in + nin, sizeof in - 1 - (size_t)nin);
         if (k <= 0) continue;
         nin += (int)k; in[nin] = 0;
@@ -779,7 +785,7 @@ static int stage_loop(const char *dir, const char *name) {
                             }
                         }
                         int hp = st_part_at(&s, st_t(s.frame), px, py, &L, s.tool != 2); /* (the part pressed on is the one the tool works on; ROTATE: not a sprite) */
-                        if (hp < 0) { if (s.tool == 2 && st_part_at(&s, st_t(s.frame), px, py, &L, 1) >= 0) st_msg(&s, "A SPRITE MOVES, IT DOES NOT ROTATE"); continue; } /* (nothing there: nothing happens) */
+                        if (hp < 0) { if (s.tool == 2 && st_part_at(&s, st_t(s.frame), px, py, &L, 1) >= 0) st_msg(&s, "A SPRITE MOVES, IT DOES NOT ROTATE"); else if (s.tool == 0) s.pick = -1; continue; } /* (nothing there: nothing happens; SELECT: nothing picked) */
                         s.pick = hp;
                         if (s.tool == 0) {}
                         else { /* MOVE / ROTATE: a drag on the stage changes the picked part at this frame */
@@ -788,7 +794,7 @@ static int stage_loop(const char *dir, const char *name) {
                             if (k2 >= 0) { s.drag = 1; s.px0 = px; s.py0 = py; s.dpose = s.a.part[s.pick].key[k2].pose; }
                         }
                     }
-                    else if (rg->kind == R_STOOL) { if (rg->i == 3) { s.playing = 0; st_toggle_key(&s); } else if (rg->i == 2 && s.a.part[s.pick].sprite) st_msg(&s, "A SPRITE MOVES, IT DOES NOT ROTATE"); else s.tool = rg->i; } /* (KEY: a key here or none; ROTATE greyed for a sprite: not picked) */
+                    else if (rg->kind == R_STOOL) { if (rg->i == 3) { s.playing = 0; st_toggle_key(&s); } else if (rg->i == 2 && ST_HAS(&s) && s.a.part[s.pick].sprite) st_msg(&s, "A SPRITE MOVES, IT DOES NOT ROTATE"); else s.tool = rg->i; } /* (KEY: a key here or none; ROTATE greyed for a sprite: not picked) */
                     else if (rg->kind == R_SKEYSHOW) s.hide_keys = !s.hide_keys;
                     else if (rg->kind == R_SPART) { s.pick = rg->i; s.focus = 1; }
                     else if (rg->kind == R_SVAL) { s.row = rg->i / 3; if (rg->i % 3) { s.playing = 0; st_change(&s, s.row, rg->i % 3 == 2 ? 1 : -1); } }
@@ -810,7 +816,7 @@ static int stage_loop(const char *dir, const char *name) {
                     continue;
                 }
                 if (in[i + 1] == '[' && i + 2 < nin) { i += 3; continue; }
-                s.asking = 0; s.help = 0; /* (a lone Esc: back to editing) */
+                if (s.asking) s.asking = 0; else if (s.help) s.help = 0; else s.pick = -1; /* (a lone Esc: back to editing; else nothing picked) */
                 i += 1; continue;
             }
             char ch = in[i++];
@@ -832,6 +838,7 @@ static int stage_loop(const char *dir, const char *name) {
             else if (ch == 'a' || ch == 'A') st_pan(&s, -1, 0);
             else if (ch == 'd' || ch == 'D') st_pan(&s, 1, 0);
             else if (ch == ']' || ch == '[') { /* the next / last part (ROTATE: the sprites are skipped) */
+                if (s.pick < 0) s.pick = ch == ']' ? -1 : 0; /* (nothing picked: from the first / the last) */
                 for (int n = 0; n < s.a.npart; n++) { s.pick = (s.pick + (ch == ']' ? 1 : s.a.npart - 1)) % s.a.npart; if (!(s.tool == 2 && s.a.part[s.pick].sprite)) break; }
                 s.focus = 1;
             }
@@ -843,7 +850,7 @@ static int stage_loop(const char *dir, const char *name) {
         }
         memmove(in, in + i, (size_t)(nin - i)); nin -= i;
         (void)t;
-        if (getenv("CLAWD_STAGE_LOG")) { FILE *lg = fopen(getenv("CLAWD_STAGE_LOG"), "a"); if (lg) { fprintf(lg, "tool=%d view=%d,%d,%d pick=%s frame=%d keyed=%d\n", s.tool, s.vx, s.vy, L.z, s.a.part[s.pick].name, s.frame, st_key_at(&s.a.part[s.pick], st_t(s.frame)) >= 0); fclose(lg); } } /* (for the tests: what the page is on after each input) */
+        if (getenv("CLAWD_STAGE_LOG")) { FILE *lg = fopen(getenv("CLAWD_STAGE_LOG"), "a"); if (lg) { fprintf(lg, "tool=%d view=%d,%d,%d pick=%s frame=%d keyed=%d\n", s.tool, s.vx, s.vy, L.z, (ST_HAS(&s) ? s.a.part[s.pick].name : "-"), s.frame, (ST_HAS(&s) && st_key_at(&s.a.part[s.pick], st_t(s.frame)) >= 0)); fclose(lg); } } /* (for the tests: what the page is on after each input) */
     }
     cells_free(&prev);
     for (int f = 0; f < ST_MAXF; f++) if (s.thumb[f].p) canvas_free(&s.thumb[f]);
