@@ -548,10 +548,10 @@ static void it_marks(Canvas *cv, const SceneItem *it, void *ctx) { /* the dot, b
     if (sy != s->py) { Session tmp = *s; tmp.py = sy; draw_extras(cv, &tmp, X->pstate[it->i], X->t, X->now, is_seated, rects, 0, &X->geo->spots, it->p > 0); }
     else draw_extras(cv, s, X->pstate[it->i], X->t, X->now, is_seated, rects, 0, &X->geo->spots, it->p > 0);
 }
-/* a gate part's progress (0..1): its `grow` in anims/gate-door.txt (the side doors), gate-stairs.txt (the way up), gate-well.txt (the
- * way down), at the time since the gate began to appear; without the file or the part: the animator's eased progress p (as before) */
+/* a gate part's progress (0..1): its `grow` in the gate theme's gate-door.txt (the side doors), gate-stairs.txt (the way up), gate-well.txt (the
+ * way down), in anims/gates/THEME/, at the time since the gate began to appear; without the file or the part: the animator's eased progress p (as before) */
 static double gate_part_p(const Room *room, int side, const char *part, double t, double p) {
-    const PartAnim *an = parts_get(side == SIDE_UP ? "gate-stairs" : side == SIDE_DOWN ? "gate-well" : "gate-door");
+    const PartAnim *an = parts_gate(side == SIDE_UP ? "gate-stairs" : side == SIDE_DOWN ? "gate-well" : "gate-door");
     int k = an ? parts_find(an, part) : -1;
     if (k < 0) return p;
     double g = parts_pose(an, k, t - room->gate_t0[side]).grow / 100.0;

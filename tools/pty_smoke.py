@@ -166,8 +166,7 @@ with tempfile.TemporaryDirectory() as tmp:
     # 7. the stage page: a part animation (anims/swing.txt) on a copy of the animations; what you change is saved to yours
     anims = tempfile.mkdtemp(prefix="clawd-smoke-anims-")
     mine_a = tempfile.mkdtemp(prefix="clawd-smoke-mine-anims-")
-    for f in os.listdir(os.path.join(ROOT, "anims")):
-        shutil.copy(os.path.join(ROOT, "anims", f), anims)
+    shutil.copytree(os.path.join(ROOT, "anims"), anims, dirs_exist_ok=True)  # (with the gate themes' folders)
     aenv = dict(env, CLAWD_ANIMS=anims, CLAWD_MY_ANIMS=mine_a)
     swing_mine = os.path.join(mine_a, "swing.txt")
     last_view = [4, 50, 2]
@@ -279,8 +278,8 @@ with tempfile.TemporaryDirectory() as tmp:
     check("--edit anims/NAME with no such animation says so and names the ones there are", r.returncode == 1 and "anims/swing" in r.stderr)
     keys = [(1.2 + i * 0.05, b"\x1b[C") for i in range(4)] + [(1.6, b"\x1b[<0;212;55M"), (1.7, b"\x1b[<0;212;55m"), (2.2, b"q"), (2.6, b"s")]  # (frame 5, a click at a tenth of the grow bar: the steps come in later)
     g0 = subprocess.run(CMD + ["--script", os.path.join(ROOT, "tools", "scenarios", "office-gates-appear.sc")], capture_output=True, text=True, env=dict(os.environ, **aenv))
-    out, st = run(["--edit", "anims/gate-stairs"], keys, aenv, cols=300, rows=90)
-    gmine = os.path.join(mine_a, "gate-stairs.txt")
+    out, st = run(["--edit", "anims/gates/simple/gate-stairs"], keys, aenv, cols=300, rows=90)
+    gmine = os.path.join(mine_a, "gates", "simple", "gate-stairs.txt")
     txt = open(gmine).read() if os.path.exists(gmine) else ""
     g1 = subprocess.run(CMD + ["--script", os.path.join(ROOT, "tools", "scenarios", "office-gates-appear.sc")], capture_output=True, text=True, env=dict(os.environ, **aenv))
     check("stage: a gate (anims/gate-stairs) is edited like any part animation (the grow bar), and a room's gate appears by your file", st == 0 and re.search(r"key steps 0\.25 .* grow=10\b", txt) and g0.returncode == 0 and g1.stdout != g0.stdout)

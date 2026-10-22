@@ -926,7 +926,7 @@ static void draw_timeline(Canvas *cv, const Ed *e, double now, int preview, int 
 typedef struct { int file, sp, n, mine; char name[64]; } PickItem; /* (mine: one of its frames is yours); file NFILES: a part animation, sp its index in g_anim */
 static File g_pf[NFILES];
 #define ANIMS NFILES /* the picker's last tab: the part animations (anims/NAME.txt), opened on the stage page (stage.inc) */
-static char g_anim[32][24];
+static char g_anim[32][PARTS_PATH_NAME];
 static int g_nanim, g_redraw; /* (g_redraw: the stage page had the terminal: draw everything again) */
 static void stage_dirs(const char *dir);
 static int stage_loop(const char *dir, const char *name);
@@ -1243,7 +1243,7 @@ static void picker_make_default(Ed *e, const char *dir) {
 static void picker_pick(Ed *e, const char *dir) {
     if (e->psel < 0 || e->psel >= g_npi) return;
     if (g_pi[e->psel].file == ANIMS) { /* the stage page, in this window; q there comes back here */
-        char nm[24];
+        char nm[PARTS_PATH_NAME];
         snprintf(nm, sizeof nm, "%s", g_anim[g_pi[e->psel].sp]);
         if (stage_loop(dir, nm)) snprintf(e->msg, sizeof e->msg, "CANNOT OPEN ANIMS/%s", g_pi[e->psel].name);
         g_redraw = 1;
@@ -1851,7 +1851,7 @@ int editor_find(const char *dir, const char *name, int *which) {
     if (!strncmp(name, "anims/", 6)) { /* a part animation of anims/ (yours or the default) */
         if (which) *which = -1;
         if (parts_get(name + 6)) return 0;
-        char names[32][24];
+        char names[32][PARTS_PATH_NAME];
         int n = parts_names(names, 32);
         fprintf(stderr, "clawd-room --edit: no part animation called %s\n  there are:", name + 6);
         for (int i = 0; i < n; i++) fprintf(stderr, " anims/%s", names[i]);
@@ -1938,7 +1938,7 @@ int editor_list(const char *dir) {
         printf("\n");
         file_free(&tf);
     }
-    { char names[32][24]; int n = parts_names(names, 32); /* the part animations: opened with their folder, anims/NAME */
+    { char names[32][PARTS_PATH_NAME]; int n = parts_names(names, 32); /* the part animations: opened with their folder, anims/NAME */
       if (n) { printf("[ anims ] %d part animation%s\n", n, n == 1 ? "" : "s"); printf("  "); for (int i = 0; i < n; i++) printf("%sanims/%s", i ? "    " : "", names[i]); printf("\n\n"); } }
     printf("open one: ./clawd-room.sh --edit NAME\n");
     return 0;

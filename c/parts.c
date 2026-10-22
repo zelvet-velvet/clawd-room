@@ -143,7 +143,7 @@ int parts_save(const PartAnim *a, const char *path) {
     char dir[700];
     snprintf(dir, sizeof dir, "%s", path);
     char *sl = strrchr(dir, '/');
-    if (sl) { *sl = 0; mkdir(dir, 0755); }
+    if (sl) { *sl = 0; for (char *q = dir + 1; *q; q++) if (*q == '/') { *q = 0; mkdir(dir, 0755); *q = '/'; } mkdir(dir, 0755); } /* (every folder on the way: a theme's) */
     char tmp[720];
     snprintf(tmp, sizeof tmp, "%s.tmp", path);
     FILE *f = fopen(tmp, "w");
@@ -193,9 +193,9 @@ void parts_inherit(PartAnim *a, const char *name) {
     for (int i = 0; i < a->npart; i++) { int j = parts_find(&d, a->part[i].name); if (j >= 0 && d.part[j].sprite) a->part[i].sprite = 1; }
 }
 
-#define NAMED 8
+#define NAMED 16
 const PartAnim *parts_get(const char *name) {
-    static struct { char name[24], path[700]; PartAnim a; time_t mt; int ok, tried; } C[NAMED];
+    static struct { char name[PARTS_PATH_NAME], path[700]; PartAnim a; time_t mt; int ok, tried; } C[NAMED];
     struct stat st;
     char path[700];
     int k = 0;
@@ -213,23 +213,48 @@ const PartAnim *parts_get(const char *name) {
 }
 
 static int cmp_names(const void *a, const void *b) { return strcmp((const char *)a, (const char *)b); }
-int parts_names(char names[][24], int max) {
-    int n = 0;
-    const char *dirs[2] = {g_dir, g_mine};
-    for (int d = 0; d < 2; d++) {
-        DIR *dp = dirs[d][0] ? opendir(dirs[d]) : NULL;
-        if (!dp) continue;
-        for (struct dirent *e; (e = readdir(dp)); ) {
-            size_t l = strlen(e->d_name);
-            if (l < 5 || l > 27 || strcmp(e->d_name + l - 4, ".txt")) continue;
-            char nm[24];
-            snprintf(nm, sizeof nm, "%.*s", (int)(l - 4), e->d_name);
+/* the files of one folder (and of the folders in it, one level at a time, down to a few levels), as names under anims/ */
+static int names_in(const char *dir, const char *prefix, char names[][PARTS_PATH_NAME], int n, int max, int depth) {
+    DIR *dp = opendir(dir);
+    if (!dp) return n;
+    for (struct dirent *e; (e = readdir(dp)); ) {
+        size_t l = strlen(e->d_name);
+        char nm[PARTS_PATH_NAME], sub[700];
+        if (e->d_name[0] == '.') continue;
+        if (l >= 5 && !strcmp(e->d_name + l - 4, ".txt")) {
+            if (snprintf(nm, sizeof nm, "%s%.*s", prefix, (int)(l - 4), e->d_name) >= (int)sizeof nm) continue;
             int have = 0;
             for (int i = 0; i < n; i++) if (!strcmp(names[i], nm)) have = 1;
-            if (!have && n < max) snprintf(names[n++], 24, "%s", nm);
+            if (!have && n < max) snprintf(names[n++], PARTS_PATH_NAME, "%s", nm);
+        } else if (depth < 3) { /* (a folder: a theme's files) */
+            struct stat st;
+            snprintf(sub, sizeof sub, "%s/%s", dir, e->d_name);
+            if (stat(sub, &st) != 0 || !S_ISDIR(st.st_mode)) continue;
+            if (snprintf(nm, sizeof nm, "%s%s/", prefix, e->d_name) >= (int)sizeof nm) continue;
+            n = names_in(sub, nm, names, n, max, depth + 1);
         }
-        closedir(dp);
     }
-    qsort(names, (size_t)n, 24, cmp_names);
+    closedir(dp);
     return n;
+}
+int parts_names(char names[][PARTS_PATH_NAME], int max) {
+    int n = 0;
+    const char *dirs[2] = {g_dir, g_mine};
+    for (int d = 0; d < 2; d++) if (dirs[d][0]) n = names_in(dirs[d], "", names, n, max, 0);
+    qsort(names, (size_t)n, PARTS_PATH_NAME, cmp_names);
+    return n;
+}
+
+/* the gate theme: the folder anims/gates/THEME holds gate-door, gate-stairs, gate-well (and any more a theme wants); a theme missing a
+ * file uses the simple theme's, so a new theme can be started with one file */
+static char g_gate_theme[24] = "simple";
+void parts_set_gate_theme(const char *theme) { snprintf(g_gate_theme, sizeof g_gate_theme, "%s", theme && theme[0] ? theme : "simple"); }
+const char *parts_gate_theme(void) { return g_gate_theme; }
+const PartAnim *parts_gate(const char *kind) {
+    char nm[PARTS_PATH_NAME];
+    snprintf(nm, sizeof nm, "gates/%s/%s", g_gate_theme, kind);
+    const PartAnim *a = parts_get(nm);
+    if (a || !strcmp(g_gate_theme, "simple")) return a;
+    snprintf(nm, sizeof nm, "gates/simple/%s", kind);
+    return parts_get(nm);
 }

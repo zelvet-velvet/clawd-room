@@ -38,7 +38,7 @@ static const char *RATIO_CHOICES[] = {"auto", "3:1", "2:1", "16:9", "4:3", "1:1"
 typedef struct {
     char events[512];
     int has_at; double at;
-    const char *room, *theme, *edit, *edit_check; /* (edit: --edit NAME, the pixel editor; edit_check: is there such a NAME) */
+    const char *room, *theme, *edit, *edit_check, *gate_theme; /* (edit: --edit NAME, the pixel editor; edit_check: is there such a NAME) */
     char ratio[8];
     int scale, zoom, room_size, no_auto, no_detect, no_split;
     const char *dump;
@@ -840,7 +840,7 @@ static int choose_scene(Args *a, const char **scene, const char **room_name) {
 static void usage(void) {
     fprintf(stderr,
         "usage: clawd-room [--events FILE] [--at TS] [--room NAME] [--theme office|coffee|park] [--room-size auto|s|m|l|xl]\n"
-        "                  [--scale N] [--zoom 1-4] [--ratio 3:1|2:1|16:9|4:3|1:1|3:4] [--no-auto] [--no-detect] [--dump COLSxROWS]\n"
+        "                  [--gate-theme NAME] [--scale N] [--zoom 1-4] [--ratio 3:1|2:1|16:9|4:3|1:1|3:4] [--no-auto] [--no-detect] [--dump COLSxROWS]\n"
         "  (accepted, not used yet by the C version: --left/--right/--up/--down NAME, --no-split, --size, --font, --profile-font, --near)\n");
 }
 
@@ -858,7 +858,7 @@ int app_main(int argc, char **argv) {
         {"up", 1, 0, 'U'}, {"down", 1, 0, 'D'}, {"no-split", 0, 0, 'S'}, {"ratio", 1, 0, 'x'}, {"size", 1, 0, 'z'}, {"font", 1, 0, 'f'},
         {"profile-font", 1, 0, 'p'}, {"scale", 1, 0, 'c'}, {"no-auto", 0, 0, 'A'}, {"no-detect", 0, 0, 'N'}, {"near", 1, 0, 'n'},
         {"dump", 1, 0, 'd'}, {"build-art", 0, 0, 'B'}, {"export-sprites", 0, 0, 'X'}, {"force", 0, 0, 'F'}, {"add", 0, 0, 'P'},
-        {"list-windows", 0, 0, 'W'}, {"zoom", 1, 0, 'Z'}, {"room-size", 1, 0, 'Y'}, {"help", 0, 0, 'h'}, {"edit", 1, 0, 'E'}, {"edit-check", 1, 0, 'K'}, {0, 0, 0, 0}};
+        {"list-windows", 0, 0, 'W'}, {"zoom", 1, 0, 'Z'}, {"room-size", 1, 0, 'Y'}, {"help", 0, 0, 'h'}, {"edit", 1, 0, 'E'}, {"edit-check", 1, 0, 'K'}, {"gate-theme", 1, 0, 'G'}, {0, 0, 0, 0}};
     int o, font_given = 0;
     while ((o = getopt_long(argc, argv, "h", opts, NULL)) != -1) {
         switch (o) {
@@ -876,6 +876,7 @@ int app_main(int argc, char **argv) {
         case 'Z': a.zoom = atoi(optarg); break;
         case 'E': a.edit = optarg; break;
         case 'K': a.edit_check = optarg; break;
+        case 'G': a.gate_theme = optarg; break;
         case 'Y': a.room_size = -1; for (int i = 0; i < N_SIZES; i++) if (!strcmp(optarg, SIZE_KEY[i])) a.room_size = i; break;
         case 'A': a.no_auto = 1; break;
         case 'N': a.no_detect = 1; break;
@@ -915,7 +916,7 @@ int app_main(int argc, char **argv) {
     props = sprites_load_layered(path, mine);
     theme_set_props(&props);
     sprites_watch(dir, &frames, &items, &props);
-    { char rd[600]; snprintf(rd, sizeof rd, "%s", dir); char *sl = strrchr(rd, '/'); if (sl) strcpy(sl, "/rooms"); else strcpy(rd, "../rooms"); theme_set_rooms_dir(rd); sl = strrchr(rd, '/'); strcpy(sl ? sl : rd, "/anims"); parts_set_dir(getenv("CLAWD_ANIMS") ? getenv("CLAWD_ANIMS") : rd); }
+    { char rd[600]; snprintf(rd, sizeof rd, "%s", dir); char *sl = strrchr(rd, '/'); if (sl) strcpy(sl, "/rooms"); else strcpy(rd, "../rooms"); theme_set_rooms_dir(rd); sl = strrchr(rd, '/'); strcpy(sl ? sl : rd, "/anims"); parts_set_dir(getenv("CLAWD_ANIMS") ? getenv("CLAWD_ANIMS") : rd); parts_set_gate_theme(a.gate_theme ? a.gate_theme : getenv("CLAWD_GATE_THEME")); } /* (the gate theme: anims/gates/THEME) */
     { char md[700]; const char *env = getenv("CLAWD_MY_ANIMS"), *ms = sprites_mine_dir(); snprintf(md, sizeof md, "%s", env ? env : ms); if (!env) { char *sl = strrchr(md, '/'); if (sl) strcpy(sl, "/anims"); } parts_set_mine_dir(md); } /* (yours: ~/.clawd-room/anims, next to your sprites) */ /* (rooms/ and anims/ next to sprites/) */
     draw_set_sprites(&frames, &items); /* (the editor's stage draws rooms) */
     if (a.edit_check) { int which; int er = editor_find(dir, a.edit_check, &which); sprites_free(&frames); sprites_free(&items); sprites_free(&props); return er; } /* (clawd-room.sh, before it opens a window) */

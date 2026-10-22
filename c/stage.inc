@@ -27,7 +27,7 @@ static const char *const ST_EASE[] = {"LINEAR", "OUT", "IN OUT", "BACK", "IN", "
 typedef struct {
     PartAnim a, undo[ST_UNDO];
     int nundo, nredo;
-    char name[24];
+    char name[PARTS_PATH_NAME];
     int pick, row, frame, tool, playing, first, help, vx, vy, vw, vh, asking, changed;
     int onion;                /* o / ONION: the frame before shows faintly red, the one after blue, where they differ (not while playing) */
     int hide_keys;            /* the keys' marks on the stage are hidden (v, or the KEYS button under the stage) */
