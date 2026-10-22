@@ -50,11 +50,11 @@
 
 **Moving a Clawd to the next room:** it packs its desk into a box and carries it out.
 
-<p align="center"><img src="docs/images/moving.png" width="700" alt="A Clawd packing its desk into a box"></p>
+<p align="center"><img src="docs/images/moving.png" width="100%" alt="A Clawd packing its desk into a box"></p>
 
 **Gates appear** when two windows are next to each other:
 
-<p align="center"><img src="docs/images/gate-construct.gif" width="700" alt="Stairs being built from real parts"></p>
+<p align="center"><img src="docs/images/gate-construct.gif" width="100%" alt="Stairs being built from real parts"></p>
 
 ## Get it
 
@@ -133,7 +133,11 @@ Details, fonts and profiles: [docs/Platforms.md](docs/Platforms.md).
 ./clawd-room.sh --edit walk       # an animation: timeline, play, onion skin, fill
 ```
 
-<p align="center"><img src="docs/images/editor-picker.png" width="420" alt="The sprite picker"> <img src="docs/images/editor-timeline.png" width="420" alt="The editor's timeline, onion skin and fill"></p>
+<p align="center"><img src="docs/images/editor-picker.png" width="100%" alt="The picker's THEMES tab: a card per gate theme"></p>
+<p align="center"><sub><b>The picker.</b> Tabs for props, items, Clawd, UI, animations and gate themes; the cards play.</sub></p>
+
+<p align="center"><img src="docs/images/editor-timeline.png" width="100%" alt="The pixel editor: a Clawd frame, the timeline, onion skin"></p>
+<p align="center"><sub><b>The pixel editor.</b> A Clawd's frames in a timeline, with onion skin (the frame before shows faintly).</sub></p>
 
 Your edits go to `~/.clawd-room/sprites/` and the running rooms show them at once.
 
