@@ -1075,6 +1075,13 @@ static void picker_search(Canvas *cv, int x, int y, int w, const char *typed, in
     if (typed[0] && focus) canvas_rect(cv, x + 3 + text_width(typed) + 1, y + 2, 3, 5, C_YELLOW);
     region(R_PFIND, 0, x, y, w, 9, RGB(0, 0, 0));
 }
+/* a scroll bar in the right margin when the rows do not all fit: where the rows shown are among all of them (the wheel and the arrows scroll) */
+static void picker_scrollbar(Canvas *cv, int y, int h, int first, int vis, int rows) {
+    if (rows <= vis || h < 8) return;
+    int x = cv->w - 4, th = h * vis / rows < 8 ? 8 : h * vis / rows, ty = y + (h - th) * first / (rows - vis);
+    canvas_rect(cv, x, y, 3, h, RGB(40, 40, 52));
+    canvas_rect(cv, x, ty, 3, th, RGB(140, 140, 160));
+}
 /* ---- the THEMES tab: a card per gate theme, with its three gates side by side, and a card to make one ------------------- */
 static char g_src_theme[24] = "simple"; /* the theme last picked: what NEW THEME copies */
 static const char *theme_target(const Ed *e) { /* the theme USE / OPEN act on: the picked card, else the open theme */
@@ -1148,8 +1155,7 @@ static void draw_theme_cards(const Ed *e, Canvas *cv, int y0, const int *sh, int
     int ty = y0 + (rows < vis ? rows : vis) * (bh + gap) + 2; /* (what a theme is, when there is room for it between the cards and the buttons) */
     if (ty + 8 <= by - 2) canvas_text(cv, 4, ty, "A THEME IS A FOLDER OF GATE FILES: HOW A GATE APPEARS.", RGB(110, 110, 130));
     if (ty + 17 <= by - 2) canvas_text(cv, 4, ty + 9, "YOURS GO TO ~/.CLAWD-ROOM.", RGB(110, 110, 130));
-    if (first > 0) canvas_text(cv, W / 2 - 1, y0 - 6, "^", RGB(150, 150, 170));
-    if ((first + vis) * cols < n) canvas_text(cv, W / 2 - 1, by - 8, "V", RGB(150, 150, 170));
+    picker_scrollbar(cv, y0, by - 3 - y0, first, vis, rows);
 }
 static void draw_picker(const Ed *e, Canvas *cv, double now) {
     int W = cv->w, H = cv->h, sh[512], n = picker_shown(e, sh), k = (int)fmod(now / 0.3, 1e6); /* (k: the picked one plays; fmod: the wall clock / 0.3 is past what an int holds) */
@@ -1204,8 +1210,7 @@ static void draw_picker(const Ed *e, Canvas *cv, double now) {
             if (on) frame(cv, cx, cy, cw, chh, C_YELLOW);
             region(R_PITEM, sh[j], cx, cy, cw, chh, RGB(0, 0, 0));
         }
-        if (first > 0) canvas_text(cv, W / 2 - 1, y0 - 6, "^", C_GREY);
-        if ((first + vis) * cols < n) canvas_text(cv, W / 2 - 1, H - 29, "V", C_GREY);
+        picker_scrollbar(cv, y0, vis * (chh + gap) - gap, first, vis, (n + cols - 1) / cols);
         }
     } else { /* a list by file, the picked one big on the right with its file, size and frames */
         int lw = W / 3 < 92 ? 92 : W / 3, y = 26;
