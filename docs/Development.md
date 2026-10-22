@@ -32,3 +32,19 @@ the CSS snippets, the Minimal theme and the community plugins of another vault; 
 workspace state and Make.md's cache are not in git (see `.gitignore`), copy the plugins from that vault
 or install them from Obsidian's community plugins list (`.obsidian/community-plugins.json` names them).
 Start with `Start/Home.md`.
+
+## Redrawing the README's pictures
+
+The GIFs and the four-rooms picture are drawn by the program itself, so they follow the code:
+
+```bash
+tools/readme/make_gifs.sh                 # the rooms, moving, the gates (both themes) and the four-rooms picture
+tools/readme/make_gifs.sh construct-door  # just one
+python3 tools/readme/make_editor_gifs.py  # the picker, the pixel editor and the stage page, recorded in a pty
+```
+
+- **Room GIFs** are scenes in `tools/readme/*.sc` (the same script language as `tools/scenarios/`, with one more line: `gif FROM TO EVERY [X Y W H [SCALE]]`, which records those seconds, cropped, as the GIF named by `CLAWD_GIF`). A script can also press the `m` key: `key T m SID SIDE`.
+- **Editor GIFs**: `CLAWD_EDIT_GIF=FILE` makes the editor record its own pages (`CLAWD_EDIT_GIF_SCALE`, 2 by default); `tools/readme/make_editor_gifs.py` sends the keys.
+- Look at a scene's frames with `CLAWD_PNG_DIR=DIR` (a picture of each printed frame of a `--script` run) or `CLAWD_EDIT_PNG=FILE` / `CLAWD_STAGE_PNG=FILE` (the editor's page).
+- Session names in the pictures are made up (`web-shop`, `api-server`, `docs-site`), never real ones.
+

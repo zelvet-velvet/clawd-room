@@ -229,6 +229,26 @@ int gif_write(const char *path, const Rgb *const *frames, int nframes, int w, in
     return 0;
 }
 
+/* a GIF has 256 colours: blends (a glow) are rounded, a little more each time, until all the frames fit (flat pixel art loses nothing) */
+int gif_write_fit(const char *path, Rgb **frames, int nframes, int w, int h, int delay_cs) {
+    static const int STEP[] = {1, 2, 3, 4, 6, 8, 12, 16, 24, 32};
+    static Rgb pal[257];
+    for (int si = 0; si < 10; si++) {
+        int st = STEP[si], np = 0, ok = 1;
+        for (int f = 0; f < nframes && ok; f++) for (int i = 0; i < w * h && ok; i++) {
+            Rgb c = frames[f][i];
+            if (st > 1) c = RGB((uint8_t)(c.r / st * st + st / 2), (uint8_t)(c.g / st * st + st / 2), (uint8_t)(c.b / st * st + st / 2));
+            int k = 0;
+            while (k < np && !rgb_eq(pal[k], c)) k++;
+            if (k == np) { if (np == 256) ok = 0; else pal[np++] = c; }
+        }
+        if (!ok) continue;
+        if (st > 1) for (int f = 0; f < nframes; f++) for (int i = 0; i < w * h; i++) { Rgb c = frames[f][i]; frames[f][i] = RGB((uint8_t)(c.r / st * st + st / 2), (uint8_t)(c.g / st * st + st / 2), (uint8_t)(c.b / st * st + st / 2)); }
+        return gif_write(path, (const Rgb *const *)frames, nframes, w, h, delay_cs);
+    }
+    return 1;
+}
+
 /* ---- the frames of every action, drawn by the code --------------------------------------------------------- */
 static void pose_key_of(const Pose *p, char *key, size_t n) { pose_key(p, key, n); }
 static Pose blank(const Pose *p) { Pose q = *p; q.bob = 0; return q; }
