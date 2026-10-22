@@ -929,6 +929,9 @@ static File g_pf[NFILES];
 static char g_anim[32][PARTS_PATH_NAME];
 static int g_nanim, g_redraw; /* (g_redraw: the stage page had the terminal: draw everything again) */
 static void stage_dirs(const char *dir);
+#define ST_PIXELS 2 /* stage_loop returns it when I asked for the pixel art of a sprite part */
+int editor_run(const char *dir, const char *name);
+static int g_start_tab = -1; /* the picker opens on this tab (the stage page's I key: CLAWD) */
 static int stage_loop(const char *dir, const char *name);
 static void picker_anim(Canvas *cv, int ai, double t, int x, int y, int w, int h);
 static void anim_mine_path(char *out, size_t n, int ai) { snprintf(out, n, "%s/%s.txt", parts_mine_dir(), g_anim[ai]); }
@@ -1245,10 +1248,12 @@ static void picker_pick(Ed *e, const char *dir) {
     if (g_pi[e->psel].file == ANIMS) { /* the stage page, in this window; q there comes back here */
         char nm[PARTS_PATH_NAME];
         snprintf(nm, sizeof nm, "%s", g_anim[g_pi[e->psel].sp]);
-        if (stage_loop(dir, nm)) snprintf(e->msg, sizeof e->msg, "CANNOT OPEN ANIMS/%s", g_pi[e->psel].name);
+        int rc = stage_loop(dir, nm);
+        if (rc == 1) snprintf(e->msg, sizeof e->msg, "CANNOT OPEN ANIMS/%s", g_pi[e->psel].name);
         g_redraw = 1;
         picker_gather(dir);
         for (int i = 0; i < g_npi; i++) if (g_pi[i].file == ANIMS && !strcmp(g_anim[g_pi[i].sp], nm)) e->psel = i;
+        if (rc == ST_PIXELS) { e->ptab = 2; e->pscroll = 0; int sh[512]; if (picker_shown(e, sh)) e->psel = sh[0]; snprintf(e->msg, sizeof e->msg, "PICK THE PART'S DRAWING"); } /* (I on the stage: the CLAWD tab) */
         return;
     }
     char nm[64];
@@ -1534,7 +1539,7 @@ int editor_run(const char *dir, const char *name) {
     int which = 0; /* the file that has a sprite called NAME (props first), else an animation */
     if (name && editor_find(dir, name, &which)) return 1;
     file_open(&e, dir, which, name);
-    if (!name) picker_open(&e, dir, 0); /* (no name: the picker first) */
+    if (!name) { picker_open(&e, dir, 0); if (g_start_tab >= 0) { e.ptab = g_start_tab; g_start_tab = -1; int sh[512]; if (picker_shown(&e, sh)) e.psel = sh[0]; } } /* (no name: the picker first) */
     else visit_start(&e, dir);
     if (!isatty(STDIN_FILENO) || !isatty(STDOUT_FILENO)) { fprintf(stderr, "clawd-room --edit needs a terminal\n"); return 1; }
     tty_on();

@@ -535,7 +535,7 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
     }
     if (s->help) { /* ?: the keys and the mouse, in a box over the stage; a window too short for it scrolls it (up / down, the wheel) */
         static const char *const H[] = {"HELP  (UP DOWN SCROLLS)", "MOUSE", "CLICK A PART: PICK IT", "SELECT: DRAG A BORDER TO RESIZE", "MOVE / ROTATE: DRAG ON THE STAGE", "KEY: A KEY AT THIS FRAME, OR NONE", "< > BESIDE A VALUE: CHANGE IT", "THE BAR BY THE RUNNING CLAWD: HOW MUCH HAS COME IN", "CLICK A FRAME: GO THERE", "WHEEL: ZOOM / SCROLL THE PANEL", "RIGHT DRAG: MOVE THE VIEW", "DRAG THE LINE ABOVE THE FRAMES: FOLD THEM", "THE BUTTON TOP RIGHT: FOLD THE PANEL",
-                                        "KEYS", "LEFT RIGHT  FRAME", "UP DOWN  A VALUE", "< >  CHANGE IT", "+ -  ZOOM THE STAGE", "W A S D  MOVE THE VIEW", "0  ZOOM AS IT WAS, THE PART IN THE MIDDLE", "V  KEYS ON THE STAGE: ON / OFF", "P  FOLD THE PANEL", "SPACE  PLAY", "O  ONION SKIN (BEFORE RED, AFTER BLUE)", "[ ]  OTHER PART", "K  A KEY HERE OR NONE", "X  DELETE THE KEY", "E  KEY EASE", "U R  UNDO REDO", "Q  QUIT"};
+                                        "KEYS", "LEFT RIGHT  FRAME", "UP DOWN  A VALUE", "< >  CHANGE IT", "+ -  ZOOM THE STAGE", "W A S D  MOVE THE VIEW", "0  ZOOM AS IT WAS, THE PART IN THE MIDDLE", "V  KEYS ON THE STAGE: ON / OFF", "I  THE PIXEL ART OF A SPRITE PART", "P  FOLD THE PANEL", "SPACE  PLAY", "O  ONION SKIN (BEFORE RED, AFTER BLUE)", "[ ]  OTHER PART", "K  A KEY HERE OR NONE", "X  DELETE THE KEY", "E  KEY EASE", "U R  UNDO REDO", "Q  QUIT"};
         int n = (int)(sizeof H / sizeof *H), bw2 = 0;
         for (int i = 0; i < n; i++) if (text_width(H[i]) > bw2) bw2 = text_width(H[i]);
         int vis = (cv->h - 12 - 4 - 8) / 7, w = bw2 + 14; /* (as many lines as the window has room for) */
@@ -671,7 +671,7 @@ static int stage_loop(const char *dir, const char *name) {
     static Stage s;
     if (stage_open(&s, name)) return 1;
     Cells prev = {0, 0, NULL};
-    int quit = 0, cols = 0, rows = 0;
+    int quit = 0, cols = 0, rows = 0, rc = 0;
     char in[256]; int nin = 0;
     while (!quit) {
         struct winsize ws;
@@ -823,6 +823,10 @@ static int stage_loop(const char *dir, const char *name) {
             else if (ch == ',' || ch == '<') { s.playing = 0; st_change(&s, s.row, -1); s.pfollow = 1; }
             else if (ch == '+' || ch == '=') st_zoom(&s, &L, 1);
             else if (ch == '-') st_zoom(&s, &L, -1);
+            else if (ch == 'i' || ch == 'I') { /* the pixel art: a sprite part's drawing is in the pixel editor (the CLAWD tab); the changes so far are already saved */
+                if (s.a.npart && s.a.part[s.pick].sprite) { quit = 1; rc = ST_PIXELS; }
+                else st_msg(&s, "DRAWN BY CODE, NO PIXEL ART HERE");
+            }
             else if (ch == 'v' || ch == 'V') s.hide_keys = !s.hide_keys;
             else if (ch == 'p' || ch == 'P') s.folded = !s.folded; /* (the panel folds / unfolds, like the editor's) */
             else if (ch == 'o' || ch == 'O') s.onion = !s.onion;
@@ -848,14 +852,20 @@ static int stage_loop(const char *dir, const char *name) {
     cells_free(&prev);
     for (int f = 0; f < ST_MAXF; f++) if (s.thumb[f].p) canvas_free(&s.thumb[f]);
     free(s.orig);
-    return 0;
+    return rc;
 }
 static int stage_run(const char *dir, const char *name) { /* --edit anims/NAME */
     stage_dirs(dir);
     { static Stage probe; int bad = stage_open(&probe, name); free(probe.orig); if (bad) return 1; } /* (a file that does not load says so before the terminal changes) */
     if (!isatty(STDIN_FILENO) || !isatty(STDOUT_FILENO)) { fprintf(stderr, "clawd-room --edit needs a terminal\n"); return 1; }
     tty_on();
-    int rc = stage_loop(dir, name);
+    int rc;
+    while ((rc = stage_loop(dir, name)) == ST_PIXELS) { /* I: the pixel editor's picker on the CLAWD tab, then back here */
+        tty_off();
+        g_start_tab = 2;
+        editor_run(dir, NULL);
+        tty_on();
+    }
     tty_off();
     return rc;
 }

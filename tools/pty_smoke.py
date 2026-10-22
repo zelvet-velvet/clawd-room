@@ -196,6 +196,8 @@ with tempfile.TemporaryDirectory() as tmp:
     out, st = run_stage(["--edit", "anims/swing"], [(1.2, b"]"), (1.3, b"]"), (1.4, b"]"), (1.5, b"]"), (1.8, b"."), (2.4, b"q"), (2.8, b"s")], aenv, cols=300, rows=90)  # (the clawd part, MOVE Y one more at frame 1)
     txt = open(swing_mine).read() if os.path.exists(swing_mine) else ""
     check("stage: ] picks a part, the . key changes its value at this frame and saves it to yours (the default stays)", st == 0 and "key clawd 0 x=0 y=1 " in txt and "y=0" in open(os.path.join(anims, "swing.txt")).read())
+    out, st = run_stage(["--edit", "anims/swing"], [(1.2, b"]"), (1.3, b"]"), (1.4, b"]"), (1.5, b"]"), (1.9, b"i"), (2.8, b"\x1b"), (3.6, b"q"), (4.0, b"s")], aenv, cols=300, rows=90)  # (I on the Clawd part: the pixel editor's picker on the CLAWD tab; Esc leaves it and the stage page is back)
+    check("stage: I on a sprite part opens the pixel editor's picker, and quitting it brings the stage page back (no crash, the terminal restored)", st == 0)
     out, st = run_stage(["--edit", "anims/swing"], [(1.2, b"]"), (1.3, b"]"), (1.4, b"]"), (1.5, b"\x1b[C"), (1.6, b"\x1b[C"), (1.7, b"\x1b[C"), (1.9, b"k"), (2.1, b"e"), (2.6, b"q"), (3.0, b"s")], aenv, cols=300, rows=90)  # (a key on the seat at frame 4: 0.1875 s, then its ease)
     txt = open(swing_mine).read()
     check("stage: . steps a frame, k adds a key there, e changes its ease", st == 0 and "key seat 0.1875 " in txt and re.search(r"key seat 0\.1875 .* ease=", txt))

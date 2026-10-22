@@ -79,7 +79,7 @@ fi
 # WSL + Windows Terminal: the pixel editor opens in its own Clawd Room window in the middle of the screen (like iTerm2);
 # the window you typed in stays. --here (or CLAWD_HERE=1) runs it in the current window.
 if [ "$editing" = 1 ] && [ "$here_only" = 0 ] && [ "${CLAWD_HERE:-0}" = 0 ] && [ -n "${WSL_DISTRO_NAME:-}" ] && [ -x "$bin" ] && command -v wt.exe >/dev/null 2>&1; then
-  python3 "$here/tools/wsl_open.py" "Clawd Room pixel editor" 85 78 "$bin" "$@" && { echo "clawd-room: the editor opened in its own window" >&2; exit 0; }
+  python3 "$here/tools/wsl_open.py" "Clawd Room pixel editor" 78 78 "$bin" "$@" && { echo "clawd-room: the editor opened in its own window" >&2; exit 0; }
   echo "clawd-room: could not open a window for the editor, running here" >&2
 fi
 if [ "$(uname -s)" = Darwin ] && [ "$TERM_PROGRAM" = iTerm.app ] && [ -z "$TMUX" ]; then
