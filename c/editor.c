@@ -1468,13 +1468,12 @@ static void theme_close(Ed *e) { /* back to the theme cards, the one that was op
     g_theme_open[0] = 0; e->ptab = THEMES; e->pscroll = 0;
     for (int i = 0; i < g_npi; i++) if (g_pi[i].file == THEMES && g_pi[i].sp >= 0 && !strcmp(g_theme[g_pi[i].sp], was)) e->psel = i;
 }
-static int picker_escape(Ed *e) { /* Esc in the picker: clears the search, leaves the box, leaves an open theme; else 1: quit */
-    int sh[512];
+static int picker_escape(Ed *e) { /* Esc in the picker: one step out (the search cleared, the search box let go, an open theme left); it never quits: that is q */
     if (e->find[0]) { e->find[0] = 0; picker_refind(e); return 0; }
     if (e->pfocus == 2) { e->pfocus = 0; return 0; }
     if (g_theme_open[0] && e->ptab == ANIMS) { theme_close(e); return 0; }
-    (void)sh;
-    return 1;
+    if (e->pfocus) e->pfocus = 0;
+    return 0;
 }
 static void theme_make(Ed *e, const char *dir) { /* the new theme: a copy of the one last picked, as yours (anims/gates/NAME) */
     char nm[24];

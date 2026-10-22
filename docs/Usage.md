@@ -81,7 +81,7 @@ A part animation is a thing of the room made of parts with keys (a key: a part's
 | `o`, `v` | onion skin; the keys' marks on the stage |
 | `p` or the fold button; drag the line above the frames | fold the panel to a ribbon of the tools; fold the timeline to its one line |
 | Space, `u` / `r`, `?`, `q` | play; undo / redo; the keys; quit (save or discard) |
-| `i` | the pixel art of a sprite part (the swing's Clawd): the picker on the CLAWD tab; Esc comes back. Parts drawn by code (the gates) say so |
+| `i` | the pixel art of a sprite part (the swing's Clawd): the picker on the CLAWD tab; `q` there comes back (Esc only steps out of the search box). Parts drawn by code (the gates) say so |
 
 ## Gate themes and settings
 

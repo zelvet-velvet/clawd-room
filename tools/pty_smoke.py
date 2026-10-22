@@ -158,8 +158,8 @@ with tempfile.TemporaryDirectory() as tmp:
     check("editor: f adds prop frames (yours), x x deletes your last one (q asks, s keeps)", st == 0 and heads == ["@ window~2 | window~2"] and read("props.txt") == props0)
     out, st = run(["--edit", "walk"], [(0.8, b" "), (1.6, b">"), (1.9, b"o"), (2.2, b" "), (2.5, b"f"), (2.8, b"q"), (3.1, b"q")], env, cols=150, rows=50)
     check("editor: opens an animation by its name, plays, steps frames; f leaves Clawd frames alone", st == 0 and b"Clawd Room pixel editor" in out and read("clawd.txt").count("@ walk-") == clawd0.count("@ walk-"))
-    out, st = run(["--edit", "-"], [(0.8, b"W"), (0.9, b"A"), (1.0, b"L"), (1.3, b"\r"), (1.7, b"q"), (2.1, b"\x1b")], env, cols=150, rows=50)
-    check("editor: the sprite picker opens with no name, finds by typing, Enter opens, q goes back to it, a lone Esc there quits (the search empty)", st == 0 and b"Clawd Room pixel editor" in out)
+    out, st = run(["--edit", "-"], [(0.8, b"W"), (0.9, b"A"), (1.0, b"L"), (1.3, b"\r"), (1.7, b"q"), (2.1, b"\x1b"), (2.5, b"q")], env, cols=150, rows=50)
+    check("editor: the sprite picker opens with no name, finds by typing, Enter opens, q goes back to it, Esc there only steps out (clears the search) and q quits", st == 0 and b"Clawd Room pixel editor" in out)
     r = subprocess.run(CMD + ["--edit", "list"], capture_output=True, text=True, env=dict(os.environ, **env))
     import re
     check("--edit list shows animations with their frame counts", r.returncode == 0 and re.search(r"walk +4\b", r.stdout) and re.search(r"think +9\b", r.stdout) and "window" in r.stdout)
@@ -196,7 +196,7 @@ with tempfile.TemporaryDirectory() as tmp:
     out, st = run_stage(["--edit", "anims/swing"], [(1.2, b"]"), (1.3, b"]"), (1.4, b"]"), (1.5, b"]"), (1.8, b"."), (2.4, b"q"), (2.8, b"s")], aenv, cols=300, rows=90)  # (the clawd part, MOVE Y one more at frame 1)
     txt = open(swing_mine).read() if os.path.exists(swing_mine) else ""
     check("stage: ] picks a part, the . key changes its value at this frame and saves it to yours (the default stays)", st == 0 and "key clawd 0 x=0 y=1 " in txt and "y=0" in open(os.path.join(anims, "swing.txt")).read())
-    out, st = run_stage(["--edit", "anims/swing"], [(1.2, b"]"), (1.3, b"]"), (1.4, b"]"), (1.5, b"]"), (1.9, b"i"), (2.8, b"\x1b"), (3.6, b"q"), (4.0, b"s")], aenv, cols=300, rows=90)  # (I on the Clawd part: the pixel editor's picker on the CLAWD tab; Esc leaves it and the stage page is back)
+    out, st = run_stage(["--edit", "anims/swing"], [(1.2, b"]"), (1.3, b"]"), (1.4, b"]"), (1.5, b"]"), (1.9, b"i"), (2.8, b"q"), (3.6, b"q"), (4.0, b"s")], aenv, cols=300, rows=90)  # (I on the Clawd part: the pixel editor's picker on the CLAWD tab; Esc leaves it and the stage page is back)
     check("stage: I on a sprite part opens the pixel editor's picker, and quitting it brings the stage page back (no crash, the terminal restored)", st == 0)
     out, st = run_stage(["--edit", "anims/swing"], [(1.2, b"]"), (1.3, b"]"), (1.4, b"]"), (1.5, b"\x1b[C"), (1.6, b"\x1b[C"), (1.7, b"\x1b[C"), (1.9, b"k"), (2.1, b"e"), (2.6, b"q"), (3.0, b"s")], aenv, cols=300, rows=90)  # (a key on the seat at frame 4: 0.1875 s, then its ease)
     txt = open(swing_mine).read()
