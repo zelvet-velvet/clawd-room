@@ -132,6 +132,10 @@ What to test next, one `[!example] Group X · …` callout per group. Each test 
 > > 3. In a WSL shell: `./clawd-room.sh --edit anims/swing` (the editor opens in its own window).
 > > 4. Your edits are in `~/.clawd-room/anims/`; delete `swing.txt` there (or RESET in the picker) to go back to the default.
 
+> [!example] Group H · WSL: picking nothing on the stage page (T39–T40)
+> - [ ] **T39** `./clawd-room.sh --edit anims/swing`, pick a part, press Esc → nothing is picked: no yellow outline, the panel shows only the parts; `<` `>` and the KEY cap say "PICK A PART FIRST"; `[` or `]` or a click picks again.
+> - [ ] **T40** With SELECT, click the stage where there is no part → nothing picked; with `?` open or the quit question showing, Esc closes that first (the part stays picked).
+
 ## Rooms and art ([[Rooms and Art]])
 - [x] Each room (office, coffee shop, park) looks like the mockups at your window size
 - [x] Seated Clawds show behind their desk / table / bench; the barista behind the bar
