@@ -158,6 +158,18 @@ What to test next, one `[!example] Group X · …` callout per group. Each test 
 > > 1. `git switch feat/gate-parts` in the repo (until its pull request is merged).
 > > 2. Try a narrow and a wide window for T45 – T47.
 
+> [!example] Group K · WSL: gate themes, the construct, settings.conf (T51–T56)
+> - [ ] **T51** `./clawd-room.sh --edit` → ANIMS lists `GATES/SIMPLE/GATE-DOOR` ... and `GATES/CONSTRUCT/GATE-DOOR` ...; the simple ones have a star (the active theme). Open `GATES/CONSTRUCT/GATE-STAIRS`: the whole yellow frame of its one part BUILD is in view (the stage zooms out to fit it) → the stairs come in as you drag the GROW bar or PLAY.
+> - [ ] **T52** `./clawd-room.sh --try` (or two stacked windows) with `--gate-theme construct` → when a gate appears its pieces fly in from the air under a blue outline and click into place (1.4 s); the stairs' rail shows at the end. Look at the side door and the well too.
+> - [ ] **T53** Without the flag: put `gate_theme = construct` in `~/.clawd-room/settings.conf` while a room runs → the next gate to appear is a construct; change it to `simple` (or delete the line) → back to the parts coming in turn. The ANIMS star follows.
+> - [ ] **T54** Stage page, pick the swing's Clawd part, press `i` → the picker opens on the CLAWD tab; Esc → the stage page is back. On a gate part `i` says DRAWN BY CODE, NO PIXEL ART HERE.
+> - [ ] **T55** `./clawd-room.sh --edit` → the editor's own window is a little narrower than before (78% of the screen) and the picker's frame strip shows four frames.
+> - [ ] **T56** Nothing else changed: with no flag and no settings file the gates appear as before (T44).
+>
+> > [!tip]- T51–T56 · how to run them
+> > 1. `git switch feat/gate-themes` in the repo (until its pull request is merged).
+> > 2. Your own gate files are in `~/.clawd-room/anims/gates/NAME/` (an old `~/.clawd-room/anims/gate-*.txt` is no longer read: delete it).
+
 ## Rooms and art ([[Rooms and Art]])
 - [x] Each room (office, coffee shop, park) looks like the mockups at your window size
 - [x] Seated Clawds show behind their desk / table / bench; the barista behind the bar
