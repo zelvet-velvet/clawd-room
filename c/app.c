@@ -18,6 +18,7 @@
 #include <unistd.h>
 #include "art.h"
 #include "parts.h"
+#include "settings.h"
 #include "camera.h"
 #include "clawd.h"
 #include "link.h"
@@ -290,6 +291,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
     int have_prev = 0;
     while (!g_quit) {
         double frame_start = mono(), t = frame_start - t0, now = a->has_at ? a->at + t : wall();
+        if (settings_poll()) { dirty = 1; have_prev = 0; } /* (settings.conf edited: the gate theme changes at once) */
         if (sprites_reload_changed()) { dirty = 1; have_prev = 0; } /* an edited sprite file shows at once (the pixel editor saves as you draw) */
         if (desk.has_watcher) watcher_poll(&desk.w);
         char keys[256];
@@ -916,7 +918,7 @@ int app_main(int argc, char **argv) {
     props = sprites_load_layered(path, mine);
     theme_set_props(&props);
     sprites_watch(dir, &frames, &items, &props);
-    { char rd[600]; snprintf(rd, sizeof rd, "%s", dir); char *sl = strrchr(rd, '/'); if (sl) strcpy(sl, "/rooms"); else strcpy(rd, "../rooms"); theme_set_rooms_dir(rd); sl = strrchr(rd, '/'); strcpy(sl ? sl : rd, "/anims"); parts_set_dir(getenv("CLAWD_ANIMS") ? getenv("CLAWD_ANIMS") : rd); parts_set_gate_theme(a.gate_theme ? a.gate_theme : getenv("CLAWD_GATE_THEME")); } /* (the gate theme: anims/gates/THEME) */
+    { char rd[600]; snprintf(rd, sizeof rd, "%s", dir); char *sl = strrchr(rd, '/'); if (sl) strcpy(sl, "/rooms"); else strcpy(rd, "../rooms"); theme_set_rooms_dir(rd); sl = strrchr(rd, '/'); strcpy(sl ? sl : rd, "/anims"); parts_set_dir(getenv("CLAWD_ANIMS") ? getenv("CLAWD_ANIMS") : rd); { char sp[700]; const char *se = getenv("CLAWD_SETTINGS"); snprintf(sp, sizeof sp, "%s", se ? se : sprites_mine_dir()); if (!se) { char *sl = strrchr(sp, '/'); if (sl) strcpy(sl, "/settings.conf"); } settings_init(sp); settings_apply(a.gate_theme); } } /* (the gate theme: anims/gates/THEME, from --gate-theme, CLAWD_GATE_THEME or ~/.clawd-room/settings.conf) */
     { char md[700]; const char *env = getenv("CLAWD_MY_ANIMS"), *ms = sprites_mine_dir(); snprintf(md, sizeof md, "%s", env ? env : ms); if (!env) { char *sl = strrchr(md, '/'); if (sl) strcpy(sl, "/anims"); } parts_set_mine_dir(md); } /* (yours: ~/.clawd-room/anims, next to your sprites) */ /* (rooms/ and anims/ next to sprites/) */
     draw_set_sprites(&frames, &items); /* (the editor's stage draws rooms) */
     if (a.edit_check) { int which; int er = editor_find(dir, a.edit_check, &which); sprites_free(&frames); sprites_free(&items); sprites_free(&props); return er; } /* (clawd-room.sh, before it opens a window) */

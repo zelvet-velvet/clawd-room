@@ -81,3 +81,18 @@ A part animation is a thing of the room made of parts with keys (a key: a part's
 | `o`, `v` | onion skin; the keys' marks on the stage |
 | `p` or the fold button; drag the line above the frames | fold the panel to a ribbon of the tools; fold the timeline to its one line |
 | Space, `u` / `r`, `?`, `q` | play; undo / redo; the keys; quit (save or discard) |
+| `i` | the pixel art of a sprite part (the swing's Clawd): the picker on the CLAWD tab; Esc comes back. Parts drawn by code (the gates) say so |
+
+## Gate themes and settings
+
+How a gate appears is a **theme**: a folder `anims/gates/NAME/` with `gate-door.txt`, `gate-stairs.txt` and `gate-well.txt`. `simple` is the default (the parts come in turn); `construct` builds the gate from its own pieces that fly in under a blue outline (1.4 s: its one part `build` is the clock, drag the GROW bar on the stage to watch it). A theme that lacks a file uses `simple`'s, so a new theme can start with one file; your edits go to `~/.clawd-room/anims/gates/NAME/`.
+
+    ./clawd-room.sh --gate-theme construct     # for this run
+    CLAWD_GATE_THEME=construct ./clawd-room.sh # the same
+
+Or in `~/.clawd-room/settings.conf` (read again while the room runs; the flag and the variable win over it):
+
+    # the gate theme
+    gate_theme = construct
+
+In the picker's ANIMS tab the active theme's files carry a star.

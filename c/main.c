@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "parts.h"
+#include "settings.h"
 #include "canvas.h"
 #include "theme.h"
 #include "clawd.h"
@@ -299,7 +300,7 @@ int main(int argc, char **argv) {
     SpriteFile props = sprites_load(path);
     theme_set_props(&props);
     { char rd[600]; snprintf(rd, sizeof rd, "%s", dir); char *sl = strrchr(rd, '/'); if (sl) strcpy(sl, "/rooms"); else snprintf(rd, sizeof rd, "rooms"); theme_set_rooms_dir(getenv("CLAWD_ROOMS") ? getenv("CLAWD_ROOMS") : rd); }
-    { char ad[600]; snprintf(ad, sizeof ad, "%s", dir); char *sl = strrchr(ad, '/'); if (sl) strcpy(sl, "/anims"); else snprintf(ad, sizeof ad, "anims"); parts_set_dir(getenv("CLAWD_ANIMS") ? getenv("CLAWD_ANIMS") : ad); parts_set_mine_dir(getenv("CLAWD_MY_ANIMS")); parts_set_gate_theme(getenv("CLAWD_GATE_THEME")); } /* (the tests use none of yours) */
+    { char ad[600]; snprintf(ad, sizeof ad, "%s", dir); char *sl = strrchr(ad, '/'); if (sl) strcpy(sl, "/anims"); else snprintf(ad, sizeof ad, "anims"); parts_set_dir(getenv("CLAWD_ANIMS") ? getenv("CLAWD_ANIMS") : ad); parts_set_mine_dir(getenv("CLAWD_MY_ANIMS")); settings_init(getenv("CLAWD_SETTINGS")); settings_apply(NULL); } /* (the tests use none of yours) */
     int rc = 0;
     if (argc > 1 && !strcmp(argv[1], "--golden")) rc = golden(argc > 2 && !strcmp(argv[2], "--code") ? NULL : &frames);
     else if (argc > 2 && !strcmp(argv[1], "--fixture")) rc = run_fixtures(argc - 2, argv + 2, &frames, &items);

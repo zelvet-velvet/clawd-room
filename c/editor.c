@@ -972,6 +972,8 @@ static void picker_gather(const char *dir) {
         g_pi[g_npi] = (PickItem){ANIMS, i, nf, parts_mine_dir()[0] && access(mp, R_OK) == 0, ""};
         snprintf(g_pi[g_npi].name, sizeof g_pi[g_npi].name, "%s", g_anim[i]);
         for (char *q = g_pi[g_npi].name; *q; q++) if (*q >= 'a' && *q <= 'z') *q -= 32;
+        size_t tl = strlen(parts_gate_theme());
+        if (!strncmp(g_anim[i], "gates/", 6) && !strncmp(g_anim[i] + 6, parts_gate_theme(), tl) && g_anim[i][6 + tl] == '/') strncat(g_pi[g_npi].name, " *", sizeof g_pi[g_npi].name - strlen(g_pi[g_npi].name) - 1); /* (the active gate theme's files: a star) */
         g_npi++;
     }
 }
