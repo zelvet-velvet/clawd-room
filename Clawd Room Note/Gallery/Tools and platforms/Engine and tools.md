@@ -8,6 +8,12 @@ sticker: lucide//wrench
 ---
 Pictures of the debug overlay, the placer, the pixel editor, the gallery, newest first: ✅ current (open), ♻️ replaced and ❌ not picked (folded; the status is in [[Snapshot status]]). The files are the source in `Assets/Snapshots/Engine and tools/`; this note is written by `tools/vault_gallery.py` (do not edit it by hand: add a picture, then run the tool).
 
+## 2026-10-22
+
+> [!success]+ ✅ current · Stage page, the construct stairs mid-build
+> ![[2026-10-22 stage page, the construct stairs mid-build.png|420]]
+> Shown in: [[2026-10-22#🏗️ Gates can appear as a construct; gate themes and a settings file (Zaviel)|2026-10-22 · 🏗️ Gates can appear as a construct; gate themes and a settings file (Zaviel)]]
+
 ## 2026-10-21
 
 > [!success]+ ✅ current · Stage page, the panel with even gaps
