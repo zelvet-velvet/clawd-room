@@ -296,6 +296,8 @@ with tempfile.TemporaryDirectory() as tmp:
     mtxt = open(made).read() if os.path.exists(made) else ""
     check("picker: the THEMES tab: space uses the picked theme (settings.conf), NEW THEME makes a copy under a name, and the copy keeps its grow values",
           st == 0 and "gate_theme = construct" in (open(sett).read() if os.path.exists(sett) else "") and "style construct" in mtxt and "grow=100" in mtxt)
+    out, st = run(["--edit", "-"], [(1.0, b"\t"), (1.1, b"\t"), (1.2, b"\t"), (1.3, b"\t"), (1.4, b"\t"), (1.8, b"\x1b[C"), (2.2, b" "), (2.8, b" "), (3.4, b"q")], tenv, cols=300, rows=90)
+    check("picker: space on the active theme makes simple the active one again", st == 0 and "gate_theme = simple" in open(sett).read())
     shutil.rmtree(anims, ignore_errors=True); shutil.rmtree(mine_a, ignore_errors=True)
     shutil.rmtree(spr, ignore_errors=True)
 print("%d failed" % len(fails) if fails else "all passed")

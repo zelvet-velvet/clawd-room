@@ -1154,7 +1154,8 @@ static void draw_theme_cards(const Ed *e, Canvas *cv, int y0, const int *sh, int
         region(R_PITEM, sh[j], cx, cy, bw, bh, RGB(0, 0, 0));
     }
     int rows = (n + cols - 1) / cols, bx = 4, live = picked >= 0;
-    theme_button(cv, &bx, by + 1, "MAKE ACTIVE", live && strcmp(g_theme[picked], parts_gate_theme()) != 0, R_PUSE);
+    int is_on = live && !strcmp(g_theme[picked], parts_gate_theme()), is_simple = live && !strcmp(g_theme[picked], "simple");
+    theme_button(cv, &bx, by + 1, is_on ? "MAKE INACTIVE" : "MAKE ACTIVE", live && !(is_on && is_simple), R_PUSE); /* (the active one: back to simple) */
     theme_button(cv, &bx, by + 1, "OPEN", live, R_POPEN);
     int ty = y0 + (rows < vis ? rows : vis) * (bh + gap) + 2; /* (what a theme is, when there is room for it between the cards and the buttons) */
     if (ty + 8 <= by - 2) canvas_text(cv, 4, ty, "A THEME IS A FOLDER OF GATE FILES: HOW A GATE APPEARS.", RGB(110, 110, 130));
@@ -1191,7 +1192,12 @@ static void draw_picker(const Ed *e, Canvas *cv, double now) {
             region(R_PBACK, 0, 4, y0, tw, 11, RGB(0, 0, 0));
             canvas_text(cv, x, y0 + 2, ">", RGB(90, 90, 110)); x += text_width(">") + 5;
             canvas_text(cv, x, y0 + 2, nm, C_WHITE);
-            if (on) { const char *t = "ACTIVE"; int bx = W - 4 - text_width(t) - 9; canvas_rect(cv, bx, y0 + 2, 5, 5, C_YELLOW); canvas_text(cv, bx + 8, y0 + 2, t, C_YELLOW); }
+            if (on) { /* (a click on ACTIVE: back to simple, unless this is simple) */
+                const char *t = "ACTIVE"; int w = text_width(t) + 16, bx = W - 4 - w, can = strcmp(g_theme_open, "simple") != 0;
+                if (can) frame(cv, bx, y0, w - 1, 9, RGB(90, 90, 110));
+                canvas_rect(cv, bx + 4, y0 + 2, 5, 5, C_YELLOW); canvas_text(cv, bx + 12, y0 + 2, t, C_YELLOW);
+                if (can) region(R_PUSE, 0, bx - 1, y0 - 1, w + 1, 11, RGB(0, 0, 0));
+            }
             else {
                 const char *t = "INACTIVE"; int w = text_width(t) + 16, bx = W - 4 - w;
                 frame(cv, bx, y0, w - 1, 9, RGB(90, 90, 110)); ring(cv, bx + 4, y0 + 2, RGB(190, 190, 205)); canvas_text(cv, bx + 12, y0 + 2, t, RGB(190, 190, 205));
@@ -1302,7 +1308,7 @@ static void draw_picker(const Ed *e, Canvas *cv, double now) {
         }
     }
     canvas_rect(cv, 0, H - 10, W, 1, RGB(40, 40, 52));
-    canvas_text(cv, 4, H - 7, e->pview == 0 ? e->ptab == THEMES ? "ARROWS PICK  SPACE MAKE ACTIVE  ENTER OPEN  TAB NEXT TAB  Q QUIT" : g_theme_open[0] && e->ptab == ANIMS ? "ARROWS PICK  ENTER OPEN  ESC BACK TO THEMES  Q QUIT" : "ARROWS PICK  ENTER OPEN  TAB NEXT TAB  \\ LIST  Q QUIT" : "UP DOWN PICK  ENTER OPEN  \\ CARDS  Q QUIT", RGB(150, 150, 170));
+    canvas_text(cv, 4, H - 7, e->pview == 0 ? e->ptab == THEMES ? "ARROWS PICK  SPACE ACTIVE / INACTIVE  ENTER OPEN  TAB NEXT TAB  Q QUIT" : g_theme_open[0] && e->ptab == ANIMS ? "ARROWS PICK  ENTER OPEN  ESC BACK TO THEMES  Q QUIT" : "ARROWS PICK  ENTER OPEN  TAB NEXT TAB  \\ LIST  Q QUIT" : "UP DOWN PICK  ENTER OPEN  \\ CARDS  Q QUIT", RGB(150, 150, 170));
 }
 /* the picker opens: the items again, the open sprite's animation picked */
 static void picker_open(Ed *e, const char *dir, int from_edit) {
@@ -1439,6 +1445,10 @@ static void theme_use(Ed *e, const char *dir) { /* USE: gate_theme = NAME in set
     if (!t) return;
     char name[24];
     snprintf(name, sizeof name, "%s", t);
+    if (!strcmp(name, parts_gate_theme())) { /* the active one again: back to simple (simple itself is the one to go back to: nothing) */
+        if (!strcmp(name, "simple")) return;
+        snprintf(name, sizeof name, "simple");
+    }
     if (settings_set("gate_theme", name)) { snprintf(e->msg, sizeof e->msg, "CANNOT WRITE SETTINGS.CONF"); return; }
     const char *env = getenv("CLAWD_GATE_THEME");
     snprintf(e->msg, sizeof e->msg, env && env[0] ? "SAVED, BUT CLAWD_GATE_THEME WINS" : "%s IS ACTIVE", name);
