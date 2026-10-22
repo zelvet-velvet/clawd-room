@@ -69,6 +69,9 @@ static Canvas st_shot(const PartAnim *a, double t) {
         snprintf(text + n, sizeof text - n, "%s\n", a->scene[i]);
     }
     if (fixture_load_text(&fx, text)) return canvas_new(8, 8, ST_BG);
+    char keep[24]; /* (a gate file of a theme: its gates are drawn by that theme, not by the active one) */
+    snprintf(keep, sizeof keep, "%s", parts_gate_theme());
+    if (a->theme[0]) parts_set_gate_theme(a->theme);
     fx.room.freeze = still; /* (it moves: the swing's Clawd by the animation; a still scene does not) */
     char note[64];
     Canvas settle = render(fx.cols, fx.rows, &fx.room, fx.now, fx.t, note, sizeof note);
@@ -80,7 +83,9 @@ static Canvas st_shot(const PartAnim *a, double t) {
         snprintf(key, sizeof key, "gate%d", gside[i]);
         anim_start(&fx.room.anim, key, 0, 1, fx.t - t, 0.8, EASE_OUT);
     }
-    return render(fx.cols, fx.rows, &fx.room, fx.now, fx.t, note, sizeof note);
+    Canvas shot = render(fx.cols, fx.rows, &fx.room, fx.now, fx.t, note, sizeof note);
+    parts_set_gate_theme(keep);
+    return shot;
 }
 static void st_crop(Canvas *dst, const Canvas *src, int sx, int sy, int w, int h, int dx, int dy, int z) { /* a piece of a picture, z times, at (dx, dy) */
     for (int y = 0; y < h; y++) for (int x = 0; x < w; x++) {
@@ -606,6 +611,7 @@ static int stage_open(Stage *s, const char *name) {
     s->orig = parts_mine_dir()[0] ? slurp(path) : NULL;
     if (!parts_mine_dir()[0] || access(path, R_OK)) snprintf(path, sizeof path, "%s/%s.txt", parts_default_dir(), name);
     if (parts_load(&s->a, path)) return 1;
+    parts_name_theme(&s->a, name);
     parts_inherit(&s->a, name);
     if (!s->a.npart) { fprintf(stderr, "%s: no parts\n", path); return 1; }
     s->vx = s->a.view_x; s->vy = s->a.view_y; s->focus = 1; /* (it opens on its first part, in the middle) */
