@@ -934,6 +934,7 @@ static char g_theme[16][24];      /* the gate themes there are (the folders of a
 static int g_nth;
 static char g_theme_open[24];     /* the theme the ANIMS tab shows the files of ("": the animations that are in no theme) */
 static char g_newname[24];        /* typing the name of a new theme */
+static char g_back_stage[PARTS_PATH_NAME]; /* the animation whose stage page asked for its drawing (I): q in the picker goes back to it */
 static int anim_theme_of(const char *path, char *out, size_t n) { /* gates/THEME/KIND: 1 and the theme */
     if (strncmp(path, "gates/", 6)) return 0;
     const char *e = strchr(path + 6, '/');
@@ -1309,7 +1310,7 @@ static void draw_picker(const Ed *e, Canvas *cv, double now) {
         }
     }
     canvas_rect(cv, 0, H - 10, W, 1, RGB(40, 40, 52));
-    canvas_text(cv, 4, H - 7, e->pview == 0 ? e->ptab == THEMES ? "ARROWS PICK  SPACE ACTIVE / INACTIVE  ENTER OPEN  TAB NEXT TAB  Q QUIT" : g_theme_open[0] && e->ptab == ANIMS ? "ARROWS PICK  ENTER OPEN  ESC BACK TO THEMES  Q QUIT" : "ARROWS PICK  ENTER OPEN  TAB NEXT TAB  \\ LIST  Q QUIT" : "UP DOWN PICK  ENTER OPEN  \\ CARDS  Q QUIT", RGB(150, 150, 170));
+    canvas_text(cv, 4, H - 7, e->pview == 0 ? e->ptab == THEMES ? "ARROWS PICK  SPACE ACTIVE / INACTIVE  ENTER OPEN  TAB NEXT TAB  Q QUIT" : g_back_stage[0] ? "ARROWS PICK  ENTER OPEN  Q BACK TO THE STAGE" : g_theme_open[0] && e->ptab == ANIMS ? "ARROWS PICK  ENTER OPEN  ESC BACK TO THEMES  Q QUIT" : "ARROWS PICK  ENTER OPEN  TAB NEXT TAB  \\ LIST  Q QUIT" : "UP DOWN PICK  ENTER OPEN  \\ CARDS  Q QUIT", RGB(150, 150, 170));
 }
 /* the picker opens: the items again, the open sprite's animation picked */
 static void picker_open(Ed *e, const char *dir, int from_edit) {
@@ -1499,6 +1500,32 @@ static void theme_make(Ed *e, const char *dir) { /* the new theme: a copy of the
     snprintf(e->msg, sizeof e->msg, "MADE THEME %s", nm);
     for (char *q = e->msg; *q; q++) if (*q >= 'a' && *q <= 'z') *q -= 32;
 }
+/* the stage page of an animation, in this window. I there (a sprite part's drawing) comes back as the CLAWD tab, and q in the picker then goes back to the stage page */
+static void open_stage(Ed *e, const char *dir, const char *nm) {
+    int rc = stage_loop(dir, nm);
+    if (rc == 1) snprintf(e->msg, sizeof e->msg, "CANNOT OPEN ANIMS/%s", nm);
+    g_redraw = 1;
+    g_back_stage[0] = 0;
+    picker_gather(dir);
+    if (rc == ST_PIXELS) { /* (I on the stage: the CLAWD tab) */
+        snprintf(g_back_stage, sizeof g_back_stage, "%s", nm);
+        e->ptab = 2; e->pscroll = 0; e->find[0] = 0;
+        int sh[512]; if (picker_shown(e, sh)) e->psel = sh[0];
+        snprintf(e->msg, sizeof e->msg, "PICK THE PART'S DRAWING. Q: BACK TO THE STAGE");
+        return;
+    }
+    char th[24]; /* (back from the stage: the picker on that animation) */
+    if (anim_theme_of(nm, th, sizeof th)) snprintf(g_theme_open, sizeof g_theme_open, "%s", th); else g_theme_open[0] = 0;
+    e->ptab = ANIMS; e->pscroll = 0;
+    for (int i = 0; i < g_npi; i++) if (g_pi[i].file == ANIMS && !strcmp(g_anim[g_pi[i].sp], nm)) e->psel = i;
+}
+static int picker_quit(Ed *e, const char *dir) { /* q in the picker: back to the stage page it came from, else quit */
+    if (!g_back_stage[0]) return 1;
+    char nm[PARTS_PATH_NAME];
+    snprintf(nm, sizeof nm, "%s", g_back_stage);
+    open_stage(e, dir, nm);
+    return 0;
+}
 /* the picked one opens in the editor */
 static void picker_pick(Ed *e, const char *dir) {
     if (e->psel < 0 || e->psel >= g_npi) return;
@@ -1510,12 +1537,7 @@ static void picker_pick(Ed *e, const char *dir) {
     if (g_pi[e->psel].file == ANIMS) { /* the stage page, in this window; q there comes back here */
         char nm[PARTS_PATH_NAME];
         snprintf(nm, sizeof nm, "%s", g_anim[g_pi[e->psel].sp]);
-        int rc = stage_loop(dir, nm);
-        if (rc == 1) snprintf(e->msg, sizeof e->msg, "CANNOT OPEN ANIMS/%s", g_pi[e->psel].name);
-        g_redraw = 1;
-        picker_gather(dir);
-        for (int i = 0; i < g_npi; i++) if (g_pi[i].file == ANIMS && !strcmp(g_anim[g_pi[i].sp], nm)) e->psel = i;
-        if (rc == ST_PIXELS) { e->ptab = 2; e->pscroll = 0; int sh[512]; if (picker_shown(e, sh)) e->psel = sh[0]; snprintf(e->msg, sizeof e->msg, "PICK THE PART'S DRAWING"); } /* (I on the stage: the CLAWD tab) */
+        open_stage(e, dir, nm);
         return;
     }
     char nm[64];
@@ -2004,7 +2026,8 @@ int editor_run(const char *dir, const char *name) {
                 else if (ch == '\t') { e.ptab = (e.ptab + 1) % (THEMES + 1); g_theme_open[0] = 0; e.pscroll = 0; int sh[512]; if (picker_shown(&e, sh)) e.psel = sh[0]; }
                 else if (ch == ' ' && theme_target(&e)) theme_use(&e, dir); /* (space: use the picked theme) */
                 else if (ch == '\\') { e.pview = !e.pview; e.pscroll = 0; } /* (\: the other view; Ctrl+V is Windows Terminal's paste) */
-                else if (ch == 0x03 || ((ch == 'q' || ch == 'Q') && e.pfocus != 2 && (!fl || !e.pfocus))) quit = 1; /* (q, the search empty or not focused, or Ctrl+C: quit; clicked into, q is typed) */
+                else if (ch == 0x03) quit = 1;
+                else if ((ch == 'q' || ch == 'Q') && e.pfocus != 2 && (!fl || !e.pfocus)) quit = picker_quit(&e, dir); /* (q, the search empty or not focused, or Ctrl+C: quit; clicked into, q is typed) */
                 else if (!e.pfocus) {} /* (the search not focused: letters are not typed) */
                 else if ((ch == 127 || ch == 8) && fl) { e.find[fl - 1] = 0; picker_refind(&e); }
                 else if (((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') || ch == '-' || ch == '~') && fl < sizeof e.find - 1) {

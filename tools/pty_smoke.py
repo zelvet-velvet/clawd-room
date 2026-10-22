@@ -299,6 +299,10 @@ with tempfile.TemporaryDirectory() as tmp:
     if os.path.exists(sett): os.remove(sett)  # (simple is active again at the start: space on construct makes it active, space again takes it back to simple)
     out, st = run(["--edit", "-"], [(1.0, b"\t"), (1.1, b"\t"), (1.2, b"\t"), (1.3, b"\t"), (1.4, b"\t"), (1.8, b"\x1b[C"), (2.2, b" "), (2.8, b" "), (3.4, b"q")], tenv, cols=300, rows=90)
     check("picker: space makes the picked theme active, space again on the active one takes it back to simple", st == 0 and "gate_theme = simple" in open(sett).read())
+    slog = os.path.join(mine_a, "stage-after-i.log")  # the stage opened from the picker's ANIMS tab: i on the Clawd part -> the picker; q there -> the stage page again (then q, s leave it)
+    out, st = run(["--edit", "-"], [(1.0, b"\t"), (1.1, b"\t"), (1.2, b"\t"), (1.3, b"\t"), (1.7, b"\x1b[C"), (2.1, b"\r"), (3.6, b"]"), (3.7, b"]"), (3.8, b"]"), (3.9, b"]"), (4.4, b"i"), (5.2, b"q"), (6.0, b"q"), (6.4, b"s"), (7.2, b"q")], dict(tenv, CLAWD_STAGE_LOG=slog), cols=300, rows=90)
+    nlog = len(open(slog).read().splitlines()) if os.path.exists(slog) else 0
+    check("picker: i on a sprite part of a stage opened from the picker goes to the CLAWD tab, and q there goes back to the stage page (not out of the editor)", st == 0 and nlog >= 7)
     shutil.rmtree(anims, ignore_errors=True); shutil.rmtree(mine_a, ignore_errors=True)
     shutil.rmtree(spr, ignore_errors=True)
 print("%d failed" % len(fails) if fails else "all passed")
