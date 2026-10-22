@@ -12,6 +12,12 @@ sticker: lucide//activity
 - **Part Animations**: A file per animation, the swing's Clawd moved by it, and the editor's stage page to edit one (`--edit anims/swing`) (#19).
 - **README**: A short front page with screenshots; the details in `docs/` (#20).
 - **Pictures in Notes**: As wide as the note; the size rule is in the LLM Guide (#20).
+- **Stage Page Tested**: Group G (T31 – T38) passes on WSL, T37 skipped; fixes on the way: ROTATE and KEY, a part's outline inside the stage (#19, merged with #20).
+- **Nothing Picked**: Esc on the stage page picks no part (#21).
+- **Gates as Part Animations**: The office's door, stairs and well appear by `anims/gate-*.txt`, the same look as before; editable in the ANIMS tab with a grow bar and a running Clawd beside it; the view puts the picked part in the middle (#22).
+- **Stage Page Folds**: The panel folds to a ribbon of the tools (`p` or the fold button), the timeline to its one line (drag the line above it); the panel has the same gap on both sides (#22).
+- **Picker Search Focus**: A click outside the search box leaves it (letters stop typing, `q` quits); clicked into, `q` is typed (#22).
+- **Eye + KEYS Button**: The stage's key-marks toggle is an eye (open: shown, shut: hidden) with KEYS; picked from four mockups (#22).
 
 ## 📅 Yesterday's Progress (2026-10-20)
 - **WSL Test Queue Done**: T16 – T30 pass (the pixel editor, its animations and fill), so all of [[Test Checklist]]'s queue (T1 – T30) passes on WSL.
@@ -26,7 +32,7 @@ sticker: lucide//activity
 
 ### 🎨 Rooms and art
 - [ ] **Railed Stair Well**: Build design A (a bigger opening, steps right to left, a guard rail); no big tree in the park when it has a way up ([[2026-10-20]]).
-- [ ] **Gates Appear**: A setting: simple (the parts in turn, nothing popping in at the end) or construct (real parts fly into a blue outline, 1.4 s).
+- [>] **Gates Appear**: As part animations (#22, the office's gates, same look; to check: T41 – T44 on its branch); next: gates leaving, the park's own gates, then a setting: simple or construct (real parts fly into a blue outline, 1.4 s) as another set of files.
 - [ ] **Docs Look**: `README.md` is a short front page now (`docs/` has the details, #20); `docs/Linked-Rooms.md` and `docs/Platforms.md` still describe the old flat look in places (banner, gates at the window edge).
 
 ### 🎮 Interaction
@@ -42,11 +48,11 @@ sticker: lucide//activity
 
 ### ⚙️ Engine and tools
 - [>] **Animations**: `--build-art` to record room animations (packing, carrying, unpacking, doors, stairs, the well, each room) as GIFs, in category folders, with Gallery notes. Started (GIF colour rounding, category folders), parked in a stash.
-- [>] **Part Animations in the Editor**: The file, the swing driven by it and the editor's stage page are built (#19, layout B); with a tab in the sprite picker and onion skin; to check by eye: T31 – T38 (Group G of [[Test Checklist]], in #19); not yet: rotation drawn in the room (parked), the barista's brewing in the room ([[Interaction]]).
+- [>] **Stage Page Polish**: Esc picks nothing (#21, T39 – T40 on its branch); folding the panel and the timeline, the picker's search focus (#22, T45 – T49 on its branch); the eye + KEYS button (#22, T50).
 - [ ] **Less CPU**: Skip frames when nothing moves; stop drawing (FPS 0) when the window is covered, minimised or on another desktop; later dirty rects. (The terminal output is already diffed and written once per frame.)
 
 ### 🗂️ Repo and vault
-- [>] **Pull Requests**: #19 (part animations: the code) and #20 (the vault, the README and docs, the part-animation plan) waiting for Zaviel; #1 – #12 merged; #13 – #18 closed into #19 and #20.
+- [>] **Pull Requests**: #21 (Esc picks nothing) and #22 (gates as part animations, folding, the search focus) waiting for Zaviel; #1 – #12, #19, #20 merged; #13 – #18 closed into #19 and #20.
 - [ ] **Go Public** (decided 2026-10-20: code and notes public together): at a quiet moment with no open PRs, look at the six `(Zaviel)` screenshots; rewrite the old fixture names out of the history (`git filter-repo`; everyone re-clones once); add a `LICENSE` (MIT) and an unofficial-fan-project line to the README (Clawd is Anthropic's character); make the repo public; then **restrict merging**: protect `main` (no direct pushes, changes only through a pull request, Zaviel's approval to merge).
 - [ ] **William's Setup**: Accept the invite, clone, Templater settings ([[Collaboration]]).
 
@@ -75,5 +81,6 @@ sticker: lucide//activity
 - **macOS + iTerm2**: Builds and runs; window helper with osascript; fixed pixel size profile; `--try`.
 
 ### ⚙️ Engine and tools
+- **Part Animations in the Editor**: A file per animation (parts with keys), the swing driven by it, the editor's stage page with an ANIMS tab in the picker, onion skin, zoom and pan; T31 – T38 pass on WSL ([[Interaction]]).
 - **Pixel Editor Animates**: A timeline of an animation's frames, play at the room's speed, onion skin, a fill tool, a sprite picker, your own sprites over the defaults ([[Interaction]]); T24 – T30 pass on WSL.
 - **Engine Plan Built**: Scene and layers, placer, sprite and room files, pixel editor, animator; `--check` at 0 overlaps.

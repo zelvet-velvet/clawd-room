@@ -164,3 +164,10 @@ Whether each picture in `Assets/Snapshots/` still shows how things are. `tools/v
 | 2026-10-20 picked Clawd, corners and spotlight fading (picked).gif | current |  |
 | 2026-10-20 settings panel A and B (B picked).png | current |  |
 | 2026-10-20 well redesign options (A picked).png | current |  |
+| 2026-10-21 a part rotated, A B C (parked).png | not picked |  |
+| 2026-10-21 grow bar figure, A B C D (C picked).png | replaced | [[2026-10-21 grow bar figure, the Clawd's own walk frames (picked).png]] |
+| 2026-10-21 grow bar running Clawd, C1 C2 C3 (not picked).png | not picked |  |
+| 2026-10-21 grow bar figure, the Clawd's own walk frames (picked).png | current |  |
+| 2026-10-21 stage page KEYS toggle, A B C D (A picked).png | current |  |
+| 2026-10-21 stage page, the panel with even gaps.png | current |  |
+| 2026-10-21 stage page, the panel and the timeline folded.png | current |  |
