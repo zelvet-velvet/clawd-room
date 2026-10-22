@@ -158,15 +158,16 @@ What to test next, one `[!example] Group X · …` callout per group. Each test 
 > > 1. `git switch feat/gate-parts` in the repo (until its pull request is merged).
 > > 2. Try a narrow and a wide window for T45 – T47.
 
-> [!example] Group K · WSL: gate themes, the construct, settings.conf (T51–T56)
+> [!example] Group K · WSL: gate themes, the construct, settings.conf (T51–T57)
 > - [x] **T51** `./clawd-room.sh --edit` → a THEMES tab (the last one): a card per theme (SIMPLE, CONSTRUCT), each with its door, stairs and well side by side; SIMPLE says ACTIVE. The CONSTRUCT card shows blue outlines and pieces mid-flight (the picked card plays). A dashed NEW THEME card. Nothing touches or is cut off, in a narrow / short window too (the cards get lower, a row too many scrolls).
-> - [ ] **T52** Pick CONSTRUCT, press Enter (or the OPEN button) → the ANIMS tab shows the header `THEMES > CONSTRUCT` (THEMES is underlined: click it, or press Esc, to go back to the cards) and the cards DOOR, STAIRS, WELL. At the right of the header: an outlined `INACTIVE` while CONSTRUCT is not the active theme (a click on it makes it active), or a yellow `ACTIVE` when it is. Open STAIRS → the stage page: the whole yellow frame of its one part BUILD is in view, and the stairs are built from pieces as you drag the GROW bar or press PLAY.
-> - [ ] **T53** On the THEMES tab pick CONSTRUCT, press Space (or the MAKE ACTIVE button) → its card says ACTIVE and SIMPLE's no longer does; `~/.clawd-room/settings.conf` has `gate_theme = construct`. In a running room (`./clawd-room.sh --try`, or two stacked windows) the next gate that appears is a construct (pieces fly in under a blue outline, 1.4 s; look at the side door and the well too). Then Space again on CONSTRUCT (the button now says MAKE INACTIVE; or click ACTIVE in its opened header) → SIMPLE is the active theme again and gates come in part by part; on SIMPLE itself nothing happens. `--gate-theme` and `CLAWD_GATE_THEME` win over the file.
+> - [x] **T52** On the THEMES tab pick CONSTRUCT, press Enter (or click OPEN) → the ANIMS tab shows `THEMES > CONSTRUCT` and three cards: DOOR, STAIRS, WELL. At the right of the header it says `INACTIVE` (outlined) while CONSTRUCT is not the active theme, or `ACTIVE` (yellow) when it is. Esc, or a click on THEMES, goes back to the theme cards.
+> - [x] **T53** On the THEMES tab pick CONSTRUCT, press Space (or the MAKE ACTIVE button) → its card says ACTIVE and SIMPLE's no longer does; `~/.clawd-room/settings.conf` has `gate_theme = construct`. In a running room (`./clawd-room.sh --try`, or two stacked windows) the next gate that appears is a construct (pieces fly in under a blue outline, 1.4 s; look at the side door and the well too). Then Space again on CONSTRUCT (the button now says MAKE INACTIVE; or click ACTIVE in its opened header) → SIMPLE is the active theme again and gates come in part by part; on SIMPLE itself nothing happens. `--gate-theme` and `CLAWD_GATE_THEME` win over the file.
 > - [ ] **T54** NEW THEME card, Enter → type a name (a-z, 0-9, -), Enter → a new card with a blue dot (yours), a copy of the theme you picked last; its three files work like any (the stage page); RESET on it removes it; MAKE DEFAULT copies it into the repo.
 > - [ ] **T55** Stage page, pick the swing's Clawd part, press `i` → the picker opens on the CLAWD tab; Esc → the stage page is back. On a gate part `i` says DRAWN BY CODE, NO PIXEL ART HERE.
 > - [ ] **T56** The editor's own window opens at 78% of the screen width, and the picker's frame strip shows four frames. Nothing else about gates changed with no flag and no settings file (T44).
+> - [ ] **T57** Open CONSTRUCT, then STAIRS → the stage page: the whole yellow frame of its one part BUILD is in view, and dragging the GROW bar (or PLAY) builds the stairs from pieces under a blue outline.
 >
-> > [!tip]- T51–T56 · how to run them
+> > [!tip]- T51–T57 · how to run them
 > > 1. `git switch feat/gate-themes` in the repo (until its pull request is merged).
 > > 2. Your own gate files are in `~/.clawd-room/anims/gates/NAME/` (an old `~/.clawd-room/anims/gate-*.txt` is no longer read: delete it).
 
