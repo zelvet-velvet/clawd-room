@@ -1,0 +1,29 @@
+# A gate of the room appearing, as a part animation: the parts come in by their grow (0: not there, 100: whole). The room plays this
+# when the gate appears (a window next to this one): the way up: the steps, the platform, the opening, the railing (the park: also the building).
+# Every part as the room always did it: grow 0 to 100 in 0.8 s, fast, then settling (ease out). See anims/swing.txt for the file format.
+anim gate-stairs length 1.6 once
+scene theme office
+scene title office
+scene terminal 160 50
+scene time 1000.0 3.4
+scene scale 1
+scene still
+scene peer beta up
+scene neighbor up office
+scene linkpos up 70
+scene gate up 1.0
+scene session s00 name=api created=900 last=999 state=work tool=Bash hold=100000 px=110 py=70
+scene appear up
+view 30 4
+part steps    group stairs box 48 36 16 11
+part platform group stairs box 62 28 71 19
+part opening  group stairs box 117 15 15 17
+part rail     group stairs box 48 26 85 6
+key steps    0.0 grow=0
+key steps    1.6 grow=100 ease=out
+key platform 0.0 grow=0
+key platform 0.8 grow=100 ease=out
+key opening  0.0 grow=0
+key opening  0.8 grow=100 ease=out
+key rail     0.0 grow=0
+key rail     0.8 grow=100 ease=out

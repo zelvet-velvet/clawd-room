@@ -39,10 +39,12 @@ snap rng.txt $bin --golden-rng
 snap scenarios.txt $bin --script tools/scenarios/*.sc
 snap ui.txt $bin --golden-ui tools/fixtures/events-odd.jsonl
 snap win.txt $bin --golden-win
-snap parts.txt $bin --golden-parts anims/swing.txt anims/brew.txt tools/fixtures/anims/bad-order.txt tools/fixtures/anims/bad-field.txt tools/fixtures/anims/bad-ease.txt tools/fixtures/anims/bad-time.txt tools/fixtures/anims/loop-wrap.txt
+snap parts.txt $bin --golden-parts anims/swing.txt anims/brew.txt anims/gate-door.txt anims/gate-stairs.txt anims/gate-well.txt tools/fixtures/anims/bad-order.txt tools/fixtures/anims/bad-field.txt tools/fixtures/anims/bad-ease.txt tools/fixtures/anims/bad-time.txt tools/fixtures/anims/loop-wrap.txt
 snap swing-file.txt env CLAWD_ANIMS=tools/fixtures/anims-big $bin --script tools/scenarios/park-swing.sc   # the swing's motion comes from anims/swing.txt (here a bigger one)
+snap gate-file.txt env CLAWD_ANIMS=tools/fixtures/anims-big $bin --script tools/scenarios/office-gates-appear.sc   # gates appear by anims/gate-*.txt (here slower steps)
 if [ $mode = compare ]; then # ... and the file makes the same motion as the code it replaced (2 * sin(3.2 t)): without a file nothing differs
   if env CLAWD_ANIMS=/nonexistent $bin --script tools/scenarios/park-swing.sc | diff -q - <($bin --script tools/scenarios/park-swing.sc) > /dev/null; then echo "OK   park-swing.sc (the file and the code swing the same)"; else echo "FAIL park-swing.sc (the file and the code swing differently)"; fail=1; fi
+  if env CLAWD_ANIMS=/nonexistent $bin --script tools/scenarios/office-gates-appear.sc | diff -q - <($bin --script tools/scenarios/office-gates-appear.sc) > /dev/null; then echo "OK   office-gates-appear.sc (the gate files and the code appear the same)"; else echo "FAIL office-gates-appear.sc (the gate files and the code appear differently)"; fail=1; fi
 fi
 snap dump.txt dumps
 snap overlap.txt $bin --check   # items painting over each other (Engine Design: the placer brings this to 0)

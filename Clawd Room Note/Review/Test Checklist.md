@@ -136,6 +136,28 @@ What to test next, one `[!example] Group X · …` callout per group. Each test 
 > - [ ] **T39** `./clawd-room.sh --edit anims/swing`, pick a part, press Esc → nothing is picked: no yellow outline, the panel shows only the parts; `<` `>` and the KEY cap say "PICK A PART FIRST"; `[` or `]` or a click picks again.
 > - [ ] **T40** With SELECT, click the stage where there is no part → nothing picked; with `?` open or the quit question showing, Esc closes that first (the part stays picked).
 
+> [!example] Group I · WSL: gates appearing, edited on the stage page (T41–T44)
+> - [x] **T41** `./clawd-room.sh --edit` → ANIMS has GATE-DOOR, GATE-STAIRS, GATE-WELL; each opens on the stage page with the office and that gate coming in over the frames (step through them, PLAY).
+> - [x] **T42** GATE-STAIRS: the parts STEPS, PLATFORM, OPENING, RAIL; under the panel a small running Clawd and a bar (it runs faster while you drag the bar or PLAY runs): how much of the picked part has come in at this frame (its progress). Pick STEPS, go to frame 5, click near the bar's left end (about a tenth) → a diamond under frame 5, and in frames 2 – 5 the steps are smaller: they come in later.
+> - [x] **T43** With that change kept, open two rooms one above the other (`./clawd-room.sh --try`, or two windows stacked): when the stairs appear they follow your file. Without your file (`q` → D, or RESET in the picker) they appear as before.
+> - [x] **T44** Nothing else about gates changed: doors, stairs and the well look and appear as before in all three rooms.
+>
+> > [!tip]- T41–T44 · how to run them
+> > 1. `git switch feat/gate-parts` in the repo (until its pull request is merged).
+> > 2. Your edits are in `~/.clawd-room/anims/gate-*.txt`; delete them (or RESET in the picker) to go back.
+
+> [!example] Group J · WSL: folding the stage page's panel and timeline; the picker's search (T45–T50)
+> - [ ] **T45** `./clawd-room.sh --edit anims/gate-stairs` → the panel on the right has the same gap to the stage as to the window's edge, at any window size.
+> - [ ] **T46** `p` (or the fold button, top right) → the panel folds to a ribbon of the four tools; the stage grows; the tools still work. `p` again opens it.
+> - [ ] **T47** Drag the line above the frames down → the timeline folds to its one line; drag it up → the frames come back. The line's grip never touches the eye + KEYS button.
+> - [ ] **T48** `./clawd-room.sh --edit` → the search box is framed yellow; typing finds; `q` with the box empty quits. Click a card → the frame goes, letters do nothing, `q` quits.
+> - [ ] **T49** Click the search box, type `q` → a Q is typed (the window stays). Esc clears it, Esc again leaves the box, `q` then quits.
+> - [ ] **T50** Under the stage at the right: an eye + KEYS button. Click it (or `v`) → the eye shuts, the button goes dark and the key marks leave the stage; again → they come back.
+>
+> > [!tip]- T45–T50 · how to run them
+> > 1. `git switch feat/gate-parts` in the repo (until its pull request is merged).
+> > 2. Try a narrow and a wide window for T45 – T47.
+
 ## Rooms and art ([[Rooms and Art]])
 - [x] Each room (office, coffee shop, park) looks like the mockups at your window size
 - [x] Seated Clawds show behind their desk / table / bench; the barista behind the bar

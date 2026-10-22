@@ -539,7 +539,7 @@ static void play(Session *s, const Geo *geo, double now) { /* swing back and for
     if (!strcmp(s->emote, "swing")) {
         const PartAnim *an = parts_get("swing"); /* (anims/swing.txt, its clawd part's move x / y: 2 * sin(3.2 u) up and down when there is no file) */
         int cl = an ? parts_find(an, "clawd") : -1;
-        PartPose q = cl >= 0 ? parts_pose(an, cl, u) : (PartPose){0, 2 * sin(u * 3.2), 0, 0, 1};
+        PartPose q = cl >= 0 ? parts_pose(an, cl, u) : (PartPose){0, 2 * sin(u * 3.2), 0, 0, 1, 100};
         s->px = geo->spots.swing.x + q.x;        /* the swing set faces us: towards us and back (and sideways, if the file says so) */
         s->py = geo->spots.swing.y + q.y;
     } else {

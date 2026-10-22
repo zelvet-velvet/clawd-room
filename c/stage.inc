@@ -6,20 +6,21 @@
  *   mouse: a part on the stage or in the list picks it; SELECT / MOVE / ROTATE / KEY tools: MOVE drags the picked part, ROTATE drags
  *          its angle, KEY adds a key at this frame; < > beside a value change it at this frame (a key is made if there is none)
  *   keys:  left / right frame, Space play, up / down value, + - change it, [ ] part, k add key, x delete key, e ease of the key,
- *          u / r undo / redo, q quit */
+ *          u / r undo / redo, p fold the panel (like the editor: the fold button too; the line above the frames folds them), q quit */
 #include "fixture.h"
 #include "parts.h"
 
 Canvas render(int cols, int rows, Room *room, double now, double t, char *note, size_t note_n); /* draw.c */
 
-enum { R_SSTAGE = 64, R_SVAL, R_SPART, R_SKEY, R_SKEYDEL, R_SEASE, R_STOOL, R_SPANEL, R_SSCROLL, R_SKEYSHOW };
+enum { R_SSTAGE = 64, R_SVAL, R_SPART, R_SKEY, R_SKEYDEL, R_SEASE, R_STOOL, R_SPANEL, R_SSCROLL, R_SKEYSHOW, R_SGROW };
 #define ST_UNDO 24
 #define ST_FPS 16          /* the frames: 16 a second, like the room */
 #define ST_MAXF 300
 #define ST_TW 44           /* a frame as a picture */
 #define ST_TH 26
 #define ST_BG RGB(18, 18, 24)
-#define ST_ROWS 5          /* the values: move x, move y, turn, show, glow */
+#define ST_GAP 9           /* the gap between the stage's frame and the panel, and between the panel and the window's edge */
+#define ST_ROWS 5          /* the values: move x, move y, rotate, show, glow (grow is the bar under the panel) */
 static const char *const ST_ROW[ST_ROWS] = {"MOVE X", "MOVE Y", "ROTATE", "SHOW", "GLOW"};
 static const char *const ST_EASE[] = {"LINEAR", "OUT", "IN OUT", "BACK", "IN", "SINE", "SINE OUT", "SINE IN"};
 
@@ -31,6 +32,10 @@ typedef struct {
     int onion;                /* o / ONION: the frame before shows faintly red, the one after blue, where they differ (not while playing) */
     int hide_keys;            /* the keys' marks on the stage are hidden (v, or the KEYS button under the stage) */
     int hscroll;              /* the help box scrolls when the window is too short for it */
+    int growdrag;             /* dragging the grow bar */
+    int folded, fold_hover;   /* p or the fold button: the panel folded to a ribbon of the tools (like the editor's) */
+    int tl_folded, div_drag, div_hover; /* the line above the timeline dragged down: the timeline folded to its top line */
+    int focus;                /* the view goes to the picked part (put in the middle) at the next drawing */
     int zoom;                 /* the stage's zoom (0: as the window fits); vx, vy: the room pixel at its top left (vw, vh: what it shows) */
     int pscroll, pfollow;     /* the panel scrolls: how far, and whether it should bring the picked value into view */
     int pan; double pan_x0, pan_y0; int pan_vx, pan_vy; /* dragging the view with the right button */
@@ -50,23 +55,31 @@ static double st_now_t(const Stage *s, double wall) { return s->playing ? fmod((
 static int st_key_at(const Part *p, double t) { for (int k = 0; k < p->nkey; k++) if (fabs(p->key[k].t - t) < 0.5 / ST_FPS) return k; return -1; }
 
 /* the room of the scene at time t of the animation: the scene lines as a fixture (a line `emote SID KIND` starts that emote when the
- * animation began, t ago), rendered once to settle the room, then at that moment */
+ * animation began, t ago; `appear SIDE` makes that gate begin to appear then), rendered once to settle the room, then at that moment */
 static Canvas st_shot(const PartAnim *a, double t) {
     static Fixture fx;
     char text[PARTS_SCENE_LINES * 200 + 16], sid[PARTS_SCENE_LINES][24], kind[PARTS_SCENE_LINES][16];
-    int nemote = 0;
+    int nemote = 0, ngate = 0, gside[4], still = 0;
     text[0] = 0;
     for (int i = 0; i < a->nscene; i++) {
+        if (!strcmp(a->scene[i], "still")) { still = 1; continue; } /* still: nobody moves (a gate scene: the room keeps the gates the fixture gives) */
+        if (!strncmp(a->scene[i], "appear ", 7)) { char sd[16]; if (ngate < 4 && sscanf(a->scene[i] + 7, "%15s", sd) == 1) gside[ngate++] = side_index(sd); continue; } /* appear SIDE: that gate begins to appear when the animation does */
         if (!strncmp(a->scene[i], "emote ", 6)) { if (nemote < PARTS_SCENE_LINES && sscanf(a->scene[i] + 6, "%23s %15s", sid[nemote], kind[nemote]) == 2) nemote++; continue; }
         size_t n = strlen(text);
         snprintf(text + n, sizeof text - n, "%s\n", a->scene[i]);
     }
     if (fixture_load_text(&fx, text)) return canvas_new(8, 8, ST_BG);
-    fx.room.freeze = 0; /* (it moves: the swing's Clawd by the animation) */
+    fx.room.freeze = still; /* (it moves: the swing's Clawd by the animation; a still scene does not) */
     char note[64];
     Canvas settle = render(fx.cols, fx.rows, &fx.room, fx.now, fx.t, note, sizeof note);
     canvas_free(&settle);
     for (int i = 0; i < nemote; i++) room_emote(&fx.room, sid[i], kind[i], fx.now - t, 100000.0);
+    for (int i = 0; i < ngate; i++) if (gside[i] >= 0) { /* (a gate: it began to appear t ago) */
+        char key[8];
+        fx.room.gate_t0[gside[i]] = fx.t - t; /* (gates run on the drawing's clock, fx.t, not the events' one) */
+        snprintf(key, sizeof key, "gate%d", gside[i]);
+        anim_start(&fx.room.anim, key, 0, 1, fx.t - t, 0.8, EASE_OUT);
+    }
     return render(fx.cols, fx.rows, &fx.room, fx.now, fx.t, note, sizeof note);
 }
 static void st_crop(Canvas *dst, const Canvas *src, int sx, int sy, int w, int h, int dx, int dy, int z) { /* a piece of a picture, z times, at (dx, dy) */
@@ -192,13 +205,13 @@ static void st_box(const Part *p, PartPose q, int *x, int *y, int *w, int *h) { 
 typedef struct { int gx, ty, cw, ah, z, px, fw, th, y0; } StLayout; /* the stage's corner and size, the panel's left and width, the timeline's height and top */
 static StLayout st_layout(const Stage *s, int W, int H) {
     StLayout L;
-    L.th = H >= 150 ? 3 + 12 + ST_TH + 22 : 15; /* (too short: the timeline's line only) */
+    L.th = H >= 150 && !s->tl_folded ? 3 + 12 + ST_TH + 22 : 15; /* (too short, or folded: the timeline's line only) */
     L.y0 = H - L.th;
     L.gx = 4; L.ty = 12;
-    L.fw = W >= 280 ? 104 : W >= 200 ? 96 : 84; /* (a narrow window: a narrower panel) */
-    L.px = W - 4 - L.fw;
-    L.cw = L.px - 10 - L.gx;
-    L.ah = L.y0 - 12 - L.ty;
+    L.fw = s->folded ? RIBBON : W >= 280 ? 104 : W >= 200 ? 96 : 84; /* (a narrow window: a narrower panel; folded, the ribbon) */
+    L.px = W - ST_GAP - L.fw - (s->folded ? 0 : 2); /* (the same gap left and right of the panel: its scroll bar is 2 more) */
+    L.cw = L.px - ST_GAP - 1 - L.gx;
+    L.ah = L.y0 - 14 - L.ty; /* (the line under the stage: its buttons clear of the timeline's grip) */
     L.z = s->zoom > 0 ? s->zoom : L.cw >= 120 ? 2 : 1;
     return L;
 }
@@ -229,9 +242,11 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
     double t = st_now_t(s, wall);
     int nf = st_nf(a), cur = (int)lround(t * ST_FPS) % nf;
     char buf[160];
-    snprintf(buf, sizeof buf, "EDIT %s  ANIMS/%s.TXT  %d PARTS", a->name, s->name, a->npart);
+    snprintf(buf, sizeof buf, "EDIT %s  ANIMS/%s.TXT  %d PART%s", a->name, s->name, a->npart, a->npart == 1 ? "" : "S");
     for (char *p = buf; *p; p++) if (*p >= 'a' && *p <= 'z') *p -= 32;
+    while (buf[0] && 4 + text_width(buf) + 6 > cv->w - 4 - 9) buf[strlen(buf) - 1] = 0; /* (never touching the fold button) */
     canvas_text(cv, 4, 3, buf, C_YELLOW);
+    fold_button(cv, s->folded, s->fold_hover);
     /* the stage: the room at this time, a crop of it, every part outlined (the picked one yellow), the picked part's keys */
     Canvas shot = st_shot(a, t);
     if (s->onion && !s->playing) { /* onion skin: where the frame before / after differs from this one, it shows faintly red / blue */
@@ -251,11 +266,18 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
         }
     }
     int vw = L.cw / L.z, vh = L.ah / L.z;
-    int vx = s->vx, vy = s->vy; /* (the piece of the room shown stays inside it) */
-    if (vx + vw > shot.w) vx = shot.w - vw;
-    if (vy + vh > shot.h) vy = shot.h - vh;
-    if (vx < 0) vx = 0;
-    if (vy < 0) vy = 0;
+    if (s->focus && s->pick >= 0 && s->pick < a->npart && a->part[s->pick].has_box) { /* the picked part in the middle of the stage (as far as the room lets it) */
+        const Part *fp = &a->part[s->pick];
+        PartPose fq = parts_pose(a, s->pick, t);
+        s->vx = fp->box[0] + (int)lround(fq.x) + fp->box[2] / 2 - vw / 2;
+        s->vy = fp->box[1] + (int)lround(fq.y) + fp->box[3] / 2 - vh / 2;
+    }
+    s->focus = 0;
+    int vx = s->vx, vy = s->vy; /* (the view may go past the room's edge by half of itself, so any part can be in its middle) */
+    if (vx + vw / 2 > shot.w) vx = shot.w - vw / 2;
+    if (vy + vh / 2 > shot.h) vy = shot.h - vh / 2;
+    if (vx < -vw / 2) vx = -vw / 2;
+    if (vy < -vh / 2) vy = -vh / 2;
     s->vx = vx; s->vy = vy; s->vw = vw; s->vh = vh;
     canvas_rect(cv, L.gx, L.ty, L.cw, L.ah, ST_BG);
     st_crop(cv, &shot, vx, vy, vw, vh, L.gx, L.ty, L.z);
@@ -266,14 +288,19 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
         st_box(p, parts_pose(a, i, t), &bx, &by, &bw, &bh);
         Rgb oc = i == s->pick ? C_YELLOW : s->tool == 2 && p->sprite ? RGB(58, 62, 78) : RGB(95, 105, 135); /* (ROTATE: a sprite's outline dim, it cannot be picked) */
         double turn = parts_pose(a, i, t).turn;
-        if (fabs(turn) < 0.5) frame(cv, L.gx + (bx - vx) * L.z, L.ty + (by - vy) * L.z, bw * L.z, bh * L.z, oc);
+        int cx0 = L.gx, cy0 = L.ty, cx1 = L.gx + L.cw - 1, cy1 = L.ty + L.ah - 1; /* (outlines stay inside the stage: a part out of view draws nothing over the panel) */
+        if (fabs(turn) < 0.5) { /* (frame()'s border, one pixel outside the box, line by line inside the stage) */
+            int x0 = L.gx + (bx - vx) * L.z - 1, y0 = L.ty + (by - vy) * L.z - 1, x1 = x0 + bw * L.z + 1, y1 = y0 + bh * L.z + 1;
+            st_line_in(cv, x0, y0, x1, y0, oc, cx0, cy0, cx1, cy1); st_line_in(cv, x0, y1, x1, y1, oc, cx0, cy0, cx1, cy1);
+            st_line_in(cv, x0, y0, x0, y1, oc, cx0, cy0, cx1, cy1); st_line_in(cv, x1, y0, x1, y1, oc, cx0, cy0, cx1, cy1);
+        }
         else { /* turned: the outline turned about its middle, and a mark on its top edge */
             double cxp = L.gx + (bx - vx + bw / 2.0) * L.z, cyp = L.ty + (by - vy + bh / 2.0) * L.z, w2 = bw * L.z / 2.0 + 1, h2 = bh * L.z / 2.0 + 1, ca = cos(turn * M_PI / 180), sa = sin(turn * M_PI / 180);
             double cx4[4] = {-w2, w2, w2, -w2}, cy4[4] = {-h2, -h2, h2, h2};
             int px4[4], py4[4];
             for (int k = 0; k < 4; k++) { px4[k] = (int)lround(cxp + cx4[k] * ca - cy4[k] * sa); py4[k] = (int)lround(cyp + cx4[k] * sa + cy4[k] * ca); }
-            for (int k = 0; k < 4; k++) canvas_line(cv, px4[k], py4[k], px4[(k + 1) % 4], py4[(k + 1) % 4], oc);
-            canvas_line(cv, (px4[0] + px4[1]) / 2, (py4[0] + py4[1]) / 2, (int)lround(cxp), (int)lround(cyp), oc); /* (top middle to the middle: which way is up) */
+            for (int k = 0; k < 4; k++) st_line_in(cv, px4[k], py4[k], px4[(k + 1) % 4], py4[(k + 1) % 4], oc, cx0, cy0, cx1, cy1);
+            st_line_in(cv, (px4[0] + px4[1]) / 2, (py4[0] + py4[1]) / 2, (int)lround(cxp), (int)lround(cyp), oc, cx0, cy0, cx1, cy1); /* (top middle to the middle: which way is up) */
         }
     }
     if (s->tool == 0 && ST_HAS(s) && a->part[s->pick].has_box) { /* SELECT: handles on the picked part's border (drag one to resize it) */
@@ -306,14 +333,33 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
         snprintf(buf, sizeof buf, "PART %s  X %d  Y %d", a->part[s->pick].name, a->part[s->pick].box[0] + (int)lround(q.x), a->part[s->pick].box[1] + (int)lround(q.y));
         for (char *p = buf; *p; p++) if (*p >= 'a' && *p <= 'z') *p -= 32;
     }
-    { /* the line under the stage: the part and where it is, or a message in its place; KEYS ON / OFF at the right (the text cut short so they never touch) */
-        const char *kl = s->hide_keys ? "KEYS OFF" : "KEYS ON";
-        int kx = L.gx + L.cw - text_width(kl) - 6, room = kx - 8 - L.gx;
+    { /* the line under the stage: the part and where it is, or a message in its place; at the right the eye + KEYS button (the key marks
+         on the stage: open eye shown, shut eye hidden; the text cut short so they never touch) */
+        int kw = 3 + 9 + 3 + text_width("KEYS") + 4, kx = L.gx + L.cw - kw, room = kx - 8 - L.gx;
         char line[160];
         snprintf(line, sizeof line, "%s", s->msg[0] ? s->msg : ST_HAS(s) ? buf : "");
         while (line[0] && text_width(line) > room) line[strlen(line) - 1] = 0;
         canvas_text(cv, L.gx, L.ty + L.ah + 4, line, s->msg[0] ? C_YELLOW : C_GREY);
-        button(cv, kx, L.ty + L.ah + 2, kl, !s->hide_keys, R_SKEYSHOW, 0);
+        int on = !s->hide_keys, ky = L.ty + L.ah + 2;
+        canvas_rect(cv, kx, ky, kw, 9, on ? RGB(90, 90, 120) : RGB(34, 34, 44));
+        if (on) frame(cv, kx, ky, kw, 9, C_YELLOW);
+        if (!ui_icon(cv, on ? "eye-open" : "eye-shut", kx + 3, ky + 2, 0)) { /* (no such sprite in sprites/ui.txt: the built-in eye) */
+            static const char *const EYE[2][5] = {{".........", ".........", "e.......e", ".eeeeeee.", "..e.e.e.."}, {"..yyyyy..", ".y..y..y.", "y..yyy..y", ".y..y..y.", "..yyyyy.."}};
+            for (int r = 0; r < 5; r++) for (int c = 0; c < 9; c++) if (EYE[on][r][c] != '.') canvas_px(cv, kx + 3 + c, ky + 2 + r, on ? C_YELLOW : RGB(150, 150, 172));
+        }
+        canvas_text(cv, kx + 15, ky + 2, "KEYS", on ? C_WHITE : C_GREY);
+        region(R_SKEYSHOW, 0, kx, ky, kw, 9, RGB(0, 0, 0));
+    }
+    if (!s->folded && s->pick >= 0 && s->pick < a->npart) { /* GROW: how much of the picked part has come in at this frame (a running figure, a bar; click or drag it) */
+        int gx0 = L.px, gy0 = L.ty + L.ah + 2, bx0 = gx0 + 17, bw = L.fw - 17, g = (int)lround(parts_pose(a, s->pick, t).grow);
+        g = g < 0 ? 0 : g > 100 ? 100 : g;
+        char fig[16]; /* (a Clawd from sprites/ui.txt, always running: faster while the bar is dragged or PLAY runs; at rest it steps with the page's redraws) */
+        snprintf(fig, sizeof fig, "grow-walk-%d", 1 + (int)fmod(wall * (s->growdrag || s->playing ? 8 : 5), 4)); /* (fmod: the wall clock times 5 is past what an int holds) */
+        if (!ui_icon(cv, fig, gx0, gy0, 0)) canvas_rect(cv, gx0 + 3, gy0 + 2, 9, 5, C_CLAWD); /* (no such sprite: a plain block) */
+        canvas_rect(cv, bx0, gy0 + 2, bw, 5, RGB(34, 34, 44));
+        canvas_rect(cv, bx0, gy0 + 2, bw * g / 100, 5, C_YELLOW);
+        frame(cv, bx0, gy0 + 2, bw, 5, RGB(60, 60, 76));
+        region(R_SGROW, 0, bx0 - 2, gy0, bw + 4, 9, RGB(0, 0, 0));
     }
     /* the panel: the tools, the picked part, its values at this frame, the keys' buttons, the parts */
     int x = L.px, y = L.ty, fw = L.fw, pbot = L.ty + L.ah;
@@ -325,6 +371,13 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
     for (int i = 0, used = 0; i < 4; i++) {
         int cw = text_width(TOOL[i]) > 13 ? text_width(TOOL[i]) : 13, tx = x + used + (fw - roww) * i / 3;
         used += cw;
+        if (s->folded) { /* folded: a ribbon, the tools one over another (no names) */
+            int ry = y + i * 17, off = i == 2 && ST_HAS(s) && a->part[s->pick].sprite, keyed = i == 3 && ST_HAS(s) && st_key_at(&a->part[s->pick], st_t(cur)) >= 0;
+            stage_tool(cv, x, ry, i, i == 3 ? keyed : s->tool == i && !off);
+            if (off) st_dim(cv, x, ry, 13, 15);
+            region(R_STOOL, i, x, ry, 13, 15, RGB(0, 0, 0));
+            continue;
+        }
         int off = i == 2 && ST_HAS(s) && a->part[s->pick].sprite; /* (a sprite does not rotate) */
         int keyed = i == 3 && ST_HAS(s) && st_key_at(&a->part[s->pick], st_t(cur)) >= 0; /* (KEY is not a tool: a toggle, pressed in when this frame is a key of the picked part) */
         stage_tool(cv, tx + (cw - 13) / 2, y, i, i == 3 ? keyed : s->tool == i && !off);
@@ -332,13 +385,14 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
         canvas_text(cv, tx + (cw - text_width(TOOL[i])) / 2, y + 16, TOOL[i], off ? RGB(70, 70, 86) : keyed ? C_YELLOW : i != 3 && s->tool == i ? C_WHITE : C_GREY);
         region(R_STOOL, i, tx, y, cw, 21, RGB(0, 0, 0));
     }
+    const Part *pp = ST_HAS(s) ? &a->part[s->pick] : NULL;
+    if (!s->folded) { /* (the rest of the panel: not while it is folded) */
     int top = L.ty + 27, pvis = pbot - top;
     if (pvis < 16) pvis = 16;
     region(R_SPANEL, 0, x, top, fw + 2, pvis, RGB(0, 0, 0));
     int n0 = g_nreg;
     Canvas pc = canvas_new(fw + 2, 300, ST_BG); /* (the rest of the panel is drawn whole, then the part that is in view is copied: it scrolls) */
-    const Part *pp = ST_HAS(s) ? &a->part[s->pick] : NULL;
-    PartPose q = pp ? parts_pose(a, s->pick, t) : (PartPose){0, 0, 0, 0, 1};
+    PartPose q = pp ? parts_pose(a, s->pick, t) : (PartPose){0, 0, 0, 0, 1, 100};
     int kat = pp ? st_key_at(pp, st_t(cur)) : -1, py = 0, row_y[ST_ROWS] = {0};
     if (pp) {
         canvas_text(&pc, 0, py, "PART", RGB(84, 84, 104)); canvas_rect(&pc, 0, py + 7, fw, 1, RGB(40, 40, 52));
@@ -403,9 +457,16 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
         canvas_rect(cv, bx2, k0, 1, k1 - k0 > 4 ? k1 - k0 : 4, RGB(140, 140, 160));
     }
     canvas_free(&pc);
+    } /* (the panel, unfolded) */
     /* the timeline: its line, the thing as in the room at its left, the frames as pictures with the picked part's keys under them */
     int ty0 = L.y0, ly = ty0 + 3;
-    canvas_rect(cv, 0, ty0, cv->w, 1, RGB(44, 44, 56));
+    canvas_rect(cv, 0, ty0, cv->w, 1, s->div_drag || s->div_hover ? RGB(120, 120, 150) : RGB(44, 44, 56)); /* the divider: drag it down to fold the timeline to this line, up to open it (the editor's handle) */
+    if (cv->h >= 150) {
+        Rgb hk = s->div_drag || s->div_hover ? RGB(170, 170, 200) : RGB(74, 74, 92);
+        int hx = cv->w / 2 - 10;
+        canvas_rect(cv, hx + 1, ty0 - 1, 18, 3, hk); canvas_rect(cv, hx, ty0, 20, 1, hk);
+        region(R_DIV, 0, 0, ty0 - 2, cv->w, 5, RGB(0, 0, 0));
+    }
     const char *sh = cv->w >= 220 ? "? SHORTCUTS  Q QUIT" : "? HELP  Q QUIT";
     int lw = text_width(sh) + 16, sx0 = lw, sx1 = cv->w - 4;
     canvas_rect(cv, sx0 - 8, ty0 + 1, 1, L.th - 1, RGB(40, 40, 52));
@@ -443,6 +504,8 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
                 Canvas full = st_shot(a, st_t(f));
                 int cx = vx + 4, cy = vy + 6;
                 if (pp && pp->has_box) { cx = pp->box[0] + pp->box[2] / 2 - ST_TW / 2; cy = pp->box[1] + pp->box[3] / 2 - ST_TH / 2; }
+                cx = cx > full.w - ST_TW ? full.w - ST_TW : cx; cy = cy > full.h - ST_TH ? full.h - ST_TH : cy; /* (inside the room: no black edge) */
+                cx = cx < 0 ? 0 : cx; cy = cy < 0 ? 0 : cy;
                 s->thumb[f] = canvas_new(ST_TW, ST_TH, ST_BG);
                 st_crop(&s->thumb[f], &full, cx, cy, ST_TW, ST_TH, 0, 0, 1);
                 canvas_free(&full);
@@ -477,8 +540,8 @@ static void stage_draw(Stage *s, Canvas *cv, double wall) {
         canvas_text(cv, bx + (w - text_width(b)) / 2, by + 14, b, C_WHITE);
     }
     if (s->help) { /* ?: the keys and the mouse, in a box over the stage; a window too short for it scrolls it (up / down, the wheel) */
-        static const char *const H[] = {"HELP  (UP DOWN SCROLLS)", "MOUSE", "CLICK A PART: PICK IT", "SELECT: DRAG A BORDER TO RESIZE", "MOVE / ROTATE: DRAG ON THE STAGE", "KEY: A KEY AT THIS FRAME, OR NONE", "< > BESIDE A VALUE: CHANGE IT", "CLICK A FRAME: GO THERE", "WHEEL: ZOOM / SCROLL THE PANEL", "RIGHT DRAG: MOVE THE VIEW",
-                                        "KEYS", "LEFT RIGHT  FRAME", "UP DOWN  A VALUE", "< >  CHANGE IT", "+ -  ZOOM THE STAGE", "W A S D  MOVE THE VIEW", "0  VIEW AS IT WAS", "ESC  NOTHING PICKED", "V  KEYS ON THE STAGE: ON / OFF", "SPACE  PLAY", "O  ONION SKIN (BEFORE RED, AFTER BLUE)", "[ ]  OTHER PART", "K  A KEY HERE OR NONE", "X  DELETE THE KEY", "E  KEY EASE", "U R  UNDO REDO", "Q  QUIT"};
+        static const char *const H[] = {"HELP  (UP DOWN SCROLLS)", "MOUSE", "CLICK A PART: PICK IT", "SELECT: DRAG A BORDER TO RESIZE", "MOVE / ROTATE: DRAG ON THE STAGE", "KEY: A KEY AT THIS FRAME, OR NONE", "< > BESIDE A VALUE: CHANGE IT", "THE BAR BY THE RUNNING CLAWD: HOW MUCH HAS COME IN", "CLICK A FRAME: GO THERE", "WHEEL: ZOOM / SCROLL THE PANEL", "RIGHT DRAG: MOVE THE VIEW", "DRAG THE LINE ABOVE THE FRAMES: FOLD THEM", "THE BUTTON TOP RIGHT: FOLD THE PANEL",
+                                        "KEYS", "LEFT RIGHT  FRAME", "UP DOWN  A VALUE", "< >  CHANGE IT", "+ -  ZOOM THE STAGE", "W A S D  MOVE THE VIEW", "0  ZOOM AS IT WAS, THE PART IN THE MIDDLE", "ESC  NOTHING PICKED", "V  KEYS ON THE STAGE: ON / OFF", "P  FOLD THE PANEL", "SPACE  PLAY", "O  ONION SKIN (BEFORE RED, AFTER BLUE)", "[ ]  OTHER PART", "K  A KEY HERE OR NONE", "X  DELETE THE KEY", "E  KEY EASE", "U R  UNDO REDO", "Q  QUIT"};
         int n = (int)(sizeof H / sizeof *H), bw2 = 0;
         for (int i = 0; i < n; i++) if (text_width(H[i]) > bw2) bw2 = text_width(H[i]);
         int vis = (cv->h - 12 - 4 - 8) / 7, w = bw2 + 14; /* (as many lines as the window has room for) */
@@ -542,7 +605,7 @@ static int stage_open(Stage *s, const char *name) {
     if (parts_load(&s->a, path)) return 1;
     parts_inherit(&s->a, name);
     if (!s->a.npart) { fprintf(stderr, "%s: no parts\n", path); return 1; }
-    s->vx = s->a.view_x; s->vy = s->a.view_y;
+    s->vx = s->a.view_x; s->vy = s->a.view_y; s->focus = 1; /* (it opens on its first part, in the middle) */
     if (!s->a.nscene) { fprintf(stderr, "%s: no scene lines: the editor's stage has nothing to show\n", path); return 1; }
     return 0;
 }
@@ -587,6 +650,14 @@ static void st_resize(Stage *s, const StLayout *L, int mx, int my) { /* the drag
     p->box[0] = l - s->rsz_off[0]; p->box[1] = t0 - s->rsz_off[1]; p->box[2] = r - l; p->box[3] = b - t0;
     st_changed(s);
 }
+static void st_grow_to(Stage *s, const StLayout *L, int mx) { /* the grow bar: the picked part's grow at this frame where the pointer is (5% steps) */
+    int bx0 = L->px + 17, bw = L->fw - 17, k = st_ensure_key(s, s->pick, st_t(s->frame));
+    if (k < 0) return;
+    double g = (double)(mx - bx0) * 100 / (bw - 1);
+    g = 5 * lround(g / 5);
+    s->a.part[s->pick].key[k].pose.grow = g < 0 ? 0 : g > 100 ? 100 : g;
+    st_changed(s);
+}
 static void st_zoom(Stage *s, const StLayout *L, int d) { /* the stage's zoom one step, about the middle of what it shows */
     int z = L->z + d;
     if (z < 1) z = 1;
@@ -604,7 +675,6 @@ static void stage_dirs(const char *dir) { /* the folders of the animations: the 
 /* the stage page in a terminal that is already set up (the editor's sprite picker opens it too): until q; 1 if it cannot open */
 static int stage_loop(const char *dir, const char *name) {
     static Stage s;
-    (void)dir;
     if (stage_open(&s, name)) return 1;
     Cells prev = {0, 0, NULL};
     int quit = 0, cols = 0, rows = 0;
@@ -615,6 +685,7 @@ static int stage_loop(const char *dir, const char *name) {
         if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == 0 && ws.ws_col) { c = ws.ws_col; r = ws.ws_row; }
         if (c != cols || r != rows) { cols = c; rows = r; cells_free(&prev); prev.c = NULL; put("\x1b[H"); }
         double wall = wall_now();
+        ui_watch(dir); /* (the editor's own sprites, sprites/ui.txt: the grow bar's Clawd) */
         Canvas cv = canvas_new(cols, rows * 2, ST_BG);
         stage_draw(&s, &cv, wall);
         StLayout L = st_layout(&s, cv.w, cv.h);
@@ -626,7 +697,7 @@ static int stage_loop(const char *dir, const char *name) {
         cells_free(&prev); prev = cur;
         canvas_free(&cv);
         fd_set fs; FD_ZERO(&fs); FD_SET(STDIN_FILENO, &fs);
-        struct timeval tv = {0, s.playing ? 62500 : 200000};
+        struct timeval tv = {0, s.playing || s.growdrag ? 62500 : 200000}; /* (16 a second while something moves) */
         if (select(STDIN_FILENO + 1, &fs, NULL, NULL, &tv) <= 0) { if (nin == 1 && in[0] == 0x1b) { nin = 0; if (s.asking) s.asking = 0; else if (s.help) s.help = 0; else s.pick = -1; } continue; }
         ssize_t k = read(STDIN_FILENO, in + nin, sizeof in - 1 - (size_t)nin);
         if (k <= 0) continue;
@@ -657,6 +728,7 @@ static int stage_loop(const char *dir, const char *name) {
                         else if (motion && s.sb_w > 0) { s.first = (int)((long)(px - s.sb_x0) * nf / s.sb_w) - s.cap / 2; if (s.first > nf - s.cap) s.first = nf - s.cap; if (s.first < 0) s.first = 0; }
                         continue;
                     }
+                    if (s.growdrag) { if (release) { s.growdrag = 0; st_save(&s); } else if (motion) st_grow_to(&s, &L, px); continue; } /* (dragging the grow bar) */
                     if (s.rsz && (motion || release)) { /* dragging a border of the picked part */
                         if (release) { s.rsz = 0; st_save(&s); } else st_resize(&s, &L, px, py);
                         continue;
@@ -687,8 +759,18 @@ static int stage_loop(const char *dir, const char *name) {
                         }
                         continue;
                     }
+                    if (s.div_drag) { /* (dragging the line above the timeline: below two thirds of it, folded to its top line) */
+                        if (release) s.div_drag = 0;
+                        else if (motion) s.tl_folded = rows * 2 - py < (3 + 12 + ST_TH + 22) * 2 / 3;
+                        continue;
+                    }
+                    s.fold_hover = rg && rg->kind == R_FOLD;
+                    s.div_hover = rg && rg->kind == R_DIV;
                     if (release || motion || btn != 0 || !rg) continue;
                     s.msg[0] = 0;
+                    if (rg->kind == R_FOLD) { s.folded = !s.folded; continue; }
+                    if (rg->kind == R_DIV) { s.div_drag = 1; continue; }
+                    if (rg->kind == R_SGROW) { s.playing = 0; st_push(&s); s.growdrag = 1; st_grow_to(&s, &L, px); continue; }
                     if (rg->kind == R_SSCROLL) { s.sbdrag = 1; s.first = (int)((long)(px - s.sb_x0) * nf / s.sb_w) - s.cap / 2; if (s.first > nf - s.cap) s.first = nf - s.cap; if (s.first < 0) s.first = 0; continue; }
                     if (rg->kind == R_SSTAGE) {
                         s.playing = 0;
@@ -714,7 +796,7 @@ static int stage_loop(const char *dir, const char *name) {
                     }
                     else if (rg->kind == R_STOOL) { if (rg->i == 3) { s.playing = 0; st_toggle_key(&s); } else if (rg->i == 2 && ST_HAS(&s) && s.a.part[s.pick].sprite) st_msg(&s, "A SPRITE MOVES, IT DOES NOT ROTATE"); else s.tool = rg->i; } /* (KEY: a key here or none; ROTATE greyed for a sprite: not picked) */
                     else if (rg->kind == R_SKEYSHOW) s.hide_keys = !s.hide_keys;
-                    else if (rg->kind == R_SPART) s.pick = rg->i;
+                    else if (rg->kind == R_SPART) { s.pick = rg->i; s.focus = 1; }
                     else if (rg->kind == R_SVAL) { s.row = rg->i / 3; if (rg->i % 3) { s.playing = 0; st_change(&s, s.row, rg->i % 3 == 2 ? 1 : -1); } }
                     else if (rg->kind == R_SKEY) { s.playing = 0; st_toggle_key(&s); }
                     else if (rg->kind == R_SEASE) { s.playing = 0; st_ease(&s); }
@@ -748,8 +830,9 @@ static int stage_loop(const char *dir, const char *name) {
             else if (ch == '+' || ch == '=') st_zoom(&s, &L, 1);
             else if (ch == '-') st_zoom(&s, &L, -1);
             else if (ch == 'v' || ch == 'V') s.hide_keys = !s.hide_keys;
+            else if (ch == 'p' || ch == 'P') s.folded = !s.folded; /* (the panel folds / unfolds, like the editor's) */
             else if (ch == 'o' || ch == 'O') s.onion = !s.onion;
-            else if (ch == '0') { s.zoom = 0; s.vx = s.a.view_x; s.vy = s.a.view_y; }
+            else if (ch == '0') { s.zoom = 0; s.vx = s.a.view_x; s.vy = s.a.view_y; s.focus = 1; } /* (the zoom as it was, the picked part in the middle) */
             else if (ch == 'w' || ch == 'W') st_pan(&s, 0, -1);
             else if (ch == 's' || ch == 'S') st_pan(&s, 0, 1);
             else if (ch == 'a' || ch == 'A') st_pan(&s, -1, 0);
@@ -757,6 +840,7 @@ static int stage_loop(const char *dir, const char *name) {
             else if (ch == ']' || ch == '[') { /* the next / last part (ROTATE: the sprites are skipped) */
                 if (s.pick < 0) s.pick = ch == ']' ? -1 : 0; /* (nothing picked: from the first / the last) */
                 for (int n = 0; n < s.a.npart; n++) { s.pick = (s.pick + (ch == ']' ? 1 : s.a.npart - 1)) % s.a.npart; if (!(s.tool == 2 && s.a.part[s.pick].sprite)) break; }
+                s.focus = 1;
             }
             else if (ch == 'k' || ch == 'K') st_toggle_key(&s);
             else if (ch == 'x' || ch == 'X') st_del_key(&s);
@@ -766,7 +850,7 @@ static int stage_loop(const char *dir, const char *name) {
         }
         memmove(in, in + i, (size_t)(nin - i)); nin -= i;
         (void)t;
-        if (getenv("CLAWD_STAGE_LOG")) { FILE *lg = fopen(getenv("CLAWD_STAGE_LOG"), "a"); if (lg) { fprintf(lg, "tool=%d pick=%s frame=%d keyed=%d\n", s.tool, ST_HAS(&s) ? s.a.part[s.pick].name : "-", s.frame, ST_HAS(&s) && st_key_at(&s.a.part[s.pick], st_t(s.frame)) >= 0); fclose(lg); } } /* (for the tests: what the page is on after each input) */
+        if (getenv("CLAWD_STAGE_LOG")) { FILE *lg = fopen(getenv("CLAWD_STAGE_LOG"), "a"); if (lg) { fprintf(lg, "tool=%d view=%d,%d,%d pick=%s frame=%d keyed=%d\n", s.tool, s.vx, s.vy, L.z, (ST_HAS(&s) ? s.a.part[s.pick].name : "-"), s.frame, (ST_HAS(&s) && st_key_at(&s.a.part[s.pick], st_t(s.frame)) >= 0)); fclose(lg); } } /* (for the tests: what the page is on after each input) */
     }
     cells_free(&prev);
     for (int f = 0; f < ST_MAXF; f++) if (s.thumb[f].p) canvas_free(&s.thumb[f]);

@@ -14,8 +14,17 @@ static void shot_sized(const char *dir, const char *name, int frame, int pick, i
     if (asking == 2) { s.asking = 0; s.a.part[3].key[0].pose.turn = 25; s.a.part[4].key[0].pose.turn = -15; }
     if (asking == 2) snprintf(s.msg, sizeof s.msg, "KEY ADDED: SEAT AT FRAME 1");
     s.pscroll = pscroll;
+    if (getenv("SHOT_FOLD")) { int f = atoi(getenv("SHOT_FOLD")); s.folded = f & 1; s.tl_folded = (f & 2) != 0; } /* (1 the panel folded, 2 the timeline, 3 both) */
+    if (getenv("SHOT_VIEW")) { s.zoom = 3; s.vx = 0; s.vy = 30; } /* (zoomed and moved: a part out of view) */
     Canvas cv = canvas_new(W, H, ST_BG);
     stage_draw(&s, &cv, 0);
+    if (getenv("TOOLGAP")) { /* (the gaps left of the first tool and right of the last, in pixels) */
+        int y = 12 + 16 + 2, l = -1, r = -1, sr = -1;
+        Rgb bg = ST_BG;
+        for (int x = 0; x < cv.w; x++) { Rgb c = cv.p[(y - 14) * cv.w + x]; (void)c; }
+        for (int x = cv.w / 3; x < cv.w; x++) { int any = 0; for (int yy = 12; yy < 12 + 22; yy++) { Rgb c = cv.p[yy * cv.w + x]; if (!rgb_eq(c, bg)) any = 1; } if (any && sr >= 0 && l < 0 && x > sr + 1) l = x; if (!any && sr < 0 && x > cv.w / 3) { int frame_left = 1; (void)frame_left; sr = x; } if (any && l >= 0) r = x; }
+        fprintf(stderr, "stage edge %d, first tool %d, last tool %d, width %d: gaps %d / %d\n", sr, l, r, cv.w, l - sr, cv.w - 1 - r);
+    }
     png_write(out, &cv, 3);
     fprintf(stderr, "wrote %s\n", out);
     canvas_free(&cv);
@@ -29,6 +38,7 @@ static void sizes_shot(const char *dir, const char *out) { /* the page at window
         static Stage s;
         if (stage_open(&s, "swing")) return;
         s.frame = 3; s.pick = 4; s.tool = 2;
+        if (getenv("SHOT_FOLD")) { int f = atoi(getenv("SHOT_FOLD")); s.folded = f & 1; s.tl_folded = (f & 2) != 0; }
         snprintf(s.msg, sizeof s.msg, "A SPRITE MOVES, IT DOES NOT ROTATE");
         Canvas cv = canvas_new(WH[k][0], WH[k][1], ST_BG);
         stage_draw(&s, &cv, 0);
@@ -62,6 +72,7 @@ int main(int argc, char **argv) {
     snprintf(p, sizeof p, "%s/items.txt", dir); items = sprites_load(p);
     snprintf(p, sizeof p, "%s/props.txt", dir); props = sprites_load(p);
     theme_set_props(&props);
+    ui_watch(dir);
     draw_set_sprites(&frames, &items);
     char rd[700]; snprintf(rd, sizeof rd, "%s/../rooms", dir); theme_set_rooms_dir(rd);
     snprintf(rd, sizeof rd, "%s/../anims", dir); parts_set_dir(rd); parts_set_mine_dir("");
@@ -72,6 +83,9 @@ int main(int argc, char **argv) {
     snprintf(p, sizeof p, "%s/stage-turn.png", o); shot(dir, "swing", 0, 3, 2, 0, 2, p);
     snprintf(p, sizeof p, "%s/stage-wide.png", o); shot_sized(dir, "swing", 6, 4, 1, 0, 0, 443, 265, 0, p);
     snprintf(p, sizeof p, "%s/stage-wide-scrolled.png", o); shot_sized(dir, "swing", 6, 4, 1, 0, 0, 330, 175, 45, p);
+    snprintf(p, sizeof p, "%s/stage-gate-stairs.png", o); shot_sized(dir, "gate-stairs", 5, 0, 0, 0, 0, 443, 265, 0, p);
+    snprintf(p, sizeof p, "%s/stage-gate-door.png", o); shot_sized(dir, "gate-door", 6, 0, 0, 0, 0, 300, 215, 0, p);
+    snprintf(p, sizeof p, "%s/stage-gate-well.png", o); shot_sized(dir, "gate-well", 6, 0, 0, 0, 0, 300, 215, 0, p);
     snprintf(p, sizeof p, "%s/stage-rotate-list.png", o); shot_sized(dir, "swing", 6, 3, 2, 0, 0, 443, 265, 0, p);
     snprintf(p, sizeof p, "%s/stage-sizes.png", o); sizes_shot(dir, p);
     snprintf(p, sizeof p, "%s/picker-anims.png", o); picker_shot(dir, 0, p);

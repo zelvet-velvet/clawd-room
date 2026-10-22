@@ -79,4 +79,5 @@ A part animation is a thing of the room made of parts with keys (a key: a part's
 | up / down, `<` `>` | pick a value, change it |
 | `+ -`, wheel; `W A S D`, right drag; `0` | zoom; move the view; as it was |
 | `o`, `v` | onion skin; the keys' marks on the stage |
+| `p` or the fold button; drag the line above the frames | fold the panel to a ribbon of the tools; fold the timeline to its one line |
 | Space, `u` / `r`, `?`, `q` | play; undo / redo; the keys; quit (save or discard) |
