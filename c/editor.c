@@ -1187,6 +1187,8 @@ static void draw_picker(const Ed *e, Canvas *cv, double now) {
             else theme_button(cv, &hx, y0 - 1, "USE THIS THEME", 1, R_PUSE);
             y0 += 14;
         }
+        int ph = 26; /* the picture's height */
+        if (H - 24 - y0 < chh) { chh = H - 24 - y0 < 26 ? 26 : H - 24 - y0; ph = chh - 16 < 8 ? 8 : chh - 16; } /* (a short window: the cards get lower, the picture with them) */
         int vis = (H - 24 - y0 + gap) / (chh + gap) > 0 ? (H - 24 - y0 + gap) / (chh + gap) : 1;
         g_pick_cols = cols;
         int at = 0; for (int j = 0; j < n; j++) if (sh[j] == e->psel) at = j;
@@ -1199,12 +1201,12 @@ static void draw_picker(const Ed *e, Canvas *cv, double now) {
             const PickItem *it = &g_pi[sh[j]];
             int cx = 4 + (j % cols) * (cw + gap), cy = y0 + (j / cols - first) * (chh + gap), on = sh[j] == e->psel;
             canvas_rect(cv, cx, cy, cw, chh, on ? RGB(44, 44, 60) : RGB(28, 28, 36));
-            checker(cv, cx + 3, cy + 3, cw - 6, 26);
-            picker_sprite(cv, it, on ? k : 0, cx + 3, cy + 3, cw - 6, 26, 3);
+            checker(cv, cx + 3, cy + 3, cw - 6, ph);
+            picker_sprite(cv, it, on ? k : 0, cx + 3, cy + 3, cw - 6, ph, 3);
             const char *cn = it->name; /* (an open theme's file: DOOR, not THEME DOOR) */
             if (it->file == ANIMS && g_theme_open[0] && strlen(cn) > strlen(g_theme_open) + 1) cn += strlen(g_theme_open) + 1;
             char nm[24]; snprintf(nm, sizeof nm, "%.*s", (cw - 4) / 4, cn);
-            canvas_text(cv, cx + 3, cy + 32, nm, on ? C_WHITE : RGB(190, 190, 205));
+            canvas_text(cv, cx + 3, cy + 3 + ph + 3, nm, on ? C_WHITE : RGB(190, 190, 205));
             if (it->n > 1) { char fn[8]; snprintf(fn, sizeof fn, "%d", it->n); canvas_rect(cv, cx + cw - text_width(fn) - 6, cy + 4, text_width(fn) + 4, 7, RGB(18, 18, 24)); canvas_text(cv, cx + cw - text_width(fn) - 4, cy + 5, fn, C_YELLOW); }
             if (it->mine) { canvas_rect(cv, cx + 4, cy + 4, 4, 4, RGB(18, 18, 24)); canvas_rect(cv, cx + 5, cy + 5, 2, 2, RGB(120, 200, 255)); } /* (yours) */
             if (on) frame(cv, cx, cy, cw, chh, C_YELLOW);
