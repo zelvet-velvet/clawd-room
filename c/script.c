@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "art.h"
 
 typedef struct { double t; char kind[8]; char a[72], b[72], c[72], d[72], e[72]; double y; } Item; /* one timed script line */
 
@@ -117,6 +118,7 @@ int script_run(const char *path) {
                 const Session *s = pass ? &room.gpool[i] : &room.pool[i];
                 printf("  %s state=%s stage=%s chat=%s emote=%s part=%s kind=%d moving=%d face=%d pos=%d %.3f,%.3f goal=%d %.3f,%.3f left=%d away=%d travel=%d peek=%d react=%.3f\n", s->sid, s->state, s->stage, s->chat_with, s->emote, s->part, s->chat_kind, s->moving, s->face, s->has_pos, s->px, s->py, s->has_goal, s->gx, s->gy, s->has_left, s->has_away, s->has_travel, s->peek_on, s->react_until);
             }
+        if (getenv("CLAWD_PNG_DIR") && f % every == 0) { char pp[700]; snprintf(pp, sizeof pp, "%s/f%03d.png", getenv("CLAWD_PNG_DIR"), f); png_write(pp, &cv, 4); } /* (a picture of each printed frame, to look at) */
         if (f % every == 0) printf("f %d %016" PRIx64 " %016" PRIx64 " %s\n", f, canvas_hash(&cv), digest(&room), note);
         canvas_free(&cv);
     }

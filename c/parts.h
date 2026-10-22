@@ -16,6 +16,8 @@ typedef struct { double t; PartPose pose; int ease; } PartKey;   /* ease: how th
 typedef struct { char name[24], group[24]; PartKey key[PARTS_MAX_KEYS]; int nkey; int has_box, box[4], sprite; } Part; /* box: x y w h at rest, in room pixels (the editor outlines it); sprite: a drawn sprite (a Clawd): it moves, it does not rotate */
 #define PARTS_SCENE_LINES 12
 typedef struct {
+    char theme[24];   /* the gate theme of a file under anims/gates/THEME/ (set by the loader that knows the file's name), else "" */
+    char style[16];   /* `style construct` (a gate theme): the room builds the whole gate from its own pieces, timed by the part `build` (its grow) */
     char name[24]; double length; int loop; Part part[PARTS_MAX]; int npart;
     char scene[PARTS_SCENE_LINES][160]; int nscene;  /* the editor's stage: lines of a fixture (see tools/fixtures), or `emote SID KIND`: that Clawd starts that emote when the animation does */
     int view_x, view_y;                               /* ... and the room pixel at the top left of what it shows */
@@ -28,8 +30,13 @@ void parts_set_mine_dir(const char *dir);                         /* ... and you
 const char *parts_mine_dir(void);
 const char *parts_default_dir(void);
 const PartAnim *parts_get(const char *name);                       /* anims/NAME.txt (yours first), loaded and read again when it changes; NULL if there is none */
-int parts_names(char names[][24], int max);
+#define PARTS_PATH_NAME 48                                         /* an animation's name as a path under anims/: gates/THEME/gate-door */
+int parts_names(char names[][PARTS_PATH_NAME], int max);
+void parts_set_gate_theme(const char *theme);                      /* the gate theme (a folder anims/gates/THEME); "" or NULL: simple */
+const char *parts_gate_theme(void);
+const PartAnim *parts_gate(const char *kind);                      /* kind: gate-door, gate-stairs, gate-well: the theme's file, else the simple theme's; NULL if neither */
 void parts_inherit(PartAnim *a, const char *name);                 /* a part the default anims/NAME.txt marks `sprite` is one in yours too (yours may be older than the mark) */                        /* the animations there are: the names of the files in both folders, sorted */
+void parts_name_theme(PartAnim *a, const char *name);              /* sets a->theme from a name like gates/construct/gate-door */
 int parts_find(const PartAnim *a, const char *part);              /* the part's index, or -1 */
 PartPose parts_pose(const PartAnim *a, int part, double t);       /* where it is at time t seconds (a looping animation wraps t) */
 #endif

@@ -158,16 +158,15 @@ with tempfile.TemporaryDirectory() as tmp:
     check("editor: f adds prop frames (yours), x x deletes your last one (q asks, s keeps)", st == 0 and heads == ["@ window~2 | window~2"] and read("props.txt") == props0)
     out, st = run(["--edit", "walk"], [(0.8, b" "), (1.6, b">"), (1.9, b"o"), (2.2, b" "), (2.5, b"f"), (2.8, b"q"), (3.1, b"q")], env, cols=150, rows=50)
     check("editor: opens an animation by its name, plays, steps frames; f leaves Clawd frames alone", st == 0 and b"Clawd Room pixel editor" in out and read("clawd.txt").count("@ walk-") == clawd0.count("@ walk-"))
-    out, st = run(["--edit", "-"], [(0.8, b"W"), (0.9, b"A"), (1.0, b"L"), (1.3, b"\r"), (1.7, b"q"), (2.1, b"\x1b")], env, cols=150, rows=50)
-    check("editor: the sprite picker opens with no name, finds by typing, Enter opens, q goes back to it, a lone Esc there quits (the search empty)", st == 0 and b"Clawd Room pixel editor" in out)
+    out, st = run(["--edit", "-"], [(0.8, b"W"), (0.9, b"A"), (1.0, b"L"), (1.3, b"\r"), (1.7, b"q"), (2.1, b"\x1b"), (2.5, b"q")], env, cols=150, rows=50)
+    check("editor: the sprite picker opens with no name, finds by typing, Enter opens, q goes back to it, Esc there only steps out (clears the search) and q quits", st == 0 and b"Clawd Room pixel editor" in out)
     r = subprocess.run(CMD + ["--edit", "list"], capture_output=True, text=True, env=dict(os.environ, **env))
     import re
     check("--edit list shows animations with their frame counts", r.returncode == 0 and re.search(r"walk +4\b", r.stdout) and re.search(r"think +9\b", r.stdout) and "window" in r.stdout)
     # 7. the stage page: a part animation (anims/swing.txt) on a copy of the animations; what you change is saved to yours
     anims = tempfile.mkdtemp(prefix="clawd-smoke-anims-")
     mine_a = tempfile.mkdtemp(prefix="clawd-smoke-mine-anims-")
-    for f in os.listdir(os.path.join(ROOT, "anims")):
-        shutil.copy(os.path.join(ROOT, "anims", f), anims)
+    shutil.copytree(os.path.join(ROOT, "anims"), anims, dirs_exist_ok=True)  # (with the gate themes' folders)
     aenv = dict(env, CLAWD_ANIMS=anims, CLAWD_MY_ANIMS=mine_a)
     swing_mine = os.path.join(mine_a, "swing.txt")
     last_view = [4, 50, 2]
@@ -197,6 +196,8 @@ with tempfile.TemporaryDirectory() as tmp:
     out, st = run_stage(["--edit", "anims/swing"], [(1.2, b"]"), (1.3, b"]"), (1.4, b"]"), (1.5, b"]"), (1.8, b"."), (2.4, b"q"), (2.8, b"s")], aenv, cols=300, rows=90)  # (the clawd part, MOVE Y one more at frame 1)
     txt = open(swing_mine).read() if os.path.exists(swing_mine) else ""
     check("stage: ] picks a part, the . key changes its value at this frame and saves it to yours (the default stays)", st == 0 and "key clawd 0 x=0 y=1 " in txt and "y=0" in open(os.path.join(anims, "swing.txt")).read())
+    out, st = run_stage(["--edit", "anims/swing"], [(1.2, b"]"), (1.3, b"]"), (1.4, b"]"), (1.5, b"]"), (1.9, b"i"), (2.8, b"q"), (3.6, b"q"), (4.0, b"s")], aenv, cols=300, rows=90)  # (I on the Clawd part: the pixel editor's picker on the CLAWD tab; Esc leaves it and the stage page is back)
+    check("stage: I on a sprite part opens the pixel editor's picker, and quitting it brings the stage page back (no crash, the terminal restored)", st == 0)
     out, st = run_stage(["--edit", "anims/swing"], [(1.2, b"]"), (1.3, b"]"), (1.4, b"]"), (1.5, b"\x1b[C"), (1.6, b"\x1b[C"), (1.7, b"\x1b[C"), (1.9, b"k"), (2.1, b"e"), (2.6, b"q"), (3.0, b"s")], aenv, cols=300, rows=90)  # (a key on the seat at frame 4: 0.1875 s, then its ease)
     txt = open(swing_mine).read()
     check("stage: . steps a frame, k adds a key there, e changes its ease", st == 0 and "key seat 0.1875 " in txt and re.search(r"key seat 0\.1875 .* ease=", txt))
@@ -283,11 +284,25 @@ with tempfile.TemporaryDirectory() as tmp:
     check("--edit anims/NAME with no such animation says so and names the ones there are", r.returncode == 1 and "anims/swing" in r.stderr)
     keys = [(1.2 + i * 0.05, b"\x1b[C") for i in range(4)] + [(1.6, b"\x1b[<0;212;55M"), (1.7, b"\x1b[<0;212;55m"), (2.2, b"q"), (2.6, b"s")]  # (frame 5, a click at a tenth of the grow bar: the steps come in later)
     g0 = subprocess.run(CMD + ["--script", os.path.join(ROOT, "tools", "scenarios", "office-gates-appear.sc")], capture_output=True, text=True, env=dict(os.environ, **aenv))
-    out, st = run(["--edit", "anims/gate-stairs"], keys, aenv, cols=300, rows=90)
-    gmine = os.path.join(mine_a, "gate-stairs.txt")
+    out, st = run(["--edit", "anims/gates/simple/gate-stairs"], keys, aenv, cols=300, rows=90)
+    gmine = os.path.join(mine_a, "gates", "simple", "gate-stairs.txt")
     txt = open(gmine).read() if os.path.exists(gmine) else ""
     g1 = subprocess.run(CMD + ["--script", os.path.join(ROOT, "tools", "scenarios", "office-gates-appear.sc")], capture_output=True, text=True, env=dict(os.environ, **aenv))
     check("stage: a gate (anims/gate-stairs) is edited like any part animation (the grow bar), and a room's gate appears by your file", st == 0 and re.search(r"key steps 0\.25 .* grow=10\b", txt) and g0.returncode == 0 and g1.stdout != g0.stdout)
+    sett = os.path.join(mine_a, "settings.conf")  # the picker's THEMES tab: space uses the picked theme (gate_theme in the settings file), the dashed card makes a copy under a name
+    tenv = dict(aenv, CLAWD_SETTINGS=sett)
+    out, st = run(["--edit", "-"], [(1.0, b"\t"), (1.1, b"\t"), (1.2, b"\t"), (1.3, b"\t"), (1.4, b"\t"), (1.8, b"\x1b[C"), (2.2, b" "), (2.6, b"\x1b[C"), (2.9, b"\r"), (3.2, b"mytheme"), (3.6, b"\r"), (4.2, b"q")], tenv, cols=300, rows=90)
+    made = os.path.join(mine_a, "gates", "mytheme", "gate-stairs.txt")
+    mtxt = open(made).read() if os.path.exists(made) else ""
+    check("picker: the THEMES tab: space uses the picked theme (settings.conf), NEW THEME makes a copy under a name, and the copy keeps its grow values",
+          st == 0 and "gate_theme = construct" in (open(sett).read() if os.path.exists(sett) else "") and "style construct" in mtxt and "grow=100" in mtxt)
+    if os.path.exists(sett): os.remove(sett)  # (simple is active again at the start: space on construct makes it active, space again takes it back to simple)
+    out, st = run(["--edit", "-"], [(1.0, b"\t"), (1.1, b"\t"), (1.2, b"\t"), (1.3, b"\t"), (1.4, b"\t"), (1.8, b"\x1b[C"), (2.2, b" "), (2.8, b" "), (3.4, b"q")], tenv, cols=300, rows=90)
+    check("picker: space makes the picked theme active, space again on the active one takes it back to simple", st == 0 and "gate_theme = simple" in open(sett).read())
+    slog = os.path.join(mine_a, "stage-after-i.log")  # the stage opened from the picker's ANIMS tab: i on the Clawd part -> the picker; q there -> the stage page again (then q, s leave it)
+    out, st = run(["--edit", "-"], [(1.0, b"\t"), (1.1, b"\t"), (1.2, b"\t"), (1.3, b"\t"), (1.7, b"\x1b[C"), (2.1, b"\r"), (3.6, b"]"), (3.7, b"]"), (3.8, b"]"), (3.9, b"]"), (4.4, b"i"), (5.2, b"q"), (6.0, b"q"), (6.4, b"s"), (7.2, b"q")], dict(tenv, CLAWD_STAGE_LOG=slog), cols=300, rows=90)
+    nlog = len(open(slog).read().splitlines()) if os.path.exists(slog) else 0
+    check("picker: i on a sprite part of a stage opened from the picker goes to the CLAWD tab, and q there goes back to the stage page (not out of the editor)", st == 0 and nlog >= 7)
     shutil.rmtree(anims, ignore_errors=True); shutil.rmtree(mine_a, ignore_errors=True)
     shutil.rmtree(spr, ignore_errors=True)
 print("%d failed" % len(fails) if fails else "all passed")

@@ -132,11 +132,11 @@ What to test next, one `[!example] Group X · …` callout per group. Each test 
 > > 3. In a WSL shell: `./clawd-room.sh --edit anims/swing` (the editor opens in its own window).
 > > 4. Your edits are in `~/.clawd-room/anims/`; delete `swing.txt` there (or RESET in the picker) to go back to the default.
 
-> [!example] Group H · WSL: picking nothing on the stage page (T39–T40)
-> - [ ] **T39** `./clawd-room.sh --edit anims/swing`, pick a part, press Esc → nothing is picked: no yellow outline, the panel shows only the parts; `<` `>` and the KEY cap say "PICK A PART FIRST"; `[` or `]` or a click picks again.
-> - [ ] **T40** With SELECT, click the stage where there is no part → nothing picked; with `?` open or the quit question showing, Esc closes that first (the part stays picked).
+> [!example]- Group H · WSL: picking nothing on the stage page (T39–T40)
+> - [x] **T39** `./clawd-room.sh --edit anims/swing`, pick a part, press Esc → nothing is picked: no yellow outline, the panel shows only the parts; `<` `>` and the KEY cap say "PICK A PART FIRST"; `[` or `]` or a click picks again.
+> - [x] **T40** With SELECT, click the stage where there is no part → nothing picked; with `?` open or the quit question showing, Esc closes that first (the part stays picked).
 
-> [!example] Group I · WSL: gates appearing, edited on the stage page (T41–T44)
+> [!example]- Group I · WSL: gates appearing, edited on the stage page (T41–T44)
 > - [x] **T41** `./clawd-room.sh --edit` → ANIMS has GATE-DOOR, GATE-STAIRS, GATE-WELL; each opens on the stage page with the office and that gate coming in over the frames (step through them, PLAY).
 > - [x] **T42** GATE-STAIRS: the parts STEPS, PLATFORM, OPENING, RAIL; under the panel a small running Clawd and a bar (it runs faster while you drag the bar or PLAY runs): how much of the picked part has come in at this frame (its progress). Pick STEPS, go to frame 5, click near the bar's left end (about a tenth) → a diamond under frame 5, and in frames 2 – 5 the steps are smaller: they come in later.
 > - [x] **T43** With that change kept, open two rooms one above the other (`./clawd-room.sh --try`, or two windows stacked): when the stairs appear they follow your file. Without your file (`q` → D, or RESET in the picker) they appear as before.
@@ -146,17 +146,30 @@ What to test next, one `[!example] Group X · …` callout per group. Each test 
 > > 1. `git switch feat/gate-parts` in the repo (until its pull request is merged).
 > > 2. Your edits are in `~/.clawd-room/anims/gate-*.txt`; delete them (or RESET in the picker) to go back.
 
-> [!example] Group J · WSL: folding the stage page's panel and timeline; the picker's search (T45–T50)
-> - [ ] **T45** `./clawd-room.sh --edit anims/gate-stairs` → the panel on the right has the same gap to the stage as to the window's edge, at any window size.
-> - [ ] **T46** `p` (or the fold button, top right) → the panel folds to a ribbon of the four tools; the stage grows; the tools still work. `p` again opens it.
-> - [ ] **T47** Drag the line above the frames down → the timeline folds to its one line; drag it up → the frames come back. The line's grip never touches the eye + KEYS button.
-> - [ ] **T48** `./clawd-room.sh --edit` → the search box is framed yellow; typing finds; `q` with the box empty quits. Click a card → the frame goes, letters do nothing, `q` quits.
-> - [ ] **T49** Click the search box, type `q` → a Q is typed (the window stays). Esc clears it, Esc again leaves the box, `q` then quits.
-> - [ ] **T50** Under the stage at the right: an eye + KEYS button. Click it (or `v`) → the eye shuts, the button goes dark and the key marks leave the stage; again → they come back.
+> [!example]- Group J · WSL: folding the stage page's panel and timeline; the picker's search (T45–T50)
+> - [x] **T45** `./clawd-room.sh --edit anims/gate-stairs` → the panel on the right has the same gap to the stage as to the window's edge, at any window size.
+> - [x] **T46** `p` (or the fold button, top right) → the panel folds to a ribbon of the four tools; the stage grows; the tools still work. `p` again opens it.
+> - [x] **T47** Drag the line above the frames down → the timeline folds to its one line; drag it up → the frames come back. The line's grip never touches the eye + KEYS button.
+> - [x] **T48** `./clawd-room.sh --edit` → the search box is framed yellow; typing finds; `q` with the box empty quits. Click a card → the frame goes, letters do nothing, `q` quits.
+> - [x] **T49** Click the search box, type `q` → a Q is typed (the window stays). Esc clears it, Esc again leaves the box, `q` then quits.
+> - [x] **T50** Under the stage at the right: an eye + KEYS button. Click it (or `v`) → the eye shuts, the button goes dark and the key marks leave the stage; again → they come back.
 >
 > > [!tip]- T45–T50 · how to run them
 > > 1. `git switch feat/gate-parts` in the repo (until its pull request is merged).
 > > 2. Try a narrow and a wide window for T45 – T47.
+
+> [!example] Group K · WSL: gate themes, the construct, settings.conf (T51–T57)
+> - [x] **T51** `./clawd-room.sh --edit` → a THEMES tab (the last one): a card per theme (SIMPLE, CONSTRUCT), each with its door, stairs and well side by side; SIMPLE says ACTIVE. The CONSTRUCT card shows blue outlines and pieces mid-flight (the picked card plays). A dashed NEW THEME card. Nothing touches or is cut off, in a narrow / short window too (the cards get lower, a row too many scrolls).
+> - [x] **T52** On the THEMES tab pick CONSTRUCT, press Enter (or click the picked card) → the ANIMS tab shows `THEMES > CONSTRUCT` and three cards: DOOR, STAIRS, WELL. At the right of the header it says `INACTIVE` (outlined) while CONSTRUCT is not the active theme, or `ACTIVE` (yellow) when it is. Esc, or a click on THEMES, goes back to the theme cards.
+> - [x] **T53** On the THEMES tab pick CONSTRUCT, press Space (or the MAKE ACTIVE button) → its card says ACTIVE and SIMPLE's no longer does; `~/.clawd-room/settings.conf` has `gate_theme = construct`. In a running room (`./clawd-room.sh --try`, or two stacked windows) the next gate that appears is a construct (pieces fly in under a blue outline, 1.4 s; look at the side door and the well too). Then Space again on CONSTRUCT (the button now says MAKE INACTIVE; or click ACTIVE in its opened header) → SIMPLE is the active theme again and gates come in part by part; on SIMPLE itself nothing happens. `--gate-theme` and `CLAWD_GATE_THEME` win over the file.
+> - [x] **T54** NEW THEME card, Enter → type a name (a-z, 0-9, -), Enter → a new card with a blue dot (yours), a copy of the theme you picked last; its three files work like any (the stage page); RESET on it removes it; MAKE DEFAULT copies it into the repo.
+> - [x] **T55** Stage page, pick the swing's Clawd part, press `i` → the picker opens on the CLAWD tab; `q` in the picker → the stage page is back (Esc only steps out of the search box, it never quits). On a gate part `i` says DRAWN BY CODE, NO PIXEL ART HERE.
+> - [x] **T56** The editor's own window opens at 78% of the screen width, and the picker's frame strip shows four frames. Nothing else about gates changed with no flag and no settings file (T44).
+> - [x] **T57** Open CONSTRUCT, then STAIRS → the stage page: the whole yellow frame of its one part BUILD is in view, and dragging the GROW bar (or PLAY) builds the stairs from pieces under a blue outline.
+>
+> > [!tip]- T51–T57 · how to run them
+> > 1. `git switch feat/gate-themes` in the repo (until its pull request is merged).
+> > 2. Your own gate files are in `~/.clawd-room/anims/gates/NAME/` (an old `~/.clawd-room/anims/gate-*.txt` is no longer read: delete it).
 
 ## Rooms and art ([[Rooms and Art]])
 - [x] Each room (office, coffee shop, park) looks like the mockups at your window size

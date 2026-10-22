@@ -14,10 +14,10 @@ Whether each picture in `Assets/Snapshots/` still shows how things are. `tools/v
 | 2026-10-17 iTerm2 resize stripes (Zaviel).png | current |  |
 | 2026-10-17 ladder option A.png | replaced | [[2026-10-18 style A built office.png]] |
 | 2026-10-17 old ladder and hatch (Zaviel).png | replaced | [[2026-10-18 style A built office.png]] |
-| 2026-10-18 Clawds behind the railing.png | replaced | [[2026-10-18 office Clawds behind the railing.png]] |
 | 2026-10-18 city park mockups.png | replaced | [[2026-10-18 city plaza park.png]] |
 | 2026-10-18 city plaza park, all gates.png | replaced | [[2026-10-18 park buildings, all gates.png]] |
 | 2026-10-18 city plaza park.png | replaced | [[2026-10-18 park buildings with doors.png]] |
+| 2026-10-18 Clawds behind the railing.png | replaced | [[2026-10-18 office Clawds behind the railing.png]] |
 | 2026-10-18 coffee door closed and open.png | replaced | [[2026-10-18 coffee taller doors well on the floor.png]] |
 | 2026-10-18 coffee real steps, lamps moved.png | replaced | [[2026-10-18 coffee well steps run right to left.png]] |
 | 2026-10-18 coffee stairs well and doors.png | replaced | [[2026-10-18 coffee taller doors well on the floor.png]] |
@@ -122,13 +122,10 @@ Whether each picture in `Assets/Snapshots/` still shows how things are. `tools/v
 | 2026-10-20 construct v2 real parts, office stairs (picked).png | current |  |
 | 2026-10-20 construct v2 real parts, park stoop (picked).gif | current |  |
 | 2026-10-20 construct v2 real parts, park stoop (picked).png | current |  |
-| 2026-10-20 gate editor, part keyframes, A dope sheet and B one track.png | current |  |
-| 2026-10-21 part animations in the editor, a Clawd on the swing (now, A dope sheet, B frames, B picked).png | current |  |
-| 2026-10-21 part animations in the editor, the barista brewing (now, A dope sheet, B frames, B picked).png | current |  |
-| 2026-10-20 editor FILL ALL on a prop.png | current |  |
 | 2026-10-20 editor animation mockup A and B (A picked).png | replaced | [[2026-10-20 editor timeline, onion skin and fill.png]] |
 | 2026-10-20 editor colour panel folded to a ribbon.png | current |  |
 | 2026-10-20 editor colour titles and the chosen colour, A B C (A picked).png | replaced | [[2026-10-20 editor timeline, onion skin and fill.png]] |
+| 2026-10-20 editor FILL ALL on a prop.png | current |  |
 | 2026-10-20 editor new colour slot mockup, A and B (A picked).png | replaced | [[2026-10-20 editor new colour slot, a new colour, a file colour being changed.png]] |
 | 2026-10-20 editor new colour slot, a new colour, a file colour being changed.png | current |  |
 | 2026-10-20 editor nine frames in the timeline.png | current |  |
@@ -146,6 +143,7 @@ Whether each picture in `Assets/Snapshots/` still shows how things are. `tools/v
 | 2026-10-20 editor tool icons, four tiles (B1 picked).png | replaced | [[2026-10-20 editor timeline, onion skin and fill.png]] |
 | 2026-10-20 editor tool icons, key caps bigger (picked).png | replaced | [[2026-10-20 editor timeline, onion skin and fill.png]] |
 | 2026-10-20 editor your sprites mockup, A B C (B picked).png | replaced | [[2026-10-20 editor picker with yours marked, reset buttons.png]] |
+| 2026-10-20 gate editor, part keyframes, A dope sheet and B one track.png | current |  |
 | 2026-10-20 gate tag arrows as triangles.png | current |  |
 | 2026-10-20 gate tag arrows with a shaft.png | current |  |
 | 2026-10-20 gate tags A, centred (picked).png | current |  |
@@ -166,8 +164,23 @@ Whether each picture in `Assets/Snapshots/` still shows how things are. `tools/v
 | 2026-10-20 well redesign options (A picked).png | current |  |
 | 2026-10-21 a part rotated, A B C (parked).png | not picked |  |
 | 2026-10-21 grow bar figure, A B C D (C picked).png | replaced | [[2026-10-21 grow bar figure, the Clawd's own walk frames (picked).png]] |
-| 2026-10-21 grow bar running Clawd, C1 C2 C3 (not picked).png | not picked |  |
 | 2026-10-21 grow bar figure, the Clawd's own walk frames (picked).png | current |  |
+| 2026-10-21 grow bar running Clawd, C1 C2 C3 (not picked).png | not picked |  |
+| 2026-10-21 part animations in the editor, a Clawd on the swing (now, A dope sheet, B frames, B picked).png | current |  |
+| 2026-10-21 part animations in the editor, the barista brewing (now, A dope sheet, B frames, B picked).png | current |  |
 | 2026-10-21 stage page KEYS toggle, A B C D (A picked).png | current |  |
-| 2026-10-21 stage page, the panel with even gaps.png | current |  |
 | 2026-10-21 stage page, the panel and the timeline folded.png | current |  |
+| 2026-10-21 stage page, the panel with even gaps.png | current |  |
+| 2026-10-22 an open theme, ACTIVE or INACTIVE.png | current |  |
+| 2026-10-22 construct gate, the office stairs being built 1.png | current |  |
+| 2026-10-22 construct gate, the office stairs being built 2.png | current |  |
+| 2026-10-22 construct gate, the office stairs being built 3.png | current |  |
+| 2026-10-22 construct gate, the office stairs being built 4.png | current |  |
+| 2026-10-22 gate themes in the picker, A chips (not picked).png | not picked |  |
+| 2026-10-22 gate themes in the picker, B headings (not picked).png | not picked |  |
+| 2026-10-22 gate themes in the picker, C themes tab (picked).png | replaced | 2026-10-22 the picker's themes tab.png |
+| 2026-10-22 open theme header, A breadcrumb (picked).png | replaced | 2026-10-22 an open theme, ACTIVE or INACTIVE.png |
+| 2026-10-22 open theme header, B switch (not picked).png | not picked |  |
+| 2026-10-22 open theme header, C banner (not picked).png | not picked |  |
+| 2026-10-22 stage page, the construct stairs mid-build.png | current |  |
+| 2026-10-22 the picker's themes tab.png | current |  |
