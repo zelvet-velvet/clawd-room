@@ -1,0 +1,21 @@
+# The construct: the gate is built from its own pieces. The room draws the whole gate once and cuts it into real parts (boards, posts, lengths of rail, the handle)
+# that fly in from the air in a pale blue glow and click into place inside a blue outline. The one part `build` is the clock: its grow 0 to 100 is the build
+# (1.4 s); drag the GROW bar on the stage to watch it. `style construct` makes the room build the gate this way. See anims/swing.txt for the file format.
+anim gate-stairs length 1.4 once
+style construct
+scene theme office
+scene title office
+scene terminal 160 50
+scene time 1000.0 3.4
+scene scale 1
+scene still
+scene peer beta up
+scene neighbor up office
+scene linkpos up 70
+scene gate up 1.0
+scene session s00 name=api created=900 last=999 state=work tool=Bash hold=100000 px=110 py=70
+scene appear up
+view 30 4
+part build group gate box 48 15 85 32
+key build 0.0 grow=0
+key build 1.4 grow=100

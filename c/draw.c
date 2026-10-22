@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "clawd.h"
+#include "construct.h"
 #include "parts.h"
 #include "room.h"
 #include "scene.h"
@@ -460,6 +461,36 @@ static const char *GATE_KIND[SIDES] = {"gate-left", "gate-right", "gate-up", "ga
 
 static void draw_background(Canvas *cv, const Room *room, int banner, int count);
 static void it_background(Canvas *cv, const SceneItem *it, void *ctx) { DrawCtx *X = ctx; (void)it; draw_background(cv, X->room, X->geo->banner, X->active); }
+/* the gate theme builds this gate as a construct (`style construct` in its file, the part `build`): 1, and *bp is the build 0..1 at time t */
+static int construct_progress(const Room *room, int side, double t, double *bp) {
+    const PartAnim *an = parts_gate(side == SIDE_UP ? "gate-stairs" : side == SIDE_DOWN ? "gate-well" : "gate-door");
+    int k = an && !strcmp(an->style, "construct") ? parts_find(an, "build") : -1;
+    if (k < 0) return 0;
+    double g = parts_pose(an, k, t - room->gate_t0[side]).grow / 100.0;
+    *bp = g < 0 ? 0 : g > 1 ? 1 : g;
+    return 1;
+}
+/* the whole gate drawn once, the pixels it changed cut into parts that fly in (construct.c) */
+static void it_construct(Canvas *cv, const SceneItem *it, void *ctx) {
+    DrawCtx *X = ctx;
+    static Rgb *after;
+    static size_t cap;
+    size_t n = (size_t)cv->w * (size_t)cv->h;
+    int side = it->i, park = X->room->theme == theme_get("park"), parts[4], np = 0;
+    if (n > cap) { free(after); after = malloc(n * sizeof(Rgb)); cap = after ? n : 0; }
+    if (!cap) return;
+    Rgb *before = malloc(n * sizeof(Rgb));
+    if (!before) return;
+    memcpy(before, cv->p, n * sizeof(Rgb));
+    if (side == SIDE_UP) { if (park) parts[np++] = 3; parts[np++] = 0; parts[np++] = 1; parts[np++] = 2; }
+    else if (side < 2 && park) { parts[np++] = 0; parts[np++] = 1; }
+    else parts[np++] = -1;
+    for (int k = 0; k < np; k++) theme_gate(X->room->theme, cv, X->geo, side, 1.0, side < 2 ? X->room->door_open[side] : 0, parts[k]);
+    memcpy(after, cv->p, n * sizeof(Rgb));
+    memcpy(cv->p, before, n * sizeof(Rgb));
+    free(before);
+    construct_draw(cv, after, it->p);
+}
 /* the gate theme's pose for a gate part at time t (since the gate began to appear): 1 if the file has the part */
 static int gate_part_pose(const Room *room, int side, const char *part, double t, PartPose *out) {
     const PartAnim *an = parts_gate(side == SIDE_UP ? "gate-stairs" : side == SIDE_DOWN ? "gate-well" : "gate-door");
@@ -725,6 +756,11 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
         snprintf(gk, sizeof gk, "gate%d", side);
         double p = fmin(1.0, fmax(0.0, anim_value(&room->anim, gk, t, 1))); /* (eased by the animator; clamped: EASE_BACK may pass 1) */
         int park = room->theme == theme_get("park");
+        double bp = 1;
+        if (construct_progress(room, side, t, &bp)) { /* a construct: while it builds one item, then the whole gate */
+            if (bp < 1) { scene_add(sc, (SceneItem){.kind = GATE_KIND[side], .layer = LAYER_STRUCT, .owner = -1, .ax = geo.gate_out[side][0], .ay = geo.gate_out[side][1], .draw = it_construct, .i = side, .p = bp}); continue; }
+            p = 1;
+        }
         if (side == SIDE_UP) { /* the stairs: (the park: the building behind them,) the steps, the platform (the park: the stoop's landing), the opening (the park: its door) */
             if (park) scene_add(sc, (SceneItem){.kind = "backdrop", .layer = LAYER_STRUCT, .owner = -1, .draw = it_gate, .i = side, .j = 3, .p = gate_part_p(room, side, "building", t, p), .part = "building"});
             scene_add(sc, (SceneItem){.kind = "gate-up", .layer = LAYER_STRUCT, .owner = -1, .ax = geo.gate_in[side][0], .ay = geo.gate_in[side][1], .draw = it_gate, .i = side, .j = 0, .p = gate_part_p(room, side, "steps", t, p), .part = "steps"});
@@ -758,7 +794,7 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
     /* the workspaces and the Clawds, back to front by where they stand on the floor (a desk's front edge, a Clawd's feet);
      * the stairs' railing is one more item at the back wall's foot: Clawds on the stairs and the platform are behind it */
     X.rail_p = -1;
-    for (int i = 0; i < room->nnb; i++) if (room->nb[i].side == SIDE_UP) X.rail_p = gate_part_p(room, SIDE_UP, "rail", t, fmin(1.0, fmax(0.0, anim_value(&room->anim, "gate2", t, 1))));
+    for (int i = 0; i < room->nnb; i++) if (room->nb[i].side == SIDE_UP) { double cb; if (construct_progress(room, SIDE_UP, t, &cb)) X.rail_p = cb < 1 ? 0 : 1; else X.rail_p = gate_part_p(room, SIDE_UP, "rail", t, fmin(1.0, fmax(0.0, anim_value(&room->anim, "gate2", t, 1)))); }
     double rail_key = geo.view.bb - 0.25;
     for (int i = 0; i < room->nnb; i++) if (room->nb[i].side == SIDE_DOWN) X.well = 1;
     for (int i = 0; i < geo.shown; i++)

@@ -10,7 +10,7 @@ ifeq ($(ARCH),x86_64)
 else
   CFLAGS += -ffp-contract=on
 endif
-OBJS = main.o canvas.o sprites.o clawd.o term.o theme.o draw.o fixture.o rng.o room.o script.o tail.o ui.o app.o json.o link.o win.o actions.o art.o camera.o persp.o scene.o gallery.o place.o editor.o anim.o parts.o
+OBJS = main.o canvas.o sprites.o clawd.o term.o theme.o draw.o fixture.o rng.o room.o script.o tail.o ui.o app.o json.o link.o win.o actions.o art.o camera.o persp.o scene.o gallery.o place.o editor.o anim.o parts.o construct.o
 
 clawd-room: $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $(OBJS) -lm

@@ -102,6 +102,7 @@ int parts_load(PartAnim *a, const char *path) {
         char *save, *word = strtok_r(buf, " \t", &save);
         if (!word || *word == '#') continue;
         if (!strcmp(word, "anim")) rc = parse_anim(a, &save, path, line);
+        else if (!strcmp(word, "style")) { char *v = strtok_r(NULL, " \t", &save); if (!v) { fprintf(stderr, "%s:%d: style needs a name\n", path, line); rc = -1; } else snprintf(a->style, sizeof a->style, "%s", v); }
         else if (!strcmp(word, "part")) rc = parse_part(a, &save, path, line);
         else if (!strcmp(word, "key")) rc = parse_key(a, &save, path, line);
         else if (!strcmp(word, "scene")) { /* scene LINE: a line of the stage's fixture, as it is */
@@ -150,6 +151,7 @@ int parts_save(const PartAnim *a, const char *path) {
     if (!f) return -1;
     fprintf(f, "# %s: a part animation (the pixel editor wrote this file; the format is in anims/swing.txt)\n", a->name);
     fprintf(f, "anim %s length %g %s\n", a->name, a->length, a->loop ? "loop" : "once");
+    if (a->style[0]) fprintf(f, "style %s\n", a->style);
     for (int i = 0; i < a->nscene; i++) fprintf(f, "scene %s\n", a->scene[i]);
     fprintf(f, "view %d %d\n", a->view_x, a->view_y);
     static const char *const EASE[] = {"linear", "out", "in-out", "back", "in", "sine", "sine-out", "sine-in"};

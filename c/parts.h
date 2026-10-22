@@ -16,6 +16,7 @@ typedef struct { double t; PartPose pose; int ease; } PartKey;   /* ease: how th
 typedef struct { char name[24], group[24]; PartKey key[PARTS_MAX_KEYS]; int nkey; int has_box, box[4], sprite; } Part; /* box: x y w h at rest, in room pixels (the editor outlines it); sprite: a drawn sprite (a Clawd): it moves, it does not rotate */
 #define PARTS_SCENE_LINES 12
 typedef struct {
+    char style[16];   /* `style construct` (a gate theme): the room builds the whole gate from its own pieces, timed by the part `build` (its grow) */
     char name[24]; double length; int loop; Part part[PARTS_MAX]; int npart;
     char scene[PARTS_SCENE_LINES][160]; int nscene;  /* the editor's stage: lines of a fixture (see tools/fixtures), or `emote SID KIND`: that Clawd starts that emote when the animation does */
     int view_x, view_y;                               /* ... and the room pixel at the top left of what it shows */
