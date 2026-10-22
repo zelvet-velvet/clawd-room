@@ -1131,9 +1131,10 @@ static void draw_theme_cards(const Ed *e, Canvas *cv, int y0, const int *sh, int
             continue;
         }
         canvas_rect(cv, cx, cy, bw, bh, on ? RGB(44, 44, 60) : RGB(28, 28, 36));
-        int tw = (bw - 6) / 3 - 2, stairs = theme_kind_index(g_theme[it->sp], "stairs");
+        int tw = (bw - 6 - 2 * 2) / 3, stairs = theme_kind_index(g_theme[it->sp], "stairs"); /* (the three pictures: equal gaps, the row in the middle of the card) */
+        int tx0 = cx + 3 + (bw - 6 - (3 * tw + 2 * 2)) / 2;
         for (int q = 0; q < 3; q++) {
-            int ai = theme_kind_index(g_theme[it->sp], KIND[q]), tx = cx + 3 + q * ((bw - 6) / 3);
+            int ai = theme_kind_index(g_theme[it->sp], KIND[q]), tx = tx0 + q * (tw + 2);
             checker(cv, tx, cy + 3, tw, th);
             if (ai >= 0) picker_anim(cv, ai, on ? k * 0.3 : 0.6, tx, cy + 3, tw, th); /* (the picked one plays, the others rest part way) */
         }
