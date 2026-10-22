@@ -18,6 +18,19 @@ Pictures of the debug overlay, the placer, the pixel editor, the gallery, newest
 > ![[2026-10-22 stage page, the construct stairs mid-build.png|420]]
 > Shown in: [[2026-10-22#🏗️ Gates can appear as a construct; gate themes and a settings file (Zaviel)|2026-10-22 · 🏗️ Gates can appear as a construct; gate themes and a settings file (Zaviel)]]
 
+> [!failure]- ❌ not picked · Open theme header, C banner (not picked)
+> ![[2026-10-22 open theme header, C banner (not picked).png|420]]
+> Shown in: not in a note yet
+
+> [!failure]- ❌ not picked · Open theme header, B switch (not picked)
+> ![[2026-10-22 open theme header, B switch (not picked).png|420]]
+> Shown in: not in a note yet
+
+> [!quote]- ♻️ replaced · Open theme header, A breadcrumb · picked
+> ![[2026-10-22 open theme header, A breadcrumb (picked).png|420]]
+> Replaced by: [[2026-10-22 an open theme, ACTIVE or INACTIVE.png]]
+> Shown in: not in a note yet
+
 > [!quote]- ♻️ replaced · Gate themes in the picker, C themes tab · picked
 > ![[2026-10-22 gate themes in the picker, C themes tab (picked).png|420]]
 > Replaced by: [[2026-10-22 the picker's themes tab.png]]
@@ -30,6 +43,10 @@ Pictures of the debug overlay, the placer, the pixel editor, the gallery, newest
 > [!failure]- ❌ not picked · Gate themes in the picker, A chips (not picked)
 > ![[2026-10-22 gate themes in the picker, A chips (not picked).png|420]]
 > Shown in: [[2026-10-22#🎨 The picker's THEMES tab: use, open and make a gate theme (Zaviel)|2026-10-22 · 🎨 The picker's THEMES tab: use, open and make a gate theme (Zaviel)]]
+
+> [!success]+ ✅ current · An open theme, ACTIVE or INACTIVE
+> ![[2026-10-22 an open theme, ACTIVE or INACTIVE.png|420]]
+> Shown in: not in a note yet
 
 ## 2026-10-21
 
