@@ -289,6 +289,13 @@ with tempfile.TemporaryDirectory() as tmp:
     txt = open(gmine).read() if os.path.exists(gmine) else ""
     g1 = subprocess.run(CMD + ["--script", os.path.join(ROOT, "tools", "scenarios", "office-gates-appear.sc")], capture_output=True, text=True, env=dict(os.environ, **aenv))
     check("stage: a gate (anims/gate-stairs) is edited like any part animation (the grow bar), and a room's gate appears by your file", st == 0 and re.search(r"key steps 0\.25 .* grow=10\b", txt) and g0.returncode == 0 and g1.stdout != g0.stdout)
+    sett = os.path.join(mine_a, "settings.conf")  # the picker's THEMES tab: space uses the picked theme (gate_theme in the settings file), the dashed card makes a copy under a name
+    tenv = dict(aenv, CLAWD_SETTINGS=sett)
+    out, st = run(["--edit", "-"], [(1.0, b"\t"), (1.1, b"\t"), (1.2, b"\t"), (1.3, b"\t"), (1.4, b"\t"), (1.8, b"\x1b[C"), (2.2, b" "), (2.6, b"\x1b[C"), (2.9, b"\r"), (3.2, b"mytheme"), (3.6, b"\r"), (4.2, b"q")], tenv, cols=300, rows=90)
+    made = os.path.join(mine_a, "gates", "mytheme", "gate-stairs.txt")
+    mtxt = open(made).read() if os.path.exists(made) else ""
+    check("picker: the THEMES tab: space uses the picked theme (settings.conf), NEW THEME makes a copy under a name, and the copy keeps its grow values",
+          st == 0 and "gate_theme = construct" in (open(sett).read() if os.path.exists(sett) else "") and "style construct" in mtxt and "grow=100" in mtxt)
     shutil.rmtree(anims, ignore_errors=True); shutil.rmtree(mine_a, ignore_errors=True)
     shutil.rmtree(spr, ignore_errors=True)
 print("%d failed" % len(fails) if fails else "all passed")

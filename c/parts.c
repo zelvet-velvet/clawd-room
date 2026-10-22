@@ -168,7 +168,7 @@ int parts_save(const PartAnim *a, const char *path) {
         for (int k = 0; k < p->nkey; k++) {
             const PartKey *q = &p->key[k];
             fprintf(f, "key %s %g x=%g y=%g turn=%g glow=%g show=%d", p->name, q->t, q->pose.x, q->pose.y, q->pose.turn, q->pose.glow, q->pose.show);
-            if (q->pose.grow != 100) fprintf(f, " grow=%g", q->pose.grow);
+            fprintf(f, " grow=%g", q->pose.grow); /* (always: a key without it takes the one before, so a 100 after a 0 must be written) */
             if (q->ease != EASE_LINEAR) fprintf(f, " ease=%s", EASE[q->ease]);
             fprintf(f, "\n");
         }

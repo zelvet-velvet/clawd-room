@@ -24,6 +24,7 @@
 #include "sprites.h"
 #include "term.h"
 #include "parts.h"
+#include "settings.h"
 
 #define MAXW 64
 #define MAXH 64
@@ -508,7 +509,7 @@ static void swap_undo(Ed *e, int at) {
 /* ---- the screen: canvas pixels; one terminal cell is 1 pixel wide and 2 high ---------------------------------------- */
 /* what is where, filled while drawing, so a click finds what it is on */
 enum { R_GRID, R_TOOL, R_FILE, R_NEW, R_FIELD, R_HUE, R_HEX, R_NUM, R_ADD, R_FRAME, R_FADD, R_PLAY, R_SPEED, R_ONION, R_STRIP, R_DIV, R_FOLD, R_PITEM, R_PTAB, R_PVIEW,
-       R_PRESET, R_PRESETALL, R_PMAKEDEF, R_PFIND };
+       R_PRESET, R_PRESETALL, R_PMAKEDEF, R_PFIND, R_PUSE, R_POPEN, R_PBACK };
 typedef struct { int kind, i, x0, y0, x1, y1; Rgb c; } Region;
 static Region g_reg[320];
 static int g_nreg;
@@ -927,7 +928,28 @@ static void draw_timeline(Canvas *cv, const Ed *e, double now, int preview, int 
 typedef struct { int file, sp, n, mine; char name[64]; } PickItem; /* (mine: one of its frames is yours); file NFILES: a part animation, sp its index in g_anim */
 static File g_pf[NFILES];
 #define ANIMS NFILES /* the picker's last tab: the part animations (anims/NAME.txt), opened on the stage page (stage.inc) */
+#define THEMES (NFILES + 1) /* the picker's tab of gate themes: a card per folder anims/gates/NAME, opened on the ANIMS tab */
 static char g_anim[32][PARTS_PATH_NAME];
+static char g_theme[16][24];      /* the gate themes there are (the folders of anims/gates/ in both places), "simple" first */
+static int g_nth;
+static char g_theme_open[24];     /* the theme the ANIMS tab shows the files of ("": the animations that are in no theme) */
+static char g_newname[24];        /* typing the name of a new theme */
+static int anim_theme_of(const char *path, char *out, size_t n) { /* gates/THEME/KIND: 1 and the theme */
+    if (strncmp(path, "gates/", 6)) return 0;
+    const char *e = strchr(path + 6, '/');
+    if (!e) return 0;
+    snprintf(out, n, "%.*s", (int)(e - (path + 6)), path + 6);
+    return 1;
+}
+static int g_nanim;
+static int theme_kind_index(const char *theme, const char *kind) { /* the picker's anim index of gates/THEME/gate-KIND, else simple's, else -1 */
+    char nm[PARTS_PATH_NAME];
+    for (int pass = 0; pass < 2; pass++) {
+        snprintf(nm, sizeof nm, "gates/%s/gate-%s", pass ? "simple" : theme, kind);
+        for (int i = 0; i < g_nanim; i++) if (!strcmp(g_anim[i], nm)) return i;
+    }
+    return -1;
+}
 static int g_nanim, g_redraw; /* (g_redraw: the stage page had the terminal: draw everything again) */
 static void stage_dirs(const char *dir);
 #define ST_PIXELS 2 /* stage_loop returns it when I asked for the pixel art of a sprite part */
@@ -971,9 +993,32 @@ static void picker_gather(const char *dir) {
         int nf = a ? (int)lround(a->length * 16) + (a->loop ? 0 : 1) : 1;
         g_pi[g_npi] = (PickItem){ANIMS, i, nf, parts_mine_dir()[0] && access(mp, R_OK) == 0, ""};
         snprintf(g_pi[g_npi].name, sizeof g_pi[g_npi].name, "%s", g_anim[i]);
+        char th[24];
+        if (anim_theme_of(g_anim[i], th, sizeof th)) { /* a gate file: THEME KIND (the ANIMS tab shows it as KIND when its theme is open) */
+            const char *kind = strrchr(g_anim[i], '/') + 1;
+            snprintf(g_pi[g_npi].name, sizeof g_pi[g_npi].name, "%s %s", th, !strncmp(kind, "gate-", 5) ? kind + 5 : kind);
+        }
         for (char *q = g_pi[g_npi].name; *q; q++) if (*q >= 'a' && *q <= 'z') *q -= 32;
-        size_t tl = strlen(parts_gate_theme());
-        if (!strncmp(g_anim[i], "gates/", 6) && !strncmp(g_anim[i] + 6, parts_gate_theme(), tl) && g_anim[i][6 + tl] == '/') strncat(g_pi[g_npi].name, " *", sizeof g_pi[g_npi].name - strlen(g_pi[g_npi].name) - 1); /* (the active gate theme's files: a star) */
+        g_npi++;
+    }
+    g_nth = 0; /* the themes: simple first, then by name; a card each, and a card to make one */
+    for (int i = 0; i < g_nanim; i++) {
+        char th[24];
+        if (!anim_theme_of(g_anim[i], th, sizeof th)) continue;
+        int have = 0;
+        for (int k = 0; k < g_nth; k++) if (!strcmp(g_theme[k], th)) have = 1;
+        if (!have && g_nth < 16) snprintf(g_theme[g_nth++], sizeof g_theme[0], "%s", th);
+    }
+    for (int a = 0; a < g_nth; a++) for (int b = a + 1; b < g_nth; b++) {
+        int sa = !strcmp(g_theme[a], "simple"), sb = !strcmp(g_theme[b], "simple");
+        if (sb || (!sa && strcmp(g_theme[a], g_theme[b]) > 0)) { char t[24]; snprintf(t, sizeof t, "%s", g_theme[a]); snprintf(g_theme[a], sizeof g_theme[0], "%s", g_theme[b]); snprintf(g_theme[b], sizeof g_theme[0], "%s", t); }
+    }
+    for (int k = 0; k <= g_nth && g_npi < 512; k++) {
+        int mine = 0;
+        for (int i = 0; k < g_nth && i < g_npi; i++) if (g_pi[i].file == ANIMS) { char th[24]; if (anim_theme_of(g_anim[g_pi[i].sp], th, sizeof th) && !strcmp(th, g_theme[k]) && g_pi[i].mine) mine = 1; }
+        g_pi[g_npi] = (PickItem){THEMES, k < g_nth ? k : -1, 3, mine, ""};
+        snprintf(g_pi[g_npi].name, sizeof g_pi[g_npi].name, "%s", k < g_nth ? g_theme[k] : "NEW THEME");
+        for (char *q = g_pi[g_npi].name; *q; q++) if (*q >= 'a' && *q <= 'z') *q -= 32;
         g_npi++;
     }
 }
@@ -982,6 +1027,12 @@ static int picker_shown(const Ed *e, int *out) {
     int n = 0;
     for (int i = 0; i < g_npi; i++) {
         if (e->pview == 0 && g_pi[i].file != e->ptab) continue;
+        if (e->pview != 0 && g_pi[i].file == THEMES) continue; /* (the list has the files, not the theme cards) */
+        if (e->pview == 0 && g_pi[i].file == ANIMS) { /* the ANIMS tab: the animations in no theme, or the open theme's files */
+            char th[24];
+            int gate = anim_theme_of(g_anim[g_pi[i].sp], th, sizeof th);
+            if (g_theme_open[0] ? !(gate && !strcmp(th, g_theme_open)) : gate) continue;
+        }
         if (e->find[0] && !strstr(g_pi[i].name, e->find)) continue;
         out[n++] = i;
     }
@@ -989,7 +1040,14 @@ static int picker_shown(const Ed *e, int *out) {
 }
 /* a sprite of the picker's files, fitted into w x h (z at most), centred; frame k of its animation (playing: the picked one) */
 static void picker_sprite(Canvas *cv, const PickItem *it, int k, int x, int y, int w, int h, int z) {
-    if (it->file == ANIMS) { picker_anim(cv, it->sp, k * 0.3, x, y, w, h); return; } /* (a part animation: its room, the parts in the middle) */
+    if (it->file == THEMES) return;
+    if (it->file == ANIMS) { /* (resting cards of an animation that plays once: part way in, so a gate shows) */
+        double t = k * 0.3;
+        const PartAnim *pa = k == 0 ? parts_get(g_anim[it->sp]) : NULL;
+        if (pa && !pa->loop) t = pa->length * 0.55;
+        picker_anim(cv, it->sp, t, x, y, w, h);
+        return;
+    } /* (a part animation: its room, the parts in the middle) */
     int fr[128], n = anim_frames(&g_pf[it->file], it->sp, fr, 128), sw, sh;
     static char g[MAXH][MAXW + 1];
     grid_of(&g_pf[it->file], fr[k % n], g, &sw, &sh);
@@ -1017,15 +1075,91 @@ static void picker_search(Canvas *cv, int x, int y, int w, const char *typed, in
     if (typed[0] && focus) canvas_rect(cv, x + 3 + text_width(typed) + 1, y + 2, 3, 5, C_YELLOW);
     region(R_PFIND, 0, x, y, w, 9, RGB(0, 0, 0));
 }
+/* ---- the THEMES tab: a card per gate theme, with its three gates side by side, and a card to make one ------------------- */
+static char g_src_theme[24] = "simple"; /* the theme last picked: what NEW THEME copies */
+static const char *theme_target(const Ed *e) { /* the theme USE / OPEN act on: the picked card, else the open theme */
+    if (e->ptab == THEMES && e->psel >= 0 && e->psel < g_npi && g_pi[e->psel].file == THEMES && g_pi[e->psel].sp >= 0) return g_theme[g_pi[e->psel].sp];
+    return g_theme_open[0] ? g_theme_open : NULL;
+}
+static void theme_button(Canvas *cv, int *x, int y, const char *t, int live, int kind) {
+    int w = text_width(t) + 8;
+    canvas_rect(cv, *x, y, w, 11, live ? RGB(90, 90, 120) : RGB(28, 28, 36));
+    canvas_text(cv, *x + 4, y + 3, t, live ? C_WHITE : RGB(70, 70, 86));
+    if (live) region(kind, 0, *x, y, w, 11, RGB(0, 0, 0));
+    *x += w + 4;
+}
+static void draw_theme_cards(const Ed *e, Canvas *cv, int y0, const int *sh, int n, double now) {
+    static const char *const KIND[3] = {"door", "stairs", "well"};
+    int W = cv->w, gap = 4, cols = (W - 8 + gap) / (100 + gap);
+    if (cols < 1) cols = 1;
+    int bw = (W - 8 + gap) / cols - gap, bh = 62, k = (int)fmod(now / 0.3, 1e6), picked = -1;
+    g_pick_cols = cols;
+    int H = cv->h, by = H - 24 - 13, at = 0;
+    if (by - 3 - y0 < bh) bh = by - 3 - y0 < 28 ? 28 : by - 3 - y0; /* (a short window: the cards get lower, the pictures and the lines with them) */
+    int th = bh >= 62 ? 26 : bh - 18 < 10 ? 10 : bh - 18, vis = (by - 3 - y0 + gap) / (bh + gap); /* (the buttons just above the bar at the bottom; the rows that fit scroll) */
+    if (vis < 1) vis = 1;
+    for (int j = 0; j < n; j++) if (sh[j] == e->psel) at = j;
+    int first = e->pscroll;
+    if (at / cols < first) first = at / cols;
+    if (at / cols >= first + vis) first = at / cols - vis + 1;
+    if (first < 0) first = 0;
+    ((Ed *)e)->pscroll = first;
+    for (int j = 0; j < n; j++) {
+        const PickItem *it = &g_pi[sh[j]];
+        int on = sh[j] == e->psel;
+        if (on && it->sp >= 0) { picked = it->sp; snprintf(g_src_theme, sizeof g_src_theme, "%s", g_theme[it->sp]); }
+        if (j / cols < first || j / cols >= first + vis) continue;
+        int cx = 4 + (j % cols) * (bw + gap), cy = y0 + (j / cols - first) * (bh + gap);
+        if (it->sp < 0) { /* the card to make one: dashed, a plus */
+            for (int i = 0; i < bw; i += 3) { canvas_px(cv, cx + i, cy, RGB(90, 90, 110)); canvas_px(cv, cx + i, cy + bh - 1, RGB(90, 90, 110)); }
+            for (int i = 0; i < bh; i += 3) { canvas_px(cv, cx, cy + i, RGB(90, 90, 110)); canvas_px(cv, cx + bw - 1, cy + i, RGB(90, 90, 110)); }
+            canvas_rect(cv, cx + bw / 2 - 5, cy + bh / 2 - 9, 11, 3, C_YELLOW); canvas_rect(cv, cx + bw / 2 - 1, cy + bh / 2 - 13, 3, 11, C_YELLOW);
+            canvas_text(cv, cx + bw / 2 - text_width("NEW THEME") / 2, cy + bh - 17, "NEW THEME", C_WHITE);
+            char sub[48]; snprintf(sub, sizeof sub, "A COPY OF %s", g_src_theme);
+            for (char *q = sub; *q; q++) if (*q >= 'a' && *q <= 'z') *q -= 32;
+            while (sub[0] && text_width(sub) > bw - 4) sub[strlen(sub) - 1] = 0;
+            canvas_text(cv, cx + bw / 2 - text_width(sub) / 2, cy + bh - 10, sub, RGB(90, 90, 110));
+            if (on) frame(cv, cx, cy, bw, bh, C_YELLOW);
+            region(R_PITEM, sh[j], cx, cy, bw, bh, RGB(0, 0, 0));
+            continue;
+        }
+        canvas_rect(cv, cx, cy, bw, bh, on ? RGB(44, 44, 60) : RGB(28, 28, 36));
+        int tw = (bw - 6) / 3 - 2, stairs = theme_kind_index(g_theme[it->sp], "stairs");
+        for (int q = 0; q < 3; q++) {
+            int ai = theme_kind_index(g_theme[it->sp], KIND[q]), tx = cx + 3 + q * ((bw - 6) / 3);
+            checker(cv, tx, cy + 3, tw, th);
+            if (ai >= 0) picker_anim(cv, ai, on ? k * 0.3 : 0.6, tx, cy + 3, tw, th); /* (the picked one plays, the others rest part way) */
+        }
+        int l1 = cy + 3 + th + 6; /* (the lines under the pictures, each only when it fits in the card) */
+        canvas_text(cv, cx + 4, l1, it->name, on ? C_WHITE : RGB(190, 190, 205));
+        const PartAnim *sa = stairs >= 0 ? parts_get(g_anim[stairs]) : NULL;
+        if (l1 + 17 <= cy + bh) {
+            if (!strcmp(g_theme[it->sp], parts_gate_theme())) { canvas_rect(cv, cx + 4, l1 + 10, 5, 5, C_YELLOW); canvas_text(cv, cx + 12, l1 + 10, "ACTIVE", C_YELLOW); }
+            else { char st[32] = "PARTS IN TURN"; if (sa && sa->style[0]) { snprintf(st, sizeof st, "STYLE %s", sa->style); for (char *q = st; *q; q++) if (*q >= 'a' && *q <= 'z') *q -= 32; } canvas_text(cv, cx + 4, l1 + 10, st, RGB(90, 90, 110)); }
+        } else if (!strcmp(g_theme[it->sp], parts_gate_theme())) { canvas_rect(cv, cx + bw - 9, l1, 5, 5, C_YELLOW); } /* (no room for the word: just the mark) */
+        if (l1 + 25 <= cy + bh) canvas_text(cv, cx + 4, l1 + 18, "DOOR  STAIRS  WELL", RGB(90, 90, 110));
+        if (it->mine && l1 + 17 <= cy + bh) { canvas_rect(cv, cx + bw - 9, l1 + 1, 5, 5, RGB(18, 18, 24)); canvas_rect(cv, cx + bw - 8, l1 + 2, 3, 3, RGB(120, 200, 255)); } /* (yours) */
+        if (on) frame(cv, cx, cy, bw, bh, C_YELLOW);
+        region(R_PITEM, sh[j], cx, cy, bw, bh, RGB(0, 0, 0));
+    }
+    int rows = (n + cols - 1) / cols, bx = 4, live = picked >= 0;
+    theme_button(cv, &bx, by, "USE THIS THEME", live && strcmp(g_theme[picked], parts_gate_theme()) != 0, R_PUSE);
+    theme_button(cv, &bx, by, "OPEN", live, R_POPEN);
+    int ty = y0 + (rows < vis ? rows : vis) * (bh + gap) + 2; /* (what a theme is, when there is room for it between the cards and the buttons) */
+    if (ty + 8 <= by - 2) canvas_text(cv, 4, ty, "A THEME IS A FOLDER OF GATE FILES: HOW A GATE APPEARS.", RGB(110, 110, 130));
+    if (ty + 17 <= by - 2) canvas_text(cv, 4, ty + 9, "YOURS GO TO ~/.CLAWD-ROOM.", RGB(110, 110, 130));
+    if (first > 0) canvas_text(cv, W / 2 - 1, y0 - 6, "^", RGB(150, 150, 170));
+    if ((first + vis) * cols < n) canvas_text(cv, W / 2 - 1, by - 8, "V", RGB(150, 150, 170));
+}
 static void draw_picker(const Ed *e, Canvas *cv, double now) {
     int W = cv->w, H = cv->h, sh[512], n = picker_shown(e, sh), k = (int)fmod(now / 0.3, 1e6); /* (k: the picked one plays; fmod: the wall clock / 0.3 is past what an int holds) */
     canvas_text(cv, 4, 3, "OPEN A SPRITE", C_YELLOW);
     picker_view_button(cv, W - 4 - 24, 3, 0, e->pview == 0);
     picker_view_button(cv, W - 4 - 9, 3, 1, e->pview == 1);
-    static const char *TABS[NFILES + 1] = {"PROPS", "ITEMS", "CLAWD", "UI", "ANIMS"};
+    static const char *TABS[NFILES + 2] = {"PROPS", "ITEMS", "CLAWD", "UI", "ANIMS", "THEMES"};
     if (e->pview == 0) { /* cards: a tab per file, the search box, the cards */
         int tx = 4, ty = 14;
-        for (int f = 0; f <= ANIMS; f++) {
+        for (int f = 0; f <= THEMES; f++) {
             int tw = text_width(TABS[f]) + 8;
             canvas_rect(cv, tx, ty, tw, 10, f == e->ptab ? RGB(52, 54, 70) : RGB(28, 28, 36));
             if (f == e->ptab) canvas_rect(cv, tx + 2, ty + 9, tw - 4, 1, C_YELLOW);
@@ -1036,6 +1170,17 @@ static void draw_picker(const Ed *e, Canvas *cv, double now) {
         int sw = W - 4 - tx - 6 < 90 ? W - 4 - tx - 6 : 90;
         if (sw > 40) picker_search(cv, W - 4 - sw, ty, sw, e->find, e->pfocus);
         int gap = 4, cols = (W - 8 + gap) / (46 + gap) > 0 ? (W - 8 + gap) / (46 + gap) : 1, cw = (W - 8 + gap) / cols - gap, chh = 42, y0 = ty + 16;
+        if (e->ptab == THEMES) draw_theme_cards(e, cv, y0, sh, n, now);
+        else {
+        if (e->ptab == ANIMS && g_theme_open[0]) { /* a theme's files: a way back, its name, ACTIVE or USE */
+            char hd[48]; snprintf(hd, sizeof hd, "< THEMES   %s", g_theme_open);
+            for (char *q = hd; *q; q++) if (*q >= 'a' && *q <= 'z') *q -= 32;
+            int hw = text_width(hd) + 8, hx = 4 + hw + 6;
+            canvas_rect(cv, 4, y0 - 1, hw, 11, RGB(52, 54, 70)); canvas_text(cv, 8, y0 + 2, hd, C_WHITE); region(R_PBACK, 0, 4, y0 - 1, hw, 11, RGB(0, 0, 0));
+            if (!strcmp(g_theme_open, parts_gate_theme())) { canvas_rect(cv, hx, y0 + 2, 5, 5, C_YELLOW); canvas_text(cv, hx + 8, y0 + 2, "ACTIVE", C_YELLOW); }
+            else theme_button(cv, &hx, y0 - 1, "USE THIS THEME", 1, R_PUSE);
+            y0 += 14;
+        }
         int vis = (H - 24 - y0 + gap) / (chh + gap) > 0 ? (H - 24 - y0 + gap) / (chh + gap) : 1;
         g_pick_cols = cols;
         int at = 0; for (int j = 0; j < n; j++) if (sh[j] == e->psel) at = j;
@@ -1050,7 +1195,9 @@ static void draw_picker(const Ed *e, Canvas *cv, double now) {
             canvas_rect(cv, cx, cy, cw, chh, on ? RGB(44, 44, 60) : RGB(28, 28, 36));
             checker(cv, cx + 3, cy + 3, cw - 6, 26);
             picker_sprite(cv, it, on ? k : 0, cx + 3, cy + 3, cw - 6, 26, 3);
-            char nm[24]; snprintf(nm, sizeof nm, "%.*s", (cw - 4) / 4, it->name);
+            const char *cn = it->name; /* (an open theme's file: DOOR, not THEME DOOR) */
+            if (it->file == ANIMS && g_theme_open[0] && strlen(cn) > strlen(g_theme_open) + 1) cn += strlen(g_theme_open) + 1;
+            char nm[24]; snprintf(nm, sizeof nm, "%.*s", (cw - 4) / 4, cn);
             canvas_text(cv, cx + 3, cy + 32, nm, on ? C_WHITE : RGB(190, 190, 205));
             if (it->n > 1) { char fn[8]; snprintf(fn, sizeof fn, "%d", it->n); canvas_rect(cv, cx + cw - text_width(fn) - 6, cy + 4, text_width(fn) + 4, 7, RGB(18, 18, 24)); canvas_text(cv, cx + cw - text_width(fn) - 4, cy + 5, fn, C_YELLOW); }
             if (it->mine) { canvas_rect(cv, cx + 4, cy + 4, 4, 4, RGB(18, 18, 24)); canvas_rect(cv, cx + 5, cy + 5, 2, 2, RGB(120, 200, 255)); } /* (yours) */
@@ -1059,6 +1206,7 @@ static void draw_picker(const Ed *e, Canvas *cv, double now) {
         }
         if (first > 0) canvas_text(cv, W / 2 - 1, y0 - 6, "^", C_GREY);
         if ((first + vis) * cols < n) canvas_text(cv, W / 2 - 1, H - 29, "V", C_GREY);
+        }
     } else { /* a list by file, the picked one big on the right with its file, size and frames */
         int lw = W / 3 < 92 ? 92 : W / 3, y = 26;
         picker_search(cv, 4, 14, lw - 4, e->find, e->pfocus);
@@ -1116,7 +1264,7 @@ static void draw_picker(const Ed *e, Canvas *cv, double now) {
     if (!n) { char t[64]; snprintf(t, sizeof t, "NOTHING CALLED %s", e->find); canvas_text(cv, (W - text_width(t)) / 2, H / 2, t, C_GREY); }
     { /* the bar above the hints: how many are yours (left); RESET, RESET ALL, MAKE DEFAULT (right; dim when they would do nothing) */
         int by = H - 21, yours = 0, file_mine = 0, picked_mine = e->psel >= 0 && e->psel < g_npi && g_pi[e->psel].mine;
-        for (int i = 0; i < g_npi; i++) { yours += g_pi[i].mine; if (e->psel >= 0 && e->psel < g_npi && g_pi[i].file == g_pi[e->psel].file && g_pi[i].mine) file_mine = 1; }
+        for (int i = 0; i < g_npi; i++) { if (g_pi[i].file != THEMES) yours += g_pi[i].mine; if (e->psel >= 0 && e->psel < g_npi && g_pi[i].file == g_pi[e->psel].file && g_pi[i].mine) file_mine = 1; }
         canvas_rect(cv, 0, by - 2, W, 1, RGB(40, 40, 52));
         char yt[24];
         snprintf(yt, sizeof yt, "YOURS: %d", yours);
@@ -1134,7 +1282,7 @@ static void draw_picker(const Ed *e, Canvas *cv, double now) {
         }
     }
     canvas_rect(cv, 0, H - 10, W, 1, RGB(40, 40, 52));
-    canvas_text(cv, 4, H - 7, e->pview == 0 ? "ARROWS PICK  ENTER OPEN  TAB NEXT TAB  \\ LIST  Q QUIT" : "UP DOWN PICK  ENTER OPEN  \\ CARDS  Q QUIT", RGB(150, 150, 170));
+    canvas_text(cv, 4, H - 7, e->pview == 0 ? e->ptab == THEMES ? "ARROWS PICK  SPACE USE  ENTER OPEN  TAB NEXT TAB  Q QUIT" : g_theme_open[0] && e->ptab == ANIMS ? "ARROWS PICK  ENTER OPEN  ESC BACK TO THEMES  Q QUIT" : "ARROWS PICK  ENTER OPEN  TAB NEXT TAB  \\ LIST  Q QUIT" : "UP DOWN PICK  ENTER OPEN  \\ CARDS  Q QUIT", RGB(150, 150, 170));
 }
 /* the picker opens: the items again, the open sprite's animation picked */
 static void picker_open(Ed *e, const char *dir, int from_edit) {
@@ -1153,7 +1301,7 @@ static void picker_open(Ed *e, const char *dir, int from_edit) {
 /* what is typed changed: the first match picked (the cards: on the first tab that has one) */
 static void picker_refind(Ed *e) {
     int sh[512];
-    if (e->pview == 0 && !picker_shown(e, sh)) for (int f = 0; f <= ANIMS; f++) { e->ptab = f; if (picker_shown(e, sh)) break; }
+    if (e->pview == 0 && !picker_shown(e, sh)) for (int f = 0; f <= THEMES; f++) { e->ptab = f; if (picker_shown(e, sh)) break; }
     int n = picker_shown(e, sh);
     if (n) e->psel = sh[0];
     e->pscroll = 0;
@@ -1191,6 +1339,10 @@ static void visit_discard(Ed *e, const char *dir) { /* (D when leaving a sprite:
 static void picker_reset(Ed *e, const char *dir) {
     if (e->psel < 0 || e->psel >= g_npi) return;
     const PickItem *it = &g_pi[e->psel];
+    if (it->file == THEMES) { /* a theme: its files of yours go (a theme only yours goes altogether) */
+        for (int i = 0; i < g_nanim && it->sp >= 0; i++) { char th[24]; if (anim_theme_of(g_anim[i], th, sizeof th) && !strcmp(th, g_theme[it->sp])) { char mp[700]; anim_mine_path(mp, sizeof mp, i); remove(mp); } }
+        picker_gather(dir); snprintf(e->msg, sizeof e->msg, "RESET"); return;
+    }
     if (it->file == ANIMS) { char mp[700]; anim_mine_path(mp, sizeof mp, it->sp); remove(mp); picker_gather(dir); snprintf(e->msg, sizeof e->msg, "RESET"); return; } /* (a part animation: yours goes) */
     File *f = &g_pf[it->file];
     static File d;
@@ -1222,6 +1374,22 @@ static void picker_reset_all(Ed *e, const char *dir) { /* RESET ALL: every file 
 static void picker_make_default(Ed *e, const char *dir) {
     if (e->psel < 0 || e->psel >= g_npi) return;
     int fi = g_pi[e->psel].file;
+    if (fi == THEMES) { /* a theme: each file of yours is copied over the default (the folder made), then goes */
+        for (int i = 0; i < g_nanim && g_pi[e->psel].sp >= 0; i++) {
+            char th[24], mp[700], dp[700], dd[700];
+            if (!anim_theme_of(g_anim[i], th, sizeof th) || strcmp(th, g_theme[g_pi[e->psel].sp])) continue;
+            anim_mine_path(mp, sizeof mp, i);
+            char *t = slurp(mp);
+            if (!t) continue;
+            snprintf(dp, sizeof dp, "%s/%s.txt", parts_default_dir(), g_anim[i]);
+            snprintf(dd, sizeof dd, "%s", dp); char *sl = strrchr(dd, '/'); if (sl) { *sl = 0; char *p2 = strrchr(dd, '/'); if (p2) { *p2 = 0; mkdir(dd, 0755); *p2 = '/'; } mkdir(dd, 0755); }
+            FILE *o = fopen(dp, "w");
+            if (o) { fputs(t, o); fclose(o); remove(mp); }
+            free(t);
+        }
+        picker_gather(dir);
+        return;
+    }
     if (fi == ANIMS) { /* a part animation: yours is copied over the default, then goes */
         char mp[700], dp[700];
         anim_mine_path(mp, sizeof mp, g_pi[e->psel].sp);
@@ -1245,9 +1413,70 @@ static void picker_make_default(Ed *e, const char *dir) {
     put_back(fi, NULL);
     picker_gather(dir);
 }
+/* ---- the THEMES tab's actions ------------------------------------------------------------------------------------------ */
+static void theme_use(Ed *e, const char *dir) { /* USE: gate_theme = NAME in settings.conf (the room reads it again by itself) */
+    const char *t = theme_target(e);
+    if (!t) return;
+    char name[24];
+    snprintf(name, sizeof name, "%s", t);
+    if (settings_set("gate_theme", name)) { snprintf(e->msg, sizeof e->msg, "CANNOT WRITE SETTINGS.CONF"); return; }
+    const char *env = getenv("CLAWD_GATE_THEME");
+    snprintf(e->msg, sizeof e->msg, env && env[0] ? "SAVED, BUT CLAWD_GATE_THEME WINS" : "USING %s", name);
+    for (char *q = e->msg; *q; q++) if (*q >= 'a' && *q <= 'z') *q -= 32;
+    picker_gather(dir);
+}
+static void theme_open(Ed *e) { /* OPEN: the ANIMS tab with that theme's files */
+    const char *t = theme_target(e);
+    if (!t) return;
+    snprintf(g_theme_open, sizeof g_theme_open, "%s", t);
+    e->ptab = ANIMS; e->pscroll = 0; e->find[0] = 0;
+    int sh[512]; if (picker_shown(e, sh)) e->psel = sh[0];
+}
+static void theme_close(Ed *e) { /* back to the theme cards, the one that was open picked */
+    char was[24]; snprintf(was, sizeof was, "%s", g_theme_open);
+    g_theme_open[0] = 0; e->ptab = THEMES; e->pscroll = 0;
+    for (int i = 0; i < g_npi; i++) if (g_pi[i].file == THEMES && g_pi[i].sp >= 0 && !strcmp(g_theme[g_pi[i].sp], was)) e->psel = i;
+}
+static int picker_escape(Ed *e) { /* Esc in the picker: clears the search, leaves the box, leaves an open theme; else 1: quit */
+    int sh[512];
+    if (e->find[0]) { e->find[0] = 0; picker_refind(e); return 0; }
+    if (e->pfocus == 2) { e->pfocus = 0; return 0; }
+    if (g_theme_open[0] && e->ptab == ANIMS) { theme_close(e); return 0; }
+    (void)sh;
+    return 1;
+}
+static void theme_make(Ed *e, const char *dir) { /* the new theme: a copy of the one last picked, as yours (anims/gates/NAME) */
+    char nm[24];
+    snprintf(nm, sizeof nm, "%s", g_newname);
+    size_t l = strlen(nm);
+    if (!l) { snprintf(e->msg, sizeof e->msg, "GIVE IT A NAME"); return; }
+    for (int i = 0; i < g_nth; i++) if (!strcmp(g_theme[i], nm)) { snprintf(e->msg, sizeof e->msg, "THERE IS A THEME CALLED THAT"); return; }
+    if (!parts_mine_dir()[0]) { snprintf(e->msg, sizeof e->msg, "NOWHERE TO SAVE"); return; }
+    static PartAnim a;
+    static const char *const KIND[3] = {"door", "stairs", "well"};
+    for (int q = 0; q < 3; q++) {
+        int ai = theme_kind_index(g_src_theme, KIND[q]);
+        if (ai < 0) continue;
+        char src[700], dst[700];
+        snprintf(src, sizeof src, "%s/%s.txt", parts_mine_dir(), g_anim[ai]);
+        if (access(src, R_OK)) snprintf(src, sizeof src, "%s/%s.txt", parts_default_dir(), g_anim[ai]);
+        if (parts_load(&a, src)) continue;
+        snprintf(dst, sizeof dst, "%s/gates/%s/gate-%s.txt", parts_mine_dir(), nm, KIND[q]);
+        parts_save(&a, dst);
+    }
+    picker_gather(dir);
+    for (int i = 0; i < g_npi; i++) if (g_pi[i].file == THEMES && g_pi[i].sp >= 0 && !strcmp(g_theme[g_pi[i].sp], nm)) e->psel = i;
+    snprintf(e->msg, sizeof e->msg, "MADE THEME %s", nm);
+    for (char *q = e->msg; *q; q++) if (*q >= 'a' && *q <= 'z') *q -= 32;
+}
 /* the picked one opens in the editor */
 static void picker_pick(Ed *e, const char *dir) {
     if (e->psel < 0 || e->psel >= g_npi) return;
+    if (g_pi[e->psel].file == THEMES) { /* a theme card opens its files; the dashed card asks for a name */
+        if (g_pi[e->psel].sp >= 0) theme_open(e);
+        else { g_newname[0] = 0; e->asking = 5; }
+        return;
+    }
     if (g_pi[e->psel].file == ANIMS) { /* the stage page, in this window; q there comes back here */
         char nm[PARTS_PATH_NAME];
         snprintf(nm, sizeof nm, "%s", g_anim[g_pi[e->psel].sp]);
@@ -1270,7 +1499,8 @@ static void picker_pick(Ed *e, const char *dir) {
 static void draw_asking(Canvas *cv, const Ed *e) {
     char a[96];
     const char *b = "S SAVE    D DISCARD    ESC BACK";
-    if (e->asking == 3) { int n = 0; for (int i = 0; i < g_npi; i++) n += g_pi[i].mine; snprintf(a, sizeof a, "RESET %d OF YOURS TO THE DEFAULT?", n); b = "Y RESET    N KEEP THEM"; }
+    if (e->asking == 5) { snprintf(a, sizeof a, "NAME THE NEW THEME:  %s_", g_newname); for (char *q = a; *q; q++) if (*q >= 'a' && *q <= 'z') *q -= 32; b = "ENTER MAKE IT    ESC BACK"; }
+    else if (e->asking == 3) { int n = 0; for (int i = 0; i < g_npi; i++) n += g_pi[i].mine; snprintf(a, sizeof a, "RESET %d OF YOURS TO THE DEFAULT?", n); b = "Y RESET    N KEEP THEM"; }
     else if (e->asking == 4) { if (e->psel >= 0 && e->psel < g_npi && g_pi[e->psel].file == ANIMS) snprintf(a, sizeof a, "MAKE YOUR ANIMS/%s.TXT THE DEFAULT?", g_pi[e->psel].name); else snprintf(a, sizeof a, "MAKE YOURS IN %s THE DEFAULT?", e->psel >= 0 && e->psel < g_npi ? FILES[g_pi[e->psel].file] : ""); for (char *q = a; *q; q++) if (*q >= 'a' && *q <= 'z') *q -= 32; b = "Y MAKE IT THE DEFAULT    N NOT NOW"; }
     else if (e->asking == 2) { snprintf(a, sizeof a, "SAVE THE CHANGES TO %s?", e->name); for (char *q = a; *q; q++) if (*q >= 'a' && *q <= 'z') *q -= 32; }
     else snprintf(a, sizeof a, "SAVE THE CHANGES?");
@@ -1558,6 +1788,7 @@ int editor_run(const char *dir, const char *name) {
         if (e.sizing && wall_now() > e.sizing_until) { e.sizing = 0; if (strstr(e.msg, "ARROW")) e.msg[0] = 0; } /* (w / n let go) */
         Canvas cv = canvas_new(cols, rows * 2, RGB(18, 18, 24));
         draw(&e, &cv);
+        if (getenv("CLAWD_EDIT_PNG")) png_write(getenv("CLAWD_EDIT_PNG"), &cv, 4); /* (a picture of the editor, to look at) */
         Cells cur = cells_from_canvas(&cv, NULL);
         size_t len;
         char *s = diff_frame(&cur, prev.c ? &prev : NULL, &len);
@@ -1573,7 +1804,7 @@ int editor_run(const char *dir, const char *name) {
                 nin = 0;
                 if (e.asking) e.asking = 0;
                 else if (e.typing) e.typing = 0;
-                else if (e.page) { if (e.find[0]) { e.find[0] = 0; picker_refind(&e); } else if (e.pfocus == 2) e.pfocus = 0; else quit = 1; } /* (the picker: Esc clears the search, then leaves the clicked box, else quits) */
+                else if (e.page) quit = picker_escape(&e); /* (the picker: Esc clears the search, leaves the clicked box, leaves an open theme, else quits) */
             }
             continue;
         }
@@ -1587,7 +1818,7 @@ int editor_run(const char *dir, const char *name) {
                 if (e.asking && in[i + 1] != '[') { e.asking = 0; i++; continue; } /* (Esc: back to editing) */
                 if (e.page && !e.asking && in[i + 1] != '[') { /* the picker, Esc: clears the search, else quits */
                     i++;
-                    if (e.find[0]) { e.find[0] = 0; picker_refind(&e); } else if (e.pfocus == 2) e.pfocus = 0; else quit = 1;
+                    quit = picker_escape(&e);
                     continue;
                 }
                 if (e.page && in[i + 1] == '[' && i + 2 < nin && in[i + 2] >= 'A' && in[i + 2] <= 'D') { /* the picker's arrows */
@@ -1609,7 +1840,10 @@ int editor_run(const char *dir, const char *name) {
                         if (!motion && !release && btn == 0) e.pfocus = r && r->kind == R_PFIND ? 2 : 0; /* (a press on the search box focuses it, anywhere else not) */
                         if (motion || release || btn != 0 || !r) continue;
                         if (r->kind == R_PITEM) { if (r->i == e.psel) picker_pick(&e, dir); else e.psel = r->i; }
-                        else if (r->kind == R_PTAB) { e.ptab = r->i; e.pscroll = 0; int sh[512]; if (picker_shown(&e, sh)) e.psel = sh[0]; }
+                        else if (r->kind == R_PUSE) theme_use(&e, dir);
+                        else if (r->kind == R_POPEN) { theme_open(&e); }
+                        else if (r->kind == R_PBACK) theme_close(&e);
+                        else if (r->kind == R_PTAB) { e.ptab = r->i; g_theme_open[0] = 0; e.pscroll = 0; int sh[512]; if (picker_shown(&e, sh)) e.psel = sh[0]; }
                         else if (r->kind == R_PVIEW) { e.pview = r->i; e.pscroll = 0; }
                         else if (r->kind == R_PRESET) picker_reset(&e, dir);
                         else if (r->kind == R_PRESETALL) e.asking = 3; /* (asks first) */
@@ -1738,7 +1972,8 @@ int editor_run(const char *dir, const char *name) {
             if (e.page && !e.asking) { /* the picker: type to find, Backspace, Enter opens, Tab the next file, \ the view */
                 size_t fl = strlen(e.find);
                 if (ch == '\r' || ch == '\n') picker_pick(&e, dir);
-                else if (ch == '\t') { e.ptab = (e.ptab + 1) % (ANIMS + 1); e.pscroll = 0; int sh[512]; if (picker_shown(&e, sh)) e.psel = sh[0]; }
+                else if (ch == '\t') { e.ptab = (e.ptab + 1) % (THEMES + 1); g_theme_open[0] = 0; e.pscroll = 0; int sh[512]; if (picker_shown(&e, sh)) e.psel = sh[0]; }
+                else if (ch == ' ' && theme_target(&e)) theme_use(&e, dir); /* (space: use the picked theme) */
                 else if (ch == '\\') { e.pview = !e.pview; e.pscroll = 0; } /* (\: the other view; Ctrl+V is Windows Terminal's paste) */
                 else if (ch == 0x03 || ((ch == 'q' || ch == 'Q') && e.pfocus != 2 && (!fl || !e.pfocus))) quit = 1; /* (q, the search empty or not focused, or Ctrl+C: quit; clicked into, q is typed) */
                 else if (!e.pfocus) {} /* (the search not focused: letters are not typed) */
@@ -1746,6 +1981,13 @@ int editor_run(const char *dir, const char *name) {
                 else if (((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') || ch == '-' || ch == '~') && fl < sizeof e.find - 1) {
                     e.find[fl] = (char)(ch >= 'a' && ch <= 'z' ? ch - 32 : ch); e.find[fl + 1] = 0; picker_refind(&e);
                 }
+                continue;
+            }
+            if (e.asking == 5) { /* the new theme's name: a-z 0-9 -, Backspace, Enter */
+                size_t nl = strlen(g_newname);
+                if (ch == '\r' || ch == '\n') { theme_make(&e, dir); e.asking = 0; }
+                else if ((ch == 127 || ch == 8) && nl) g_newname[nl - 1] = 0;
+                else if (((ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9') || ch == '-' || (ch >= 'A' && ch <= 'Z')) && nl < sizeof g_newname - 1) { g_newname[nl] = (char)(ch >= 'A' && ch <= 'Z' ? ch + 32 : ch); g_newname[nl + 1] = 0; }
                 continue;
             }
             if (e.asking == 3 || e.asking == 4) { /* RESET ALL / MAKE DEFAULT: Y does it, N (or Esc) not */

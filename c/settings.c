@@ -63,3 +63,32 @@ int settings_poll(void) {
     settings_apply(NULL);
     return 1;
 }
+
+int settings_set(const char *key, const char *val) {
+    if (!g_path[0]) return -1;
+    char *lines[128];
+    int n = 0, done = 0;
+    FILE *f = fopen(g_path, "r");
+    char buf[256];
+    while (f && n < 127 && fgets(buf, sizeof buf, f)) {
+        buf[strcspn(buf, "\r\n")] = 0;
+        char *p = buf + strspn(buf, " \t"), *eq = strchr(p, '=');
+        size_t kl = strlen(key);
+        if (!done && *p != '#' && eq && !strncmp(p, key, kl) && (p[kl] == ' ' || p[kl] == '\t' || p[kl] == '=')) { char nl[160]; snprintf(nl, sizeof nl, "%s = %s", key, val); lines[n++] = strdup(nl); done = 1; }
+        else lines[n++] = strdup(buf);
+    }
+    if (f) fclose(f);
+    if (!done && n < 128) { char nl[160]; snprintf(nl, sizeof nl, "%s = %s", key, val); lines[n++] = strdup(nl); }
+    char dir[600], tmp[620];
+    snprintf(dir, sizeof dir, "%s", g_path);
+    char *sl = strrchr(dir, '/');
+    if (sl) { *sl = 0; mkdir(dir, 0755); }
+    snprintf(tmp, sizeof tmp, "%s.tmp", g_path);
+    FILE *o = fopen(tmp, "w");
+    int rc = o ? 0 : -1;
+    for (int i = 0; i < n; i++) { if (o) fprintf(o, "%s\n", lines[i]); free(lines[i]); }
+    if (o && fclose(o)) rc = -1;
+    if (rc == 0 && rename(tmp, g_path)) rc = -1;
+    if (rc == 0) { g_mt = mtime(); read_file(); settings_apply(NULL); }
+    return rc;
+}

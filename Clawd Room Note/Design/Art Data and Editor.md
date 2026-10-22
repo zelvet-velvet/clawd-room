@@ -88,8 +88,8 @@ flowchart TD
 ---
 ## 🚪 Gate themes
 
-> [!todo]- Branch `feat/gate-themes`, not merged yet
-> A gate theme is a folder `anims/gates/NAME/` with `gate-door`, `gate-stairs` and `gate-well`. The room asks the chosen theme (`--gate-theme NAME` or `CLAWD_GATE_THEME`); a file the theme lacks comes from `simple`. The picker lists them as `gates/NAME/gate-door`. The room draws a gate part's `grow`, `x`, `y`, `glow` and `show`; `turn` is not drawn yet. The `construct` theme (real parts flying into a blue outline, 1.4 s) is picked but not built. See [[Interaction]] and [[Dev Status]].
+> [!info] Gate themes (branch `feat/gate-themes`, PR #24)
+> A gate theme is a folder `anims/gates/NAME/` with `gate-door`, `gate-stairs` and `gate-well`. The active theme comes from `--gate-theme NAME`, `CLAWD_GATE_THEME`, or `gate_theme = NAME` in `~/.clawd-room/settings.conf` (in that order); a file a theme lacks comes from `simple`. The room draws a gate part's `grow`, `x`, `y`, `glow` and `show`; `turn` is not drawn yet. `simple` brings the parts in turn; `construct` (`style construct`, one part `build` as the clock) builds the gate from its own pieces. In the picker the **THEMES** tab has a card per theme: Space makes it active (writes `settings.conf`), Enter opens its files on the ANIMS tab, the dashed card makes a copy under a name. The construct's pieces as authored sprites are not built yet ([[Dev Status]], "Art as Sprite Pieces").
 
 ```mermaid
 %%{init: {"flowchart": {"defaultRenderer": "elk"}}}%%

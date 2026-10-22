@@ -175,4 +175,8 @@ Whether each picture in `Assets/Snapshots/` still shows how things are. `tools/v
 | 2026-10-22 construct gate, the office stairs being built 2.png | current |  |
 | 2026-10-22 construct gate, the office stairs being built 3.png | current |  |
 | 2026-10-22 construct gate, the office stairs being built 4.png | current |  |
+| 2026-10-22 gate themes in the picker, A chips (not picked).png | not picked |  |
+| 2026-10-22 gate themes in the picker, B headings (not picked).png | not picked |  |
+| 2026-10-22 gate themes in the picker, C themes tab (picked).png | replaced | 2026-10-22 the picker's themes tab.png |
 | 2026-10-22 stage page, the construct stairs mid-build.png | current |  |
+| 2026-10-22 the picker's themes tab.png | current |  |

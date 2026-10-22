@@ -8,4 +8,5 @@ int settings_poll(void);                     /* read again when the file changed
 const char *settings_get(const char *key);   /* the value, or NULL */
 void settings_apply(const char *gate_flag);  /* the gate theme: the flag (--gate-theme), else CLAWD_GATE_THEME, else the file, else simple */
 const char *settings_path(void);
+int settings_set(const char *key, const char *val); /* writes `key = val` into the file (the line replaced, the rest kept; made if missing), reads it again: 0 ok */
 #endif
