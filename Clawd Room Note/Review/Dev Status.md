@@ -51,7 +51,7 @@ sticker: lucide//activity
 
 ### 🗂️ Repo and vault
 - [>] **Pull Requests**: #21 (Esc picks nothing) and #22 (gates as part animations, folding, the search focus) waiting for Zaviel; #1 – #12, #19, #20 merged; #13 – #18 closed into #19 and #20.
-- [ ] **Go Public** (decided 2026-10-20: code and notes public together): at a quiet moment with no open PRs, look at the six `(Zaviel)` screenshots; rewrite the old fixture names out of the history (`git filter-repo`; everyone re-clones once); add a `LICENSE` (MIT) and an unofficial-fan-project line to the README (Clawd is Anthropic's character); make the repo public; then **restrict merging**: protect `main` (no direct pushes, changes only through a pull request, Zaviel's approval to merge).
+- [>] **Go Public** (decided 2026-10-20: code and notes public together): done on `docs/prepare-public`: the MIT `LICENSE` and the README's License section, your home path and email out of the LLM Guide, the iTerm2 screenshot cropped to the room window (it showed a Mac username and hostname). Still to do, at a quiet moment with no open PRs: rewrite the old fixture names and that screenshot out of the history (`git filter-repo`; everyone re-clones once; keep a backup first); decide `wip/animations-stash`; make the repo public; then **restrict merging**: protect `main` (no direct pushes, changes only through a pull request, Zaviel's approval to merge; free once public).
 - [ ] **William's Setup**: Accept the invite, clone, Templater settings ([[Collaboration]]).
 
 ## 💡 Ideas
