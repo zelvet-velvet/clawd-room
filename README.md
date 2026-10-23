@@ -10,50 +10,114 @@
 </p>
 
 <p align="center">
-  <img src="docs/images/four-rooms.png" width="820" alt="Four linked rooms: office, coffee shop, park, office">
+  <img src="docs/images/office-day.gif" width="100%" alt="The office: three Clawds at their desks; one types, one waits with a sign">
 </p>
 
-## Contents
-
-- [What it does](#what-it-does)
-- [Screenshots](#screenshots)
-- [Get it](#get-it)
-- [Quick start](#quick-start)
-- [Keys](#keys)
-- [Linked rooms](#linked-rooms)
-- [Platforms](#platforms)
-- [Pixel editor](#pixel-editor)
-- [Privacy](#privacy)
-- [Documentation](#documentation)
-- [Contributing](#contributing)
+<p align="center">
+  <a href="#get-it">Get it</a> ·
+  <a href="#quick-start">Quick start</a> ·
+  <a href="#the-rooms">Rooms</a> ·
+  <a href="#linked-rooms">Linked rooms</a> ·
+  <a href="#gates-and-themes">Gate themes</a> ·
+  <a href="#pixel-editor">Pixel editor</a> ·
+  <a href="#keys">Keys</a> ·
+  <a href="#privacy">Privacy</a>
+</p>
 
 ## What it does
 
 - **One Clawd per session.** A Claude Code hook writes one small line per event; the room follows that file and animates a Clawd for every session.
-- **You see the state at a glance.** Thinking (dots), working (typing, the monitor shows the tool), needs your OK (a sign), done (a cheer), idle for 90 s (asleep), session ended (walks out). A session silent for 30 min is dropped.
-- **Three rooms.** Office, coffee shop and park, drawn in one-point perspective.
-- **Linked windows.** Put two rooms next to each other: Clawds walk through doors, stairs and wells into the room next door, and you can move one with a key.
+- **You see the state at a glance.**
+
+  | A Clawd… | means |
+  | --- | --- |
+  | thinks (dots over its head) | the session is working out an answer |
+  | types at its desk, the monitor shows the tool | it is running a tool |
+  | holds up a **sign** | it needs your OK |
+  | cheers | it is done |
+  | falls asleep after 90 s | idle |
+  | walks out | the session ended (a session silent for 30 min is dropped) |
+
+- **Three rooms**, drawn in one-point perspective: office, coffee shop, park.
+- **Linked windows.** Put two rooms next to each other: Clawds walk through doors, stairs and wells into the room next door, and you can move one for good with a key.
+- **Gates that build themselves.** A gate comes in part by part, or is built from its own pieces that fly in; you pick the theme, or make your own.
+- **A pixel editor** for the sprites, the animations and the gate themes, built in.
 - **Camera.** Zoom in and follow the Clawd that needs you.
-- **A pixel editor** for the sprites and animations, built in.
 - **C11, no libraries, no network, no daemon.** Python 3 (standard library only) is used just for the hook and the helpers.
 
-## Screenshots
+## The rooms
+
+<p align="center"><img src="docs/images/four-rooms.png" width="100%" alt="Four linked rooms: office, coffee shop, park, office"></p>
+
+<p align="center"><img src="docs/images/coffee.gif" width="100%" alt="The coffee shop: the barista behind the bar, a Clawd typing at a table"></p>
+<p align="center"><sub><b>Coffee shop.</b> The barista works behind the bar; the others sit at the tables.</sub></p>
+
+<p align="center"><img src="docs/images/park.gif" width="100%" alt="The park: a Clawd on the swing"></p>
+<p align="center"><sub><b>Park.</b> A swing, benches, and a building with a stoop that is the way up. With few sessions the playground has room for a swing and a slide.</sub></p>
+
+## Linked rooms
+
+Start more than one room and put the windows next to each other (side by side or stacked):
+
+```bash
+./clawd-room.sh --room park       # window 1
+./clawd-room.sh --room coffee     # window 2
+```
+
+Gates appear on the walls, ceiling and floor; idle Clawds visit the next room, and `g` / `m` send or move one. Sessions are shared, so two windows never show the same Clawd. Rooms talk through small files in `~/.clawd-room/link/` (no network). How it works: [docs/Linked-Rooms.md](docs/Linked-Rooms.md).
+
+<p align="center"><img src="docs/images/moving.gif" width="100%" alt="A Clawd packs its desk into a box and carries it out through the door"></p>
+<p align="center"><sub><b>Moving a Clawd to the next room</b> (<code>m</code>): it packs its desk into a box and carries it out.</sub></p>
+
+## Gates and themes
+
+How a gate appears is a **theme**: a folder of part animations in `anims/gates/NAME/`.
 
 <table>
   <tr>
-    <td align="center"><img src="docs/images/office.png" alt="Office"><br><sub>Office</sub></td>
-    <td align="center"><img src="docs/images/coffee.png" alt="Coffee shop"><br><sub>Coffee shop</sub></td>
-    <td align="center"><img src="docs/images/park.png" alt="Park"><br><sub>Park</sub></td>
+    <td width="50%"><img src="docs/images/simple-stairs.gif" width="100%" alt="The stairs coming in part by part"></td>
+    <td width="50%"><img src="docs/images/construct-stairs.gif" width="100%" alt="The stairs built from pieces that fly in"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub><b>simple</b> (the default): the parts come in turn.</sub></td>
+    <td align="center"><sub><b>construct</b>: real pieces (boards, posts, lengths of rail) fly in under a blue outline.</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/images/construct-door.gif" width="100%" alt="A door built from pieces"></td>
+    <td width="50%"><img src="docs/images/construct-well.gif" width="100%" alt="A stair well built from pieces"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>The construct builds a door…</sub></td>
+    <td align="center"><sub>…and a stair well.</sub></td>
   </tr>
 </table>
 
-**Moving a Clawd to the next room:** it packs its desk into a box and carries it out.
+Pick one with `./clawd-room.sh --gate-theme construct`, or for good in `~/.clawd-room/settings.conf` (read again while the room runs):
 
-<p align="center"><img src="docs/images/moving.png" width="700" alt="A Clawd packing its desk into a box"></p>
+```
+gate_theme = construct
+```
 
-**Gates appear** when two windows are next to each other:
+Or in the editor: the **THEMES** tab has a card per theme, Space makes the picked one active, and the dashed card makes your own as a copy. A theme that lacks a gate file uses `simple`'s. Details: [docs/Usage.md](docs/Usage.md).
 
-<p align="center"><img src="docs/images/gate-construct.gif" width="700" alt="Stairs being built from real parts"></p>
+## Pixel editor
+
+```bash
+./clawd-room.sh --edit                      # the picker: props, items, Clawd, UI, animations, gate themes
+./clawd-room.sh --edit walk                 # a sprite animation: timeline, play, onion skin, fill
+./clawd-room.sh --edit anims/gates/construct/gate-stairs   # a part animation on the stage page
+```
+
+<p align="center"><img src="docs/images/editor-themes.gif" width="100%" alt="The picker: tabs, and the THEMES tab with a card per gate theme"></p>
+<p align="center"><sub><b>The picker.</b> Cards play; THEMES holds the gate themes.</sub></p>
+
+<p align="center"><img src="docs/images/editor-walk.gif" width="100%" alt="The pixel editor playing a Clawd's walk, with the timeline and onion skin"></p>
+<p align="center"><sub><b>Pixel editor.</b> A Clawd's frames in a timeline, played at the room's speed, with onion skin.</sub></p>
+
+<p align="center"><img src="docs/images/editor-stage.gif" width="100%" alt="The stage page: the stairs built from pieces as the frames are stepped"></p>
+<p align="center"><sub><b>Stage page.</b> A part animation (here the construct's stairs) shown in the room as you step the frames: parts, keys, a grow bar.</sub></p>
+
+Your edits go to `~/.clawd-room/` (shown over the defaults) and the running rooms show them at once. `MAKE DEFAULT` writes yours into the repo's files.
 
 ## Get it
 
@@ -105,17 +169,6 @@ python3 install_hooks.py --apply    # installs it (backs the file up first)
 
 The status line, the help and the `g` / `m` hint show in a bar along the bottom. All the options: [docs/Usage.md](docs/Usage.md).
 
-## Linked rooms
-
-Start more than one room and put the windows next to each other (side by side or stacked):
-
-```bash
-./clawd-room.sh --room park       # window 1
-./clawd-room.sh --room coffee     # window 2
-```
-
-Gates appear on the walls, ceiling and floor; idle Clawds visit the next room, and `g` / `m` send or move one. Sessions are shared, so two windows never show the same Clawd. Rooms talk through small files in `~/.clawd-room/link/` (no network). How it works: [docs/Linked-Rooms.md](docs/Linked-Rooms.md).
-
 ## Platforms
 
 | | Terminal | Notes |
@@ -125,17 +178,6 @@ Gates appear on the walls, ceiling and floor; idle Clawds visit the next room, a
 
 Details, fonts and profiles: [docs/Platforms.md](docs/Platforms.md).
 
-## Pixel editor
-
-```bash
-./clawd-room.sh --edit            # pick a sprite (cards with pictures, or a list)
-./clawd-room.sh --edit walk       # an animation: timeline, play, onion skin, fill
-```
-
-<p align="center"><img src="docs/images/editor-picker.png" width="420" alt="The sprite picker"> <img src="docs/images/editor-timeline.png" width="420" alt="The editor's timeline, onion skin and fill"></p>
-
-Your edits go to `~/.clawd-room/sprites/` and the running rooms show them at once.
-
 ## Privacy
 
 The events file holds only the time, the session id, the event, the **folder name** (not the path) and the tool name. It never stores prompts, tool input or output. Everything stays on your machine: no network, no background daemon, files are mode 600.
@@ -144,10 +186,10 @@ The events file holds only the time, the session id, the event, the **folder nam
 
 | | |
 | --- | --- |
-| [Usage](docs/Usage.md) | commands, keys, themes, room size, camera |
+| [Usage](docs/Usage.md) | commands, keys, themes, room size, camera, gate themes and settings |
 | [Linked rooms](docs/Linked-Rooms.md) | gates, crossing, moving, sessions |
 | [Platforms](docs/Platforms.md) | Windows Terminal, iTerm2, fonts, profiles |
-| [Development](docs/Development.md) | code map, build, tests, sprite files, the notes vault |
+| [Development](docs/Development.md) | code map, build, tests, sprite files, the notes vault, redrawing the README's GIFs |
 | [Project notes](Clawd%20Room%20Note/Start/Home.md) | design notes and the day-by-day Dev Log (an Obsidian vault) |
 
 ## Contributing
