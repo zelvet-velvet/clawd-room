@@ -41,17 +41,17 @@ sticker: lucide//activity
 - [ ] **Windows Terminal Panes**: Split panes are not seen separately yet.
 
 ### ⚙️ Engine and tools
-- [>] **Animations**: `--build-art` to record room animations (packing, carrying, unpacking, doors, stairs, the well, each room) as GIFs, in category folders, with Gallery notes. Started (GIF colour rounding, category folders), parked in a stash.
 - [x] **Stage Page Polish**: Esc picks nothing (#21), folding the panel and timeline, the picker's search focus, the eye + KEYS button (#22); tests T39 – T50 are in [[Test Checklist]].
 - [ ] **Editor Add Buttons**: NEW in the picker for what the room already looks up by name: a prop (placed through a room's wall plan), an animation (a copy of a template), a gate theme (a copy of `simple`). A UI icon waits until the code asks for a name. Aimed at Zaviel, William and later outside people, so friendly (names checked, templates, short help).
 - [ ] **Less CPU**: Skip frames when nothing moves; stop drawing (FPS 0) when the window is covered, minimised or on another desktop; later dirty rects. (The terminal output is already diffed and written once per frame.)
 
 ### 🗂️ Repo and vault
-- [>] **Pull Requests**: #27 (prepare for going public) is the last open one; #1 – #12 and #19 – #26 merged; #13 – #18 closed into #19 and #20.
-- [>] **Go Public** (decided 2026-10-20: code and notes public together): done on `docs/prepare-public`: the MIT `LICENSE` and the README's License section, your home path and email out of the LLM Guide, the iTerm2 screenshot cropped to the room window (it showed a Mac username and hostname). Still to do, at a quiet moment with no open PRs: rewrite the old fixture names and that screenshot out of the history (`git filter-repo`; everyone re-clones once; keep a backup first); decide `wip/animations-stash`; make the repo public; then **restrict merging**: protect `main` (no direct pushes, changes only through a pull request, Zaviel's approval to merge; free once public).
+- [x] **Pull Requests**: None open; #1 – #12 and #19 – #28 merged; #13 – #18 closed into #19 and #20. Only merged branches are deleted; `main` is the one branch left.
+- [>] **Go Public** (decided 2026-10-20: code and notes public together): done: the MIT `LICENSE` and the README's License section, the home path and email out of the LLM Guide, the iTerm2 screenshot cropped (it showed a Mac username and hostname), the contributing notes for anyone (#27, #28). Still to do: rewrite the old fixture names and the full screenshot out of the history (`git filter-repo` on a copy first; a backup; then a force-push; everyone re-clones once, unmerged local branches are lost); make the repo public; then **restrict merging**: protect `main` (no direct pushes, changes only through a pull request, Zaviel's approval to merge; free once public).
 - [ ] **William's Setup**: Accept the invite, clone, Templater settings ([[Collaboration]]).
 
 ## 💡 Ideas
+- Animations gallery: `--build-art` GIFs sorted into category folders (Session states, Getting around, Playground, Together, On their own) with Gallery notes; the GIF colour rounding is already in. Dropped from Ongoing 2026-10-23 with the `wip/animations-stash` branch (a small `action_folder()` function, easy to write again).
 - A seesaw in the park; an empty-desk look for Clawds that are away.
 - Camera polish: smooth zoom, a slight lead in the walking direction, a small bounce when a Clawd finishes, parallax in the park.
 - Full screen: a "hub" room that others visit, or several rooms side by side in one window.
