@@ -68,7 +68,7 @@ Keep PRs to **one topic** and ideally under a few hundred lines; two small PRs r
 | **Linked windows, platforms** | `c/link.c`, `c/win.c`, `c/ps_scripts.h`, `c/mac_scripts.h`, `clawd-room.sh` | Say which platform you tested on; the other one is checked by its owner. |
 | **Tools, docs** | `tools/`, `README.md`, `docs/`, `Clawd Room Note/` | |
 
-Ideas waiting for someone are at the end of the Dev Log (Pending, Ideas); ask in an issue before starting a big one.
+Work waiting for someone is in the **Task Queue** (`Clawd Room Note/Review/Task Queue.md`): pick a free row, claim it with a draft pull request titled with its ID, and work on your own branch (how it works is at the top of that note). Ideas that are not decided yet are at the bottom of it; ask in an issue before starting a big one.
 
 ---
 ## 5. Tests and snapshots
