@@ -697,6 +697,7 @@ static int stage_loop(const char *dir, const char *name) {
         ui_watch(dir); /* (the editor's own sprites, sprites/ui.txt: the grow bar's Clawd) */
         Canvas cv = canvas_new(cols, rows * 2, ST_BG);
         stage_draw(&s, &cv, wall);
+        rec_frame(&cv);
         StLayout L = st_layout(&s, cv.w, cv.h);
         if (getenv("CLAWD_STAGE_PNG") && !s.asking) png_write(getenv("CLAWD_STAGE_PNG"), &cv, 4); /* (a picture of the page, to look at) */
         Cells cur = cells_from_canvas(&cv, NULL);
@@ -884,5 +885,6 @@ static int stage_run(const char *dir, const char *name) { /* --edit anims/NAME *
         tty_on();
     }
     tty_off();
+    rec_finish();
     return rc;
 }

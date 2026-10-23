@@ -721,6 +721,30 @@ static void section(Canvas *cv, int x, int y, const char *title) {
 }
 
 static double wall_now(void) { struct timeval tv; gettimeofday(&tv, NULL); return tv.tv_sec + tv.tv_usec / 1e6; }
+/* CLAWD_EDIT_GIF=FILE: the editor's pages are recorded as a GIF (a frame about every 0.12 s, each pixel CLAWD_EDIT_GIF_SCALE times bigger, 2 by default) and written when the editor ends; for the README */
+static Rgb *g_rec[160];
+static int g_nrec, g_rec_w, g_rec_h, g_rec_scale;
+static double g_rec_last;
+static void rec_frame(const Canvas *cv) {
+    const char *path = getenv("CLAWD_EDIT_GIF");
+    double now = wall_now();
+    if (!path || g_nrec >= 160 || now - g_rec_last < 0.12) return;
+    g_rec_last = now;
+    int z = getenv("CLAWD_EDIT_GIF_SCALE") ? atoi(getenv("CLAWD_EDIT_GIF_SCALE")) : 2;
+    if (z < 1) z = 1;
+    if (g_nrec && (g_rec_w != cv->w * z || g_rec_h != cv->h * z)) return; /* (the window changed size: the frames of one size only) */
+    g_rec_w = cv->w * z; g_rec_h = cv->h * z; g_rec_scale = z;
+    Rgb *fr = malloc((size_t)g_rec_w * (size_t)g_rec_h * sizeof(Rgb));
+    if (!fr) return;
+    for (int y = 0; y < g_rec_h; y++) for (int x = 0; x < g_rec_w; x++) fr[y * g_rec_w + x] = cv->p[(y / z) * cv->w + x / z];
+    g_rec[g_nrec++] = fr;
+}
+static void rec_finish(void) {
+    const char *path = getenv("CLAWD_EDIT_GIF");
+    if (path && g_nrec && gif_write_fit(path, g_rec, g_nrec, g_rec_w, g_rec_h, 12)) fprintf(stderr, "clawd-room: could not write %s (too many colours?)\n", path);
+    for (int i = 0; i < g_nrec; i++) free(g_rec[i]);
+    g_nrec = 0;
+}
 
 /* w / n + an arrow: a column or a row more (grow) or less (shrink) on that side; on the left or the top the drawing moves
  * over by one, so nothing is cut but what is taken away. arrow: 'A' up, 'B' down, 'C' right, 'D' left */
@@ -1840,6 +1864,7 @@ int editor_run(const char *dir, const char *name) {
         if (e.sizing && wall_now() > e.sizing_until) { e.sizing = 0; if (strstr(e.msg, "ARROW")) e.msg[0] = 0; } /* (w / n let go) */
         Canvas cv = canvas_new(cols, rows * 2, RGB(18, 18, 24));
         draw(&e, &cv);
+        rec_frame(&cv);
         if (getenv("CLAWD_EDIT_PNG")) png_write(getenv("CLAWD_EDIT_PNG"), &cv, 4); /* (a picture of the editor, to look at) */
         Cells cur = cells_from_canvas(&cv, NULL);
         size_t len;
@@ -2129,6 +2154,7 @@ int editor_run(const char *dir, const char *name) {
         memmove(in, in + i, (size_t)(nin - i)); nin -= i;
     }
     tty_off();
+    rec_finish();
     cells_free(&prev);
     file_free(&e.f);
     for (int f = 0; f < NFILES; f++) free(e.orig[f]);
