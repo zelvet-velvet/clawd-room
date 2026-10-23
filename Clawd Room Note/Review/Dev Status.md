@@ -26,7 +26,7 @@ sticker: lucide//activity
 - [ ] **Railed Stair Well**: Build design A (a bigger opening, steps right to left, a guard rail); no big tree in the park when it has a way up ([[2026-10-20]]).
 - [>] **Gates Appear**: Built and merged (#22, #24): themes `simple` and `construct`, the `settings.conf` line, the picker's THEMES tab. Not yet: the park's own gates, gates leaving, the construct's pieces as authored sprites.
 - [ ] **Art as Sprite Pieces**: Geometry stays in code (perspective, how many steps), the look moves to small sprites the code places and repeats (a tread, a baluster, a length of rail, a door leaf), so a gate, desk or well can be edited in the pixel editor; the default sprites must reproduce today's pictures exactly (snapshots). Props already work this way.
-- [ ] **Docs Look**: `README.md` is a short front page now (`docs/` has the details, #20); `docs/Linked-Rooms.md` and `docs/Platforms.md` still describe the old flat look in places (banner, gates at the window edge).
+- [x] **Docs Look**: `docs/Linked-Rooms.md` describes the current gates (doors, stairs, wells on the walls and floor), the bottom bar's `G` / `M` hint and how rooms find each other; `docs/Platforms.md` was checked and fits. Still to look at: the code names the park's way up `TREEHOUSE` in the bar's gate names, while the park has a corner building with a stoop.
 
 ### 🎮 Interaction
 - [ ] **Picked Clawd**: Yellow corners and a spotlight (60 in 100) that fade in and out on Tab.
