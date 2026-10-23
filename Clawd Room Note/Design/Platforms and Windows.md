@@ -96,4 +96,4 @@ sequenceDiagram
 > - **Resize stripes:** iTerm2 re-wraps the screen when a window gets narrower, so during a drag the last frame shows as stripes until the next frame. It cannot be switched off; the room repaints at once.
 > - **Native full screen:** with an iTerm2 window in native full screen, new windows open full-screen size and placing them hangs; a room in such a window can block writing. Leave full screen when testing linked windows.
 
-![[2026-10-17 iTerm2 resize stripes (Zaviel).png|774]]
+![[2026-10-17 iTerm2 resize stripes (Zaviel).png|600]]

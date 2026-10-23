@@ -129,7 +129,7 @@ The repo is private on GitHub (`zelvet-velvet/clawd-room`). Two people work on i
 - Example: `fix(gates): wait one second for still windows before showing a gate`.
 - End each commit message with the co-author line from the session's attribution rules.
 - Pull request descriptions end with the attribution line with a **Clawd instead of the 🤖** (Zaviel's choice): `<img src="https://github.com/zelvet-velvet/clawd-room/blob/main/.github/clawd.png?raw=true" height="22" align="absmiddle"> Generated with [Claude Code](https://claude.com/claude-code)`.
-- Git identity: the user's own, set in the repo (not globally). Zaviel: `Zaviel`, `you@example.com`. Check `git config user.name` to know whom you work with.
+- Git identity: the user's own, set in the repo (not globally). Zaviel: `Zaviel` and the email of their GitHub account. Check `git config user.name` to know whom you work with.
 
 **Every change = commit + push** on the current feature branch, without asking; never force-push a shared branch or `main`.
 

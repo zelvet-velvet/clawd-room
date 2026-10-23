@@ -199,3 +199,7 @@ Work on a branch, open a pull request, the owner merges. How we work, how to set
 ## Disclaimer
 
 An unofficial fan project. Clawd is Anthropic's character; this project is not made or endorsed by Anthropic.
+
+## License
+
+[MIT](LICENSE). The license covers this project's code and notes, not Clawd, which belongs to Anthropic.
