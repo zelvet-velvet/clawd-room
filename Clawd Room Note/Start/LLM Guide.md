@@ -23,7 +23,7 @@ Read this first if you are an AI assistant (Claude Code or similar) working on t
 | --- | --- |
 | What it is, how to start | `README.md` |
 | Commands, flags, keys, platforms, build and tests | `docs/` ([[Usage]] is `docs/Usage.md`; also `Linked-Rooms.md`, `Platforms.md`, `Development.md`) |
-| How two people work together (branches, PRs, the vault) | `CONTRIBUTING.md`, [[Collaboration]] |
+| How contributors work together (branches, PRs, the vault) | `CONTRIBUTING.md`, [[Collaboration]] |
 | Where to start, what is where in the vault | [[Home]] |
 | Where things stand: today, ongoing, ideas, done | [[Dev Status]] |
 | What changed and when (one note per day, with pictures) | [[Dev Log]] (index) → `Review/Log/YYYY/MM/Www/YYYY-MM-DD` |
@@ -116,12 +116,11 @@ Run the tests that rewrite snapshots in a separate worktree (`git worktree add g
 ---
 ## 🌿 Regulation: repo management
 
-The repo is private on GitHub (`zelvet-velvet/clawd-room`). Two people work on it: **Zaviel** (owner, `zelvet-velvet`) and **William Pan** (collaborator, `WilliamPanTW`, since 2026-10-19). The human version of these rules, with the setup and the everyday loop, is `CONTRIBUTING.md`; the vault side is [[Collaboration]]. History starts clean (2026-10-16): the first commit is `chore: start clean history`. The old repo, with the original pygame prototype and the branches `feature/terminal-ui` / `feature/room-link`, is archived (read-only, private) as `zelvet-velvet/clawd-room-archive`; look there only for old history.
+The repo is on GitHub (`zelvet-velvet/clawd-room`). **Zaviel** (owner, `zelvet-velvet`) merges; everyone else is a contributor. The human version of these rules, with the setup and the everyday loop, is `CONTRIBUTING.md`; the vault side is [[Collaboration]]. History starts clean (2026-10-16): the first commit is `chore: start clean history`. The old repo, with the original pygame prototype and the branches `feature/terminal-ui` / `feature/room-link`, is archived (read-only, private) as `zelvet-velvet/clawd-room-archive`; look there only for old history.
 
 **Branches**
 - `main` is the stable line. Nobody commits or pushes to it directly; it only receives pull requests.
 - Work on a branch off a fresh `main`, named `type/short-slug`, for example `feat/seesaw`, `fix/gate-offset`. One topic per branch; unrelated things go on a new branch.
-- (Until 2026-10-19 Zaviel worked alone with `feat/style-a` kept equal to `main`; that practice ended when William joined.)
 
 **Commit messages:** `type(scope): summary`, lowercase, imperative, no trailing period.
 - `type` is one of `feat`, `fix`, `refactor`, `chore`, `docs`.
@@ -135,7 +134,7 @@ The repo is private on GitHub (`zelvet-velvet/clawd-room`). Two people work on i
 
 **Pull requests and merging**
 - When a feature is done (tests pass, Dev Log entry written), **open a pull request** into `main` with `gh pr create` (the template asks for what changed, pictures, what was tested). Before that, `git fetch && git merge origin/main` and test again.
-- **Only Zaviel merges** (on GitHub: "Create a merge commit", so each feature shows as one branch). Never merge a PR yourself, and for Zaviel's own PRs ask before merging.
+- **Only Zaviel merges** (on GitHub: "Create a merge commit", so each feature shows as one branch). Exception (Zaviel, 2026-10-23): when Zaviel says in the conversation that they tested a PR and it is ready, you may merge it for them (`gh pr merge N --merge`, check it is mergeable and resolve conflicts on its own branch first, then delete the branch). Never merge on your own judgement, and never someone else's PR unless Zaviel says so.
 - After a merge, delete the branch (GitHub's button, then `git branch -d` locally).
 
 ## 📜 Commands: status, journal, notes
@@ -158,7 +157,7 @@ The progress lives in two places: **[[Dev Status]]** (`Review/Dev Status.md`: �
 ---
 ## 🗣️ Conventions
 
-- Call the user by name (**Zaviel** or **William**, from `git config user.name`). Reply in the language they write in; the notes stay English.
+- Call the user by the name in `git config user.name`. Reply in the language they write in; the notes stay English.
 - **Notes:** no `# Title` heading inside a note (Obsidian shows the file name as its title); each note in `Design/`, `Review/` and `Gallery/` has a make.md `sticker:` in its frontmatter (a lucide icon, `lucide//palette`). Never write a note named like its folder (make.md's folder notes).
 - **Pictures in notes** (outside a callout; `![[name.png|WIDTH]]`, the width in pixels of a note about 774 wide): **one picture on a line: `|774`**, the full width. **Two pictures on one line: half each, `|380`**, written as `![[a.png|380]] ![[b.png|380]]` on the same line. Never wider than the picture's own width (small pictures stay at their own size; a row of three or more goes one per line). Pictures inside a callout stay small (about 250–300). Check the width of a new picture before embedding it.
 - Pixel text is upper case only (the 3x5 font has no lower case); keep UI strings short.
