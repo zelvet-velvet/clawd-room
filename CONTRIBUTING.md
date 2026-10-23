@@ -1,14 +1,14 @@
 # Contributing to clawd-room
 
-Welcome! This is a small private project by **Zaviel** (owner, `zelvet-velvet`), now with **William Pan** (`WilliamPanTW`) as a collaborator. This page is the agreed way of working. If something here does not fit, say so in an issue and we change the page.
+Welcome! This is a small project by **Zaviel** (owner, `zelvet-velvet`), open to anyone who wants to help. This page is the agreed way of working. If something here does not fit, say so in an issue and we change the page.
 
 ---
 ## 1. Who decides what
 
 | Role | Who | Does |
 | --- | --- | --- |
-| Owner | Zaviel | decides the look and the features, reviews and merges pull requests into `main`, keeps the Dev Log and notes in shape |
-| Collaborator | William | picks or proposes issues, works on branches, opens pull requests, reviews Zaviel's PRs when asked |
+| Owner | Zaviel (`zelvet-velvet`) | decides the look and the features, reviews and merges pull requests into `main`, keeps the Dev Log and notes in shape |
+| Contributor | you | picks or proposes issues, works on branches, opens pull requests, reviews others' PRs when asked |
 
 - **The look is the owner's call.** Visual changes (pixel art, rooms, colours, layout) start as a picture: post a mockup or a screenshot in the issue, Zaviel picks, then it is built.
 - **`main` is the stable line.** Nobody pushes to `main` directly; everything arrives through a pull request (PR) that Zaviel merges.
@@ -17,7 +17,7 @@ Welcome! This is a small private project by **Zaviel** (owner, `zelvet-velvet`),
 ---
 ## 2. First day (setup)
 
-1. Accept the GitHub invitation (email or github.com/notifications), then clone:
+1. Clone (collaborators accept the GitHub invitation first; everyone else forks the repo and opens pull requests from the fork, replacing the URL below with their fork's):
    ```
    git clone git@github.com:zelvet-velvet/clawd-room.git
    cd clawd-room
@@ -39,7 +39,7 @@ Welcome! This is a small private project by **Zaviel** (owner, `zelvet-velvet`),
 issue  ->  branch  ->  commits  ->  pull request  ->  review  ->  merge  ->  delete branch
 ```
 
-1. **Issue first.** Every piece of work has a GitHub issue (Issues tab): what and why, a picture if it is visual. Assign yourself, so we never work on the same thing. Small fixes can skip this and go straight to a PR.
+1. **Issue first.** Every piece of work has a GitHub issue (Issues tab): what and why, a picture if it is visual. Assign yourself (or comment that you are on it), so we never work on the same thing. Small fixes can skip this and go straight to a PR.
 2. **Branch from a fresh `main`:**
    ```
    git switch main && git pull
@@ -83,8 +83,8 @@ Ideas waiting for someone are at the end of the Dev Log (Pending, Ideas); ask in
 
 The notes are an Obsidian vault in git; setup, what is shared and how to write in it: `Clawd Room Note/Start/Collaboration.md`. In short:
 
-- Every PR adds a short entry to today's note in `Clawd Room Note/Review/Log/<year>/<month>/<week>/` (`YYYY-MM-DD.md`, newest first; in Obsidian *Open today's daily note* makes it in the right folder): a title, two to four plain bullets about what changed **for someone using the room**, and `(William)` or `(Zaviel)` after the title. Pictures go in the subject folder under `Clawd Room Note/Assets/Snapshots/` (Office, Park, Gates ...) as `YYYY-MM-DD subject.png`.
-- Two people adding entries at the top of the same file conflict easily: when `git merge origin/main` reports a conflict in the Dev Log, keep **both** entries.
+- Every PR adds a short entry to today's note in `Clawd Room Note/Review/Log/<year>/<month>/<week>/` (`YYYY-MM-DD.md`, newest first; in Obsidian *Open today's daily note* makes it in the right folder): a title, two to four plain bullets about what changed **for someone using the room**, and your name in brackets after the title, e.g. `(Zaviel)`. Pictures go in the subject folder under `Clawd Room Note/Assets/Snapshots/` (Office, Park, Gates ...) as `YYYY-MM-DD subject.png`.
+- Several people adding entries at the top of the same file conflict easily: when `git merge origin/main` reports a conflict in the Dev Log, keep **both** entries.
 - Do not commit your own Obsidian layout or settings (`git restore "Clawd Room Note/.obsidian"` if you changed one by accident).
 - Where things stand is in `Clawd Room Note/Review/Dev Status.md`. Your Claude keeps it and the notes with `CMD_SYNC`, `CMD_JOURNAL`, `CMD_NOTES_SYNC`, `CMD_ROLLOVER` (see the LLM guide); bigger rewrites of the design notes (`Clawd Room Note/Design/`) happen in `CMD_NOTES_SYNC`.
 
@@ -102,9 +102,9 @@ The notes are an Obsidian vault in git; setup, what is shared and how to write i
 ---
 ## 8. Working with an AI assistant (Claude Code)
 
-Both of us use Claude Code. `CLAUDE.md` points it to the guide, so it follows the same rules. Still:
+Many of us use Claude Code. `CLAUDE.md` points it to the guide, so it follows the same rules. Still:
 - You are responsible for what it commits: read the diff before you push.
-- Let it open the PR (`gh pr create`) but not merge it; merging is the owner's step.
+- Let it open the PR (`gh pr create`) but not merge it; merging is the owner's step. (The owner may tell their own Claude to merge a PR they have tested.)
 - Visual changes: ask it for a rendered mockup picture first, and post that in the issue.
 
 ---

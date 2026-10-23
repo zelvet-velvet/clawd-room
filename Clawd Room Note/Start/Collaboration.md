@@ -6,7 +6,7 @@ tags:
   - clawd-room
 sticker: lucide//users
 ---
-How Zaviel (owner) and William (collaborator) work on clawd-room together, and how to share this vault through git. The full rules are in `CONTRIBUTING.md` at the repo root; this note is the short version plus what is special about Obsidian.
+How the owner (Zaviel) and contributors work on clawd-room together, and how to share this vault through git. The full rules are in `CONTRIBUTING.md` at the repo root; this note is the short version plus what is special about Obsidian.
 
 ---
 ## 🔁 The loop
@@ -26,7 +26,7 @@ flowchart LR
 | Who | Role |
 | --- | --- |
 | **Zaviel** (`zelvet-velvet`) | owner: decides the look and features, merges PRs into `main` |
-| **William** (`WilliamPanTW`) | collaborator: issues, branches, PRs; reviews Zaviel's PRs when asked |
+| **Contributors** | issues, branches, PRs; review others' PRs when asked |
 
 > [!important] The three rules people trip on
 > - Nobody pushes to `main`; everything goes through a pull request.
@@ -58,9 +58,9 @@ The vault is plain Markdown in git, so it travels with the code: notes change on
 ---
 ## ✍️ Writing in the vault
 
-- **Dev Log:** every PR adds a short entry to **today's note** in `Review/Log/<year>/<month>/<week>/` (`2026/10/W43/2026-10-21.md`; a `## ` heading per entry, newest first), with the author after the title, e.g. `## 🛝 A seesaw in the park (William)`. Two to four plain bullets about what changed for someone using the room; a picture if visual. A new day: **Open today's daily note** (or the Calendar) makes it in the right folder from [[Day note]]; the [[Dev Log]] index lists it by itself.
+- **Dev Log:** every PR adds a short entry to **today's note** in `Review/Log/<year>/<month>/<week>/` (`2026/10/W43/2026-10-21.md`; a `## ` heading per entry, newest first), with the author after the title, e.g. `## 🛝 A seesaw in the park (Your Name)`. Two to four plain bullets about what changed for someone using the room; a picture if visual. A new day: **Open today's daily note** (or the Calendar) makes it in the right folder from [[Day note]]; the [[Dev Log]] index lists it by itself.
 - **Design notes** (`Design/`: [[Rooms and Art]], [[Interaction]], [[Platforms and Windows]], [[Engine and Tests]]) describe how things work **now**: rewrite the part that changed, do not append history.
-- **[[Test Checklist]]:** add what still needs someone's eyes to the **test queue** at the top (a `Group X` callout per group, each test a box with an ID like **T14** or a question **Q2**, a `✅ date: … (who)` line for the result, and a folded *how to run*); refer to tests by their ID in issues and PRs. Tick only what **you** checked, and say who: `- [x] the seesaw tips both ways (William, 2026-10-21)`. Visual items stay for Zaviel to tick.
+- **[[Test Checklist]]:** add what still needs someone's eyes to the **test queue** at the top (a `Group X` callout per group, each test a box with an ID like **T14** or a question **Q2**, a `✅ date: … (who)` line for the result, and a folded *how to run*); refer to tests by their ID in issues and PRs. Tick only what **you** checked, and say who: `- [x] the seesaw tips both ways (Your Name, 2026-10-21)`. Visual items stay for Zaviel to tick.
 - **Pictures:** `Assets/Snapshots/<subject folder>/YYYY-MM-DD subject.png`, a row in [[Snapshot status]], then `python3 tools/vault_gallery.py` (it writes the browsing notes in `Gallery/`) (folders: `Office/`, `Coffee shop/`, `Park/`, `Gates (stairs, doors, wells)/`, `Interaction (keys, moving)/`, `Engine and tools/`, `Platforms/`, `Style and mockups/`, `Old look/`; a new one if none fits); your own captures add your name, `... (William).png`. Embed with `![[name.png|300]]`.
 - **Renaming a note** updates links in the vault you have open, not in other people's branches: rename notes only in a PR of their own, and say so.
 - **Conflicts** in Markdown (two PRs adding to the same day's note): keep **both** entries, newest first. Separate day notes make this rare.
