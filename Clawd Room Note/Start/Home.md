@@ -9,7 +9,7 @@ sticker: lucide//house
 > [!tip] New here? Read in this order
 > 1. `CONTRIBUTING.md` in the repo: setup and how we work (branches, pull requests, who merges).
 > 2. [[LLM Guide]]: the map of the code and the rules (written for AI assistants, short and useful for people).
-> 3. [[Dev Status]]: where things stand (today, ongoing, ideas); [[Dev Log]]: what changed, day by day.
+> 3. [[Task Queue]]: work you can pick up; [[Dev Status]]: where things stand (today, ongoing, ideas); [[Dev Log]]: what changed, day by day.
 > 4. The design notes for the part you work on (below).
 
 ## 🗂️ What is where
@@ -17,7 +17,7 @@ sticker: lucide//house
 | Folder | What | Written by |
 | --- | --- | --- |
 | `Start/` | this page, [[LLM Guide]], [[Collaboration]] | people |
-| `Review/` | [[Dev Status]] (today, ongoing, ideas, done), [[Dev Log]] (the index of days), `Log/<year>/<month>/<week>/` (one note per day; *Open today's daily note* makes today's), [[Test Checklist]] (the test queue T1, T2 …) | people |
+| `Review/` | [[Task Queue]] (work anyone can claim), [[Dev Status]] (today, ongoing, ideas, done), [[Dev Log]] (the index of days), `Log/<year>/<month>/<week>/` (one note per day; *Open today's daily note* makes today's), [[Test Checklist]] (the test queue T1, T2 …) | people |
 | `Design/` | how things work **now**: [[Rooms and Art]], [[Interaction]], [[Platforms and Windows]], [[Engine and Tests]], [[Engine Design]], [[Animations]] | people |
 | `Gallery/` | pictures and animations to browse: [[Index\|Gallery index]] | `tools/vault_gallery.py` (never by hand) |
 | `Assets/` | the files only: `Snapshots/<subject>/` pictures, `Animations/` GIFs and sheets | people (pictures), `--build-art` (animations) |
