@@ -697,6 +697,46 @@ static void draw_background(Canvas *cv, const Room *room, int banner, int count)
 
 }
 
+/* The picked Clawd stands out (Tab, room_pick): the room outside a soft spotlight is darkened and four yellow corners close in
+ * around the Clawd. Both fade in (PICK_IN), glide to the next Clawd on another Tab, and fade out PICK_HOLD s after the last one
+ * (PICK_OUT). A post-pass over the finished picture, in room pixels, so the camera zoom scales it with the room. */
+static void draw_pick(Canvas *cv, Room *room, double t) {
+    if (!room->pick_sid[0]) return;
+    const Session *s = NULL;
+    for (int i = 0; i < room->n + room->ng && !s; i++) {
+        const Session *q = i < room->n ? room->s[i] : room->guests[i - room->n];
+        if (q->has_pos && !q->has_away && !q->has_left && !strcmp(q->sid, room->pick_sid)) s = q;
+    }
+    if ((!s || t >= room->pick_until) && anim_target(&room->anim, "pick", 0) != 0) anim_to(&room->anim, "pick", 0, t, PICK_OUT, EASE_IN_OUT); /* (time is up, or it left) */
+    double a = fmin(1.0, fmax(0.0, anim_value(&room->anim, "pick", t, 0)));
+    if (!s || (a < 0.004 && anim_target(&room->anim, "pick", 0) == 0)) { room->pick_sid[0] = 0; room->pick_seen = 0; anim_set(&room->anim, "pick", 0); return; }
+    double cx = s->px + 0.5 + anim_value(&room->anim, "pickox", t, 0), cy = s->py + 4 + anim_value(&room->anim, "pickoy", t, 0);
+    room->pick_seen = 1; room->pick_cx = cx; room->pick_cy = cy;
+    double lx = cx, ly = cy - 3; /* the light sits a little above the Clawd's middle (its bubble and name stay lit) */
+    for (int y = 0; y < cv->h; y++)
+        for (int x = 0; x < cv->w; x++) {
+            double dx = (x + 0.5 - lx) / PICK_RX, dy = (y + 0.5 - ly) / PICK_RY, r = sqrt(dx * dx + dy * dy);
+            double f = 1.0 - PICK_DIM * a * smooth((r - 0.45) / 0.55); /* clear inside, darkest from the rim outwards */
+            if (f >= 0.999) continue;
+            Rgb *p = &cv->p[y * cv->w + x];
+            p->r = (uint8_t)(p->r * f + 0.5); p->g = (uint8_t)(p->g * f + 0.5); p->b = (uint8_t)(p->b * f + 0.5);
+        }
+    const Rgb Y = RGB(255, 208, 64);
+    double pad = 2 + 5 * (1 - a); /* the corners close in as they appear */
+    int x0 = (int)floor(cx - 7 - pad + 0.5), x1 = (int)floor(cx + 7 + pad + 0.5) - 1, y0 = (int)floor(cy - 5 - pad + 0.5), y1 = (int)floor(cy + 5 + pad + 0.5) - 1;
+    for (int c = 0; c < 4; c++) { /* each corner: an arm along the top / bottom and one down / up the side */
+        int px = c & 1 ? x1 : x0, py = c & 2 ? y1 : y0, dx = c & 1 ? -1 : 1, dy = c & 2 ? -1 : 1;
+        for (int i = 0; i < 4; i++) {
+            int xs[2] = {px + dx * i, px}, ys[2] = {py, py + dy * i};
+            for (int k = 0; k < 2; k++) {
+                if (xs[k] < 0 || xs[k] >= cv->w || ys[k] < 0 || ys[k] >= cv->h) continue;
+                Rgb *p = &cv->p[ys[k] * cv->w + xs[k]];
+                p->r = (uint8_t)(p->r * (1 - a) + Y.r * a + 0.5); p->g = (uint8_t)(p->g * (1 - a) + Y.g * a + 0.5); p->b = (uint8_t)(p->b * (1 - a) + Y.b * a + 0.5);
+            }
+        }
+    }
+}
+
 void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t note_n) {
     Geo geo;
     room_order(room);
@@ -812,6 +852,7 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
         scene_add(sc, (SceneItem){.kind = "name", .layer = LAYER_HUD, .owner = -1, .draw = it_marks, .i = i, .p = 1});
     if (geo.has_more_pos) scene_add(sc, (SceneItem){.kind = "more", .layer = LAYER_HUD, .owner = -1, .ax = geo.more_pos[0], .ay = geo.more_pos[1], .draw = it_more});
     scene_draw(sc, cv, &X);
+    draw_pick(cv, room, t);
     if (room->debug_overlay) draw_overlay(cv, sc, &geo, room);
     if (geo.more && !geo.has_more_pos) snprintf(note, note_n, "+%d MORE", geo.more);
 }

@@ -339,6 +339,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                 } else if (k == '\t' || ((k == 'a' || k == 'd') && cam.mode != CAM_FREE)) { /* following: the previous / next Clawd */
                     if (cam.mode == CAM_FREE) cam.mode = CAM_AUTO;
                     const char *nm = camera_step(&cam, &room, now, k == 'a' ? -1 : 1);
+                    if (nm) room_pick(&room, cam.sid, paused ? frozen_t : t); /* the picked Clawd stands out */
                     char up[48];
                     snprintf(up, sizeof up, "%s", nm ? nm : "NOBODY");
                     for (char *p = up; *p; p++) if (*p >= 'a' && *p <= 'z') *p -= 32;

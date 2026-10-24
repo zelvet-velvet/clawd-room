@@ -132,6 +132,14 @@ What to test next, one `[!example] Group X · …` callout per group. Each test 
 > > 3. In a WSL shell: `./clawd-room.sh --edit anims/swing` (the editor opens in its own window).
 > > 4. Your edits are in `~/.clawd-room/anims/`; delete `swing.txt` there (or RESET in the picker) to go back to the default.
 
+> [!example] Group L · WSL: the picked Clawd stands out (T58–T60)
+> - [ ] **T58** In a room with two or more Clawds press Tab → yellow corners close in around one Clawd and the rest of the room dims around a soft light; the corners settle within about a quarter of a second.
+> - [ ] **T59** Press Tab again (or A / D) a moment later → the corners glide to the next Clawd, they do not jump; stop pressing → about 2.5 s later they fade out over a moment and the room is bright again.
+> - [ ] **T60** Zoom in (`]`) and press Tab → the corners and the light scale with the room and stay on the Clawd, also when it walks; in a room with one Clawd Tab still shows them.
+> 
+> > [!tip]- T58–T60 · how to run them
+> > `./clawd-room.sh --try` (or any room with a few sessions); press Tab, then Tab again; try `]` to zoom. The dimming is 60 in 100 on purpose (picked from mockups, [[2026-10-20]]).
+
 > [!example]- Group H · WSL: picking nothing on the stage page (T39–T40)
 > - [x] **T39** `./clawd-room.sh --edit anims/swing`, pick a part, press Esc → nothing is picked: no yellow outline, the panel shows only the parts; `<` `>` and the KEY cap say "PICK A PART FIRST"; `[` or `]` or a click picks again.
 > - [x] **T40** With SELECT, click the stage where there is no part → nothing picked; with `?` open or the quit question showing, Esc closes that first (the part stays picked).

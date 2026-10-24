@@ -121,6 +121,20 @@ static Session *find_any(Room *r, const char *sid) {
     return NULL;
 }
 
+/* Tab: the picked Clawd stands out. Corners already on screen glide from where they are (the offset eases to 0 while the
+ * corners follow the Clawd itself); the opacity eases to 1; they fade out PICK_HOLD seconds after the last pick. */
+void room_pick(Room *r, const char *sid, double t) {
+    const Session *s = find_any(r, sid);
+    if (!s || !s->has_pos) return;
+    if (r->pick_seen && strcmp(r->pick_sid, sid)) { /* already showing somebody else: glide over */
+        anim_start(&r->anim, "pickox", r->pick_cx - (s->px + 0.5), 0, t, PICK_GLIDE, EASE_IN_OUT);
+        anim_start(&r->anim, "pickoy", r->pick_cy - (s->py + 4), 0, t, PICK_GLIDE, EASE_IN_OUT);
+    } else if (!r->pick_seen) { anim_set(&r->anim, "pickox", 0); anim_set(&r->anim, "pickoy", 0); }
+    snprintf(r->pick_sid, sizeof r->pick_sid, "%s", sid);
+    r->pick_until = t + PICK_HOLD;
+    anim_to(&r->anim, "pick", 1, t, PICK_IN, EASE_OUT);
+}
+
 /* ---- events ---------------------------------------------------------------------------------- */
 static void set_state(Session *s, const char *state, double t) { snprintf(s->state, sizeof s->state, "%s", state); s->state_t = t; }
 
