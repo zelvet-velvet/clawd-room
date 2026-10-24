@@ -106,10 +106,16 @@ void camera_update(Camera *c, Room *room, double now) {
     if (!room->cam_set) { room->cam_x = tx; room->cam_y = ty; room->cam_set = 1; return; }
     double vw = room->cam_vw ? room->cam_vw : room->size_w / (double)room->cam_zoom, vh = room->cam_vh ? room->cam_vh : room->size_h / (double)room->cam_zoom;
     double dx = tx - room->cam_x, dy = ty - room->cam_y, mx = vw * CAM_DEAD, my = vh * CAM_DEAD;
+    if (now < c->centre_until) { /* just picked: all the way to the middle, until it is there */
+        if (fabs(dx) < 0.5 && fabs(dy) < 0.5) c->centre_until = 0;
+        else { room->cam_x += dx * CAM_EASE; room->cam_y += dy * CAM_EASE; return; }
+    }
     /* only the part outside the dead zone pulls, a little each frame */
     if (fabs(dx) > mx) room->cam_x += (dx - copysign(mx, dx)) * CAM_EASE;
     if (fabs(dy) > my) room->cam_y += (dy - copysign(my, dy)) * CAM_EASE;
 }
+
+void camera_centre(Camera *c, double now) { c->centre_until = now + CAM_CENTRE; }
 
 int camera_anyone(Room *room) {
     for (int i = 0; i < count(room); i++) if (followable(nth(room, i))) return 1;

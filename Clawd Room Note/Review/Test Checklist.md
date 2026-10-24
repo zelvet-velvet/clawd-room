@@ -132,13 +132,14 @@ What to test next, one `[!example] Group X · …` callout per group. Each test 
 > > 3. In a WSL shell: `./clawd-room.sh --edit anims/swing` (the editor opens in its own window).
 > > 4. Your edits are in `~/.clawd-room/anims/`; delete `swing.txt` there (or RESET in the picker) to go back to the default.
 
-> [!example] Group L · WSL: the picked Clawd stands out (T58–T61)
-> - [ ] **T58** In a room with two or more Clawds press Tab → yellow corners close in around one Clawd and the rest of the room dims around a soft light; the corners settle within about a quarter of a second.
-> - [ ] **T59** Press Tab again (or A / D) a moment later → the corners glide to the next Clawd, they do not jump; stop pressing → about 2.5 s later they fade out over a moment and the room is bright again.
+> [!example] Group L · WSL: the picked Clawd stands out (T58–T62)
+> - [x] **T58** In a room with two or more Clawds press Tab → yellow corners close in around one Clawd and the rest of the room dims around a soft light; the corners settle within about a quarter of a second.
+> - [x] **T59** Press Tab again (or A / D) a moment later → the corners glide to the next Clawd, they do not jump; stop pressing → about 2.5 s later they fade out over a moment and the room is bright again.
 > - [ ] **T60** Zoom in (`]`) and press Tab → the corners and the light scale with the room and stay on the Clawd, also when it walks; in a room with one Clawd Tab still shows them.
 > - [ ] **T61** Press Esc while the corners show → they and the dimming fade out at once (the camera stays on that Clawd) and the room does **not** quit; Esc with nothing picked does nothing; `q` quits.
+> - [ ] **T62** Zoom in (`]`), walk the Clawd off to a side, then press Tab (or `c` to go back to auto follow) → the camera glides until that Clawd is in the middle of the view (about a second), and then follows with the usual slack.
 > 
-> > [!tip]- T58–T61 · how to run them
+> > [!tip]- T58–T62 · how to run them
 > > `./clawd-room.sh --try` (or any room with a few sessions); press Tab, then Tab again; try `]` to zoom; Esc lets go, `q` quits. The dimming is 60 in 100 on purpose (picked from mockups, [[2026-10-20]]).
 
 > [!example]- Group H · WSL: picking nothing on the stage page (T39–T40)
