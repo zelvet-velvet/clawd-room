@@ -1,4 +1,4 @@
-/* Where the camera looks when it is zoomed in (draw.c shows the view): it follows a Clawd, or the busy ones.
+/* Where the camera looks when it is zoomed in (draw.c shows the view): it follows a Clawd (kept in the middle of the view), or the busy ones.
  * Auto follow picks who: the one that needs you (wait) > the one that just finished (cheer) > the most recently active
  * (work, think) > if nothing happens, the next Clawd every CAM_CYCLE seconds. Visitors count too. While following,
  * left / right (A / D) or Tab pick the previous / next Clawd and stay on it; c switches between following and a free
@@ -10,8 +10,7 @@
 #include "room.h"
 
 #define CAM_CYCLE 10.0     /* seconds on one Clawd when nothing happens */
-#define CAM_DEAD 0.25      /* the target may move this part of the view from the centre before the camera follows */
-#define CAM_EASE 0.18      /* part of the way the camera moves each frame */
+#define CAM_TAU 0.22       /* seconds the camera takes to cover most of the way to the Clawd (smaller: tighter, larger: softer) */
 #define CAM_ZOOM_EVERY 2.0 /* auto zoom changes at most this often (seconds) */
 #define CAM_MARGIN 12      /* room pixels kept around what auto zoom frames */
 
@@ -24,6 +23,7 @@ typedef struct {
     double since;           /* when that Clawd was picked */
     double zoom_at;         /* when auto zoom last changed the zoom */
     char cross_sid[72];     /* the Clawd followed to a gate, "" if none */
+    double last;            /* the time of the last camera_update, for the step in seconds */
 } Camera;
 
 void camera_init(Camera *c);

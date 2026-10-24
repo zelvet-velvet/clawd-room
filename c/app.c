@@ -327,7 +327,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                     flash_until = wall() + (side >= 0 ? 4 : 0); dirty = 1;
                     if (side >= 0 || k == 27) continue;
                 }
-                if (k == 27) { g_quit = 1; break; }
+                if (k == 27) { room_unpick(&room, paused ? frozen_t : t); dirty = 1; continue; } /* Esc lets go of the picked Clawd; only q quits */
                 if (k == 'p') { paused = !paused; frozen_now = now; frozen_t = t; dirty = 1; }
                 else if (k == '?') { help_on = !help_on; dirty = 1; }
                 else if (k == 'r') { size_pick = size; size_menu = 1; dirty = 1; } /* open the ROOM SIZE list at the current size */
@@ -339,6 +339,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                 } else if (k == '\t' || ((k == 'a' || k == 'd') && cam.mode != CAM_FREE)) { /* following: the previous / next Clawd */
                     if (cam.mode == CAM_FREE) cam.mode = CAM_AUTO;
                     const char *nm = camera_step(&cam, &room, now, k == 'a' ? -1 : 1);
+                    if (nm) room_pick(&room, cam.sid, paused ? frozen_t : t); /* the picked Clawd stands out, in the middle */
                     char up[48];
                     snprintf(up, sizeof up, "%s", nm ? nm : "NOBODY");
                     for (char *p = up; *p; p++) if (*p >= 'a' && *p <= 'z') *p -= 32;

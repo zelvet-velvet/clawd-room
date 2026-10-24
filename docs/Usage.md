@@ -23,7 +23,7 @@ Everything the room can do from the command line, with the keys, the themes, the
     ./clawd-room.sh                           # draws in the terminal (works in a 60x20 pane or fullscreen); builds c/ on the first start
     ./clawd-room.sh --dump 100x30 --events /tmp/e.jsonl --at 1800000010   # one plain-text frame, for tests
 
-Keys: `q` or Esc quit, `p` pause, `?` help line, `r` room size list, `[` `]` camera zoom, `z` auto zoom, left / right (A / D) or Tab pick the Clawd the camera follows, `c` follow / free camera (then the arrows or W A S D move it), `g` send a Clawd next door (hold `g` + an arrow: which way), `m` + an arrow move the picked Clawd to that room (it packs its desk into a box and lives there while the rooms run), `b` call your Clawds back (or send visitors home), `f` fit. Needs at least 44x20 cells. Messages, the help line and the `g` / `m` hint show in a bar along the bottom of the room. The hook must be
+Keys: `q` quits, Esc lets go of the picked Clawd, `p` pause, `?` help line, `r` room size list, `[` `]` camera zoom, `z` auto zoom, left / right (A / D) or Tab pick the Clawd the camera follows, `c` follow / free camera (then the arrows or W A S D move it), `g` send a Clawd next door (hold `g` + an arrow: which way), `m` + an arrow move the picked Clawd to that room (it packs its desk into a box and lives there while the rooms run), `b` call your Clawds back (or send visitors home), `f` fit. Needs at least 44x20 cells. Messages, the help line and the `g` / `m` hint show in a bar along the bottom of the room. The hook must be
 installed once (`python3 install_hooks.py` shows what it would change) or the room stays empty.
 Needs a truecolor terminal (Windows Terminal is fine). It only reads the events file.
 
@@ -52,10 +52,10 @@ list (up/down or W/S, Enter picks, Esc or `r` closes; `--room-size auto|s|m|l|xl
 ## Camera
 
 Camera: `[` and `]` zoom a camera into the room (1x to 4x; `--zoom N` starts zoomed); the room keeps its layout, only the
-view gets closer. When zoomed the camera follows a Clawd and only moves when that Clawd nears the edge of the view. Auto
+view gets closer. When zoomed the camera follows a Clawd and keeps it in the middle of the view. Auto
 follow (default) picks the Clawd that needs you, else the one that just finished, else the most recently active one, and
 takes turns every 10 s when nothing happens; visitors count too (a room with only a visitor follows it). While following,
-left / right (A / D) or Tab pick the previous / next Clawd and stay on it; `c` switches to a free camera (only then do the
+left / right (A / D) or Tab pick the previous / next Clawd and stay on it (yellow corners close in around the picked Clawd and the rest of the room dims; they stay until you press Esc); `c` switches to a free camera (only then do the
 arrows or W A S D move the view) and back to auto follow. While zoomed, the status line says what the camera does
 (`AUTO FOLLOW (WAITING)`, `AUTO: NAME`, `FOLLOW NAME`, `FREE CAMERA`); in a room with nobody to follow `c` stays on auto
 follow, so the first Clawd to come in is followed. `z` turns auto zoom on or off: the zoom then frames the busy Clawds (close on one, wider for several).

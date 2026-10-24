@@ -75,7 +75,7 @@ public static class T {
   public static bool Focus(IntPtr h) { keybd_event(0x12, 0, 0, UIntPtr.Zero); keybd_event(0x12, 0, 2, UIntPtr.Zero); SetForegroundWindow(h); for (int i = 0; i < 25 && GetForegroundWindow() != h; i++) System.Threading.Thread.Sleep(10); return GetForegroundWindow() == h; }
   static void Tap(byte k) { keybd_event(k, 0, 1, UIntPtr.Zero); keybd_event(k, 0, 3, UIntPtr.Zero); System.Threading.Thread.Sleep(60); }
   /* snap h into a quarter with the keyboard as a person would: hold Win, tap left / right then up / down, let go of Win;
-     windows snapped this way become a snap group (one taskbar entry). Keys go only to h while it has the focus; no Esc (it
+     windows snapped this way become a snap group (one taskbar entry). Keys go only to h while it has the focus; no q (it
      quits a room). False if h could not be focused. */
   public static bool Snap(IntPtr h, byte side, byte half) {
     if (!Focus(h)) return false;

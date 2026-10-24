@@ -13,13 +13,14 @@ sticker: lucide//gamepad-2
 
 | Key | Does |
 | --- | --- |
-| `q`, Esc | quit (Esc closes the room size list first) |
+| `q` | quit |
+| Esc | lets go of the picked Clawd (the corners and the dimming fade out; the camera stays on it); it closes the room size list first |
 | `p` | pause |
 | `?` | help line |
 | `r` | **room size list**: AUTO, S, M, L, XL (up/down or W/S, Enter picks, Esc or `r` closes) |
 | `[` `]` | **camera zoom** 1x–4x (the room keeps its layout; only the view gets closer) |
 | `z` | **auto zoom** on / off (frames the busy Clawds) |
-| ← → or A D, Tab | while following: pick the previous / next Clawd (the camera stays on it) |
+| ← → or A D, Tab | while following: pick the previous / next Clawd (the camera stays on it); **yellow corners close in around it and the room dims (60 in 100)**, they glide on the next pick and stay until you press **Esc** |
 | `c` | switch **auto follow ↔ free camera** |
 | arrows / W A S D | free camera only: move the view a quarter at a time |
 | `g` | send an idle Clawd next door; with several linked rooms **hold `g` and press an arrow** (the way to send it); only while `g` (or `m`) is **held** (it goes soon after the key's repeats stop; the room learns how fast the keyboard repeats) the bar along the bottom has one yellow hint for both: `G SEND / M MOVE NAME + ARROW:` (the held key bright) and which arrow goes where |
@@ -28,8 +29,11 @@ sticker: lucide//gamepad-2
 | `f` | auto font and scale again (WSL and iTerm2), camera back to 1x |
 | `o` | **debug overlay**: each item's box with its **name** (SIGN, DESK, GATE-LEFT …; the park's buildings all say BUILDING), anchors, gate points (in green, mid yellow, out red), where Clawds are walking; handy for pointing at something in a screenshot |
 
+> [!note] The picked Clawd stands out (built 2026-10-24)
+> On **Tab** (or `A` / `D` while following) four yellow corners close in around the picked Clawd and the room outside a round, soft spotlight (a circle of radius 20 room pixels, a little above the Clawd's middle) is darkened by 60 in 100. They fade in over 0.25 s, **glide** to the next Clawd on another pick (0.2 s) and stay until you press **Esc** (they fade out over 0.4 s), or the Clawd leaves (Esc no longer quits the room: only `q` does). It is drawn last, in room pixels (`draw_pick` in `c/draw.c`), so the camera zoom scales it with the room; the animator keys are `pick`, `pickox`, `pickoy`.
+> ![[2026-10-24 picked Clawd built.gif|300]]
+
 > [!todo]- Picked, not built yet
-> - **The picked Clawd stands out** (2026-10-20): on Tab yellow corners close in around it and the rest of the room dims (60 in 100); they glide to the next Clawd on Tab and fade out (0.4 s). ![[2026-10-20 picked Clawd, corners and spotlight fading (picked).gif|250]]
 > - **The bar below the room, tags on the gates** (2026-10-20): the room is laid out above a one-line bar (today the bar covers its bottom, the well included); while `g` / `m` is held each gate gets a tag centred over its door: a pixel arrow (style still to pick) and the room it leads to, cream letters with a thin dark outline; where tags collide only the arrow. ![[2026-10-20 gate tags A, centred (picked).png|250]]
 > - **Settings** (2026-10-20): `~/.clawd-room/settings.conf` (one file, `key = value`, reread when it changes) and a panel beside the room on **`.`** (the room keeps running, so a change shows at once). ![[2026-10-20 settings panel A and B (B picked).png|250]]
 >
@@ -126,7 +130,7 @@ flowchart LR
 ---
 ## 🎥 The camera
 
-When zoomed, the camera **follows a Clawd** and only moves when that Clawd nears the edge of the view (dead zone a quarter of the view, smooth).
+When zoomed, the camera **follows a Clawd** and keeps it in the middle of the view (smooth, no dead zone; changed 2026-10-24).
 
 ```mermaid
 stateDiagram-v2

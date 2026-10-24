@@ -159,7 +159,7 @@ Whether each picture in `Assets/Snapshots/` still shows how things are. `tools/v
 | 2026-10-20 picked Clawd looks A-E, seated.png | replaced | [[2026-10-20 picked Clawd, corners and spotlight fading (picked).gif]] |
 | 2026-10-20 picked Clawd looks A-E, standing.png | replaced | [[2026-10-20 picked Clawd, corners and spotlight fading (picked).gif]] |
 | 2026-10-20 picked Clawd spotlight strengths.png | not picked |  |
-| 2026-10-20 picked Clawd, corners and spotlight fading (picked).gif | current |  |
+| 2026-10-20 picked Clawd, corners and spotlight fading (picked).gif | replaced | [[2026-10-24 picked Clawd built.gif]] |
 | 2026-10-20 settings panel A and B (B picked).png | current |  |
 | 2026-10-20 well redesign options (A picked).png | current |  |
 | 2026-10-21 a part rotated, A B C (parked).png | not picked |  |
@@ -184,3 +184,5 @@ Whether each picture in `Assets/Snapshots/` still shows how things are. `tools/v
 | 2026-10-22 open theme header, C banner (not picked).png | not picked |  |
 | 2026-10-22 stage page, the construct stairs mid-build.png | current |  |
 | 2026-10-22 the picker's themes tab.png | current |  |
+| 2026-10-24 picked Clawd built.gif | current |  |
+| 2026-10-24 picked Clawd gliding.png | current |  |

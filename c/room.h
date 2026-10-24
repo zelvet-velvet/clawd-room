@@ -10,6 +10,12 @@
 #include "anim.h"
 
 enum { SIDE_LEFT, SIDE_RIGHT, SIDE_UP, SIDE_DOWN, SIDES };
+#define PICK_IN 0.25    /* the picked Clawd (Tab): seconds the corners and the dimming take to appear, */
+#define PICK_OUT 0.4    /* ... to fade out again, */
+#define PICK_GLIDE 0.2  /* ... to glide to the next Clawd, */
+#define PICK_HOLD 1e9   /* ... and how long they stay after the last Tab: until Esc (room_unpick) */
+#define PICK_DIM 0.60   /* how much the room outside the spotlight is darkened (60 in 100) */
+#define PICK_R 20       /* the spotlight: a circle of this radius (room pixels; they are square on screen), soft at the edge */
 extern const char *SIDE_NAME[SIDES];     /* "left" "right" "up" "down" */
 int side_index(const char *name);        /* -1 if not a side */
 #define OPPOSITE(side) ((side) ^ 1) /* left<->right, up<->down */
@@ -79,6 +85,8 @@ typedef struct {
     double door_open[SIDES], door_t; /* how far each door leaf is open (0..1, opens while a Clawd passes) and when it was last moved */
     Animator anim;           /* eased values: gates appearing ("gate0".."gate3"), doors swinging ("door0", "door1") */
     int has_gate_sync; double gate_sync_t; /* when the windows stopped moving + 1 s, in draw time: both rooms start the animation then */
+    char pick_sid[72]; double pick_until;  /* the picked Clawd (Tab) stands out until this draw time, then fades (draw.c draw_pick) */
+    int pick_seen; double pick_cx, pick_cy; /* the corners are on screen, centred here (room pixels, glide included): the next pick glides from there */
     /* movement state */
     int has_last_now; double last_now;
     int has_geo_key; int geo_w, geo_h;
@@ -151,6 +159,8 @@ void room_order(Room *r);                            /* fills r->s (ordered) and
 void room_apply(Room *r, double t, const char *sid, const char *ev, const char *cwd, const char *tool);
 void room_emote(Room *r, const char *sid, const char *kind, double now, double dur);
 void room_prune(Room *r, double now);
+void room_unpick(Room *r, double t);                /* Esc: the picked Clawd stops standing out (fades out now, not after the hold) */
+void room_pick(Room *r, const char *sid, double t); /* Tab: that Clawd stands out (yellow corners close in, the rest of the room dims); t is draw time */
 void room_step(Room *r, const Geo *geo, double now); /* move everybody a little (once per frame) */
 Session *room_add_guest(Room *r, const char *key, double now);
 void room_receive(Room *r, const Msg *m);

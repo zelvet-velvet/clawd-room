@@ -116,9 +116,9 @@ with tempfile.TemporaryDirectory() as tmp:
     check("z turns auto zoom on", b"AUTO ZOOM ON" in out)
     out, st = run(["--theme", "office", "--events", events], [(1.0, b"r"), (1.3, b"\x1b"), (1.6, b"]"), (2.2, b"q")])
     check("Esc closes the room size list, not the room", st == 0 and b"ZOOM 2X" in out)
-    # 2. a lone Esc quits too
-    out, st = run(["--theme", "park", "--events", events], [(1.0, b"\x1b")])
-    check("Esc quits", st == 0)
+    # 2. a lone Esc does not quit (it lets go of the picked Clawd): the room still answers p afterwards, and q quits
+    out, st = run(["--theme", "park", "--events", events], [(1.0, b"\t"), (1.5, b"\x1b"), (2.0, b"p"), (2.6, b"q")])
+    check("Esc does not quit the room, q does", st == 0 and b"PAUSED" in out)
     # 3. too small a terminal
     out, st = run(["--theme", "office", "--events", events], [(0.8, b"q")], cols=30, rows=10)
     check("small terminal says what it needs", b"need 44x20" in out and st == 0)
