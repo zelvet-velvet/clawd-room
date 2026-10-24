@@ -327,7 +327,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                     flash_until = wall() + (side >= 0 ? 4 : 0); dirty = 1;
                     if (side >= 0 || k == 27) continue;
                 }
-                if (k == 27) { g_quit = 1; break; }
+                if (k == 27) { room_unpick(&room, paused ? frozen_t : t); dirty = 1; continue; } /* Esc lets go of the picked Clawd; only q quits */
                 if (k == 'p') { paused = !paused; frozen_now = now; frozen_t = t; dirty = 1; }
                 else if (k == '?') { help_on = !help_on; dirty = 1; }
                 else if (k == 'r') { size_pick = size; size_menu = 1; dirty = 1; } /* open the ROOM SIZE list at the current size */

@@ -13,7 +13,8 @@ sticker: lucide//gamepad-2
 
 | Key | Does |
 | --- | --- |
-| `q`, Esc | quit (Esc closes the room size list first) |
+| `q` | quit |
+| Esc | lets go of the picked Clawd (the corners and the dimming fade out; the camera stays on it); it closes the room size list first |
 | `p` | pause |
 | `?` | help line |
 | `r` | **room size list**: AUTO, S, M, L, XL (up/down or W/S, Enter picks, Esc or `r` closes) |
@@ -29,7 +30,7 @@ sticker: lucide//gamepad-2
 | `o` | **debug overlay**: each item's box with its **name** (SIGN, DESK, GATE-LEFT …; the park's buildings all say BUILDING), anchors, gate points (in green, mid yellow, out red), where Clawds are walking; handy for pointing at something in a screenshot |
 
 > [!note] The picked Clawd stands out (built 2026-10-24)
-> On **Tab** (or `A` / `D` while following) four yellow corners close in around the picked Clawd and the room outside a soft spotlight (an ellipse, 24 x 16 room pixels, a little above the Clawd's middle) is darkened by 60 in 100. They fade in over 0.25 s, **glide** to the next Clawd on another pick (0.2 s) and fade out over 0.4 s, 2.5 s after the last pick (or at once if the Clawd leaves). It is drawn last, in room pixels (`draw_pick` in `c/draw.c`), so the camera zoom scales it with the room; the animator keys are `pick`, `pickox`, `pickoy`.
+> On **Tab** (or `A` / `D` while following) four yellow corners close in around the picked Clawd and the room outside a round, soft spotlight (a circle of radius 20 room pixels, a little above the Clawd's middle) is darkened by 60 in 100. They fade in over 0.25 s, **glide** to the next Clawd on another pick (0.2 s) and fade out over 0.4 s, 2.5 s after the last pick, at once if the Clawd leaves, or when you press **Esc** (Esc no longer quits the room: only `q` does). It is drawn last, in room pixels (`draw_pick` in `c/draw.c`), so the camera zoom scales it with the room; the animator keys are `pick`, `pickox`, `pickoy`.
 > ![[2026-10-24 picked Clawd built.gif|300]]
 
 > [!todo]- Picked, not built yet

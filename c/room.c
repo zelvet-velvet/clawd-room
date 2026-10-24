@@ -135,6 +135,8 @@ void room_pick(Room *r, const char *sid, double t) {
     anim_to(&r->anim, "pick", 1, t, PICK_IN, EASE_OUT);
 }
 
+void room_unpick(Room *r, double t) { if (r->pick_sid[0]) r->pick_until = t; } /* (draw_pick starts the fade-out) */
+
 /* ---- events ---------------------------------------------------------------------------------- */
 static void set_state(Session *s, const char *state, double t) { snprintf(s->state, sizeof s->state, "%s", state); s->state_t = t; }
 

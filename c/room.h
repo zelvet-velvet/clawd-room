@@ -15,8 +15,7 @@ enum { SIDE_LEFT, SIDE_RIGHT, SIDE_UP, SIDE_DOWN, SIDES };
 #define PICK_GLIDE 0.2  /* ... to glide to the next Clawd, */
 #define PICK_HOLD 2.5   /* ... and how long they stay after the last Tab */
 #define PICK_DIM 0.60   /* how much the room outside the spotlight is darkened (60 in 100) */
-#define PICK_RX 24      /* the spotlight: an ellipse this far (room pixels) across and ... */
-#define PICK_RY 16      /* ... up from its centre, soft at the edge */
+#define PICK_R 20       /* the spotlight: a circle of this radius (room pixels; they are square on screen), soft at the edge */
 extern const char *SIDE_NAME[SIDES];     /* "left" "right" "up" "down" */
 int side_index(const char *name);        /* -1 if not a side */
 #define OPPOSITE(side) ((side) ^ 1) /* left<->right, up<->down */
@@ -160,6 +159,7 @@ void room_order(Room *r);                            /* fills r->s (ordered) and
 void room_apply(Room *r, double t, const char *sid, const char *ev, const char *cwd, const char *tool);
 void room_emote(Room *r, const char *sid, const char *kind, double now, double dur);
 void room_prune(Room *r, double now);
+void room_unpick(Room *r, double t);                /* Esc: the picked Clawd stops standing out (fades out now, not after the hold) */
 void room_pick(Room *r, const char *sid, double t); /* Tab: that Clawd stands out (yellow corners close in, the rest of the room dims); t is draw time */
 void room_step(Room *r, const Geo *geo, double now); /* move everybody a little (once per frame) */
 Session *room_add_guest(Room *r, const char *key, double now);

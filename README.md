@@ -154,7 +154,8 @@ python3 install_hooks.py --apply    # installs it (backs the file up first)
 
 | Key | Does |
 | --- | --- |
-| `q` / Esc | quit |
+| `q` | quit |
+| Esc | let go of the picked Clawd (the corners fade out) |
 | `p` | pause |
 | `?` | help line |
 | `r` | room size list |

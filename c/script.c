@@ -112,6 +112,7 @@ int script_run(const char *path) {
                 room_order(&room);
                 printf("key %d %s\n", f, room_move_to(&room, &room.geo, now, it->b, side_index(it->c), buf, sizeof buf));
             } else if (!strcmp(it->kind, "key") && !strcmp(it->a, "tab")) room_pick(&room, it->b, t); /* the Tab key (key T tab SID): that Clawd stands out */
+            else if (!strcmp(it->kind, "key") && !strcmp(it->a, "esc")) room_unpick(&room, t); /* the Esc key (key T esc): it stops standing out */
             else if (!strcmp(it->kind, "key")) { /* the g key (key T g [SIDE]): needs the geometry of the last frame */
                 char buf[64];
                 room_order(&room);
