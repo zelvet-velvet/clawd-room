@@ -13,7 +13,7 @@ enum { SIDE_LEFT, SIDE_RIGHT, SIDE_UP, SIDE_DOWN, SIDES };
 #define PICK_IN 0.25    /* the picked Clawd (Tab): seconds the corners and the dimming take to appear, */
 #define PICK_OUT 0.4    /* ... to fade out again, */
 #define PICK_GLIDE 0.2  /* ... to glide to the next Clawd, */
-#define PICK_HOLD 2.5   /* ... and how long they stay after the last Tab */
+#define PICK_HOLD 1e9   /* ... and how long they stay after the last Tab: until Esc (room_unpick) */
 #define PICK_DIM 0.60   /* how much the room outside the spotlight is darkened (60 in 100) */
 #define PICK_R 20       /* the spotlight: a circle of this radius (room pixels; they are square on screen), soft at the edge */
 extern const char *SIDE_NAME[SIDES];     /* "left" "right" "up" "down" */

@@ -122,7 +122,7 @@ static Session *find_any(Room *r, const char *sid) {
 }
 
 /* Tab: the picked Clawd stands out. Corners already on screen glide from where they are (the offset eases to 0 while the
- * corners follow the Clawd itself); the opacity eases to 1; they fade out PICK_HOLD seconds after the last pick. */
+ * corners follow the Clawd itself); the opacity eases to 1; they stay until Esc lets go (room_unpick). */
 void room_pick(Room *r, const char *sid, double t) {
     const Session *s = find_any(r, sid);
     if (!s || !s->has_pos) return;

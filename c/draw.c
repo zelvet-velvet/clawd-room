@@ -698,7 +698,7 @@ static void draw_background(Canvas *cv, const Room *room, int banner, int count)
 }
 
 /* The picked Clawd stands out (Tab, room_pick): the room outside a round, soft spotlight is darkened and four yellow corners close in
- * around the Clawd. Both fade in (PICK_IN), glide to the next Clawd on another Tab, and fade out PICK_HOLD s after the last one
+ * around the Clawd. Both fade in (PICK_IN), glide to the next Clawd on another Tab, and stay until Esc (room_unpick) or the Clawd leaves
  * (PICK_OUT). A post-pass over the finished picture, in room pixels, so the camera zoom scales it with the room. */
 static void draw_pick(Canvas *cv, Room *room, double t) {
     if (!room->pick_sid[0]) return;
@@ -908,6 +908,8 @@ static Canvas render_camera(int pw, int ph, Room *room, double now, double t, ch
     room->cam_y = fmax(band + vh / 2.0, fmin(h - vh / 2.0, room->cam_y));
     room->cam_vw = vw; room->cam_vh = vh;
     int x0 = (int)(room->cam_x - vw / 2.0), y0 = (int)(room->cam_y - vh / 2.0);
+    /* the view slides by screen pixels, not whole room pixels (that is what makes a moving camera smooth); at the room's edge there is nothing more to slide over */
+    int sfx = x0 + vw < w ? (int)((room->cam_x - vw / 2.0 - x0) * s) : 0, sfy = y0 + vh < h ? (int)((room->cam_y - vh / 2.0 - y0) * s) : 0;
     int vx = ax0 + ((ax1 - ax0) - vw * s) / 2, vy = ay0 + ((ay1 - ay0) - vh * s) / 2 / 2 * 2; /* the view, centred in that part */
     Canvas full = canvas_new(pw, ph, MARGIN);
     for (int y = 0; y < band * k; y++) { /* the banner at 1x */
@@ -916,13 +918,13 @@ static Canvas render_camera(int pw, int ph, Room *room, double now, double t, ch
         for (int x = 0; x < w * k; x++) { int X = ox + x; if (X >= 0 && X < pw) full.p[Y * pw + X] = rc.p[(y / k) * w + x / k]; }
     }
     for (int y = 0; y < vh * s; y++) {
-        const Rgb *src = rc.p + (size_t)(y0 + y / s) * (size_t)rc.w + x0;
+        const Rgb *src = rc.p + (size_t)(y0 + (y + sfy) / s) * (size_t)rc.w + x0;
         Rgb *dst = full.p + (size_t)(vy + y) * (size_t)pw + vx;
-        for (int x = 0; x < vw * s; x++) dst[x] = src[x / s];
+        for (int x = 0; x < vw * s; x++) dst[x] = src[(x + sfx) / s];
     }
     /* the gates count as not zoomed: they line up with the next window by where the room sits at 1x */
     room->view_x = ox; room->view_y = oy; room->view_k = k;
-    double zx = vx - x0 * s, zy = vy - y0 * s; /* screen = (zx, zy) + room pixel * s, for the words */
+    double zx = vx - x0 * s - sfx, zy = vy - y0 * s - sfy; /* screen = (zx, zy) + room pixel * s, for the words */
     static SRect boxes[MAX_SESS + MAX_GUESTS];
     int nbox = 0;
     for (int i = 0; i < room->n + room->ng; i++) { /* where the Clawds are on screen (their 14x8 sprite, arms and legs) */

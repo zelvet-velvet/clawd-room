@@ -10,7 +10,7 @@
 #include "room.h"
 
 #define CAM_CYCLE 10.0     /* seconds on one Clawd when nothing happens */
-#define CAM_EASE 0.18      /* part of the way the camera moves each frame */
+#define CAM_TAU 0.22       /* seconds the camera takes to cover most of the way to the Clawd (smaller: tighter, larger: softer) */
 #define CAM_ZOOM_EVERY 2.0 /* auto zoom changes at most this often (seconds) */
 #define CAM_MARGIN 12      /* room pixels kept around what auto zoom frames */
 
@@ -23,6 +23,7 @@ typedef struct {
     double since;           /* when that Clawd was picked */
     double zoom_at;         /* when auto zoom last changed the zoom */
     char cross_sid[72];     /* the Clawd followed to a gate, "" if none */
+    double last;            /* the time of the last camera_update, for the step in seconds */
 } Camera;
 
 void camera_init(Camera *c);

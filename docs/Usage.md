@@ -55,7 +55,7 @@ Camera: `[` and `]` zoom a camera into the room (1x to 4x; `--zoom N` starts zoo
 view gets closer. When zoomed the camera follows a Clawd and keeps it in the middle of the view. Auto
 follow (default) picks the Clawd that needs you, else the one that just finished, else the most recently active one, and
 takes turns every 10 s when nothing happens; visitors count too (a room with only a visitor follows it). While following,
-left / right (A / D) or Tab pick the previous / next Clawd and stay on it (yellow corners close in around the picked Clawd and the rest of the room dims for a moment, then they fade out); `c` switches to a free camera (only then do the
+left / right (A / D) or Tab pick the previous / next Clawd and stay on it (yellow corners close in around the picked Clawd and the rest of the room dims; they stay until you press Esc); `c` switches to a free camera (only then do the
 arrows or W A S D move the view) and back to auto follow. While zoomed, the status line says what the camera does
 (`AUTO FOLLOW (WAITING)`, `AUTO: NAME`, `FOLLOW NAME`, `FREE CAMERA`); in a room with nobody to follow `c` stays on auto
 follow, so the first Clawd to come in is followed. `z` turns auto zoom on or off: the zoom then frames the busy Clawds (close on one, wider for several).

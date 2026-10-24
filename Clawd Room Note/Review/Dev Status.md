@@ -29,7 +29,7 @@ sticker: lucide//activity
 - [x] **Docs Look**: `docs/Linked-Rooms.md` describes the current gates (doors, stairs, wells on the walls and floor), the bottom bar's `G` / `M` hint and how rooms find each other; `docs/Platforms.md` was checked and fits. Still to look at: the code names the park's way up `TREEHOUSE` in the bar's gate names, while the park has a corner building with a stoop.
 
 ### 🎮 Interaction
-- [>] **Picked Clawd**: Built on `feat/picked-clawd` (#6): Tab puts yellow corners and a soft spotlight (60 in 100) on the picked Clawd, they glide on the next pick and fade out 2.5 s later; Esc lets go of it and no longer quits the room (only `q` does); to check by eye: T58 – T61 (Group L of [[Test Checklist]]).
+- [>] **Picked Clawd**: Built on `feat/picked-clawd` (#6): Tab puts yellow corners and a soft spotlight (60 in 100) on the picked Clawd, they glide on the next pick and stay until Esc; Esc lets go of it and no longer quits the room (only `q` does); to check by eye: T58 – T61 (Group L of [[Test Checklist]]).
 - [ ] **Bar Below the Room, Gate Tags**: The room above a one-line bar; while `g` / `m` is held a tag centred over each gate (arrow style still to pick).
 - [>] **Settings**: `~/.clawd-room/settings.conf` exists with one line, `gate_theme` (a missing theme falls back to simple quietly). Not yet: more settings and the panel beside the room on `.`, which reads and writes the same file.
 - [ ] **Room Setup Page**: An editor page to choose, per room, which Clawd look / role and which desks, props and options appear. Needs the data first: `rooms/*.txt` declares a room's desks, roles and allowed props (today the code decides), then the page edits those files with the room as the preview.

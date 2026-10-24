@@ -90,6 +90,9 @@ static Session *crossing(Camera *c, Room *room) {
 }
 
 void camera_update(Camera *c, Room *room, double now) {
+    double dt = c->last > 0 && now > c->last ? fmin(now - c->last, 0.25) : 1.0 / 16; /* seconds since last frame, so the speed does not depend on the frame rate */
+    double ease = 1 - exp(-dt / CAM_TAU);
+    c->last = now;
     double tx = -1, ty = -1;
     if (c->autozoom) frame_busy(c, room, now, &tx, &ty);
     if (room->cam_zoom <= 1 || !room->size_w || c->mode == CAM_FREE) { c->cross_sid[0] = 0; return; } /* the whole room is shown, or the user steers */
@@ -105,8 +108,8 @@ void camera_update(Camera *c, Room *room, double now) {
     }
     if (!room->cam_set) { room->cam_x = tx; room->cam_y = ty; room->cam_set = 1; return; }
     /* always towards the middle: the followed Clawd stays in the centre of the view, it does not wait for the edge */
-    room->cam_x += (tx - room->cam_x) * CAM_EASE;
-    room->cam_y += (ty - room->cam_y) * CAM_EASE;
+    room->cam_x += (tx - room->cam_x) * ease;
+    room->cam_y += (ty - room->cam_y) * ease;
 }
 
 int camera_anyone(Room *room) {
