@@ -27,7 +27,7 @@ Work anyone can pick up. Each task has an ID (`W1`, `W2` …) that never changes
 > - [ ] **W3** **Art as sprite pieces**: geometry stays in code, the look moves to small sprites the code places and repeats (a tread, a baluster, a length of rail), so gates, desks and wells can be edited in the pixel editor; the default sprites must reproduce today's pictures exactly · *L · needs: a design chat first*
 
 > [!example] 🎮 Interaction
-> - [ ] **W4** **Picked Clawd**: yellow corners and a spotlight (60 in 100) that fade in and out on Tab (design picked) · *M · needs: picked design*
+> - [/] **W4** **Picked Clawd**: yellow corners and a spotlight (60 in 100) that fade in and out on Tab (design picked) · *M · needs: picked design* · 🙋 @zelvet-velvet · feat/picked-clawd
 > - [ ] **W5** **Bar below the room, gate tags**: the room above a one-line bar; while `g` / `m` is held a tag centred over each gate · *M · needs: mockup (arrow style to pick)*
 > - [ ] **W6** **Settings panel**: more settings in `~/.clawd-room/settings.conf` and a panel beside the room on `.` that reads and writes the same file · *L · needs: mockup*
 > - [ ] **W7** **Room setup page**: an editor page to choose, per room, which Clawd look / role and which desks, props and options appear; `rooms/*.txt` must declare them first · *L · needs: a design chat first*
