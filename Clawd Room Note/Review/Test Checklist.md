@@ -137,7 +137,7 @@ What to test next, one `[!example] Group X · …` callout per group. Each test 
 > - [x] **T59** Press Tab again (or A / D) a moment later → the corners glide to the next Clawd, they do not jump; stop pressing → about 2.5 s later they fade out over a moment and the room is bright again.
 > - [ ] **T60** Zoom in (`]`) and press Tab → the corners and the light scale with the room and stay on the Clawd, also when it walks; in a room with one Clawd Tab still shows them.
 > - [ ] **T61** Press Esc while the corners show → they and the dimming fade out at once (the camera stays on that Clawd) and the room does **not** quit; Esc with nothing picked does nothing; `q` quits.
-> - [ ] **T62** Zoom in (`]`), walk the Clawd off to a side, then press Tab (or `c` to go back to auto follow) → the camera glides until that Clawd is in the middle of the view (about a second), and then follows with the usual slack.
+> - [ ] **T62** Zoom in (`]`) in auto follow (or after Tab) → the followed Clawd stays in the middle of the view the whole time, also while it walks: the view moves with it from the first step, not only when it nears the edge.
 > 
 > > [!tip]- T58–T62 · how to run them
 > > `./clawd-room.sh --try` (or any room with a few sessions); press Tab, then Tab again; try `]` to zoom; Esc lets go, `q` quits. The dimming is 60 in 100 on purpose (picked from mockups, [[2026-10-20]]).

@@ -130,7 +130,7 @@ flowchart LR
 ---
 ## 🎥 The camera
 
-When zoomed, the camera **follows a Clawd** and only moves when that Clawd nears the edge of the view (dead zone a quarter of the view, smooth).
+When zoomed, the camera **follows a Clawd** and keeps it in the middle of the view (smooth, no dead zone; changed 2026-10-24).
 
 ```mermaid
 stateDiagram-v2

@@ -1,7 +1,7 @@
-/* Where the camera looks when it is zoomed in (draw.c shows the view): it follows a Clawd, or the busy ones.
+/* Where the camera looks when it is zoomed in (draw.c shows the view): it follows a Clawd (kept in the middle of the view), or the busy ones.
  * Auto follow picks who: the one that needs you (wait) > the one that just finished (cheer) > the most recently active
  * (work, think) > if nothing happens, the next Clawd every CAM_CYCLE seconds. Visitors count too. While following,
- * left / right (A / D) or Tab pick the previous / next Clawd and stay on it (the Clawd goes to the middle of the view); c switches between following and a free
+ * left / right (A / D) or Tab pick the previous / next Clawd and stay on it; c switches between following and a free
  * camera (only then do the arrows move the view). Auto zoom (z) also sets the zoom so the busy Clawds fit in the view.
  * A Clawd walking out through a gate (sent next door, visiting, or a visitor going home) takes the camera until it has
  * crossed; then the camera zooms out to the whole room (not in free mode). */
@@ -10,10 +10,8 @@
 #include "room.h"
 
 #define CAM_CYCLE 10.0     /* seconds on one Clawd when nothing happens */
-#define CAM_DEAD 0.25      /* the target may move this part of the view from the centre before the camera follows */
 #define CAM_EASE 0.18      /* part of the way the camera moves each frame */
 #define CAM_ZOOM_EVERY 2.0 /* auto zoom changes at most this often (seconds) */
-#define CAM_CENTRE 1.5     /* seconds the camera may take to put a newly followed Clawd in the middle */
 #define CAM_MARGIN 12      /* room pixels kept around what auto zoom frames */
 
 enum { CAM_AUTO, CAM_LOCKED, CAM_FREE };
@@ -25,7 +23,6 @@ typedef struct {
     double since;           /* when that Clawd was picked */
     double zoom_at;         /* when auto zoom last changed the zoom */
     char cross_sid[72];     /* the Clawd followed to a gate, "" if none */
-    double centre_until;    /* until then the camera glides the followed Clawd to the middle of the view (no dead zone) */
 } Camera;
 
 void camera_init(Camera *c);
@@ -33,8 +30,6 @@ void camera_init(Camera *c);
 void camera_update(Camera *c, Room *room, double now);
 /* Tab, right, left: lock on the next (dir 1) or previous (dir -1) Clawd; returns its name (or NULL if the room is empty) */
 const char *camera_step(Camera *c, Room *room, double now, int dir);
-/* Tab / c: the followed Clawd goes to the middle of the view (a glide), then the dead zone applies again */
-void camera_centre(Camera *c, double now);
 int camera_anyone(Room *room); /* somebody here the camera could follow */
 /* what the camera does, for the status line: AUTO FOLLOW (WAITING), AUTO: NAME, FOLLOW NAME, WITH NAME TO THE GATE, FREE CAMERA */
 void camera_label(const Camera *c, Room *room, char *out, size_t n);

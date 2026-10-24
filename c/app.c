@@ -334,12 +334,12 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                 else if (k == 'c') { /* follow (auto) <-> free camera; from a chosen Clawd back to auto */
                     if (cam.mode == CAM_AUTO && !camera_anyone(&room)) snprintf(flash, sizeof flash, "AUTO FOLLOW: WAITING FOR A CLAWD"); /* (nothing to look at freely) */
                     else if (cam.mode == CAM_AUTO) { cam.mode = CAM_FREE; snprintf(flash, sizeof flash, "FREE CAMERA  ARROWS MOVE  (C = FOLLOW)"); }
-                    else { cam.mode = CAM_AUTO; cam.sid[0] = 0; camera_centre(&cam, now); snprintf(flash, sizeof flash, "AUTO FOLLOW  < > PICK A CLAWD%s", room.cam_zoom > 1 || cam.autozoom ? "" : "  (] ZOOMS IN)"); }
+                    else { cam.mode = CAM_AUTO; cam.sid[0] = 0; snprintf(flash, sizeof flash, "AUTO FOLLOW  < > PICK A CLAWD%s", room.cam_zoom > 1 || cam.autozoom ? "" : "  (] ZOOMS IN)"); }
                     flash_until = wall() + 3; dirty = 1;
                 } else if (k == '\t' || ((k == 'a' || k == 'd') && cam.mode != CAM_FREE)) { /* following: the previous / next Clawd */
                     if (cam.mode == CAM_FREE) cam.mode = CAM_AUTO;
                     const char *nm = camera_step(&cam, &room, now, k == 'a' ? -1 : 1);
-                    if (nm) { room_pick(&room, cam.sid, paused ? frozen_t : t); camera_centre(&cam, now); } /* the picked Clawd stands out, in the middle */
+                    if (nm) room_pick(&room, cam.sid, paused ? frozen_t : t); /* the picked Clawd stands out, in the middle */
                     char up[48];
                     snprintf(up, sizeof up, "%s", nm ? nm : "NOBODY");
                     for (char *p = up; *p; p++) if (*p >= 'a' && *p <= 'z') *p -= 32;
