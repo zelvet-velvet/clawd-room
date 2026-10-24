@@ -135,9 +135,9 @@ What to test next, one `[!example] Group X · …` callout per group. Each test 
 > [!example] Group L · WSL: the picked Clawd stands out (T58–T62)
 > - [x] **T58** In a room with two or more Clawds press Tab → yellow corners close in around one Clawd and the rest of the room dims around a soft light; the corners settle within about a quarter of a second.
 > - [x] **T59** Press Tab again (or A / D) a moment later → the corners glide to the next Clawd, they do not jump; stop pressing → they stay, as long as you like, until Esc.
-> - [ ] **T60** Zoom in (`]`) and press Tab → the corners and the light scale with the room and stay on the Clawd, also when it walks; in a room with one Clawd Tab still shows them.
-> - [ ] **T61** Press Esc while the corners show → they and the dimming fade out (the camera stays on that Clawd) and the room does **not** quit; Esc with nothing picked does nothing; `q` quits.
-> - [ ] **T62** Zoom in (`]`) in auto follow (or after Tab) → the followed Clawd stays in the middle of the view the whole time, also while it walks: the view moves with it from the first step, not only when it nears the edge.
+> - [x] **T60** Zoom in (`]`) and press Tab → the corners and the light scale with the room and stay on the Clawd, also when it walks; in a room with one Clawd Tab still shows them.
+> - [x] **T61** Press Esc while the corners show → they and the dimming fade out (the camera stays on that Clawd) and the room does **not** quit; Esc with nothing picked does nothing; `q` quits.
+> - [x] **T62** Zoom in (`]`) in auto follow (or after Tab) → the followed Clawd stays in the middle of the view the whole time, also while it walks: the view moves with it from the first step, not only when it nears the edge.
 > 
 > > [!tip]- T58–T62 · how to run them
 > > `./clawd-room.sh --try` (or any room with a few sessions); press Tab, then Tab again; try `]` to zoom; Esc lets go, `q` quits. The dimming is 60 in 100 on purpose (picked from mockups, [[2026-10-20]]).
