@@ -132,6 +132,15 @@ What to test next, one `[!example] Group X · …` callout per group. Each test 
 > > 3. In a WSL shell: `./clawd-room.sh --edit anims/swing` (the editor opens in its own window).
 > > 4. Your edits are in `~/.clawd-room/anims/`; delete `swing.txt` there (or RESET in the picker) to go back to the default.
 
+> [!example] Group M · WSL: the settings panel (T63–T66)
+> - [ ] **T63** In a room press `.` → a panel with SETTINGS opens on the right and the room stays alive (Clawds still move); `.` or Esc closes it and the room gets its width back.
+> - [ ] **T64** Open it, `W` / `S` move the highlight over SPOTLIGHT, APPEAR, SIZE, FRAMES; `A` / `D` change the highlighted value → the room reacts at once (Tab a Clawd: the spotlight is darker or lighter; APPEAR: send a Clawd through a gate; SIZE: the room grows or shrinks; FRAMES: smoother or choppier).
+> - [ ] **T65** Close the room and open it again → the values you set are still there (look in `~/.clawd-room/settings.conf`); edit the file by hand while the panel is open → the panel follows.
+> - [ ] **T66** Make the window narrow (under about 130 columns) and short (under about 36 rows) → nothing is cut off or overlapped: the panel covers the room's right side, the group names disappear when it is short, the hint stays readable.
+>
+> > [!tip]- T63–T66 · how to run them
+> > `./clawd-room.sh --try`, press `.`, then the keys above. `cat ~/.clawd-room/settings.conf` shows what was saved. Picture: [[2026-10-27]].
+
 > [!example] Group L · WSL: the picked Clawd stands out (T58–T62)
 > - [x] **T58** In a room with two or more Clawds press Tab → yellow corners close in around one Clawd and the rest of the room dims around a soft light; the corners settle within about a quarter of a second.
 > - [x] **T59** Press Tab again (or A / D) a moment later → the corners glide to the next Clawd, they do not jump; stop pressing → they stay, as long as you like, until Esc.

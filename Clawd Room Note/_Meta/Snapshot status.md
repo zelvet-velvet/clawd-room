@@ -160,7 +160,8 @@ Whether each picture in `Assets/Snapshots/` still shows how things are. `tools/v
 | 2026-10-20 picked Clawd looks A-E, standing.png | replaced | [[2026-10-20 picked Clawd, corners and spotlight fading (picked).gif]] |
 | 2026-10-20 picked Clawd spotlight strengths.png | not picked |  |
 | 2026-10-20 picked Clawd, corners and spotlight fading (picked).gif | replaced | [[2026-10-24 picked Clawd built.gif]] |
-| 2026-10-20 settings panel A and B (B picked).png | current |  |
+| 2026-10-20 settings panel A and B (B picked).png | replaced by 2026-10-27 settings panel built.png |  |
+| 2026-10-27 settings panel built.png | current | the panel as built (the real program, wide and narrow window) |
 | 2026-10-20 well redesign options (A picked).png | current |  |
 | 2026-10-21 a part rotated, A B C (parked).png | not picked |  |
 | 2026-10-21 grow bar figure, A B C D (C picked).png | replaced | [[2026-10-21 grow bar figure, the Clawd's own walk frames (picked).png]] |

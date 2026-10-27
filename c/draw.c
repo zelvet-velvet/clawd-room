@@ -700,6 +700,7 @@ static void draw_background(Canvas *cv, const Room *room, int banner, int count)
 /* The picked Clawd stands out (Tab, room_pick): the room outside a round, soft spotlight is darkened and four yellow corners close in
  * around the Clawd. Both fade in (PICK_IN), glide to the next Clawd on another Tab, and stay until Esc (room_unpick) or the Clawd leaves
  * (PICK_OUT). A post-pass over the finished picture, in room pixels, so the camera zoom scales it with the room. */
+double pick_dim = 0.60;
 static void draw_pick(Canvas *cv, Room *room, double t) {
     if (!room->pick_sid[0]) return;
     const Session *s = NULL;
@@ -716,7 +717,7 @@ static void draw_pick(Canvas *cv, Room *room, double t) {
     for (int y = 0; y < cv->h; y++)
         for (int x = 0; x < cv->w; x++) {
             double dx = (x + 0.5 - lx) / PICK_R, dy = (y + 0.5 - ly) / PICK_R, r = sqrt(dx * dx + dy * dy);
-            double f = 1.0 - PICK_DIM * a * smooth((r - 0.45) / 0.55); /* clear inside, darkest from the rim outwards */
+            double f = 1.0 - pick_dim * a * smooth((r - 0.45) / 0.55); /* clear inside, darkest from the rim outwards */
             if (f >= 0.999) continue;
             Rgb *p = &cv->p[y * cv->w + x];
             p->r = (uint8_t)(p->r * f + 0.5); p->g = (uint8_t)(p->g * f + 0.5); p->b = (uint8_t)(p->b * f + 0.5);

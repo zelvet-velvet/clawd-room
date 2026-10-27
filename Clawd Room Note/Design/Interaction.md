@@ -21,6 +21,7 @@ sticker: lucide//gamepad-2
 | `[` `]` | **camera zoom** 1x–4x (the room keeps its layout; only the view gets closer) |
 | `z` | **auto zoom** on / off (frames the busy Clawds) |
 | ← → or A D, Tab | while following: pick the previous / next Clawd (the camera stays on it); **yellow corners close in around it and the room dims (60 in 100)**, they glide on the next pick and stay until you press **Esc** |
+| `.` | **settings panel** beside the room (built 2026-10-27, see below) |
 | `c` | switch **auto follow ↔ free camera** |
 | arrows / W A S D | free camera only: move the view a quarter at a time |
 | `g` | send an idle Clawd next door; with several linked rooms **hold `g` and press an arrow** (the way to send it); only while `g` (or `m`) is **held** (it goes soon after the key's repeats stop; the room learns how fast the keyboard repeats) the bar along the bottom has one yellow hint for both: `G SEND / M MOVE NAME + ARROW:` (the held key bright) and which arrow goes where |
@@ -33,9 +34,12 @@ sticker: lucide//gamepad-2
 > On **Tab** (or `A` / `D` while following) four yellow corners close in around the picked Clawd and the room outside a round, soft spotlight (a circle of radius 20 room pixels, a little above the Clawd's middle) is darkened by 60 in 100. They fade in over 0.25 s, **glide** to the next Clawd on another pick (0.2 s) and stay until you press **Esc** (they fade out over 0.4 s), or the Clawd leaves (Esc no longer quits the room: only `q` does). It is drawn last, in room pixels (`draw_pick` in `c/draw.c`), so the camera zoom scales it with the room; the animator keys are `pick`, `pickox`, `pickoy`.
 > ![[2026-10-24 picked Clawd built.gif|300]]
 
+> [!note] The settings panel (built 2026-10-27)
+> **`.`** opens a panel beside the room (design B of 2026-10-20: the room keeps running; a window under 130 columns gets the panel over the room's right side). **W / S** pick a row, **A / D** change it, **`.`** or Esc close it; the bottom bar says so. Every change is written to `~/.clawd-room/settings.conf` at once (`c/panel.c`) and read back like an edit of the file, so editing the file by hand works too. Rows so far: **SPOTLIGHT** (`spotlight`, 0 – 100, 60 is the picked look), **APPEAR** (`gate_theme`, every theme folder), **SIZE** (`room_size`, AUTO to XL), **FRAMES** (`fps`, 8 – 30). A `--room-size` flag beats the file for that run; a short window leaves out the group names. Not yet: the picked Clawd's fade time and the gate tags (their features are not built), more rows.
+> ![[2026-10-27 settings panel built.png|300]]
+
 > [!todo]- Picked, not built yet
 > - **The bar below the room, tags on the gates** (2026-10-20): the room is laid out above a one-line bar (today the bar covers its bottom, the well included); while `g` / `m` is held each gate gets a tag centred over its door: a pixel arrow (style still to pick) and the room it leads to, cream letters with a thin dark outline; where tags collide only the arrow. ![[2026-10-20 gate tags A, centred (picked).png|250]]
-> - **Settings** (2026-10-20): `~/.clawd-room/settings.conf` (one file, `key = value`, reread when it changes) and a panel beside the room on **`.`** (the room keeps running, so a change shows at once). ![[2026-10-20 settings panel A and B (B picked).png|250]]
 >
 > → [[2026-10-20]]
 

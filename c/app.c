@@ -27,9 +27,10 @@
 #include "term.h"
 #include "win.h"
 #include "ui.h"
+#include "panel.h"
 #define OWNER_GRACE 15.0 /* seconds a linked room that went quiet (but has not closed) keeps its share of the sessions */
 
-#define FPS 16
+static int g_fps = 16; /* frames a second (the `fps` setting) */
 #define REPLAY_SECONDS 600
 #define DEFAULT_EVENTS "/.clawd-room/events.jsonl"
 
@@ -142,7 +143,7 @@ static int read_keys(char *keys, size_t n, Reports *rep) {
         }
         if (c && strchr("WASD", c)) c += 32;
         if (c == '\n') c = '\r';
-        if (c && strchr("qpfgmbr?[]wasd\r\tczo", c)) keys[k++] = c; /* (o: the debug overlay, m: move a Clawd) */
+        if (c && strchr("qpfgmbr?[]wasd\r\tczo.", c)) keys[k++] = c; /* (o: the debug overlay, m: move a Clawd, `.`: the settings panel) */
     }
     keys[k] = 0;
     return (int)k;
@@ -218,6 +219,19 @@ static void desktop_start(Desktop *d, const Args *a) {
 }
 
 /* ---- the room ---------------------------------------------------------------------------------- */
+/* the settings that act while the room runs (the panel writes them; so does an edit of the file): the spotlight, the frame rate and the room size */
+static void live_settings(int *size, int *seen_n, Room *room, int *have_prev, int size_flag) {
+    pick_dim = settings_int("spotlight", 60) / 100.0;
+    g_fps = settings_int("fps", 16);
+    if (g_fps < 4) g_fps = 4;
+    if (g_fps > 60) g_fps = 60;
+    const char *v = settings_get("room_size");
+    int want = 0;
+    for (int i = 0; i < N_SIZES; i++) if (v && !strcmp(v, SIZE_KEY[i])) want = i;
+    if (!size_flag && want != *size) { *size = want; *seen_n = -1; snprintf(room->ratio, sizeof room->ratio, "auto"); room->cam_set = 0; *have_prev = 0; }
+}
+static int room_cols(int cols, const Panel *p) { return p->open && cols >= PANEL_MIN_COLS ? cols - PANEL_W : cols; } /* what the room keeps beside the panel */
+
 static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
     static Room room;
     room_init(&room);
@@ -249,7 +263,8 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
     int auto_ = !a->scale; /* the TUI scale follows the window until [ ] is pressed */
     room.scale = a->scale ? a->scale : 1;
     room.cam_zoom = a->zoom;
-    int size = a->room_size, seen_n = -1; /* the room size (r list) and how many Clawds the scale was picked for */
+    int size = a->room_size, seen_n = -1;
+    Panel panel = {0, 0}; /* the room size (r list) and how many Clawds the scale was picked for */
     Camera cam;
     camera_init(&cam);
     struct { int has; double t; int has_cell, cell[2]; int prescale; } pend = {0};
@@ -289,9 +304,10 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
     char go_key = 'g', move_sid[72] = ""; /* ... or m held: where the picked Clawd moves to */
     Cells prev = {0, 0, NULL};
     int have_prev = 0;
+    live_settings(&size, &seen_n, &room, &have_prev, a->room_size); /* (a --room-size beats the file) */
     while (!g_quit) {
         double frame_start = mono(), t = frame_start - t0, now = a->has_at ? a->at + t : wall();
-        if (settings_poll()) { dirty = 1; have_prev = 0; } /* (settings.conf edited: the gate theme changes at once) */
+        if (settings_poll()) { dirty = 1; have_prev = 0; live_settings(&size, &seen_n, &room, &have_prev, a->room_size); } /* (settings.conf edited: the gate theme changes at once) */
         if (sprites_reload_changed()) { dirty = 1; have_prev = 0; } /* an edited sprite file shows at once (the pixel editor saves as you draw) */
         if (desk.has_watcher) watcher_poll(&desk.w);
         char keys[256];
@@ -299,6 +315,8 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
             for (char *kp = keys; *kp; kp++) {
                 char k = *kp;
                 if (k == 'q') { g_quit = 1; break; }
+                if (k == '.' && !panel.open && !size_menu) { panel.open = 1; seen_n = -1; have_prev = 0; dirty = 1; continue; } /* the settings panel beside the room */
+                if (panel.open && !size_menu && panel_key(&panel, k)) { if (!panel.open) { seen_n = -1; have_prev = 0; } dirty = 1; continue; }
                 if (size_menu) { /* the ROOM SIZE list takes the keys while it is open */
                     if (k == 'w' || k == 'a') size_pick = (size_pick + N_SIZES - 1) % N_SIZES;
                     else if (k == 's' || k == 'd') size_pick = (size_pick + 1) % N_SIZES;
@@ -418,7 +436,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                         opensetup_init(&setup, &desk.tool, title, a->font, a->size, &reports, 0, a->profile_font); has_setup = 1;
                         font_set = font_set || a->font;
                         room_order(&room);
-                        room.scale = size_scale(cols, rows * 2, size, room.n, &room);
+                        room.scale = size_scale(room_cols(cols, &panel), rows * 2, size, room.n, &room);
                         snprintf(flash, sizeof flash, "AUTO FONT AND SCALE");
                         flash_until = wall() + 3; have_prev = 0;
                         wipe();
@@ -441,7 +459,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
             cols = c; rows = r;
             have_prev = 0; dirty = 1;
             int prescale = room.scale;
-            if (auto_ && !strcmp(room.ratio, "auto") && !a->no_auto) { room_order(&room); room.scale = size_scale(cols, rows * 2, size, room.n, &room); seen_n = room.n; } /* at once; undone below if it was the font */
+            if (auto_ && !strcmp(room.ratio, "auto") && !a->no_auto) { room_order(&room); room.scale = size_scale(room_cols(cols, &panel), rows * 2, size, room.n, &room); seen_n = room.n; } /* at once; undone below if it was the font */
             if (!pend.has) { pend.has = 1; pend.t = wall(); pend.has_cell = reports.has_cell; pend.cell[0] = reports.cell[0]; pend.cell[1] = reports.cell[1]; pend.prescale = prescale; }
             reports.has_cell = 0;
             wipe(); puts_("\x1b[14t\x1b[16t"); /* ... and ask how big the text area and a cell are in pixels */
@@ -670,7 +688,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                 if (auto_ && !a->no_auto && !a->scale && !strcmp(room.ratio, "auto")) { /* grow, then scale: pick the scale again when the size or the Clawds change */
                     room_order(&room);
                     if (room.n != seen_n) {
-                        int k2 = size_scale(cols, rows * 2, size, room.n, &room);
+                        int k2 = size_scale(room_cols(cols, &panel), rows * 2, size, room.n, &room);
                         if (k2 != room.scale) { room.scale = k2; have_prev = 0; }
                         seen_n = room.n;
                     }
@@ -683,7 +701,16 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                     if (strcmp(cur, logged_cam)) { snprintf(logged_cam, sizeof logged_cam, "%s", cur); FILE *lf = fopen(getenv("CLAWD_SIZE_LOG"), "a"); if (lf) { fprintf(lf, "%.1f %s\n", wall(), cur); fclose(lf); } }
                 }
                 char note[80], over[512];
-                Canvas cv = render(cols, rows, &room, shown_now, shown_t, note, sizeof note);
+                int rcols = room_cols(cols, &panel);
+                Canvas cv = render(rcols, rows, &room, shown_now, shown_t, note, sizeof note);
+                if (rcols < cols) { /* the settings panel beside the room (a window too narrow for both gets it over the room's right side) */
+                    Canvas whole = canvas_new(cols, rows * 2, RGB(14, 14, 18));
+                    canvas_blit(&whole, &cv, 0, 0);
+                    canvas_free(&cv);
+                    cv = whole;
+                    draw_panel(&cv, cols - PANEL_W, &panel);
+                }
+                else if (panel.open) draw_panel(&cv, cols - PANEL_W, &panel);
                 if (room.cam_zoom > 1 || cam.autozoom) { /* zoomed: say what the camera does (c switches follow / free) */
                     char lab[48];
                     camera_label(&cam, &room, lab, sizeof lab);
@@ -719,6 +746,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                     bar[nbar++] = (BarPiece){"+ ARROW:", C_YELLOW, 0};
                     bar[nbar++] = (BarPiece){arrows, C_YELLOW, 0};
                 }
+                if (panel.open) bar[nbar++] = (BarPiece){"W S PICK   A D CHANGE   . CLOSE", RGB(140, 128, 84), 1};
                 draw_bar(&cv, bar, nbar);
                 if (getenv("CLAWD_SHOWN_LOG")) { /* test hook: which sessions this room shows, whenever that changes */
                     static char logged_shown[4096];
@@ -741,7 +769,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
             }
             dirty = 0;
         }
-        double wait = frame_start + 1.0 / FPS - mono();
+        double wait = frame_start + 1.0 / g_fps - mono();
         if (wait > 0) key_ready(wait); /* sleeps, but wakes on a key press */
     }
     if (have_prev) cells_free(&prev);

@@ -35,7 +35,7 @@ sticker: lucide//activity
 ### 🎮 Interaction
 - [>] **Picked Clawd**: Built on `feat/picked-clawd` (#6): Tab puts yellow corners and a soft spotlight (60 in 100) on the picked Clawd, they glide on the next pick and stay until Esc; Esc lets go of it and no longer quits the room (only `q` does); to check by eye: T58 – T61 (Group L of [[Test Checklist]]).
 - [ ] **Bar Below the Room, Gate Tags**: The room above a one-line bar; while `g` / `m` is held a tag centred over each gate (arrow style still to pick).
-- [>] **Settings**: `~/.clawd-room/settings.conf` exists with one line, `gate_theme` (a missing theme falls back to simple quietly). Not yet: more settings and the panel beside the room on `.`, which reads and writes the same file.
+- [>] **Settings**: Built on `feat/settings-panel`: `.` opens a panel beside the room with SPOTLIGHT, APPEAR (gate theme), SIZE and FRAMES, saved to `~/.clawd-room/settings.conf` at once; to check by eye: T63 – T66 (Group M of [[Test Checklist]]). Not yet: the picked Clawd's fade time and the gate tags (their features come first), more rows.
 - [ ] **Room Setup Page**: An editor page to choose, per room, which Clawd look / role and which desks, props and options appear. Needs the data first: `rooms/*.txt` declares a room's desks, roles and allowed props (today the code decides), then the page edits those files with the room as the preview.
 - [ ] **Moving, Step 3**: Drag a Clawd with the mouse onto a door, the stairs or the well. (Settled: `--try real` stays split; uneven shares are fine.)
 

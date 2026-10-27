@@ -8,6 +8,13 @@ sticker: lucide//keyboard
 ---
 Pictures of keys, hints, sending and moving Clawds, newest first: ✅ current (open), ♻️ replaced and ❌ not picked (folded; the status is in [[Snapshot status]]). The files are the source in `Assets/Snapshots/Interaction (keys, moving)/`; this note is written by `tools/vault_gallery.py` (do not edit it by hand: add a picture, then run the tool).
 
+## 2026-10-27
+
+> [!success]+ ✅ current · Settings panel built
+> ![[2026-10-27 settings panel built.png|420]]
+> Replaced by: [[the panel as built (the real program, wide and narrow window)]]
+> Shown in: [[Interaction|Interaction]], [[2026-10-27#⚙️ A settings panel on `.` (Zaviel)|2026-10-27 · ⚙️ A settings panel on `.` (Zaviel)]]
+
 ## 2026-10-24
 
 > [!success]+ ✅ current · Picked Clawd gliding
@@ -22,7 +29,7 @@ Pictures of keys, hints, sending and moving Clawds, newest first: ✅ current (o
 
 > [!success]+ ✅ current · Settings panel A and B (B picked)
 > ![[2026-10-20 settings panel A and B (B picked).png|420]]
-> Shown in: [[Interaction|Interaction]], [[2026-10-20#🔦 The picked Clawd stands out; a settings panel: mockups (Zaviel)|2026-10-20 · 🔦 The picked Clawd stands out; a settings panel: mockups (Zaviel)]]
+> Shown in: [[2026-10-20#🔦 The picked Clawd stands out; a settings panel: mockups (Zaviel)|2026-10-20 · 🔦 The picked Clawd stands out; a settings panel: mockups (Zaviel)]]
 
 > [!quote]- ♻️ replaced · Picked Clawd, corners and spotlight fading · picked
 > ![[2026-10-20 picked Clawd, corners and spotlight fading (picked).gif|420]]

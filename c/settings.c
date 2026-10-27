@@ -9,7 +9,7 @@
 #define MAX_KEYS 16
 static char g_path[600], g_flag[24];
 static struct { char key[32], val[64]; } g_kv[MAX_KEYS];
-static int g_n, g_has_flag;
+static int g_n, g_has_flag, g_changed; /* (g_changed: settings_set wrote the file: settings_poll says so once) */
 static time_t g_mt;
 static double g_next;
 
@@ -53,6 +53,7 @@ void settings_apply(const char *gate_flag) {
     parts_set_gate_theme(v); /* (NULL: simple) */
 }
 int settings_poll(void) {
+    if (g_changed) { g_changed = 0; return 1; }
     double t = now_s();
     if (t < g_next) return 0;
     g_next = t + 0.5;
@@ -63,6 +64,8 @@ int settings_poll(void) {
     settings_apply(NULL);
     return 1;
 }
+
+int settings_int(const char *key, int def) { const char *v = settings_get(key); char *end; long n = v ? strtol(v, &end, 10) : 0; return v && *end == 0 ? (int)n : def; }
 
 int settings_set(const char *key, const char *val) {
     if (!g_path[0]) return -1;
@@ -89,6 +92,6 @@ int settings_set(const char *key, const char *val) {
     for (int i = 0; i < n; i++) { if (o) fprintf(o, "%s\n", lines[i]); free(lines[i]); }
     if (o && fclose(o)) rc = -1;
     if (rc == 0 && rename(tmp, g_path)) rc = -1;
-    if (rc == 0) { g_mt = mtime(); read_file(); settings_apply(NULL); }
+    if (rc == 0) { g_mt = mtime(); read_file(); settings_apply(NULL); g_changed = 1; }
     return rc;
 }
