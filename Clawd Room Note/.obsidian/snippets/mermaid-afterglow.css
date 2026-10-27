@@ -1,6 +1,6 @@
 /* ==========================================================================
    mermaid-afterglow.css
-   Colors for Mermaid diagrams (flowchart, sequence, state, mindmap).
+   Colors for Mermaid diagrams (flowchart, sequence, state, mindmap, gitGraph).
    No hex values here: every color is a --diagram-* (or theme) variable
    defined in popping-and-locking.css, so change colors there or in
    Settings → Style Settings → Popping and Locking → Diagram Colors.
@@ -21,6 +21,7 @@
     13. State diagrams
     14. Mindmaps
     15. Tooltip
+    16. Git graphs (branches, commits, merges, tags)
 
    Sizing (fit-to-width) lives in general-layout.css §7.
    ========================================================================== */
@@ -447,4 +448,265 @@
     background: var(--background-primary) !important;
     border: 1px solid var(--diagram-node-border) !important;
     color: var(--diagram-text) !important;
+}
+
+/* ==========================================================================
+   16. GIT GRAPHS (gitGraph)
+   Mermaid cycles 8 branch colors (0-7); lane N is branchN / commitN /
+   arrowN / labelN. They map onto the --diagram-* variables, so no hex here.
+   ========================================================================== */
+
+.mermaid .commit0 {
+    fill: var(--diagram-node-border) !important;
+    stroke: var(--diagram-node-border) !important;
+    stroke-width: 2px !important;
+}
+
+.mermaid .arrow0 {
+    stroke: var(--diagram-node-border) !important;
+    stroke-width: 4px !important;
+    fill: none !important;
+}
+
+.mermaid .label0 {
+    fill: var(--diagram-node-border) !important;
+}
+
+.mermaid .branch-label0 {
+    fill: var(--diagram-note-text) !important;
+    color: var(--diagram-note-text) !important;
+}
+
+.mermaid .commit1 {
+    fill: var(--diagram-edge-color) !important;
+    stroke: var(--diagram-edge-color) !important;
+    stroke-width: 2px !important;
+}
+
+.mermaid .arrow1 {
+    stroke: var(--diagram-edge-color) !important;
+    stroke-width: 4px !important;
+    fill: none !important;
+}
+
+.mermaid .label1 {
+    fill: var(--diagram-edge-color) !important;
+}
+
+.mermaid .branch-label1 {
+    fill: var(--diagram-note-text) !important;
+    color: var(--diagram-note-text) !important;
+}
+
+.mermaid .commit2 {
+    fill: var(--diagram-subgraph-border) !important;
+    stroke: var(--diagram-subgraph-border) !important;
+    stroke-width: 2px !important;
+}
+
+.mermaid .arrow2 {
+    stroke: var(--diagram-subgraph-border) !important;
+    stroke-width: 4px !important;
+    fill: none !important;
+}
+
+.mermaid .label2 {
+    fill: var(--diagram-subgraph-border) !important;
+}
+
+.mermaid .branch-label2 {
+    fill: var(--diagram-note-text) !important;
+    color: var(--diagram-note-text) !important;
+}
+
+.mermaid .commit3 {
+    fill: var(--diagram-note-border) !important;
+    stroke: var(--diagram-note-border) !important;
+    stroke-width: 2px !important;
+}
+
+.mermaid .arrow3 {
+    stroke: var(--diagram-note-border) !important;
+    stroke-width: 4px !important;
+    fill: none !important;
+}
+
+.mermaid .label3 {
+    fill: var(--diagram-note-border) !important;
+}
+
+.mermaid .branch-label3 {
+    fill: var(--diagram-note-text) !important;
+    color: var(--diagram-note-text) !important;
+}
+
+.mermaid .commit4 {
+    fill: var(--diagram-success) !important;
+    stroke: var(--diagram-success) !important;
+    stroke-width: 2px !important;
+}
+
+.mermaid .arrow4 {
+    stroke: var(--diagram-success) !important;
+    stroke-width: 4px !important;
+    fill: none !important;
+}
+
+.mermaid .label4 {
+    fill: var(--diagram-success) !important;
+}
+
+.mermaid .branch-label4 {
+    fill: var(--diagram-note-text) !important;
+    color: var(--diagram-note-text) !important;
+}
+
+.mermaid .commit5 {
+    fill: var(--diagram-error) !important;
+    stroke: var(--diagram-error) !important;
+    stroke-width: 2px !important;
+}
+
+.mermaid .arrow5 {
+    stroke: var(--diagram-error) !important;
+    stroke-width: 4px !important;
+    fill: none !important;
+}
+
+.mermaid .label5 {
+    fill: var(--diagram-error) !important;
+}
+
+.mermaid .branch-label5 {
+    fill: var(--diagram-note-text) !important;
+    color: var(--diagram-note-text) !important;
+}
+
+.mermaid .commit6 {
+    fill: var(--diagram-text) !important;
+    stroke: var(--diagram-text) !important;
+    stroke-width: 2px !important;
+}
+
+.mermaid .arrow6 {
+    stroke: var(--diagram-text) !important;
+    stroke-width: 4px !important;
+    fill: none !important;
+}
+
+.mermaid .label6 {
+    fill: var(--diagram-text) !important;
+}
+
+.mermaid .branch-label6 {
+    fill: var(--diagram-note-text) !important;
+    color: var(--diagram-note-text) !important;
+}
+
+.mermaid .commit7 {
+    fill: var(--diagram-actor-bg) !important;
+    stroke: var(--diagram-actor-bg) !important;
+    stroke-width: 2px !important;
+}
+
+.mermaid .arrow7 {
+    stroke: var(--diagram-actor-bg) !important;
+    stroke-width: 4px !important;
+    fill: none !important;
+}
+
+.mermaid .label7 {
+    fill: var(--diagram-actor-bg) !important;
+}
+
+.mermaid .branch-label7 {
+    fill: var(--diagram-note-text) !important;
+    color: var(--diagram-note-text) !important;
+}
+
+/* Branch name chips: light chip, dark text (same as edge labels). The text
+   needs its own rule: section 2 colors every .mermaid text light */
+.mermaid .branchLabel text,
+.mermaid .branchLabel tspan,
+.mermaid [class*="branch-label"] text,
+.mermaid [class*="branch-label"] tspan,
+.mermaid [class*="branch-label"] span,
+.mermaid [class*="branch-label"] p {
+    fill: var(--diagram-note-text) !important;
+    color: var(--diagram-note-text) !important;
+    stroke: none !important;
+    font-weight: normal !important;
+    /* Mermaid sizes the chip from its own font: keep it (section 2 would
+       swap in the note font after the chip was measured and the text then
+       sits off-center) */
+    font-family: "trebuchet ms", verdana, arial, sans-serif !important;
+    font-size: 16px !important;
+    dominant-baseline: auto !important;
+    /* the chip has ~3px more room below the text than above: nudge it down
+       (the `translate` property adds to Mermaid's own transform) */
+    translate: 0 3px;
+}
+
+.mermaid .branchLabelBkg {
+    fill: var(--diagram-note-bg) !important;
+    stroke: var(--background-primary-alt) !important;
+    opacity: 1 !important;
+}
+
+/* The dotted lane line each branch runs along */
+.mermaid .branch {
+    stroke: var(--diagram-node-border) !important;
+    stroke-width: 1px !important;
+    stroke-dasharray: 3 3 !important;
+    opacity: 0.6;
+}
+
+/* Commit ids and messages */
+.mermaid .commit-id,
+.mermaid .commit-msg,
+.mermaid .commit-label {
+    fill: var(--diagram-text) !important;
+    color: var(--diagram-text) !important;
+    stroke: none !important;
+    font-family: inherit !important;
+}
+
+.mermaid .commit-label-bkg {
+    fill: var(--background-primary-alt) !important;
+    opacity: 0.85 !important;
+}
+
+/* Tags (type: HIGHLIGHT shows a ring around the commit) */
+.mermaid .tag-label,
+.mermaid .tag-label text {
+    fill: var(--diagram-note-text) !important;
+    color: var(--diagram-note-text) !important;
+    stroke: none !important;
+}
+
+.mermaid .tag-label-bkg {
+    fill: var(--diagram-note-bg) !important;
+    stroke: var(--diagram-note-border) !important;
+}
+
+.mermaid .tag-hole {
+    fill: var(--background-primary) !important;
+}
+
+.mermaid .commit-highlight-outer {
+    fill: var(--diagram-note-border) !important;
+    stroke: var(--diagram-note-border) !important;
+}
+
+.mermaid .commit-highlight-inner {
+    fill: var(--background-primary) !important;
+    stroke: var(--background-primary) !important;
+}
+
+/* Merge and reverse commits are rings: the inner circle takes the page color
+   (specificity above the lane rules, which set the lane color on both) */
+.mermaid .commit-merge[class*="commit"],
+.mermaid circle.commit-merge,
+.mermaid .commit-reverse {
+    fill: var(--background-primary) !important;
 }
