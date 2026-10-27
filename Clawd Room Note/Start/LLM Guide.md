@@ -53,7 +53,7 @@ c/tests/expected/   snapshots the tests compare with (from the C program since s
 sprites/            the default Clawd frames, items and props (text grids; reloaded while the room runs; edit with --edit); ui.txt: the editor's own icons. A person's own edits go to ~/.clawd-room/sprites/ (only what differs), shown over these; MAKE DEFAULT in the picker writes them here
 rooms/              wall plans per room (what the placer puts on the walls; reloaded while the room runs)
 gallery/            not in git: contact sheets (make -C c gallery) and gallery/mock/ (mockup programs; their pictures in out/NN-slug/ with out/README.md; a test worktree wt/)
-tools/              test.sh (snapshots), fixtures/ + scenarios/ (test scenes), pty_smoke.py, link_smoke.py, move_smoke.py, split_smoke.py, win_smoke.py, place_windows.py (test helper for your own windows), demo_events.py + try_room.sh (--try)
+tools/              git_graph.py (the Dev Log's git graph: `--write` it again after a merge), test.sh (snapshots), fixtures/ + scenarios/ (test scenes), pty_smoke.py, link_smoke.py, move_smoke.py, split_smoke.py, win_smoke.py, place_windows.py (test helper for your own windows), demo_events.py + try_room.sh (--try)
 simulate.py         fake sessions: live, or --fixture TS --out FILE for a static case
 room.py + run.sh    the original pygame-ce window (needs .venv). Leave alone
 wt_settings.py      print-only: Windows Terminal settings that hide the tab bar / scroll bar

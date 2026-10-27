@@ -21,50 +21,112 @@ What changed and when, in short: **one note per day** in `Log/` (newest first), 
 Pictures are in `Assets/Snapshots/`, one folder per subject; browse them (and the animations) from [[Index|Gallery index]]. Where everything is: [[Home]]. Details of every change: `git log`.
 
 > [!info] Where the work is (branches)
-> Since 2026-10-19 (William joined) every change is a branch and a pull request into `main`, merged by Zaviel ([[Collaboration]]). Before that `main` was kept equal to `feat/style-a`. The graph is a summary of the first-parent line of `main` (updated 2026-10-27); the numbers are pull requests.
+> Since 2026-10-19 (William joined) every change is a branch and a pull request into `main`, merged by Zaviel ([[Collaboration]]). Before that `main` was kept equal to `feat/style-a`. The graph is made by `python3 tools/git_graph.py --write "Clawd Room Note/Review/Dev Log.md"` (a summary of the first-parent line of `main`; the numbers are pull requests): run it again after a merge.
+
+<!-- git-graph:start -->
+_The last 24 of 30 entries on the line of `main`._
 
 ```mermaid
 gitGraph
-    commit id: "C room (10-16)"
-    commit id: "fixes (10-17)"
-    branch macos-iterm
-    commit id: "macOS build"
-    commit id: "iTerm2 helper"
-    commit id: "camera, room size"
+    commit id: "earlier history"
+    branch wsl-queue
+    commit id: "wsl up to date --try snap group, 5 pt profi…"
     checkout main
-    merge macos-iterm id: "merged 10-17"
-    branch style-a
-    commit id: "perspective rooms"
-    commit id: "engine, editor, --try"
-    commit id: "park plaza, moves"
+    merge wsl-queue id: "#6 (10-20)"
+    branch vault-layout
+    commit id: "reorganise the vault by purpose, one dev lo…"
     checkout main
-    merge style-a id: "style-a in main (10-19)"
-    commit id: "PRs begin: collaboration, test queue"
+    merge vault-layout id: "#7 (10-20)"
+    branch mockups-2026-10-20
+    commit id: "mockups of 2026-10-20 kept in the vault, ga…"
+    checkout main
+    merge mockups-2026-10-20 id: "#9 (10-20)"
     branch editor-animation
-    commit id: "animation editor"
+    commit id: "the editor edits animations timeline, play…"
     checkout main
-    merge editor-animation id: "PR 10 (10-20)"
+    merge editor-animation id: "#10 (10-20)"
+    branch fixture-names
+    commit id: "made-up names in the test data nothing priv…"
+    checkout main
+    merge fixture-names id: "#11 (10-20)"
+    branch pr-icon-eyes
+    commit id: "the pr signature clawd's eyes filled dark"
+    checkout main
+    merge pr-icon-eyes id: "#12 (10-20)"
     branch stage-page
-    commit id: "stage page, unselect"
+    commit id: "part animations the file, the swing driven…"
     checkout main
-    merge stage-page id: "PR 19, 21 (10-21)"
+    merge stage-page id: "#19 (10-21)"
+    branch vault-readme-plan
+    commit id: "the vault sync, the README and docs, the pa…"
+    checkout main
+    merge vault-readme-plan id: "#20 (10-21)"
+    branch stage-unselect
+    commit id: "Esc picks nothing on the stage page"
+    checkout main
+    merge stage-unselect id: "#21 (10-22)"
+    branch vault-sync-2026-10-21b
+    commit id: "sync"
+    checkout main
+    merge vault-sync-2026-10-21b id: "#23 (10-22)"
     branch gate-parts
-    commit id: "gate parts"
-    commit id: "gate themes"
+    commit id: "gates appearing are part animations, edited…"
     checkout main
-    merge gate-parts id: "PR 22, 24 (10-22)"
-    commit id: "README GIFs, public prep (10-23)"
-    commit id: "new public repo: history rewritten"
-    commit id: "task queue, codeowners (10-24)"
+    merge gate-parts id: "#22 (10-22)"
+    branch gate-themes
+    commit id: "gate themes (simple, construct) in anims/ga…"
+    checkout main
+    merge gate-themes id: "#24 (10-22)"
+    branch readme-screenshots
+    commit id: "redesigned with the latest progress and 11…"
+    checkout main
+    merge readme-screenshots id: "#25 (10-23)"
+    branch vault-sync-2026-10-23
+    commit id: "sync"
+    checkout main
+    merge vault-sync-2026-10-23 id: "#26 (10-23)"
+    branch prepare-public
+    commit id: "prepare for going public"
+    checkout main
+    merge prepare-public id: "#27 (10-23)"
+    branch generic-contributing
+    commit id: "contributing notes for anyone Claude may me…"
+    checkout main
+    merge generic-contributing id: "#28 (10-23)"
+    branch status-before-rewrite
+    commit id: "status before the history rewrite"
+    checkout main
+    merge status-before-rewrite id: "#29 (10-23)"
+    branch new-repo-notes
+    commit id: "the history rewrite and the new repo"
+    checkout main
+    merge new-repo-notes id: "#1 (10-24)"
+    branch codeowners
+    commit id: "CODEOWNERS and the public status"
+    checkout main
+    merge codeowners id: "#2 (10-24)"
+    branch new-look-docs
+    commit id: "linked rooms and usage describe the current…"
+    checkout main
+    merge new-look-docs id: "#3 (10-24)"
+    branch task-queue
+    commit id: "a task queue anyone can claim"
+    checkout main
+    merge task-queue id: "#4 (10-24)"
+    branch task-queue-callouts
+    commit id: "the task queue as callouts with checkboxes"
+    checkout main
+    merge task-queue-callouts id: "#5 (10-24)"
     branch picked-clawd
-    commit id: "picked Clawd, camera follow"
+    commit id: "picked Clawd (yellow corners and a spotligh…"
     checkout main
-    merge picked-clawd id: "PR 6 (10-24)"
+    merge picked-clawd id: "#6 (10-24)"
     branch mock-workflow
-    commit id: "mockups local, hook path"
+    commit id: "mockups stay local, the picked option goes…"
     checkout main
-    merge mock-workflow id: "PR 8 (10-27)"
+    merge mock-workflow id: "#8 (10-27)"
 ```
+<!-- git-graph:end -->
 
 ---
 
