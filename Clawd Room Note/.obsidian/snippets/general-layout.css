@@ -51,15 +51,17 @@ body {
 
 
 /* ==========================================================================
-   1. GLOBAL — kill horizontal scrolling
+   1. GLOBAL — no sideways scrolling of the page (wide blocks scroll inside themselves)
    ========================================================================== */
 
-body,
-.workspace-leaf-content,
-.view-content,
-.markdown-rendered {
-    overflow-x: hidden !important;
+/* The page itself is never clipped (clipping the pane let one wide block widen
+   the layout, which dropped the margins and left the text flush at the left
+   edge). A wide block scrolls inside its own box instead. */
+.cm-embed-block,
+.markdown-rendered .mermaid {
     max-width: 100% !important;
+    overflow-x: auto !important;
+    contain: inline-size;       /* its content cannot set its width */
 }
 
 
