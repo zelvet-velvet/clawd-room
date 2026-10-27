@@ -171,7 +171,7 @@ def main():
         _, tail = rest.split(END, 1)
         text = f"{head}{START}\n{block}\n{END}{tail}"
     else:                                       # no markers: the first gitGraph block
-        m = re.search(r"```mermaid\ngitGraph\n.*?\n```", text, re.S)
+        m = re.search(r"```mermaid\n(?:%%\{.*?\}%%\n)?gitGraph\n.*?\n```", text, re.S)
         if not m:
             sys.exit(f"{a.write}: no gitGraph block and no {START} / {END} lines to write into")
         text = text[:m.start()] + block + text[m.end():]
