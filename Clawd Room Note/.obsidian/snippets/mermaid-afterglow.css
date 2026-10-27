@@ -624,7 +624,7 @@
     color: var(--diagram-note-text) !important;
 }
 
-/* Branch name chips: light chip, dark text (same as edge labels). The text
+/* Branch name chips: the lane's color, dark text (light on dark lanes). The text
    needs its own rule: section 2 colors every .mermaid text light */
 .mermaid .branchLabel text,
 .mermaid .branchLabel tspan,
@@ -647,10 +647,25 @@
     translate: 0 3px;
 }
 
+/* The chip takes its lane's color (the rect carries class labelN, which
+   sets the fill above); only the outline and opacity are set here */
 .mermaid .branchLabelBkg {
-    fill: var(--diagram-note-bg) !important;
     stroke: var(--background-primary-alt) !important;
     opacity: 1 !important;
+}
+
+/* Dark lane colors (purple, red) get the light text color; the others keep
+   the dark text */
+.mermaid .branch-label2 text,
+.mermaid .branch-label2 tspan,
+.mermaid .branch-label2 span,
+.mermaid .branch-label2 p,
+.mermaid .branch-label5 text,
+.mermaid .branch-label5 tspan,
+.mermaid .branch-label5 span,
+.mermaid .branch-label5 p {
+    fill: var(--diagram-text) !important;
+    color: var(--diagram-text) !important;
 }
 
 /* The dotted lane line each branch runs along */
