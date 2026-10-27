@@ -161,6 +161,7 @@ python3 install_hooks.py --apply    # installs it (backs the file up first)
 | `r` | room size list |
 | `[` `]` | camera zoom out / in |
 | `z` | auto zoom on / off |
+| `.` | settings panel beside the room (W S pick, A D change; written to `settings.conf` at once) |
 | ← → (`A` `D`) / Tab | pick the Clawd the camera follows |
 | `c` | follow / free camera (then arrows or `W A S D` move it) |
 | `g` + arrow | send a Clawd next door (hold `g`: which way) |
