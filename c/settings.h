@@ -1,5 +1,6 @@
 /* ~/.clawd-room/settings.conf: lines `key = value`, `#` starts a comment. Read when the program starts and again when the file changes.
- * Keys so far: gate_theme (a folder of anims/gates/: simple, construct, ...). A flag or an environment variable beats the file. */
+ * Keys: gate_theme (a folder of anims/gates/: simple, construct, ...), spotlight (0 - 100: how dark the room is round the picked Clawd),
+ * room_size (auto, s, m, l, xl), fps (frames a second). A flag or an environment variable beats the file; the panel on `.` writes them. */
 #ifndef SETTINGS_H
 #define SETTINGS_H
 
@@ -8,5 +9,6 @@ int settings_poll(void);                     /* read again when the file changed
 const char *settings_get(const char *key);   /* the value, or NULL */
 void settings_apply(const char *gate_flag);  /* the gate theme: the flag (--gate-theme), else CLAWD_GATE_THEME, else the file, else simple */
 const char *settings_path(void);
+int settings_int(const char *key, int def); /* the value as a whole number, or def (missing, or not a number) */
 int settings_set(const char *key, const char *val); /* writes `key = val` into the file (the line replaced, the rest kept; made if missing), reads it again: 0 ok */
 #endif
