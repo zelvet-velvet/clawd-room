@@ -270,11 +270,3 @@ body .mk-floweditor-container .mk-floweditor .markdown-source-view.mod-cm6 .cm-c
 body div:not(.mk-flowspace-editor) > .mk-floweditor .markdown-source-view.mod-cm6 .cm-content {
     padding-left: var(--flow-embed-gutter) !important;
 }
-
-/* The gutter above indents the note's text lines but not a dataviewjs block
-   (its own widget), which then sits flush at the left edge: give it the same
-   gutter, only inside a flow editor. If it ends up indented twice, delete this. */
-body .mk-floweditor-container .mk-floweditor .block-language-dataviewjs,
-body div:not(.mk-flowspace-editor) > .mk-floweditor .block-language-dataviewjs {
-    padding-left: var(--flow-embed-gutter) !important;
-}
