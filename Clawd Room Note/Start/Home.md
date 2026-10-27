@@ -23,6 +23,9 @@ sticker: lucide//house
 | `Assets/` | the files only: `Snapshots/<subject>/` pictures, `Animations/` GIFs and sheets | people (pictures), `--build-art` (animations) |
 | `_Meta/` | vault helpers: [[Checkbox Style]], [[Snapshot status]] | people |
 
+> [!warning]- Claude Code says `UserPromptSubmit operation blocked by hook … hook.py: No such file`
+> The repo was moved, renamed or re-cloned, and `~/.claude/settings.json` still points at the old `hook.py`. Fix it in a plain terminal: remove the hook entries whose command is `python3 <old path>/hook.py` (back the file up first), then run `python3 install_hooks.py --apply` from the current folder. More in [[LLM Guide]] (rules). Before moving the folder next time, run `python3 install_hooks.py --remove` first.
+
 ## 🔍 Reviewing a change
 
 - **What changed:** the day's note in `Review/Log/` (linked from the [[Dev Log]]): short entries, a picture for anything visual, the branch.

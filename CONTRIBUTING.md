@@ -10,7 +10,7 @@ Welcome! This is a small project by **Zaviel** (owner, `zelvet-velvet`), open to
 | Owner | Zaviel (`zelvet-velvet`) | decides the look and the features, reviews and merges pull requests into `main`, keeps the Dev Log and notes in shape |
 | Contributor | you | picks or proposes issues, works on branches, opens pull requests, reviews others' PRs when asked |
 
-- **The look is the owner's call.** Visual changes (pixel art, rooms, colours, layout) start as a picture: post a mockup or a screenshot in the issue, Zaviel picks, then it is built.
+- **The look is the owner's call.** Visual changes (pixel art, rooms, colours, layout) start as a picture: post a mockup or a screenshot in the issue, Zaviel picks, then it is built. Keep your mockups local (`gallery/` is not in git); the picked one and the side-by-side picture of all the options go into the vault (`Clawd Room Note/Assets/Snapshots/`).
 - **`main` is the stable line.** Nobody pushes to `main` directly; everything arrives through a pull request (PR) that Zaviel merges.
 - **Ask early.** A short question in the issue saves a long PR that goes the wrong way.
 
