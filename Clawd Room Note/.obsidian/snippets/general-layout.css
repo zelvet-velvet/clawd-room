@@ -238,6 +238,20 @@ mark,
     margin-bottom: var(--dataview-edge-margin) !important;
 }
 
+/* Long entry titles wrap inside the block instead of making it scroll sideways
+   (only dataviewjs blocks: styling every embed block moved the text to the
+   left edge) */
+.block-language-dataviewjs {
+    overflow-x: hidden !important;
+}
+
+.block-language-dataviewjs li,
+.block-language-dataviewjs p,
+.block-language-dataviewjs a {
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
+}
+
 
 /* ==========================================================================
    7. MERMAID — natural size, scale down if wider than the note
