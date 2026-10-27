@@ -21,25 +21,86 @@ What changed and when, in short: **one note per day** in `Log/` (newest first), 
 Pictures are in `Assets/Snapshots/`, one folder per subject; browse them (and the animations) from [[Index|Gallery index]]. Where everything is: [[Home]]. Details of every change: `git log`.
 
 > [!info] Where the work is (branches)
-> Since 2026-10-19 (William joined) every change is a branch and a pull request into `main`, merged by Zaviel ([[Collaboration]]). Before that `main` was kept equal to `feat/style-a`.
+> Since 2026-10-19 (William joined) every change is a branch and a pull request into `main`, merged by Zaviel ([[Collaboration]]). Before that `main` was kept equal to `feat/style-a`. The graph is made by `python3 tools/git_graph.py --write "Clawd Room Note/Review/Dev Log.md"`: the last 12 code branches (docs, chore and test ones left out; `--all` adds them), the number in a branch name is its pull request. Run it again after a merge.
 
 ```mermaid
+%%{init: {"gitGraph": {"showCommitLabel": false}}}%%
 gitGraph
-    commit id: "C room"
-    commit id: "fixes"
-    branch macos-iterm
-    commit id: "macOS build"
-    commit id: "iTerm2 helper"
-    commit id: "camera, room size"
+    commit
     checkout main
-    merge macos-iterm id: "merged 10-17"
-    branch style-a
-    commit id: "perspective rooms"
-    commit id: "engine, editor, --try"
-    commit id: "park plaza, moves"
+    commit
     checkout main
-    merge style-a id: "main = style-a (10-18, 10-19)"
+    branch pr2-try-stop-reason
+    checkout pr2-try-stop-reason
+    commit
+    checkout main
+    merge pr2-try-stop-reason
+    checkout main
+    branch pr10-editor-animation
+    checkout main
+    branch pr11-fixture-names
+    checkout pr10-editor-animation
+    commit
+    checkout pr11-fixture-names
+    commit
+    checkout pr11-fixture-names
+    commit
+    checkout pr10-editor-animation
+    commit
+    checkout pr10-editor-animation
+    commit
+    checkout main
+    merge pr10-editor-animation
+    checkout main
+    merge pr11-fixture-names
+    checkout main
+    branch pr19-stage-page
+    checkout pr19-stage-page
+    commit
+    checkout pr19-stage-page
+    commit
+    checkout pr19-stage-page
+    commit
+    checkout main
+    merge pr19-stage-page
+    checkout main
+    branch pr21-stage-unselect
+    checkout main
+    branch pr22-gate-parts
+    checkout main
+    branch pr24-gate-themes
+    checkout pr21-stage-unselect
+    commit
+    checkout pr22-gate-parts
+    commit
+    checkout pr22-gate-parts
+    commit
+    checkout pr22-gate-parts
+    commit
+    checkout main
+    merge pr21-stage-unselect
+    checkout pr24-gate-themes
+    commit
+    checkout main
+    merge pr22-gate-parts
+    checkout pr24-gate-themes
+    commit
+    checkout pr24-gate-themes
+    commit
+    checkout main
+    merge pr24-gate-themes
+    checkout main
+    branch pr6-picked-clawd
+    checkout pr6-picked-clawd
+    commit
+    checkout pr6-picked-clawd
+    commit
+    checkout pr6-picked-clawd
+    commit
+    checkout main
+    merge pr6-picked-clawd
 ```
+
 
 ---
 

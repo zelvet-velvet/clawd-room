@@ -51,16 +51,13 @@ body {
 
 
 /* ==========================================================================
-   1. GLOBAL — kill horizontal scrolling
+   1. GLOBAL — (no rule: see below)
    ========================================================================== */
 
-body,
-.workspace-leaf-content,
-.view-content,
-.markdown-rendered {
-    overflow-x: hidden !important;
-    max-width: 100% !important;
-}
+/* Nothing here on purpose. The page is not clipped (that let one wide block
+   widen the layout and drop the text's left margin). A wide git graph caps
+   itself in mermaid-afterglow.css. Do NOT style .cm-embed-block as a whole:
+   every widget (dataview lists too) is one, and it lost its left margin. */
 
 
 /* ==========================================================================
@@ -239,6 +236,20 @@ mark,
 
 .block-language-dataviewjs > *:last-child {
     margin-bottom: var(--dataview-edge-margin) !important;
+}
+
+/* Long entry titles wrap inside the block instead of making it scroll sideways
+   (only dataviewjs blocks: styling every embed block moved the text to the
+   left edge) */
+.block-language-dataviewjs {
+    overflow-x: hidden !important;
+}
+
+.block-language-dataviewjs li,
+.block-language-dataviewjs p,
+.block-language-dataviewjs a {
+    white-space: normal !important;
+    overflow-wrap: anywhere !important;
 }
 
 
