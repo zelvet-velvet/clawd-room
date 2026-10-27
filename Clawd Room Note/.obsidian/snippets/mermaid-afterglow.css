@@ -735,11 +735,13 @@
 
 /* The wide graph must scroll inside its own box and not widen the note
    (otherwise the whole pane scrolls sideways and the title sticks to the
-   left edge). `contain: inline-size` stops the svg from setting the box's
-   width. */
-.mermaid:has(> svg[aria-roledescription="gitGraph"]),
+   left edge; general-layout §1 hides the page's own scrollbar, so it looks
+   like the layout just jumped). `contain: inline-size` stops the svg from
+   setting the box's width. */
+.mermaid:has(svg[aria-roledescription="gitGraph"]),
 .block-language-mermaid:has(svg[aria-roledescription="gitGraph"]),
 .cm-embed-block:has(svg[aria-roledescription="gitGraph"]) {
+    width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
     overflow-x: auto !important;
