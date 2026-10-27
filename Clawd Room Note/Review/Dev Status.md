@@ -8,7 +8,11 @@ sticker: lucide//activity
 > [!important] For AI assistants
 > Read [[LLM Guide]] before any `CMD_` or status update. This note is kept by `CMD_SYNC` / `CMD_ROLLOVER` / `CMD_NOTES_SYNC`; the day notes in `Review/Log/` by `CMD_JOURNAL`.
 
-## 🚀 Today's Progress (2026-10-23)
+## 🚀 Today's Progress (2026-10-27)
+- **Dev Log Graph**: `tools/git_graph.py` draws the last merged code branches of `main` as a woven gitGraph and writes it into the [[Dev Log]]; the graph's colours and branch chips follow the lane (#9).
+- **Mockups Stay Local**: A mockup is local scratch; only the picked option and one side-by-side picture go into the vault (#8).
+- **Stale Hook Path**: [[LLM Guide]] and [[Home]] say what to do when a moved clone leaves an old `hook.py` path in `settings.json`; no absolute paths or symlinks in the repo or notes.
+- **Vault Layout**: Long titles in the Days list wrap instead of scrolling sideways; general-layout section 1 stays empty (#9).
 
 ## 📅 Yesterday's Progress (2026-10-22)
 - **Stage Page, Gates, Esc**: Esc picks nothing on the stage page (#21); gates appearing are part animations with folding panels and an eye + KEYS button (#22); the vault sync (#23).
@@ -46,7 +50,7 @@ sticker: lucide//activity
 - [ ] **Less CPU**: Skip frames when nothing moves; stop drawing (FPS 0) when the window is covered, minimised or on another desktop; later dirty rects. (The terminal output is already diffed and written once per frame.)
 
 ### 🗂️ Repo and vault
-- [x] **Pull Requests**: None open; #1 – #12 and #19 – #28 merged; #13 – #18 closed into #19 and #20. Only merged branches are deleted; `main` is the one branch left.
+- [x] **Pull Requests**: The public repo counts from #1: #1 – #6 and #8 – #9 merged, #7 closed, #10 (day note 2026-10-27) open. Only merged branches are deleted.
 - [x] **Go Public** (2026-10-24): `zelvet-velvet/clawd-room` is public with an MIT `LICENSE` and a clean history (a new repo; the old one is `clawd-room-pre-public`, private, which can be archived). `main` is protected: changes only through a pull request with one approval from a code owner (`.github/CODEOWNERS`: Zaviel), no force-push, no deletion, conversations resolved; admins are not enforced, so Zaviel merges their own PRs. Merge commits only, branches deleted on merge.
 - [>] **Contributors Setup**: Invitations to the new repo are sent; each contributor accepts, clones the new repo (or `git fetch && git reset --hard origin/main` in an old clone, after saving unmerged work), sets Templater ([[Collaboration]]).
 
