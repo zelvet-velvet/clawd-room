@@ -452,7 +452,7 @@
 
 /* ==========================================================================
    16. GIT GRAPHS (gitGraph)
-   Mermaid cycles 8 branch colors (0-7); lane N is branchN / commitN /
+   Mermaid cycles 8 branch colors (0-7; lane 7 is a tint, the near-black actor color vanished on the page); lane N is branchN / commitN /
    arrowN / labelN. They map onto the --diagram-* variables, so no hex here.
    ========================================================================== */
 
@@ -604,19 +604,19 @@
 }
 
 .mermaid .commit7 {
-    fill: var(--diagram-actor-bg) !important;
-    stroke: var(--diagram-actor-bg) !important;
+    fill: color-mix(in srgb, var(--diagram-subgraph-border) 45%, var(--diagram-text)) !important;
+    stroke: color-mix(in srgb, var(--diagram-subgraph-border) 45%, var(--diagram-text)) !important;
     stroke-width: 2px !important;
 }
 
 .mermaid .arrow7 {
-    stroke: var(--diagram-actor-bg) !important;
+    stroke: color-mix(in srgb, var(--diagram-subgraph-border) 45%, var(--diagram-text)) !important;
     stroke-width: 4px !important;
     fill: none !important;
 }
 
 .mermaid .label7 {
-    fill: var(--diagram-actor-bg) !important;
+    fill: color-mix(in srgb, var(--diagram-subgraph-border) 45%, var(--diagram-text)) !important;
 }
 
 .mermaid .branch-label7 {
@@ -709,4 +709,14 @@
 .mermaid circle.commit-merge,
 .mermaid .commit-reverse {
     fill: var(--background-primary) !important;
+}
+
+/* A git graph is wide: draw it at a readable size and scroll sideways
+   (the .mermaid box already has overflow-x: auto; general-layout §7 would
+   otherwise shrink it to the note width) */
+.mermaid svg[aria-roledescription="gitGraph"] {
+    width: 1700px !important;
+    min-width: 1700px !important;
+    max-width: none !important;
+    margin: 0 !important;
 }
