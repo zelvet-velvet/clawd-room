@@ -51,18 +51,13 @@ body {
 
 
 /* ==========================================================================
-   1. GLOBAL — no sideways scrolling of the page (wide blocks scroll inside themselves)
+   1. GLOBAL — (no rule: see below)
    ========================================================================== */
 
-/* The page itself is never clipped (clipping the pane let one wide block widen
-   the layout, which dropped the margins and left the text flush at the left
-   edge). A wide block scrolls inside its own box instead. */
-.cm-embed-block,
-.markdown-rendered .mermaid {
-    max-width: 100% !important;
-    overflow-x: auto !important;
-    contain: inline-size;       /* its content cannot set its width */
-}
+/* Nothing here on purpose. The page is not clipped (that let one wide block
+   widen the layout and drop the text's left margin). A wide git graph caps
+   itself in mermaid-afterglow.css. Do NOT style .cm-embed-block as a whole:
+   every widget (dataview lists too) is one, and it lost its left margin. */
 
 
 /* ==========================================================================
