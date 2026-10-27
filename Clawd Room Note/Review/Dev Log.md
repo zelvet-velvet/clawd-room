@@ -21,12 +21,12 @@ What changed and when, in short: **one note per day** in `Log/` (newest first), 
 Pictures are in `Assets/Snapshots/`, one folder per subject; browse them (and the animations) from [[Index|Gallery index]]. Where everything is: [[Home]]. Details of every change: `git log`.
 
 > [!info] Where the work is (branches)
-> Since 2026-10-19 (William joined) every change is a branch and a pull request into `main`, merged by Zaviel ([[Collaboration]]). Before that `main` was kept equal to `feat/style-a`.
+> Since 2026-10-19 (William joined) every change is a branch and a pull request into `main`, merged by Zaviel ([[Collaboration]]). Before that `main` was kept equal to `feat/style-a`. The graph is a summary of the first-parent line of `main` (updated 2026-10-27); the numbers are pull requests.
 
 ```mermaid
 gitGraph
-    commit id: "C room"
-    commit id: "fixes"
+    commit id: "C room (10-16)"
+    commit id: "fixes (10-17)"
     branch macos-iterm
     commit id: "macOS build"
     commit id: "iTerm2 helper"
@@ -38,7 +38,32 @@ gitGraph
     commit id: "engine, editor, --try"
     commit id: "park plaza, moves"
     checkout main
-    merge style-a id: "main = style-a (10-18, 10-19)"
+    merge style-a id: "style-a in main (10-19)"
+    commit id: "PRs begin: collaboration, test queue"
+    branch editor-animation
+    commit id: "animation editor"
+    checkout main
+    merge editor-animation id: "PR 10 (10-20)"
+    branch stage-page
+    commit id: "stage page, unselect"
+    checkout main
+    merge stage-page id: "PR 19, 21 (10-21)"
+    branch gate-parts
+    commit id: "gate parts"
+    commit id: "gate themes"
+    checkout main
+    merge gate-parts id: "PR 22, 24 (10-22)"
+    commit id: "README GIFs, public prep (10-23)"
+    commit id: "new public repo: history rewritten"
+    commit id: "task queue, codeowners (10-24)"
+    branch picked-clawd
+    commit id: "picked Clawd, camera follow"
+    checkout main
+    merge picked-clawd id: "PR 6 (10-24)"
+    branch mock-workflow
+    commit id: "mockups local, hook path"
+    checkout main
+    merge mock-workflow id: "PR 8 (10-27)"
 ```
 
 ---
