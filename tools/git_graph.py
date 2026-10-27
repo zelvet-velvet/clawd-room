@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Draw the first-parent line of a branch as a Mermaid gitGraph (standard library only).
 
-  python3 tools/git_graph.py                 # print the graph (main, last 20 entries)
-  python3 tools/git_graph.py --last 30       # more entries
+  python3 tools/git_graph.py                 # print the graph (main, last 12 code branches)
+  python3 tools/git_graph.py --last 20       # more branches
+  python3 tools/git_graph.py --all           # docs / chore / test branches too
+  python3 tools/git_graph.py --labels        # a label on every commit (crowded)
   python3 tools/git_graph.py --write "Clawd Room Note/Review/Dev Log.md"
                                              # replace the note's gitGraph block (or what sits
                                              # between <!-- git-graph:start --> and <!-- git-graph:end -->)
@@ -11,7 +13,9 @@ A summary of the real shape: each merged pull request is a branch that leaves th
 line where it really forked and joins it where it was really merged, so branches
 that were open at the same time overlap, as in `git log --graph`. A branch shows
 at most three of its commits (first, middle, last) and not the merges of main
-into it; runs of direct commits on the line become one commit.
+into it; runs of direct commits on the line become one commit. To stay readable
+the default draws no commit labels (the branch name carries the pull request
+number) and only the branches that are not docs / chore / test.
 """
 import argparse
 import re
@@ -24,6 +28,7 @@ PR = re.compile(r"^Merge pull request #(\d+) from [^/]+/(\S+)")
 SEP = "\x1f"
 MAIN, FORK, COMMIT = 0, 1, 2          # order of events that share a place on the line
 SHOWN = 3                             # commits drawn per branch
+QUIET = re.compile(r"^(docs|chore|test)/")   # branches left out unless --all
 
 
 def git(*args):
@@ -59,7 +64,7 @@ def main_line(ref):
             continue
         run = None
         out.append({"kind": "pr", "sha": sha, "date": date, "ts": int(ts), "parents": parents.split(),
-                    "number": m.group(1), "slug": m.group(2).split("/")[-1]})
+                    "number": m.group(1), "branch": m.group(2), "slug": m.group(2).split("/")[-1]})
     return out
 
 
@@ -93,26 +98,35 @@ def branch_info(e, line, i):
     return fork, commits
 
 
-def graph(line, last):
-    start = max(0, len(line) - last)
+def graph(line, last, show_all=False, labels_on=False):
+    def drawn(e):
+        return show_all or e["kind"] == "direct" or not QUIET.match(e["branch"])
+
+    shown = [i for i, e in enumerate(line) if drawn(e)]
+    start = shown[-last] if len(shown) > last else 0
     events, used, labels = [], {"main"}, set()
 
-    def label(text):
+    def cid(text):
+        """` id: "..."` for a commit when labels are on, nothing otherwise."""
+        if not labels_on:
+            return ""
         base, k = text, 2
         while text in labels:
             text, k = f"{base} {k}", k + 1
         labels.add(text)
-        return text
+        return f' id: "{text}"'
 
-    for i in range(start, len(line)):
+    for i in shown:
+        if i < start:
+            continue
         e = line[i]
         if e["kind"] == "direct":
             text = f"{e['n']} commits ({e['date']})" if e["n"] > 1 else f"commit ({e['date']})"
-            events.append(((i, MAIN, 0), ["    checkout main", f'    commit id: "{label(text)}"']))
+            events.append(((i, MAIN, 0), ["    checkout main", f"    commit{cid(text)}"]))
             continue
         fork, commits = branch_info(e, line, i)
         fork = max(fork, start - 1)               # forked before the window: at its start
-        name = re.sub(r"[^A-Za-z0-9_-]", "-", e["slug"])
+        name = re.sub(r"[^A-Za-z0-9_-]", "-", ("pr" + e["number"] + "-" if not labels_on else "") + e["slug"])
         base, k = name, 2
         while name in used:
             name, k = f"{base}-{k}", k + 1
@@ -124,11 +138,14 @@ def graph(line, last):
             for j in range(max(fork, start), i):
                 if line[j]["ts"] <= t:
                     at = j
-            events.append(((at, COMMIT, t), [f"    checkout {name}", f'    commit id: "{label(clean(s, 40))}"']))
+            events.append(((at, COMMIT, t), [f"    checkout {name}", f"    commit{cid(clean(s, 40))}"]))
         events.append(((i, MAIN, 1), ["    checkout main",
-                                      f'    merge {name} id: "{label("#" + e["number"] + " (" + e["date"] + ")")}"']))
+                                      f'    merge {name}{cid("#" + e["number"] + " (" + e["date"] + ")")}']))
     events.sort(key=lambda ev: ev[0])
-    lines = ["gitGraph", '    commit id: "earlier history"']
+    lines = []
+    if not labels_on:
+        lines.append('%%{init: {"gitGraph": {"showCommitLabel": false}}}%%')
+    lines += ["gitGraph", f"    commit{cid('earlier history')}"]
     for _, chunk in events:
         lines += chunk
     return "\n".join(lines)
@@ -137,11 +154,13 @@ def graph(line, last):
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--ref", default="main", help="the line to draw (default main)")
-    ap.add_argument("--last", type=int, default=20, help="how many entries to draw (default 20)")
+    ap.add_argument("--last", type=int, default=12, help="how many branches to draw (default 12)")
+    ap.add_argument("--all", action="store_true", help="also docs / chore / test branches")
+    ap.add_argument("--labels", action="store_true", help="a label on every commit")
     ap.add_argument("--write", metavar="NOTE", help="replace the block between the markers in this note")
     a = ap.parse_args()
     line = main_line(a.ref)
-    block = "```mermaid\n" + graph(line, a.last) + "\n```"
+    block = "```mermaid\n" + graph(line, a.last, a.all, a.labels) + "\n```"
     if not a.write:
         print(block)
         return
@@ -158,7 +177,7 @@ def main():
         text = text[:m.start()] + block + text[m.end():]
     with open(a.write, "w", encoding="utf-8") as f:
         f.write(text)
-    print(f"{a.write}: graph written ({min(a.last, len(line))} entries)")
+    print(f"{a.write}: graph written (the last {a.last})")
 
 
 if __name__ == "__main__":
