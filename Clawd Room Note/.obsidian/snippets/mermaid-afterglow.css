@@ -642,9 +642,6 @@
     font-family: "trebuchet ms", verdana, arial, sans-serif !important;
     font-size: 16px !important;
     dominant-baseline: auto !important;
-    /* the chip has ~3px more room below the text than above: nudge it down
-       (the `translate` property adds to Mermaid's own transform) */
-    translate: 0 3px;
 }
 
 /* The chip takes its lane's color (the rect carries class labelN, which
