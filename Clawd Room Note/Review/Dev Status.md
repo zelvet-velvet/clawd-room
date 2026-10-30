@@ -8,19 +8,17 @@ sticker: lucide//activity
 > [!important] For AI assistants
 > Read [[LLM Guide]] before any `CMD_` or status update. This note is kept by `CMD_SYNC` / `CMD_ROLLOVER` / `CMD_NOTES_SYNC`; the day notes in `Review/Log/` by `CMD_JOURNAL`.
 
-## 🚀 Today's Progress (2026-10-27)
+## 🚀 Today's Progress (2026-10-30)
+- **Callout States**: A callout's type shows its block's state (`[!todo]`, `[!done]`, `[!warning]`, `[!question]`, `[!failure]`), callouts before tables; rule in [[LLM Guide]] (#14).
+- **Split Panes**: A room in a Windows Terminal split pane finds its own pane, gets gates to neighbouring panes and never resizes the shared window or sends font keys (#15, open; to test: T67 – T72 in [[Test Checklist]]).
+- **Crowded Rooms Picked**: Scattered workspaces mixed with loose clusters, smaller mixed furniture, and activities for Clawds without a seat instead of "+N MORE" (mockups; not built) ([[Rooms and Art]]).
+- **Mock Programs**: [[LLM Guide]] says how to write a mockup program (the room's own drawing, the real size, one build line that survives other branches' leftovers).
+
+## 📅 Yesterday's Progress (2026-10-27)
 - **Dev Log Graph**: `tools/git_graph.py` draws the last merged code branches of `main` as a woven gitGraph and writes it into the [[Dev Log]]; the graph's colours and branch chips follow the lane (#9).
 - **Mockups Stay Local**: A mockup is local scratch; only the picked option and one side-by-side picture go into the vault (#8).
 - **Stale Hook Path**: [[LLM Guide]] and [[Home]] say what to do when a moved clone leaves an old `hook.py` path in `settings.json`; no absolute paths or symlinks in the repo or notes.
 - **Vault Layout**: Long titles in the Days list wrap instead of scrolling sideways; general-layout section 1 stays empty (#9).
-
-## 📅 Yesterday's Progress (2026-10-22)
-- **Stage Page, Gates, Esc**: Esc picks nothing on the stage page (#21); gates appearing are part animations with folding panels and an eye + KEYS button (#22); the vault sync (#23).
-- **Gate Themes**: A theme is a folder `anims/gates/NAME/` (`simple`, `construct`), chosen by `--gate-theme`, `CLAWD_GATE_THEME` or `gate_theme` in `~/.clawd-room/settings.conf` (read again while the room runs) (#24).
-- **Construct Gate**: A gate built from its own pieces that fly in under a blue outline in 1.4 s; a part's x / y / glow / show are drawn in the room (#24).
-- **Picker THEMES Tab**: A card per theme (picked one plays), Space makes it active, Enter opens its files, NEW THEME copies the last picked; Esc in the picker never quits (#24).
-- **Stage Page `I`**: Opens the pixel art of a sprite part; a part as wide as the stage fits whole; the editor window opens wider (#24).
-- **Art Map**: New design note [[Art Data and Editor]] (the repo defaults and your copy, the two kinds of animation).
 
 ---
 
@@ -30,6 +28,8 @@ sticker: lucide//activity
 - [ ] **Railed Stair Well**: Build design A (a bigger opening, steps right to left, a guard rail); no big tree in the park when it has a way up ([[2026-10-20]]).
 - [>] **Gates Appear**: Built and merged (#22, #24): themes `simple` and `construct`, the `settings.conf` line, the picker's THEMES tab. Not yet: the park's own gates, gates leaving, the construct's pieces as authored sprites.
 - [ ] **Art as Sprite Pieces**: Geometry stays in code (perspective, how many steps), the look moves to small sprites the code places and repeats (a tread, a baluster, a length of rail, a door leaf), so a gate, desk or well can be edited in the pixel editor; the default sprites must reproduce today's pictures exactly (snapshots). Props already work this way.
+- [ ] **Crowded Rooms**: Build the picked layout: scattered spots mixed with clusters of 2–3, the smaller mixed furniture, activities for Clawds without a seat (demolish, fire, clean up, play), so "+N MORE" never shows ([[Rooms and Art]], [[2026-10-30]]).
+- [?] **Crowded Rooms, Open**: Hot desking (waiting / idle Clawds give up their seat)? Activity by state or at random?
 - [x] **Docs Look**: `docs/Linked-Rooms.md` describes the current gates (doors, stairs, wells on the walls and floor), the bottom bar's `G` / `M` hint and how rooms find each other; `docs/Platforms.md` was checked and fits. Still to look at: the code names the park's way up `TREEHOUSE` in the bar's gate names, while the park has a corner building with a stoop.
 
 ### 🎮 Interaction
@@ -37,12 +37,14 @@ sticker: lucide//activity
 - [ ] **Bar Below the Room, Gate Tags**: The room above a one-line bar; while `g` / `m` is held a tag centred over each gate (arrow style still to pick).
 - [>] **Settings**: `~/.clawd-room/settings.conf` exists with one line, `gate_theme` (a missing theme falls back to simple quietly). Not yet: more settings and the panel beside the room on `.`, which reads and writes the same file.
 - [ ] **Room Setup Page**: An editor page to choose, per room, which Clawd look / role and which desks, props and options appear. Needs the data first: `rooms/*.txt` declares a room's desks, roles and allowed props (today the code decides), then the page edits those files with the room as the preview.
+- [?] **Every Size**: A strip for panes under 44x20 (S1 band, S2 names, S3 chips; mini Clawds under 8 rows): which one ([[Rooms and Art]])?
+- [?] **Clawds That React**: Which first: a waiting Clawd waves (taskbar flash), eyes follow the mouse, click for a card, click to bring its terminal forward (needs `WT_SESSION` in the hook), drag to a gate, a coffee treat.
 - [ ] **Moving, Step 3**: Drag a Clawd with the mouse onto a door, the stairs or the well. (Settled: `--try real` stays split; uneven shares are fine.)
 
 ### 🖥️ Platforms
 - [ ] **Mac Check**: Run `make -C c test` on the Mac after the fused multiply-add change (it should still match).
 - [ ] **Blocked Writes**: The room can block writing when the terminal stops reading (seen with iTerm2 in full screen).
-- [ ] **Windows Terminal Panes**: Split panes are not seen separately yet.
+- [>] **Windows Terminal Panes**: Built on `feat/split-panes` (#15): panes seen through UI Automation, gates between panes, no resize or font keys in a pane. To check by eye: T67 – T72 (Group N of [[Test Checklist]]); panes on other virtual desktops are not seen (Windows hides them).
 
 ### ⚙️ Engine and tools
 - [x] **Stage Page Polish**: Esc picks nothing (#21), folding the panel and timeline, the picker's search focus, the eye + KEYS button (#22); tests T39 – T50 are in [[Test Checklist]].
