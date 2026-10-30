@@ -8,6 +8,29 @@ sticker: lucide//palette
 ---
 Pictures of mockups and options to choose from (the picked one is marked), newest first: ✅ current (open), ♻️ replaced and ❌ not picked (folded; the status is in [[Snapshot status]]). The files are the source in `Assets/Snapshots/Style and mockups/`; this note is written by `tools/vault_gallery.py` (do not edit it by hand: add a picture, then run the tool).
 
+## 2026-10-30
+
+> [!success]+ ✅ current · Workspace clusters · picked
+> ![[2026-10-30 workspace clusters (picked).png|420]]
+> Shown in: not in a note yet
+
+> [!success]+ ✅ current · Tiny pane strip options
+> ![[2026-10-30 tiny pane strip options.png|420]]
+> Shown in: not in a note yet
+
+> [!failure]- ❌ not picked · Tight floor rows A B C
+> ![[2026-10-30 tight floor rows A B C.png|420]]
+> Replaced by: [[2026-10-30 scattered workspaces, mixed furniture (picked).png]]
+> Shown in: not in a note yet
+
+> [!success]+ ✅ current · Scattered workspaces, mixed furniture · picked
+> ![[2026-10-30 scattered workspaces, mixed furniture (picked).png|420]]
+> Shown in: not in a note yet
+
+> [!success]+ ✅ current · Desk-less activities · picked
+> ![[2026-10-30 desk-less activities (picked).gif|420]]
+> Shown in: not in a note yet
+
 ## 2026-10-19
 
 > [!failure]- ❌ not picked · Editor palette mockup C, photoshop
