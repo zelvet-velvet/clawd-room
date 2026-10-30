@@ -14,6 +14,7 @@ typedef struct {
     int cols, rows;
     int has_band; int band[2];
     int has_grid; double grid[7];
+    char pane[40]; /* its pane of a split Windows Terminal window (UI Automation runtime id), or "" */
     char homes[MAX_CLAIMS][72]; int nhomes; /* the sessions that moved into that room */
     char shows[MAX_SHOWS][72]; int nshows;  /* the sessions it shows now */
 } LinkPeer;
@@ -25,6 +26,7 @@ typedef struct {
     double last_beat, last_scan;
     int has_band; int band[2];
     int has_grid; double grid[7];
+    char pane[40]; /* ours, when the room is in a split pane (watcher_resolve) */
     char homes[MAX_CLAIMS][72]; int nhomes; /* ours, said in the heartbeat */
     char shows[MAX_SHOWS][72]; int nshows;  /* ... and the sessions we show */
 } Link;

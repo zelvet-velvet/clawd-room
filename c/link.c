@@ -87,6 +87,7 @@ static void beat(Link *l, double now, int cols, int rows, int force) { /* rewrit
     if (l->has_band) fprintf(f, ", \"band\": [%d, %d]", l->band[0], l->band[1]); else fprintf(f, ", \"band\": null");
     if (l->has_grid) { fprintf(f, ", \"grid\": ["); for (int i = 0; i < 7; i++) fprintf(f, "%s%.17g", i ? ", " : "", l->grid[i]); fprintf(f, "]"); }
     else fprintf(f, ", \"grid\": null");
+    if (l->pane[0]) { fprintf(f, ", \"pane\": "); json_str(f, l->pane); }
     fprintf(f, ", \"homes\": [");
     for (int i = 0; i < l->nhomes; i++) { if (i) fprintf(f, ", "); json_str(f, l->homes[i]); }
     fprintf(f, "], \"shows\": [");
@@ -214,6 +215,8 @@ static void scan(Link *l, double now, LinkPeer *joined, int *nj, LinkPeer *left,
                     for (int i = 0; i < 7; i++) if (v->kids[i]->type != J_NUM) ok = 0;
                     if (ok) { q->has_grid = 1; for (int i = 0; i < 7; i++) q->grid[i] = v->kids[i]->num; }
                 }
+                v = json_get(rec, "pane");
+                if (v && v->type == J_STR) snprintf(q->pane, sizeof q->pane, "%.39s", v->str);
                 v = json_get(rec, "homes");
                 if (v && v->type == J_ARR)
                     for (int i = 0; i < v->n && q->nhomes < MAX_CLAIMS; i++) if (v->kids[i]->type == J_STR) snprintf(q->homes[q->nhomes++], 72, "%.64s", v->kids[i]->str);

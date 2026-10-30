@@ -19,13 +19,20 @@ int win_available(void); /* powershell.exe on the PATH, or running inside iTerm2
 const char *win_platform(void); /* "Windows Terminal" or "iTerm2" */
 
 /* ---- where the windows are -------------------------------------------------------------------- */
-typedef struct { char title[96]; int rect[4], area[4], dpi; } WinInfo;
+/* a window, or (pane) one pane of a Windows Terminal window split into panes: rid is its UI Automation runtime id, owner
+ * the index of its window; a split window's title is "-" unless a clawd-room pane has the focus */
+typedef struct { char title[96]; int rect[4], area[4], dpi; int pane, npanes, owner, focus, clawd; char rid[40]; } WinInfo;
+#define WATCH_MAX 48
+#define WATCH_PEERS 16
 typedef struct {
     pid_t pid; int fd;
     char line[2048]; size_t n;
-    WinInfo cur[24]; int ncur;
-    WinInfo pend[24]; int npend;
+    WinInfo cur[WATCH_MAX]; int ncur;
+    WinInfo pend[WATCH_MAX]; int npend;
     double updated;
+    /* which pane is whose (watcher_resolve): ours learned from the focus, the other rooms' from their heartbeats */
+    char my_id[80], my_rid[40], cand_rid[40]; int cand_n; double resolved;
+    char peer_id[WATCH_PEERS][40], peer_rid[WATCH_PEERS][40]; int npeers;
 } Watcher;
 
 int watcher_start(Watcher *w);
@@ -36,6 +43,10 @@ const int *watcher_area(const Watcher *w, const char *room_id); /* the terminal 
 int watcher_dpi(const Watcher *w, const char *room_id);        /* 96 if unknown */
 /* feed one line of the helper's output (for tests) */
 void watcher_feed(Watcher *w, const char *line, double now);
+/* after each poll: which pane of a split window is ours (the one with the focus while the window has our title, seen in
+ * two lists in a row; else the only Clawd Room pane nobody else claims), and the other rooms' panes from their heartbeats */
+void watcher_resolve(Watcher *w, const char *my_id, const Link *link_or_null);
+int watcher_in_pane(const Watcher *w, const char *room_id); /* 1 in a pane of a split window, 0 a whole window, -1 unknown */
 
 /* "left" "right" "up" "down" side index if `other` is next to `mine` and close enough, else -1 */
 int neighbor_side(const int *mine, const int *other, int near_px, int slack);
@@ -75,7 +86,10 @@ typedef struct {
     double wait_until, started, asked; int has_started;
     Fitter fit; int has_fit;
     int ask_pending; /* the caller should send CSI 14 t / 16 t */
+    int pane;    /* set by the caller before each update: watcher_in_pane (-1 unknown: wait up to OPEN_PANE_WAIT) */
+    int skipped; /* the room is in a split pane: neither the window nor the font was touched */
 } OpenSetup;
+#define OPEN_PANE_WAIT 5.0 /* seconds to wait for the watcher to say whether the room is in a split pane */
 void opensetup_init(OpenSetup *o, Tool *tool, const char *title, int font, const char *size, Reports *reports, int window, int profile_font);
 /* returns 1 while still working; sets o->ask_pending when the terminal should be asked for its sizes */
 int opensetup_update(OpenSetup *o, double now, int cols, int rows, const int *rect, const int *area);
