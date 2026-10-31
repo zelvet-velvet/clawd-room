@@ -276,6 +276,20 @@ static int golden_win(void) {
         int b2 = opensetup_update(&u, 100.0 + OPEN_PANE_WAIT + 1, 80, 24, NULL, NULL);
         printf("split setup unknown %d %d skipped=%d\n", b1, b2, u.skipped);
     }
+    /* a room in a tall pane: at most PANE_MAX_TALL as tall as wide (the rest dark); never under MIN_ROWS */
+    {
+        static const int PR[5][2] = {{167, 80}, {239, 125}, {159, 125}, {479, 62}, {44, 40}};
+        printf("pane rows");
+        for (int i = 0; i < 5; i++) printf(" %dx%d:%d", PR[i][0], PR[i][1], pane_room_rows(PR[i][0], PR[i][1]));
+        printf("\n");
+        static Watcher w;
+        memset(&w, 0, sizeof w);
+        double now = (double)time(NULL);
+        static const char *TWO[] = {"clawd-room a-1|0|0|1200|1300|8|40|1192|1290|96|40", "@5.1|1|1|10|50|598|1290", "@5.2|0|1|604|50|1190|1290",
+                                    "-|1300|0|2000|700|1308|40|1992|692|96|40", "@6.1|0|1|1308|40|1650|692", "@6.2|0|0|1654|40|1992|692", "--"};
+        for (size_t i = 0; i < sizeof TWO / sizeof TWO[0]; i++) watcher_feed(&w, TWO[i], now);
+        printf("same window %d %d %d\n", watcher_same_window(&w, "5.1", "5.2"), watcher_same_window(&w, "5.1", "6.1"), watcher_same_window(&w, "5.1", ""));
+    }
     /* gates open together: a room's "ready" times go through its heartbeat to the other room */
     {
         char dir[] = "/tmp/clawd-ready-XXXXXX";

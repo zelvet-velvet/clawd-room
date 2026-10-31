@@ -48,6 +48,7 @@ void watcher_feed(Watcher *w, const char *line, double now);
  * their heartbeats */
 void watcher_resolve(Watcher *w, const char *my_id, const Link *link_or_null);
 int watcher_in_pane(const Watcher *w, const char *room_id); /* 1 in a pane of a split window, 0 a whole window, -1 unknown */
+int watcher_same_window(const Watcher *w, const char *rid_a, const char *rid_b); /* two panes (runtime ids) of one window */
 
 /* "left" "right" "up" "down" side index if `other` is next to `mine` and close enough, else -1 */
 int neighbor_side(const int *mine, const int *other, int near_px, int slack);

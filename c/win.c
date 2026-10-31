@@ -236,6 +236,16 @@ int watcher_in_pane(const Watcher *w, const char *room_id) {
     return -1;
 }
 
+int watcher_same_window(const Watcher *w, const char *rid_a, const char *rid_b) {
+    if (!rid_a[0] || !rid_b[0]) return 0;
+    int oa = -1, ob = -1;
+    for (int i = 0; i < w->ncur; i++) if (w->cur[i].pane) {
+        if (!strcmp(w->cur[i].rid, rid_a)) oa = w->cur[i].owner;
+        if (!strcmp(w->cur[i].rid, rid_b)) ob = w->cur[i].owner;
+    }
+    return oa >= 0 && oa == ob;
+}
+
 void watcher_resolve(Watcher *w, const char *my_id, const Link *link) {
     snprintf(w->my_id, sizeof w->my_id, "%s", my_id);
     w->npeers = 0;

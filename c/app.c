@@ -266,6 +266,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
     static char rect_sig[512];
     double rect_still = wall(); /* when the windows themselves last moved (the gate animations start from this) */
     char ready_id[LINK_READY][40]; double ready_t[LINK_READY]; int nready = 0; /* when we were ready to show each gate */
+    int in_pane = 0, my_auto = 0, seen_rrows = -1; /* in a split pane; the scale we would pick for ourselves; the rows it was picked for */
 
     RawTerm rt = {0};
     struct sigaction sa;
@@ -298,6 +299,8 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
             watcher_poll(&desk.w);
             watcher_resolve(&desk.w, win_id, has_link ? &link : NULL); /* which pane is ours in a split window */
             if (has_link) snprintf(link.pane, sizeof link.pane, "%s", desk.w.my_rid);
+            int ip = watcher_in_pane(&desk.w, win_id) == 1;
+            if (ip != in_pane) { in_pane = ip; have_prev = 0; dirty = 1; }
         }
         char keys[256];
         if (key_ready(0) && read_keys(keys, sizeof keys, &reports)) {
@@ -423,7 +426,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                         opensetup_init(&setup, &desk.tool, title, a->font, a->size, &reports, 0, a->profile_font); has_setup = 1;
                         font_set = font_set || a->font;
                         room_order(&room);
-                        room.scale = size_scale(cols, rows * 2, size, room.n, &room);
+                        room.scale = size_scale(cols, (in_pane ? pane_room_rows(cols, rows) : rows) * 2, size, room.n, &room);
                         snprintf(flash, sizeof flash, "AUTO FONT AND SCALE");
                         flash_until = wall() + 3; have_prev = 0;
                         wipe();
@@ -449,7 +452,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
             cols = c; rows = r;
             have_prev = 0; dirty = 1;
             int prescale = room.scale;
-            if (auto_ && !strcmp(room.ratio, "auto") && !a->no_auto) { room_order(&room); room.scale = size_scale(cols, rows * 2, size, room.n, &room); seen_n = room.n; } /* at once; undone below if it was the font */
+            if (auto_ && !strcmp(room.ratio, "auto") && !a->no_auto) { room_order(&room); room.scale = size_scale(cols, (in_pane ? pane_room_rows(cols, rows) : rows) * 2, size, room.n, &room); seen_n = -1; } /* at once; undone below if it was the font */
             if (!pend.has) { pend.has = 1; pend.t = wall(); pend.has_cell = reports.has_cell; pend.cell[0] = reports.cell[0]; pend.cell[1] = reports.cell[1]; pend.prescale = prescale; }
             reports.has_cell = 0;
             wipe(); puts_("\x1b[14t\x1b[16t"); /* ... and ask how big the text area and a cell are in pixels */
@@ -556,7 +559,10 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
             const int *mine_area = desk.has_watcher ? watcher_area(&desk.w, win_id) : NULL;
             Grid my_grid = {0};
             int has_grid = 0;
-            if (mine_area) { my_grid = grid_params(&room, mine_area, watcher_dpi(&desk.w, win_id), &reports, cols, rows); has_grid = 1; }
+            if (mine_area) {
+                my_grid = grid_params(&room, mine_area, watcher_dpi(&desk.w, win_id), &reports, cols, rows); has_grid = 1;
+                if (in_pane) my_grid.y0 += rows - pane_room_rows(cols, rows); /* (the dark above the room in a tall pane) */
+            }
             link.has_grid = has_grid;
             if (has_grid) { double g[7] = {my_grid.ox, my_grid.oy, my_grid.cw, my_grid.ch, my_grid.k, my_grid.x0, my_grid.y0}; memcpy(link.grid, g, sizeof g); }
             link.has_band = has_grid && my_band(&room, &my_grid, link.band);
@@ -711,14 +717,19 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                 have_prev = 0;
             } else {
                 double shown_now = paused ? frozen_now : now, shown_t = paused ? frozen_t : t;
+                int rrows = in_pane ? pane_room_rows(cols, rows) : rows; /* (in a pane: at most PANE_MAX_TALL as tall as wide) */
                 if (auto_ && !a->no_auto && !a->scale && !strcmp(room.ratio, "auto")) { /* grow, then scale: pick the scale again when the size or the Clawds change */
                     room_order(&room);
-                    if (room.n != seen_n) {
-                        int k2 = size_scale(cols, rows * 2, size, room.n, &room);
-                        if (k2 != room.scale) { room.scale = k2; have_prev = 0; }
-                        seen_n = room.n;
+                    if (room.n != seen_n || rrows != seen_rrows) {
+                        my_auto = size_scale(cols, rrows * 2, size, room.n, &room);
+                        seen_n = room.n; seen_rrows = rrows;
                     }
-                }
+                    int k2 = my_auto; /* rooms in panes of one window share the smallest of their own scales, so they look alike */
+                    for (int p = 0; in_pane && has_link && p < link.npeers; p++)
+                        if (link.peers[p].auto_k > 0 && link.peers[p].auto_k < k2 && watcher_same_window(&desk.w, desk.w.my_rid, link.peers[p].pane)) k2 = link.peers[p].auto_k;
+                    if (k2 != room.scale) { room.scale = k2; have_prev = 0; }
+                    if (has_link) link.auto_k = my_auto;
+                } else if (has_link) link.auto_k = 0;
                 if (!paused) camera_update(&cam, &room, shown_now);
                 if (getenv("CLAWD_SIZE_LOG")) { /* test hook: note who the camera follows whenever that changes */
                     static char logged_cam[128];
@@ -727,7 +738,13 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                     if (strcmp(cur, logged_cam)) { snprintf(logged_cam, sizeof logged_cam, "%s", cur); FILE *lf = fopen(getenv("CLAWD_SIZE_LOG"), "a"); if (lf) { fprintf(lf, "%.1f %s\n", wall(), cur); fclose(lf); } }
                 }
                 char note[80], over[512];
-                Canvas cv = render(cols, rows, &room, shown_now, shown_t, note, sizeof note);
+                Canvas cv = render(cols, rrows, &room, shown_now, shown_t, note, sizeof note);
+                if (rrows < rows) { /* a tall pane: the room in its middle, dark above and below (the bar stays at the bottom) */
+                    Canvas full = canvas_new(cols, rows * 2, PANE_DARK);
+                    canvas_blit(&full, &cv, 0, rows - rrows);
+                    canvas_free(&cv);
+                    cv = full;
+                }
                 if (room.cam_zoom > 1 || cam.autozoom) { /* zoomed: say what the camera does (c switches follow / free) */
                     char lab[48];
                     camera_label(&cam, &room, lab, sizeof lab);
