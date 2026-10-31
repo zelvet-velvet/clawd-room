@@ -75,17 +75,44 @@ def profile_stub():
                            % (distro, LAUNCHER, FONT_SIZE)}
 
 
+def object_around(text, at):
+    """(start, end) of the innermost { ... } holding position `at`, skipping strings and // or /* */ comments
+    (settings.json allows them). Windows Terminal saves a profile's keys in alphabetical order, so "commandline"
+    comes before "guid": a search must cover the whole profile, never just the text after the guid."""
+    opens, i, n = [], 0, len(text)
+    while i < n:
+        c = text[i]
+        if c == '"':
+            i += 1
+            while i < n and text[i] != '"':
+                i += 2 if text[i] == "\\" else 1
+        elif text.startswith("//", i):
+            i = text.find("\n", i)
+            i = n if i < 0 else i
+        elif text.startswith("/*", i):
+            i = text.find("*/", i)
+            i = n if i < 0 else i + 1
+        elif c == "{":
+            opens.append(i)
+        elif c == "}" and opens:
+            start = opens.pop()
+            if start < at < i:
+                return start, i + 1
+        i += 1
+    raise OSError("settings.json: the Clawd Room profile's { ... } was not found")
+
+
 def patch_profile(text):
     """Add the profile entry at the start of "profiles"."list"; if it is there already, point its commandline at the launcher and set its font size."""
     if GUID in text:
-        at = text.index(GUID)
-        pat = re.compile(r'("commandline"\s*:\s*)"(?:[^"\\]|\\.)*"')
-        m = pat.search(text, at, at + 800)
+        start, end = object_around(text, text.index(GUID))
+        m = re.compile(r'("commandline"\s*:\s*)"(?:[^"\\]|\\.)*"').search(text, start, end)
         if not m:
             return text
         cmd = json.dumps(profile_stub()["commandline"])
         text = text[:m.start()] + m.group(1) + cmd + text[m.end():]
-        f = re.compile(r'("font"\s*:\s*\{[^}]*?"size"\s*:\s*)[\d.]+').search(text, at, at + 800)  # and its font size
+        end += len(cmd) - (m.end() - m.start() - len(m.group(1)))  # (the profile's end moved)
+        f = re.compile(r'("font"\s*:\s*\{[^}]*?"size"\s*:\s*)[\d.]+').search(text, start, end)  # and its font size
         return text[:f.start()] + f.group(1) + str(FONT_SIZE) + text[f.end():] if f else text
     m = re.search(r'"list"\s*:\s*\[[ \t]*\r?\n', text)
     if not m:
