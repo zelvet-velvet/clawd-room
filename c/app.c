@@ -265,6 +265,8 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
     double still_since = wall(); /* when the windows last moved (gates wait until they are still) */
     static char rect_sig[512];
     double rect_still = wall(); /* when the windows themselves last moved (the gate animations start from this) */
+    char ready_id[LINK_READY][40]; double ready_t[LINK_READY]; int nready = 0; /* when we were ready to show each gate */
+    int in_pane = 0, my_auto = 0, seen_rrows = -1; /* in a split pane; the scale we would pick for ourselves; the rows it was picked for */
 
     RawTerm rt = {0};
     struct sigaction sa;
@@ -293,7 +295,13 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
         double frame_start = mono(), t = frame_start - t0, now = a->has_at ? a->at + t : wall();
         if (settings_poll()) { dirty = 1; have_prev = 0; } /* (settings.conf edited: the gate theme changes at once) */
         if (sprites_reload_changed()) { dirty = 1; have_prev = 0; } /* an edited sprite file shows at once (the pixel editor saves as you draw) */
-        if (desk.has_watcher) watcher_poll(&desk.w);
+        if (desk.has_watcher) {
+            watcher_poll(&desk.w);
+            watcher_resolve(&desk.w, win_id, has_link ? &link : NULL); /* which pane is ours in a split window */
+            if (has_link) snprintf(link.pane, sizeof link.pane, "%s", desk.w.my_rid);
+            int ip = watcher_in_pane(&desk.w, win_id) == 1;
+            if (ip != in_pane) { in_pane = ip; have_prev = 0; dirty = 1; }
+        }
         char keys[256];
         if (key_ready(0) && read_keys(keys, sizeof keys, &reports)) {
             for (char *kp = keys; *kp; kp++) {
@@ -418,10 +426,13 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                         opensetup_init(&setup, &desk.tool, title, a->font, a->size, &reports, 0, a->profile_font); has_setup = 1;
                         font_set = font_set || a->font;
                         room_order(&room);
-                        room.scale = size_scale(cols, rows * 2, size, room.n, &room);
+                        room.scale = size_scale(cols, (in_pane ? pane_room_rows(cols, rows) : rows) * 2, size, room.n, &room);
                         snprintf(flash, sizeof flash, "AUTO FONT AND SCALE");
                         flash_until = wall() + 3; have_prev = 0;
                         wipe();
+                    } else if (watcher_in_pane(&desk.w, win_id) == 1) { /* the window is shared with other panes */
+                        snprintf(flash, sizeof flash, "SPLIT PANE: WINDOW LEFT AS IT IS");
+                        flash_until = wall() + 4;
                     } else { /* fixed shape: zoom the font, then size the window to the exact grid */
                         int sw = 0, sh = 0;
                         static const struct { const char *k; int w, h; } RS[] = {{"3:1", 144, 48}, {"2:1", 120, 60}, {"16:9", 128, 72}, {"4:3", 128, 96}, {"1:1", 120, 120}, {"3:4", 96, 128}};
@@ -441,7 +452,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
             cols = c; rows = r;
             have_prev = 0; dirty = 1;
             int prescale = room.scale;
-            if (auto_ && !strcmp(room.ratio, "auto") && !a->no_auto) { room_order(&room); room.scale = size_scale(cols, rows * 2, size, room.n, &room); seen_n = room.n; } /* at once; undone below if it was the font */
+            if (auto_ && !strcmp(room.ratio, "auto") && !a->no_auto) { room_order(&room); room.scale = size_scale(cols, (in_pane ? pane_room_rows(cols, rows) : rows) * 2, size, room.n, &room); seen_n = -1; } /* at once; undone below if it was the font */
             if (!pend.has) { pend.has = 1; pend.t = wall(); pend.has_cell = reports.has_cell; pend.cell[0] = reports.cell[0]; pend.cell[1] = reports.cell[1]; pend.prescale = prescale; }
             reports.has_cell = 0;
             wipe(); puts_("\x1b[14t\x1b[16t"); /* ... and ask how big the text area and a cell are in pixels */
@@ -548,7 +559,10 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
             const int *mine_area = desk.has_watcher ? watcher_area(&desk.w, win_id) : NULL;
             Grid my_grid = {0};
             int has_grid = 0;
-            if (mine_area) { my_grid = grid_params(&room, mine_area, watcher_dpi(&desk.w, win_id), &reports, cols, rows); has_grid = 1; }
+            if (mine_area) {
+                my_grid = grid_params(&room, mine_area, watcher_dpi(&desk.w, win_id), &reports, cols, rows); has_grid = 1;
+                if (in_pane) my_grid.y0 += rows - pane_room_rows(cols, rows); /* (the dark above the room in a tall pane) */
+            }
             link.has_grid = has_grid;
             if (has_grid) { double g[7] = {my_grid.ox, my_grid.oy, my_grid.cw, my_grid.ch, my_grid.k, my_grid.x0, my_grid.y0}; memcpy(link.grid, g, sizeof g); }
             link.has_band = has_grid && my_band(&room, &my_grid, link.band);
@@ -617,6 +631,38 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                 }
                 for (int i = 0; i < room.npeers; i++) { int sd = side_index(room.peers[i].side); if (sd >= 0 && ps.closed[sd]) room.peers[i].side[0] = 0; }
             }
+            { /* gates open together: each room says in its heartbeat when it was ready to show the gate to the other (it knew
+               * both places and they were still), and both start the animation at the later of the two + GATE_SYNC_WAIT. Rooms
+               * in panes learn each other's pane from heartbeats, so one is always up to 1.5 s later than the other. */
+                char nid[LINK_READY][40]; double nt[LINK_READY]; int nn = 0, changed = 0;
+                for (int q = 0; q < room.nnb && nn < LINK_READY; q++) {
+                    double rt = wall();
+                    int k = 0;
+                    while (k < nready && strcmp(ready_id[k], room.nb[q].id)) k++;
+                    if (k < nready) rt = ready_t[k]; else changed = 1;
+                    snprintf(nid[nn], 40, "%s", room.nb[q].id); nt[nn++] = rt;
+                }
+                if (nn != nready) changed = 1;
+                memcpy(ready_id, nid, sizeof nid); memcpy(ready_t, nt, sizeof nt); nready = nn;
+                if (changed) {
+                    memcpy(link.ready_id, ready_id, sizeof ready_id); memcpy(link.ready_t, ready_t, sizeof ready_t);
+                    link.nready = nready; link.ready_changed = 1;
+                }
+                for (int sd = 0; sd < SIDES; sd++) room.has_gate_start[sd] = 0;
+                for (int q = 0; q < room.nnb && q < nready; q++) {
+                    double start = ready_t[q] + GATE_SYNC_ALONE; /* until the other room says (an older one never does) */
+                    for (int p = 0; p < link.npeers; p++) if (!strcmp(link.peers[p].id, room.nb[q].id))
+                        for (int k = 0; k < link.peers[p].nready; k++) if (!strcmp(link.peers[p].ready_id[k], win_id))
+                            start = (link.peers[p].ready_t[k] > ready_t[q] ? link.peers[p].ready_t[k] : ready_t[q]) + GATE_SYNC_WAIT;
+                    int sd = room.nb[q].side;
+                    room.has_gate_start[sd] = 1;
+                    room.gate_start[sd] = start - (wall() - t); /* (wall clock -> draw time) */
+                    if (getenv("CLAWD_SIZE_LOG")) { /* test hook: when this gate starts (wall clock), whenever that changes */
+                        static double logged_start[SIDES];
+                        if (fabs(start - logged_start[sd]) > 0.01) { logged_start[sd] = start; FILE *lf = fopen(getenv("CLAWD_SIZE_LOG"), "a"); if (lf) { fprintf(lf, "%.1f gatestart %s %.2f\n", wall(), SIDE_NAME[sd], start); fclose(lf); } }
+                    }
+                }
+            }
             if (getenv("CLAWD_SIZE_LOG")) { /* test hook: note where the gates go whenever that changes */
                 static char logged[256];
                 char cur[256] = "{";
@@ -652,7 +698,11 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
             }
         }
         if (has_setup) {
-            if (!opensetup_update(&setup, wall(), cols, rows, desk.has_watcher ? watcher_rect(&desk.w, win_id) : NULL, desk.has_watcher ? watcher_area(&desk.w, win_id) : NULL)) { has_setup = 0; dirty = 1; }
+            setup.pane = desk.has_watcher ? watcher_in_pane(&desk.w, win_id) : 0;
+            if (!opensetup_update(&setup, wall(), cols, rows, desk.has_watcher ? watcher_rect(&desk.w, win_id) : NULL, desk.has_watcher ? watcher_area(&desk.w, win_id) : NULL)) {
+                has_setup = 0; dirty = 1;
+                if (setup.skipped) font_set = 0; /* (the font was left alone) */
+            }
             else if (setup.ask_pending) puts_("\x1b[14t\x1b[16t");
         }
         if (has_fitter) {
@@ -667,14 +717,19 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                 have_prev = 0;
             } else {
                 double shown_now = paused ? frozen_now : now, shown_t = paused ? frozen_t : t;
+                int rrows = in_pane ? pane_room_rows(cols, rows) : rows; /* (in a pane: at most PANE_MAX_TALL as tall as wide) */
                 if (auto_ && !a->no_auto && !a->scale && !strcmp(room.ratio, "auto")) { /* grow, then scale: pick the scale again when the size or the Clawds change */
                     room_order(&room);
-                    if (room.n != seen_n) {
-                        int k2 = size_scale(cols, rows * 2, size, room.n, &room);
-                        if (k2 != room.scale) { room.scale = k2; have_prev = 0; }
-                        seen_n = room.n;
+                    if (room.n != seen_n || rrows != seen_rrows) {
+                        my_auto = size_scale(cols, rrows * 2, size, room.n, &room);
+                        seen_n = room.n; seen_rrows = rrows;
                     }
-                }
+                    int k2 = my_auto; /* rooms in panes of one window share the smallest of their own scales, so they look alike */
+                    for (int p = 0; in_pane && has_link && p < link.npeers; p++)
+                        if (link.peers[p].auto_k > 0 && link.peers[p].auto_k < k2 && watcher_same_window(&desk.w, desk.w.my_rid, link.peers[p].pane)) k2 = link.peers[p].auto_k;
+                    if (k2 != room.scale) { room.scale = k2; have_prev = 0; }
+                    if (has_link) link.auto_k = my_auto;
+                } else if (has_link) link.auto_k = 0;
                 if (!paused) camera_update(&cam, &room, shown_now);
                 if (getenv("CLAWD_SIZE_LOG")) { /* test hook: note who the camera follows whenever that changes */
                     static char logged_cam[128];
@@ -683,7 +738,13 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                     if (strcmp(cur, logged_cam)) { snprintf(logged_cam, sizeof logged_cam, "%s", cur); FILE *lf = fopen(getenv("CLAWD_SIZE_LOG"), "a"); if (lf) { fprintf(lf, "%.1f %s\n", wall(), cur); fclose(lf); } }
                 }
                 char note[80], over[512];
-                Canvas cv = render(cols, rows, &room, shown_now, shown_t, note, sizeof note);
+                Canvas cv = render(cols, rrows, &room, shown_now, shown_t, note, sizeof note);
+                if (rrows < rows) { /* a tall pane: the room in its middle, dark above and below (the bar stays at the bottom) */
+                    Canvas full = canvas_new(cols, rows * 2, PANE_DARK);
+                    canvas_blit(&full, &cv, 0, rows - rrows);
+                    canvas_free(&cv);
+                    cv = full;
+                }
                 if (room.cam_zoom > 1 || cam.autozoom) { /* zoomed: say what the camera does (c switches follow / free) */
                     char lab[48];
                     camera_label(&cam, &room, lab, sizeof lab);
@@ -747,7 +808,8 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
     if (have_prev) cells_free(&prev);
     tail_free(&tail);
     if (desk.has_tool) {
-        if (font_set) { tool_reset_zoom(&desk.tool, title); usleep(800000); } /* put the terminal font back to the profile's */
+        int shared = (has_setup && setup.pane != 0) || (desk.has_watcher && watcher_in_pane(&desk.w, win_id) == 1); /* (a pane now, e.g. split after we opened) */
+        if (font_set && !shared) { tool_reset_zoom(&desk.tool, title); usleep(800000); } /* put the terminal font back to the profile's */
         tool_stop(&desk.tool);
     }
     if (desk.has_watcher) { watcher_stop(&desk.w); puts_("\x1b[23;0t"); } /* give the window title back (if the terminal supports it) */
@@ -772,7 +834,7 @@ static int choose_scene(Args *a, const char **scene, const char **room_name) {
     char title[128];
     snprintf(title, sizeof title, "%smenu-%d", WIN_PREFIX, (int)getpid());
     OpenSetup setup;
-    int has_setup = 0, chosen = 0;
+    int has_setup = 0, chosen = 0, in_pane = 0;
     if (desk.has_tool && !a->no_auto) { opensetup_init(&setup, &desk.tool, title, a->font, a->size, &reports, 1, a->profile_font); has_setup = 1; }
     raw_on(&rt);
     if (desk.has_watcher) { char t[160]; snprintf(t, sizeof t, "\x1b]2;%s\x07", title); puts_(t); } /* window title = how we are found */
@@ -781,7 +843,7 @@ static int choose_scene(Args *a, const char **scene, const char **room_name) {
     double t0 = mono();
     Cells prev = {0, 0, NULL};
     while (!g_quit) {
-        if (desk.has_watcher) watcher_poll(&desk.w);
+        if (desk.has_watcher) { watcher_poll(&desk.w); watcher_resolve(&desk.w, title + strlen(WIN_PREFIX), NULL); }
         if (key_ready(0.08)) {
             char raw[256];
             ssize_t got = read(STDIN_FILENO, raw, sizeof raw - 1);
@@ -818,7 +880,8 @@ static int choose_scene(Args *a, const char **scene, const char **room_name) {
         term_size(&c, &r);
         if (c != cols || r != rows || g_winch) { g_winch = 0; cols = c; rows = r; have_prev = 0; wipe(); }
         if (has_setup) {
-            if (!opensetup_update(&setup, wall(), cols, rows, desk.has_watcher ? watcher_rect(&desk.w, title + strlen(WIN_PREFIX)) : NULL, desk.has_watcher ? watcher_area(&desk.w, title + strlen(WIN_PREFIX)) : NULL)) { has_setup = 0; a->opened = 1; } /* the room need not do it again */
+            setup.pane = desk.has_watcher ? watcher_in_pane(&desk.w, title + strlen(WIN_PREFIX)) : 0;
+            if (!opensetup_update(&setup, wall(), cols, rows, desk.has_watcher ? watcher_rect(&desk.w, title + strlen(WIN_PREFIX)) : NULL, desk.has_watcher ? watcher_area(&desk.w, title + strlen(WIN_PREFIX)) : NULL)) { has_setup = 0; a->opened = 1; in_pane = setup.skipped; } /* the room need not do it again */
             else if (setup.ask_pending) puts_("\x1b[14t\x1b[16t");
         }
         Canvas cv = render_menu(cols, rows, pick, solo, mono() - t0);
@@ -830,7 +893,7 @@ static int choose_scene(Args *a, const char **scene, const char **room_name) {
     }
     if (have_prev) cells_free(&prev);
     if (desk.has_tool) {
-        if (!chosen && a->font && !a->no_auto) { tool_reset_zoom(&desk.tool, title); usleep(800000); } /* leaving: put the terminal font back */
+        if (!chosen && a->font && !a->no_auto && !in_pane && !(has_setup && setup.pane != 0)) { tool_reset_zoom(&desk.tool, title); usleep(800000); } /* leaving: put the terminal font back */
         tool_stop(&desk.tool);
     }
     if (desk.has_watcher) watcher_stop(&desk.w);
@@ -944,7 +1007,11 @@ int app_main(int argc, char **argv) {
         usleep(500000);
         watcher_poll(&w);
         if (!w.ncur) puts("no windows with that title prefix");
-        for (int i = 0; i < w.ncur; i++) printf("%s: %d %d %d %d (terminal area %d %d %d %d, dpi %d)\n", w.cur[i].title, w.cur[i].rect[0], w.cur[i].rect[1], w.cur[i].rect[2], w.cur[i].rect[3], w.cur[i].area[0], w.cur[i].area[1], w.cur[i].area[2], w.cur[i].area[3], w.cur[i].dpi);
+        for (int i = 0; i < w.ncur; i++) {
+            const WinInfo *e = &w.cur[i];
+            if (e->pane) printf("  pane %s%s%s: %d %d %d %d\n", e->rid, e->clawd ? " (Clawd Room)" : "", e->focus ? " (focus)" : "", e->rect[0], e->rect[1], e->rect[2], e->rect[3]); /* (a split window's panes, under it) */
+            else printf("%s: %d %d %d %d (terminal area %d %d %d %d, dpi %d)%s\n", e->title[0] == '-' ? "(split window)" : e->title, e->rect[0], e->rect[1], e->rect[2], e->rect[3], e->area[0], e->area[1], e->area[2], e->area[3], e->dpi, e->npanes ? ", split" : "");
+        }
         watcher_stop(&w);
         return 0;
     }

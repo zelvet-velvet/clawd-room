@@ -6,6 +6,10 @@
 
 #define MIN_COLS 44
 #define MIN_ROWS (SLOT_H / 2)
+#define PANE_MAX_TALL 0.75 /* in a split pane the room is at most this tall for its width (picked 2026-11-01): a tall pane shows it
+                            * in its middle, dark above and below, instead of a long floor */
+#define PANE_DARK RGB(12, 12, 16)
+int pane_room_rows(int cols, int rows); /* the terminal rows the room uses in a pane (the rest stays dark) */
 #define SCALE_CAP 3
 #define ROAM_W 80
 #define ROAM_H 62

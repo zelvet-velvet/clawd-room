@@ -231,6 +231,104 @@ static int golden_win(void) {
         for (int i = 0; i < 4; i++) watcher_feed(&w, L[i], 1000.0);
         for (int i = 0; i < w.ncur; i++) printf("win %s %d %d %d %d %d %d %d %d %d\n", w.cur[i].title, w.cur[i].rect[0], w.cur[i].rect[1], w.cur[i].rect[2], w.cur[i].rect[3], w.cur[i].area[0], w.cur[i].area[1], w.cur[i].area[2], w.cur[i].area[3], w.cur[i].dpi);
     }
+    /* a Windows Terminal window split into panes: which pane is whose, and whether the window may be resized */
+    {
+        static Watcher w;
+        static Link link;
+        memset(&w, 0, sizeof w); memset(&link, 0, sizeof link);
+        double now = (double)time(NULL);
+        static const char *SPLIT[] = { /* (work pane on top with the focus, two rooms below; then a plain room window; rounds 1-3 our pane has the focus) */
+            "-|0|0|1200|1300|8|40|1192|1290|96|40", "@42.9.4.8|1|0|10|50|1190|900", "@42.9.4.9|0|1|10|910|598|1290", "@42.9.4.10|0|1|604|910|1190|1290",
+            "clawd-room solo-3|1300|0|2000|700|1308|40|1992|692|96|40", "@bad|x|1|2|3|4|5", "--"};
+        const char *ids[3] = {"left-1", "right-2", "solo-3"};
+        for (int round = 0; round < 6; round++) {
+            for (size_t i = 0; i < sizeof SPLIT / sizeof SPLIT[0]; i++) {
+                char line[128];
+                snprintf(line, sizeof line, "%s", SPLIT[i]);
+                if (round >= 1 && round < 4 && i == 0) snprintf(line, sizeof line, "clawd-room left-1|0|0|1200|1300|8|40|1192|1290|96|40"); /* our pane gets the focus */
+                if (round >= 1 && round < 4 && i == 1) snprintf(line, sizeof line, "@42.9.4.8|0|0|10|50|1190|900");
+                if (round >= 1 && round < 4 && i == 2) snprintf(line, sizeof line, "@42.9.4.9|1|1|10|910|598|1290");
+                watcher_feed(&w, line, now + round);
+            }
+            if (round == 3) { link.npeers = 1; snprintf(link.peers[0].id, 40, "right-2"); snprintf(link.peers[0].pane, 40, "42.9.4.10"); }
+            watcher_resolve(&w, "left-1", &link);
+            printf("split round %d mine=%s", round, w.my_rid[0] ? w.my_rid : "?");
+            for (int q = 0; q < 3; q++) {
+                const int *a = watcher_area(&w, ids[q]);
+                printf(" %s:%d", ids[q], watcher_in_pane(&w, ids[q]));
+                if (a) printf("@%d,%d,%d,%d", a[0], a[1], a[2], a[3]);
+            }
+            printf(" n=%d\n", w.ncur);
+        }
+        /* opening in a pane: wait for the watcher, then leave the window and the font alone */
+        Tool t = {0, -1};
+        Reports rp = {0};
+        OpenSetup o;
+        opensetup_init(&o, &t, "x", 8, "110x32", &rp, 1, 5);
+        int a1 = opensetup_update(&o, 100.0, 80, 24, NULL, NULL), st1 = o.stage;
+        o.pane = 1;
+        int a2 = opensetup_update(&o, 101.0, 80, 24, NULL, NULL);
+        printf("split setup %d %d %d skipped=%d\n", a1, st1, a2, o.skipped);
+        /* never told: after the wait the room leaves the window and the font alone as well */
+        OpenSetup u;
+        opensetup_init(&u, &t, "x", 8, "110x32", &rp, 1, 5);
+        int b1 = opensetup_update(&u, 100.0, 80, 24, NULL, NULL);
+        int b2 = opensetup_update(&u, 100.0 + OPEN_PANE_WAIT + 1, 80, 24, NULL, NULL);
+        printf("split setup unknown %d %d skipped=%d\n", b1, b2, u.skipped);
+    }
+    /* a room in a tall pane: at most PANE_MAX_TALL as tall as wide (the rest dark); never under MIN_ROWS */
+    {
+        static const int PR[5][2] = {{167, 80}, {239, 125}, {159, 125}, {479, 62}, {44, 40}};
+        printf("pane rows");
+        for (int i = 0; i < 5; i++) printf(" %dx%d:%d", PR[i][0], PR[i][1], pane_room_rows(PR[i][0], PR[i][1]));
+        printf("\n");
+        static Watcher w;
+        memset(&w, 0, sizeof w);
+        double now = (double)time(NULL);
+        static const char *TWO[] = {"clawd-room a-1|0|0|1200|1300|8|40|1192|1290|96|40", "@5.1|1|1|10|50|598|1290", "@5.2|0|1|604|50|1190|1290",
+                                    "-|1300|0|2000|700|1308|40|1992|692|96|40", "@6.1|0|1|1308|40|1650|692", "@6.2|0|0|1654|40|1992|692", "--"};
+        for (size_t i = 0; i < sizeof TWO / sizeof TWO[0]; i++) watcher_feed(&w, TWO[i], now);
+        printf("same window %d %d %d\n", watcher_same_window(&w, "5.1", "5.2"), watcher_same_window(&w, "5.1", "6.1"), watcher_same_window(&w, "5.1", ""));
+    }
+    /* gates open together: a room's "ready" times go through its heartbeat to the other room */
+    {
+        char dir[] = "/tmp/clawd-ready-XXXXXX";
+        if (mkdtemp(dir)) {
+            static Link la, lb;
+            link_init(&la, "alpha", dir); link_init(&lb, "beta", dir);
+            link_start(&la); link_start(&lb);
+            snprintf(la.ready_id[0], 40, "%s", lb.id); la.ready_t[0] = 1000.25; la.nready = 1; la.ready_changed = 1;
+            LinkEvent ev[8];
+            link_update(&la, 2000.0, 80, 24, ev, 8);
+            link_update(&lb, 2000.0, 80, 24, ev, 8);
+            int found = 0;
+            for (int p = 0; p < lb.npeers; p++)
+                for (int k = 0; k < lb.peers[p].nready; k++)
+                    if (!strcmp(lb.peers[p].id, la.id) && !strcmp(lb.peers[p].ready_id[k], lb.id)) { printf("gate ready heard %.2f changed=%d\n", lb.peers[p].ready_t[k], la.ready_changed); found = 1; }
+            if (!found) printf("gate ready not heard\n");
+            link_close(&la); link_close(&lb);
+            rmdir(dir);
+        }
+    }
+    /* two room panes opened quickly: ours never had the focus while the window showed our title (the other room's pane
+     * has it), so ours is the one Clawd Room pane the other room does not claim */
+    {
+        static Watcher w;
+        static Link link;
+        memset(&w, 0, sizeof w); memset(&link, 0, sizeof link);
+        double now = (double)time(NULL);
+        static const char *QUICK[] = {"clawd-room right-2|0|0|1200|1300|8|40|1192|1290|96|40", "@7.1|0|0|10|50|1190|900",
+                                      "@7.2|0|1|10|910|598|1290", "@7.3|1|1|604|910|1190|1290", "--"};
+        for (int round = 0; round < 3; round++) {
+            for (size_t i = 0; i < sizeof QUICK / sizeof QUICK[0]; i++) watcher_feed(&w, QUICK[i], now + round);
+            if (round == 1) { link.npeers = 1; snprintf(link.peers[0].id, 40, "right-2"); snprintf(link.peers[0].pane, 40, "7.3"); }
+            watcher_resolve(&w, "left-1", &link);
+            const int *a = watcher_area(&w, "left-1");
+            printf("split quick round %d mine=%s left-1:%d", round, w.my_rid[0] ? w.my_rid : "?", watcher_in_pane(&w, "left-1"));
+            if (a) printf("@%d,%d,%d,%d", a[0], a[1], a[2], a[3]);
+            printf("\n");
+        }
+    }
     /* the gates between two windows */
     for (int variant = 0; variant < 4; variant++) {
         static Room room;

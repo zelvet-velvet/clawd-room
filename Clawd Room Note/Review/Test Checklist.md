@@ -11,7 +11,7 @@ sticker: lucide//list-checks
 ---
 ## 🧪 Test queue
 
-What to test next, one `[!example] Group X · …` callout per group. Each test is a box with an ID (**T1**, **T2** … counting on across groups, so an ID always means the same test; open questions are **Q1**, **Q2** …): what to do → what should happen. Tick as you check, then a `✅ date: … (who)` line says what was seen. The steps are in the folded **how to run** under each group. A group that is all ticked moves down into its subject below (keeping its IDs).
+What to test next, one `[!todo] Group X · …` callout per group (`[!done]` once merged and all ticked: **Callout type** in [[LLM Guide]]). Each test is a box with an ID (**T1**, **T2** … counting on across groups, so an ID always means the same test; open questions are **Q1**, **Q2** …): what to do → what should happen. Tick as you check, then a `✅ date: … (who)` line says what was seen. The steps are in the folded **how to run** under each group. A group that is all ticked moves down into its subject below (keeping its IDs).
 
 > [!info]- Box legend ([[Checkbox Style]])
 > - [ ] to test
@@ -131,6 +131,23 @@ What to test next, one `[!example] Group X · …` callout per group. Each test 
 > > 2. Start a room in the park (`./clawd-room.sh --room park`) to see a Clawd swing (or wait for one to play).
 > > 3. In a WSL shell: `./clawd-room.sh --edit anims/swing` (the editor opens in its own window).
 > > 4. Your edits are in `~/.clawd-room/anims/`; delete `swing.txt` there (or RESET in the picker) to go back to the default.
+
+> [!todo] Group N · WSL: rooms in split panes (T67–T75)
+> - [ ] **T67** In your work window, Alt + click **Clawd Room** in the ⌄ menu → the room opens in a split pane; the **window keeps its size**, and the font of the other panes does not change.
+> - [ ] **T68** Open a second Clawd Room pane beside the first → after about 1 s still, a **gate** between the two panes; `g` + arrow sends a Clawd through.
+> - [ ] **T69** A room pane next to a room in its own window (edges close) → a gate between the pane and the window.
+> - [ ] **T70** Click into your work pane and back, drag the divider between the panes → the gates follow the panes and do not jump to the wrong one.
+> - [ ] **T71** A room in a whole window (Clawd Room from the ⌄ menu without Alt) → still sizes its window as before.
+> - [ ] **T72** With a split open, `./clawd-room.sh --list-windows` in another shell → a `(split window)` line with its panes under it, the room panes marked `(Clawd Room)`.
+> - [ ] **T73** Two room panes side by side; drag the window, let go → the gate rises in **both** rooms at the same moment (about 2 s after you let go), not one after the other.
+> - [ ] **T74** Three Clawd Room panes side by side in a full-screen window → each room is shorter than its pane, in the middle with dark above and below; the floor looks like a normal room, not a long runway; the bar is at the bottom.
+> - [ ] **T75** Two room panes, one with 1 Clawd and one with 4 → both rooms have the same pixel size (no room twice as big as the other).
+>
+> > [!tip]- T67–T75 · how to run them
+> > 1. Branch `feat/split-panes`: `git switch feat/split-panes && make -C c`.
+> > 2. Windows Terminal: hold **Alt** while picking a profile in the ⌄ menu to open it as a split pane of the current tab (Alt + Shift + D duplicates the focused pane).
+> > 3. A room learns its pane when the pane has the focus (it has, just after it opens), or as the only Clawd Room pane no other room claims. Two rooms that both never had their pane focused wait for a click into one of them. A room that cannot tell within 15 s whether it is in a pane leaves the window and font alone.
+> > 4. If something looks wrong: `CLAWD_SIZE_LOG=/tmp/size.log ./clawd-room.sh` logs why a gate is shown or not.
 
 > [!example] Group L · WSL: the picked Clawd stands out (T58–T62)
 > - [x] **T58** In a room with two or more Clawds press Tab → yellow corners close in around one Clawd and the rest of the room dims around a soft light; the corners settle within about a quarter of a second.

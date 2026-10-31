@@ -23,7 +23,7 @@ sequenceDiagram
     B->>T: window title "clawd-room beta-…"
     loop 4 times a second
         H->>T: where are the clawd-room windows?
-        T-->>H: rectangles (and iTerm2 split panes)
+        T-->>H: rectangles (and split panes)
         H-->>A: list of windows
     end
     A->>L: heartbeat (name, theme, grid)
@@ -58,13 +58,43 @@ sequenceDiagram
 > Since 2026-10-17 everything was built on macOS: style A rooms, the engine and pixel editor, the park plaza, moving Clawds (`m`), the bottom bar, the stable split. None of it has been run on WSL yet; that is the next session (the checklist is in the [[Dev Log]], ⏳ Pending). `--try` is iTerm2 only. The `g` / `m` hint learns the key repeat rate from the repeats it gets (macOS settings are read with `defaults`, which WSL does not have).
 
 - A small `powershell.exe` started by the room reports the windows (rectangles, DPI); it stops with the room.
-- On open the room sets the window to **110x32 cells** and the font to **8 pt** (`--size`, `--font`; `off` leaves them). `setup_profile.py` makes the "Clawd Room" profile; `--apply-global` edits `settings.json` with a backup.
+- On open the room sets the window to **110x32 cells** and the font to **8 pt** (`--size`, `--font`; `off` leaves them), **unless it is in a split pane** (below). `setup_profile.py` makes the "Clawd Room" profile; `--apply-global` edits `settings.json` with a backup.
 - `--try` (`tools/try_wsl.py`): four Clawd Room windows open minimized, are placed on the quarters (visible frames edge to edge, as a snap layout would) and shown together once each room has started; `--desktop N` puts them on virtual desktop N without switching (Explorer's undocumented virtual desktop interfaces). On your own desktop they then become a **snap group** (one taskbar entry; Windows has no API for groups): the first room is snapped into the top-left quarter with Win + ← + ↑ (keys only while it has the focus), the other three are picked in **Snap Assist** by their titles (UI Automation, Explorer's list only); a room it does not show in 3 s is snapped with its own keys. `CLAWD_TRY_SNAP=0` skips it.
 - `--edit NAME` opens the pixel editor in its own Clawd Room window in the middle of the screen (`tools/wsl_open.py`: opened minimized, placed once the editor has named its window, then shown with the focus); `--here` keeps the current window.
 - Font keys are sent only to a window that already has the focus. Focus mode is not used (it dropped the window in tests).
 
-> [!todo] Not yet
-> Windows Terminal split panes are not seen separately (UI Automation exposes each pane's rectangle: an idea to try).
+### 🪟 Split panes
+
+A room can run in a **pane** of a window you also work in (hold Alt when picking **Clawd Room** in the ⌄ menu). Each pane counts as its own rectangle, so rooms in panes of one window, or a pane and a window, get gates between them like windows do.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant H as 🔭 watcher
+    participant T as 🖥️ Windows Terminal
+    participant A as 🏢 room in a pane
+    participant L as 📁 link
+    participant B as ☕ other room
+    H->>T: the window's panes (UI Automation)
+    T-->>H: each pane: id, rectangle, focus, Clawd Room profile
+    H-->>A: window line, then one @ line per pane
+    Note over A: window title is ours and a pane has the focus,<br/>two lists in a row → that pane is ours
+    A->>L: heartbeat with "pane": its id
+    L-->>B: B looks up A's pane by that id
+```
+
+- **Which pane is whose:** Windows Terminal titles a window after its focused pane, and a pane does not tell its own title (UI Automation names it after its profile, `Clawd Room`). So a room takes the pane that has the focus **while the window carries its title** (in two lists in a row, as the title and the focus are read a moment apart); a new pane has the focus, so this is at once. Otherwise (the window in the background, or the next room's pane took the focus before ours was seen twice) the room takes the only `Clawd Room` pane, in any split window, that no other room claims. Each room puts its pane's id (`42.…`, the UI Automation runtime id) in its heartbeat, so the others find it without ever seeing it focused.
+- **Hands off a shared window:** in a pane the room **never resizes the window and never sends font keys** (they would reach whichever pane has the focus): at open it waits up to 15 s (`OPEN_PANE_WAIT`; PowerShell can take several to start) for the watcher to say whether it is in a pane, and still unknown then it leaves both alone too; `f` with a fixed shape says `SPLIT PANE: WINDOW LEFT AS IT IS`, and nothing is reset on exit (also when the window was split after the room opened).
+- **Private:** only a pane's rectangle, focus and profile name are read, never its text or title; a split window's title is passed on only while it is a `clawd-room …` one (else `-`).
+- **The room's shape and scale in a pane:** a room in a pane is at most **3/4 as tall as wide** (`PANE_MAX_TALL`): a taller pane shows the room in its middle, dark above and below, instead of a long floor; the bar stays at the bottom. Rooms in panes of **one window share one scale**, the smallest of the scales each would pick for itself (each says its own in the heartbeat, `"auto"`), so neighbouring panes look alike. Picked 2026-11-01 (option D):
+  ![[2026-11-01 room height in split panes, D (picked).png|774]]
+- **Gates open together:** a room learns the other room's pane only from its heartbeat, so one room is ready up to 1.5 s later than the other. Both start the gate's animation at the later room's ready time + 1 s (the `"ready"` times in the heartbeat; see [[Interaction]]).
+- `--list-windows` shows a split window with its panes under it.
+
+> [!warning] Limits
+> - Windows hides the panes of windows on **other virtual desktops** from UI Automation: rooms there are seen as whole windows only (gates need them on screen anyway).
+> - A room with **two or more** Clawd Room panes no one has claimed (none of the rooms has had its pane focused yet) waits until its pane is focused once.
+> - iTerm2 panes still size the window on open (only Windows Terminal reports panes this way).
 
 ---
 ## 🍎 macOS + iTerm2

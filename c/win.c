@@ -152,11 +152,25 @@ void watcher_feed(Watcher *w, const char *line, double now) {
         w->ncur = w->npend; w->npend = 0; w->updated = now;
         return;
     }
+    if (line[0] == '@') { /* @rid|focus|clawd|l|t|r|b: a pane of the window just before it */
+        int owner = w->npend - 1;
+        while (owner >= 0 && w->pend[owner].pane) owner--;
+        WinInfo pi;
+        memset(&pi, 0, sizeof pi);
+        char end;
+        if (owner < 0 || w->npend >= WATCH_MAX ||
+            sscanf(line, "@%39[^|]|%d|%d|%d|%d|%d|%d%c", pi.rid, &pi.focus, &pi.clawd, &pi.rect[0], &pi.rect[1], &pi.rect[2], &pi.rect[3], &end) != 7) return;
+        memcpy(pi.area, pi.rect, sizeof pi.area);
+        pi.pane = 1; pi.owner = owner; pi.dpi = w->pend[owner].dpi;
+        w->pend[owner].npanes++;
+        w->pend[w->npend++] = pi;
+        return;
+    }
     /* title|l|t|r|b|al|at|ar|ab|dpi|bar: the title is everything before the last ten '|' */
     const char *p = line + strlen(line);
     int bars = 0;
     while (p > line && bars < 10) if (*--p == '|') bars++;
-    if (bars < 10 || w->npend >= 24) return;
+    if (bars < 10 || w->npend >= WATCH_MAX) return;
     WinInfo *wi = &w->pend[w->npend];
     int nums[10];
     const char *q = p + 1;
@@ -202,10 +216,73 @@ void watcher_stop(Watcher *w) {
 
 static const WinInfo *find(const Watcher *w, const char *room_id) {
     if (wall() - w->updated > 10.0) return NULL; /* (the helper can be slow with several rooms open: keep the last list a while, windows rarely move) */
+    const char *rid = NULL; /* a room in a split window is its pane */
+    if (w->my_rid[0] && !strcmp(room_id, w->my_id)) rid = w->my_rid;
+    for (int i = 0; !rid && i < w->npeers; i++) if (!strcmp(w->peer_id[i], room_id)) rid = w->peer_rid[i];
+    if (rid) for (int i = 0; i < w->ncur; i++) if (w->cur[i].pane && !strcmp(w->cur[i].rid, rid)) return &w->cur[i];
     char title[128];
     snprintf(title, sizeof title, "%s%s", WIN_PREFIX, room_id);
-    for (int i = 0; i < w->ncur; i++) if (!strcmp(w->cur[i].title, title)) return &w->cur[i];
+    for (int i = 0; i < w->ncur; i++) if (!w->cur[i].pane && !w->cur[i].npanes && !strcmp(w->cur[i].title, title)) return &w->cur[i]; /* (a split window's title is only its focused pane's) */
     return NULL;
+}
+
+int watcher_in_pane(const Watcher *w, const char *room_id) {
+    const WinInfo *f = find(w, room_id);
+    if (f) return f->pane;
+    if (wall() - w->updated > 10.0) return -1;
+    char title[128];
+    snprintf(title, sizeof title, "%s%s", WIN_PREFIX, room_id);
+    for (int i = 0; i < w->ncur; i++) if (w->cur[i].npanes && !strcmp(w->cur[i].title, title)) return 1; /* our split window, the pane not known yet */
+    return -1;
+}
+
+int watcher_same_window(const Watcher *w, const char *rid_a, const char *rid_b) {
+    if (!rid_a[0] || !rid_b[0]) return 0;
+    int oa = -1, ob = -1;
+    for (int i = 0; i < w->ncur; i++) if (w->cur[i].pane) {
+        if (!strcmp(w->cur[i].rid, rid_a)) oa = w->cur[i].owner;
+        if (!strcmp(w->cur[i].rid, rid_b)) ob = w->cur[i].owner;
+    }
+    return oa >= 0 && oa == ob;
+}
+
+void watcher_resolve(Watcher *w, const char *my_id, const Link *link) {
+    snprintf(w->my_id, sizeof w->my_id, "%s", my_id);
+    w->npeers = 0;
+    for (int i = 0; link && i < link->npeers && w->npeers < WATCH_PEERS; i++) {
+        if (!link->peers[i].pane[0]) continue;
+        snprintf(w->peer_id[w->npeers], 40, "%s", link->peers[i].id);
+        snprintf(w->peer_rid[w->npeers], 40, "%s", link->peers[i].pane);
+        w->npeers++;
+    }
+    if (w->updated == w->resolved) return; /* (once per list) */
+    w->resolved = w->updated;
+    char title[128];
+    snprintf(title, sizeof title, "%s%s", WIN_PREFIX, my_id);
+    const char *focused = NULL, *only = NULL;
+    int nfree = 0;
+    for (int i = 0; i < w->ncur; i++) {
+        if (!w->cur[i].npanes) continue;
+        int ours = !strcmp(w->cur[i].title, title); /* (the focus says something only in the window showing our title) */
+        for (int j = i + 1; j < w->ncur && w->cur[j].pane && w->cur[j].owner == i; j++) {
+            const WinInfo *p = &w->cur[j];
+            if (ours && p->focus) focused = p->rid;
+            int claimed = 0;
+            for (int q = 0; q < w->npeers; q++) if (!strcmp(w->peer_rid[q], p->rid)) claimed = 1;
+            if (p->clawd && !claimed) { only = p->rid; nfree++; }
+        }
+    }
+    /* the window shows our title while our pane is its active one; with the focus that is the focused pane (seen twice, as
+     * the title and the focus are read a moment apart) */
+    if (focused) {
+        if (!strcmp(focused, w->cand_rid)) w->cand_n++; else { snprintf(w->cand_rid, sizeof w->cand_rid, "%s", focused); w->cand_n = 1; }
+        if (w->cand_n >= 2) snprintf(w->my_rid, sizeof w->my_rid, "%s", focused);
+    } else {
+        w->cand_n = 0;
+        /* else the only Clawd Room pane, in any split window, that no other room claims: e.g. ours lost the focus to the
+         * next room's pane before it was seen twice, and that room has said which pane is its own */
+        if (!w->my_rid[0] && nfree == 1) snprintf(w->my_rid, sizeof w->my_rid, "%s", only);
+    }
 }
 const int *watcher_rect(const Watcher *w, const char *id) { const WinInfo *i = find(w, id); return i ? i->rect : NULL; }
 const int *watcher_area(const Watcher *w, const char *id) { const WinInfo *i = find(w, id); return i ? i->area : NULL; }
@@ -325,6 +402,7 @@ void opensetup_init(OpenSetup *o, Tool *tool, const char *title, int font, const
     o->size_screen = !strcmp(o->size, "screen");
     o->size_off = !strcmp(o->size, "off");
     o->stage = ST_RESET;
+    o->pane = -1;
 }
 
 double opensetup_window_px(const OpenSetup *o, const int *rect, const int *area, int cols, int rows, double out[2]) {
@@ -342,6 +420,10 @@ int opensetup_update(OpenSetup *o, double now, int cols, int rows, const int *re
     o->ask_pending = 0;
     if (!o->has_started) { o->has_started = 1; o->started = now; }
     if (o->stage == ST_RESET) {
+        /* in a pane of a split window: the window is shared and the font keys could reach another pane, so touch neither.
+         * Still unknown after the wait: the same (a window we cannot find is not one we may size) */
+        if (o->pane < 0 && now - o->started < OPEN_PANE_WAIT) return 1;
+        if (o->pane != 0) { o->skipped = 1; o->stage = ST_DONE; return 0; }
         if (o->font) tool_reset_zoom(o->tool, o->title);
         o->reports->has_cell = o->reports->has_text = 0;
         o->stage = ST_PROBE; o->wait_until = now + 0.6;

@@ -759,10 +759,15 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
         for (int sd = 0; sd < SIDES; sd++) {
             if (present[sd] && !room->gate_seen[sd]) { /* starts when the windows stopped moving (+1 s), the same moment for both rooms */
                 room->gate_seen[sd] = 1;
-                room->gate_t0[sd] = !room->drawn ? t - 1000.0 : room->has_gate_sync && room->gate_sync_t > t - GATE_ANIM ? room->gate_sync_t : t;
+                room->gate_t0[sd] = !room->drawn ? t - 1000.0 : room->has_gate_start[sd] ? room->gate_start[sd] : room->has_gate_sync && room->gate_sync_t > t - GATE_ANIM ? room->gate_sync_t : t;
                 char key[8];
                 snprintf(key, sizeof key, "gate%d", sd);
                 anim_start(&room->anim, key, 0, 1, room->gate_t0[sd], GATE_ANIM, EASE_OUT); /* (rises fast, settles) */
+            } else if (present[sd] && room->has_gate_start[sd] && t < room->gate_t0[sd] && fabs(room->gate_start[sd] - room->gate_t0[sd]) > 0.02) {
+                room->gate_t0[sd] = room->gate_start[sd]; /* not started yet and the other room said it was ready later: wait for it */
+                char key[8];
+                snprintf(key, sizeof key, "gate%d", sd);
+                anim_start(&room->anim, key, 0, 1, room->gate_t0[sd], GATE_ANIM, EASE_OUT);
             }
             else if (!present[sd]) room->gate_seen[sd] = 0;
         }
