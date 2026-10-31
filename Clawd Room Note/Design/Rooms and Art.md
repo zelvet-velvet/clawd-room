@@ -61,6 +61,13 @@ flowchart TB
 - A Clawd **sits behind its workspace** (its lower half hidden by the furniture).
 - **The placer** keeps everything apart (see [[Engine Design]]): wall items (sign, window, plant, menu, lamps, shelf, signpost) take free places by priority; workspaces only go where they keep clear of the gates (steps, opening, doors, well, treehouse and the floor in front of them), the playground, posts and bushes; a crowded park leaves out its swing and slide; a bush that would cover something is left out. `clawd-room --check` proves it: 0 overlaps in every room × gates × crowd × size.
 - When there are more sessions than places, the last place says **+N MORE**.
+- **A pane too small for the room** (under 44x20 cells) shows a **strip** instead (`c/strip.c`, picked 2026-11-01): from 4 rows a **band** (the room's wall, baseboard and floor) with a Clawd at a laptop per session, the laptop's screen in the session's **state colour** (green working, yellow waiting, purple thinking; an idle or sleeping Clawd shuts its eyes and has no laptop; a waiting one waves); under 4 rows a **face** per session on a tile in the state's colour (the eyes say it too). **Tab** (or A / D) picks a Clawd as in the room: yellow corners, the rest dimmed, its **name** beside it, until Esc. When the sessions do not all fit, the band shows the ones around the picked Clawd, and a Clawd out of view that **starts waiting** is picked and brought into view by itself (once per wait).
+  ![[2026-11-01 small pane strip built.png|774]]
+
+| Constant | Value | Meaning |
+| --- | --- | --- |
+| `STRIP_BAND_ROWS` | 4 | terminal rows from which the band shows (else faces) |
+| `STRIP_SLOT` / `STRIP_TILE` | 18 / 15 | room pixels per Clawd in the band / per face tile |
 
 | Constant | Value | Meaning |
 | --- | --- | --- |
