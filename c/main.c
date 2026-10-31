@@ -269,6 +269,31 @@ static int golden_win(void) {
         o.pane = 1;
         int a2 = opensetup_update(&o, 101.0, 80, 24, NULL, NULL);
         printf("split setup %d %d %d skipped=%d\n", a1, st1, a2, o.skipped);
+        /* never told: after the wait the room leaves the window and the font alone as well */
+        OpenSetup u;
+        opensetup_init(&u, &t, "x", 8, "110x32", &rp, 1, 5);
+        int b1 = opensetup_update(&u, 100.0, 80, 24, NULL, NULL);
+        int b2 = opensetup_update(&u, 100.0 + OPEN_PANE_WAIT + 1, 80, 24, NULL, NULL);
+        printf("split setup unknown %d %d skipped=%d\n", b1, b2, u.skipped);
+    }
+    /* two room panes opened quickly: ours never had the focus while the window showed our title (the other room's pane
+     * has it), so ours is the one Clawd Room pane the other room does not claim */
+    {
+        static Watcher w;
+        static Link link;
+        memset(&w, 0, sizeof w); memset(&link, 0, sizeof link);
+        double now = (double)time(NULL);
+        static const char *QUICK[] = {"clawd-room right-2|0|0|1200|1300|8|40|1192|1290|96|40", "@7.1|0|0|10|50|1190|900",
+                                      "@7.2|0|1|10|910|598|1290", "@7.3|1|1|604|910|1190|1290", "--"};
+        for (int round = 0; round < 3; round++) {
+            for (size_t i = 0; i < sizeof QUICK / sizeof QUICK[0]; i++) watcher_feed(&w, QUICK[i], now + round);
+            if (round == 1) { link.npeers = 1; snprintf(link.peers[0].id, 40, "right-2"); snprintf(link.peers[0].pane, 40, "7.3"); }
+            watcher_resolve(&w, "left-1", &link);
+            const int *a = watcher_area(&w, "left-1");
+            printf("split quick round %d mine=%s left-1:%d", round, w.my_rid[0] ? w.my_rid : "?", watcher_in_pane(&w, "left-1"));
+            if (a) printf("@%d,%d,%d,%d", a[0], a[1], a[2], a[3]);
+            printf("\n");
+        }
     }
     /* the gates between two windows */
     for (int variant = 0; variant < 4; variant++) {

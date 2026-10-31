@@ -44,7 +44,8 @@ int watcher_dpi(const Watcher *w, const char *room_id);        /* 96 if unknown 
 /* feed one line of the helper's output (for tests) */
 void watcher_feed(Watcher *w, const char *line, double now);
 /* after each poll: which pane of a split window is ours (the one with the focus while the window has our title, seen in
- * two lists in a row; else the only Clawd Room pane nobody else claims), and the other rooms' panes from their heartbeats */
+ * two lists in a row; else the only Clawd Room pane in any split window nobody else claims), and the other rooms' panes from
+ * their heartbeats */
 void watcher_resolve(Watcher *w, const char *my_id, const Link *link_or_null);
 int watcher_in_pane(const Watcher *w, const char *room_id); /* 1 in a pane of a split window, 0 a whole window, -1 unknown */
 
@@ -86,10 +87,11 @@ typedef struct {
     double wait_until, started, asked; int has_started;
     Fitter fit; int has_fit;
     int ask_pending; /* the caller should send CSI 14 t / 16 t */
-    int pane;    /* set by the caller before each update: watcher_in_pane (-1 unknown: wait up to OPEN_PANE_WAIT) */
+    int pane;    /* set by the caller before each update: watcher_in_pane (-1 unknown: wait up to OPEN_PANE_WAIT, then as in a pane) */
     int skipped; /* the room is in a split pane: neither the window nor the font was touched */
 } OpenSetup;
-#define OPEN_PANE_WAIT 5.0 /* seconds to wait for the watcher to say whether the room is in a split pane */
+#define OPEN_PANE_WAIT 15.0 /* seconds to wait for the watcher to say whether the room is in a split pane (PowerShell can take several
+                             * to start); still unknown then: leave the window and the font alone */
 void opensetup_init(OpenSetup *o, Tool *tool, const char *title, int font, const char *size, Reports *reports, int window, int profile_font);
 /* returns 1 while still working; sets o->ask_pending when the terminal should be asked for its sizes */
 int opensetup_update(OpenSetup *o, double now, int cols, int rows, const int *rect, const int *area);

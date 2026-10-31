@@ -143,7 +143,7 @@ What to test next, one `[!todo] Group X · …` callout per group (`[!done]` onc
 > > [!tip]- T67–T72 · how to run them
 > > 1. Branch `feat/split-panes`: `git switch feat/split-panes && make -C c`.
 > > 2. Windows Terminal: hold **Alt** while picking a profile in the ⌄ menu to open it as a split pane of the current tab (Alt + Shift + D duplicates the focused pane).
-> > 3. A room learns its pane when the pane has the focus (it has, just after it opens). A room whose pane never had the focus while it ran waits for that before its gates show.
+> > 3. A room learns its pane when the pane has the focus (it has, just after it opens), or as the only Clawd Room pane no other room claims. Two rooms that both never had their pane focused wait for a click into one of them. A room that cannot tell within 15 s whether it is in a pane leaves the window and font alone.
 > > 4. If something looks wrong: `CLAWD_SIZE_LOG=/tmp/size.log ./clawd-room.sh` logs why a gate is shown or not.
 
 > [!example] Group L · WSL: the picked Clawd stands out (T58–T62)

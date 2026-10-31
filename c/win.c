@@ -252,10 +252,11 @@ void watcher_resolve(Watcher *w, const char *my_id, const Link *link) {
     const char *focused = NULL, *only = NULL;
     int nfree = 0;
     for (int i = 0; i < w->ncur; i++) {
-        if (!w->cur[i].npanes || strcmp(w->cur[i].title, title)) continue;
+        if (!w->cur[i].npanes) continue;
+        int ours = !strcmp(w->cur[i].title, title); /* (the focus says something only in the window showing our title) */
         for (int j = i + 1; j < w->ncur && w->cur[j].pane && w->cur[j].owner == i; j++) {
             const WinInfo *p = &w->cur[j];
-            if (p->focus) focused = p->rid;
+            if (ours && p->focus) focused = p->rid;
             int claimed = 0;
             for (int q = 0; q < w->npeers; q++) if (!strcmp(w->peer_rid[q], p->rid)) claimed = 1;
             if (p->clawd && !claimed) { only = p->rid; nfree++; }
@@ -268,7 +269,9 @@ void watcher_resolve(Watcher *w, const char *my_id, const Link *link) {
         if (w->cand_n >= 2) snprintf(w->my_rid, sizeof w->my_rid, "%s", focused);
     } else {
         w->cand_n = 0;
-        if (!w->my_rid[0] && nfree == 1) snprintf(w->my_rid, sizeof w->my_rid, "%s", only); /* (the window is in the background) */
+        /* else the only Clawd Room pane, in any split window, that no other room claims: e.g. ours lost the focus to the
+         * next room's pane before it was seen twice, and that room has said which pane is its own */
+        if (!w->my_rid[0] && nfree == 1) snprintf(w->my_rid, sizeof w->my_rid, "%s", only);
     }
 }
 const int *watcher_rect(const Watcher *w, const char *id) { const WinInfo *i = find(w, id); return i ? i->rect : NULL; }
@@ -407,9 +410,10 @@ int opensetup_update(OpenSetup *o, double now, int cols, int rows, const int *re
     o->ask_pending = 0;
     if (!o->has_started) { o->has_started = 1; o->started = now; }
     if (o->stage == ST_RESET) {
-        /* in a pane of a split window: the window is shared and the font keys could reach another pane, so touch neither */
+        /* in a pane of a split window: the window is shared and the font keys could reach another pane, so touch neither.
+         * Still unknown after the wait: the same (a window we cannot find is not one we may size) */
         if (o->pane < 0 && now - o->started < OPEN_PANE_WAIT) return 1;
-        if (o->pane == 1) { o->skipped = 1; o->stage = ST_DONE; return 0; }
+        if (o->pane != 0) { o->skipped = 1; o->stage = ST_DONE; return 0; }
         if (o->font) tool_reset_zoom(o->tool, o->title);
         o->reports->has_cell = o->reports->has_text = 0;
         o->stage = ST_PROBE; o->wait_until = now + 0.6;

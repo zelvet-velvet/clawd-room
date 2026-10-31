@@ -758,7 +758,8 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
     if (have_prev) cells_free(&prev);
     tail_free(&tail);
     if (desk.has_tool) {
-        if (font_set && !(has_setup && setup.pane != 0)) { tool_reset_zoom(&desk.tool, title); usleep(800000); } /* put the terminal font back to the profile's */
+        int shared = (has_setup && setup.pane != 0) || (desk.has_watcher && watcher_in_pane(&desk.w, win_id) == 1); /* (a pane now, e.g. split after we opened) */
+        if (font_set && !shared) { tool_reset_zoom(&desk.tool, title); usleep(800000); } /* put the terminal font back to the profile's */
         tool_stop(&desk.tool);
     }
     if (desk.has_watcher) { watcher_stop(&desk.w); puts_("\x1b[23;0t"); } /* give the window title back (if the terminal supports it) */

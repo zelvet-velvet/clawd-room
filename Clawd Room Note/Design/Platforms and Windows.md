@@ -83,14 +83,14 @@ sequenceDiagram
     L-->>B: B looks up A's pane by that id
 ```
 
-- **Which pane is whose:** Windows Terminal titles a window after its focused pane, and a pane does not tell its own title (UI Automation names it after its profile, `Clawd Room`). So a room takes the pane that has the focus **while the window carries its title** (in two lists in a row, as the title and the focus are read a moment apart); a new pane has the focus, so this is at once. With the window in the background, the only `Clawd Room` pane nobody else claims is taken. Each room puts its pane's id (`42.…`, the UI Automation runtime id) in its heartbeat, so the others find it without ever seeing it focused.
-- **Hands off a shared window:** in a pane the room **never resizes the window and never sends font keys** (they would reach whichever pane has the focus): at open it waits up to 5 s (`OPEN_PANE_WAIT`) for the watcher to say whether it is in a pane, `f` with a fixed shape says `SPLIT PANE: WINDOW LEFT AS IT IS`, and nothing is reset on exit.
+- **Which pane is whose:** Windows Terminal titles a window after its focused pane, and a pane does not tell its own title (UI Automation names it after its profile, `Clawd Room`). So a room takes the pane that has the focus **while the window carries its title** (in two lists in a row, as the title and the focus are read a moment apart); a new pane has the focus, so this is at once. Otherwise (the window in the background, or the next room's pane took the focus before ours was seen twice) the room takes the only `Clawd Room` pane, in any split window, that no other room claims. Each room puts its pane's id (`42.…`, the UI Automation runtime id) in its heartbeat, so the others find it without ever seeing it focused.
+- **Hands off a shared window:** in a pane the room **never resizes the window and never sends font keys** (they would reach whichever pane has the focus): at open it waits up to 15 s (`OPEN_PANE_WAIT`; PowerShell can take several to start) for the watcher to say whether it is in a pane, and still unknown then it leaves both alone too; `f` with a fixed shape says `SPLIT PANE: WINDOW LEFT AS IT IS`, and nothing is reset on exit (also when the window was split after the room opened).
 - **Private:** only a pane's rectangle, focus and profile name are read, never its text or title; a split window's title is passed on only while it is a `clawd-room …` one (else `-`).
 - `--list-windows` shows a split window with its panes under it.
 
 > [!warning] Limits
 > - Windows hides the panes of windows on **other virtual desktops** from UI Automation: rooms there are seen as whole windows only (gates need them on screen anyway).
-> - A room that started in a background window with **two** Clawd Room panes no one has claimed waits until its pane is focused once.
+> - A room with **two or more** Clawd Room panes no one has claimed (none of the rooms has had its pane focused yet) waits until its pane is focused once.
 > - iTerm2 panes still size the window on open (only Windows Terminal reports panes this way).
 
 ---
