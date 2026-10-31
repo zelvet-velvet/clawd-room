@@ -265,6 +265,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
     double still_since = wall(); /* when the windows last moved (gates wait until they are still) */
     static char rect_sig[512];
     double rect_still = wall(); /* when the windows themselves last moved (the gate animations start from this) */
+    char ready_id[LINK_READY][40]; double ready_t[LINK_READY]; int nready = 0; /* when we were ready to show each gate */
 
     RawTerm rt = {0};
     struct sigaction sa;
@@ -623,6 +624,38 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                     if (strcmp(cur, logged_g)) { snprintf(logged_g, sizeof logged_g, "%s", cur); FILE *lf = fopen(getenv("CLAWD_SIZE_LOG"), "a"); if (lf) { fprintf(lf, "%.1f %s\n", wall(), cur); fclose(lf); } }
                 }
                 for (int i = 0; i < room.npeers; i++) { int sd = side_index(room.peers[i].side); if (sd >= 0 && ps.closed[sd]) room.peers[i].side[0] = 0; }
+            }
+            { /* gates open together: each room says in its heartbeat when it was ready to show the gate to the other (it knew
+               * both places and they were still), and both start the animation at the later of the two + GATE_SYNC_WAIT. Rooms
+               * in panes learn each other's pane from heartbeats, so one is always up to 1.5 s later than the other. */
+                char nid[LINK_READY][40]; double nt[LINK_READY]; int nn = 0, changed = 0;
+                for (int q = 0; q < room.nnb && nn < LINK_READY; q++) {
+                    double rt = wall();
+                    int k = 0;
+                    while (k < nready && strcmp(ready_id[k], room.nb[q].id)) k++;
+                    if (k < nready) rt = ready_t[k]; else changed = 1;
+                    snprintf(nid[nn], 40, "%s", room.nb[q].id); nt[nn++] = rt;
+                }
+                if (nn != nready) changed = 1;
+                memcpy(ready_id, nid, sizeof nid); memcpy(ready_t, nt, sizeof nt); nready = nn;
+                if (changed) {
+                    memcpy(link.ready_id, ready_id, sizeof ready_id); memcpy(link.ready_t, ready_t, sizeof ready_t);
+                    link.nready = nready; link.ready_changed = 1;
+                }
+                for (int sd = 0; sd < SIDES; sd++) room.has_gate_start[sd] = 0;
+                for (int q = 0; q < room.nnb && q < nready; q++) {
+                    double start = ready_t[q] + GATE_SYNC_ALONE; /* until the other room says (an older one never does) */
+                    for (int p = 0; p < link.npeers; p++) if (!strcmp(link.peers[p].id, room.nb[q].id))
+                        for (int k = 0; k < link.peers[p].nready; k++) if (!strcmp(link.peers[p].ready_id[k], win_id))
+                            start = (link.peers[p].ready_t[k] > ready_t[q] ? link.peers[p].ready_t[k] : ready_t[q]) + GATE_SYNC_WAIT;
+                    int sd = room.nb[q].side;
+                    room.has_gate_start[sd] = 1;
+                    room.gate_start[sd] = start - (wall() - t); /* (wall clock -> draw time) */
+                    if (getenv("CLAWD_SIZE_LOG")) { /* test hook: when this gate starts (wall clock), whenever that changes */
+                        static double logged_start[SIDES];
+                        if (fabs(start - logged_start[sd]) > 0.01) { logged_start[sd] = start; FILE *lf = fopen(getenv("CLAWD_SIZE_LOG"), "a"); if (lf) { fprintf(lf, "%.1f gatestart %s %.2f\n", wall(), SIDE_NAME[sd], start); fclose(lf); } }
+                    }
+                }
             }
             if (getenv("CLAWD_SIZE_LOG")) { /* test hook: note where the gates go whenever that changes */
                 static char logged[256];

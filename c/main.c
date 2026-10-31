@@ -276,6 +276,26 @@ static int golden_win(void) {
         int b2 = opensetup_update(&u, 100.0 + OPEN_PANE_WAIT + 1, 80, 24, NULL, NULL);
         printf("split setup unknown %d %d skipped=%d\n", b1, b2, u.skipped);
     }
+    /* gates open together: a room's "ready" times go through its heartbeat to the other room */
+    {
+        char dir[] = "/tmp/clawd-ready-XXXXXX";
+        if (mkdtemp(dir)) {
+            static Link la, lb;
+            link_init(&la, "alpha", dir); link_init(&lb, "beta", dir);
+            link_start(&la); link_start(&lb);
+            snprintf(la.ready_id[0], 40, "%s", lb.id); la.ready_t[0] = 1000.25; la.nready = 1; la.ready_changed = 1;
+            LinkEvent ev[8];
+            link_update(&la, 2000.0, 80, 24, ev, 8);
+            link_update(&lb, 2000.0, 80, 24, ev, 8);
+            int found = 0;
+            for (int p = 0; p < lb.npeers; p++)
+                for (int k = 0; k < lb.peers[p].nready; k++)
+                    if (!strcmp(lb.peers[p].id, la.id) && !strcmp(lb.peers[p].ready_id[k], lb.id)) { printf("gate ready heard %.2f changed=%d\n", lb.peers[p].ready_t[k], la.ready_changed); found = 1; }
+            if (!found) printf("gate ready not heard\n");
+            link_close(&la); link_close(&lb);
+            rmdir(dir);
+        }
+    }
     /* two room panes opened quickly: ours never had the focus while the window showed our title (the other room's pane
      * has it), so ours is the one Clawd Room pane the other room does not claim */
     {

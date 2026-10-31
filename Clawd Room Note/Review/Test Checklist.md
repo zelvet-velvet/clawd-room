@@ -132,15 +132,16 @@ What to test next, one `[!todo] Group X · …` callout per group (`[!done]` onc
 > > 3. In a WSL shell: `./clawd-room.sh --edit anims/swing` (the editor opens in its own window).
 > > 4. Your edits are in `~/.clawd-room/anims/`; delete `swing.txt` there (or RESET in the picker) to go back to the default.
 
-> [!todo] Group N · WSL: rooms in split panes (T67–T72)
+> [!todo] Group N · WSL: rooms in split panes (T67–T73)
 > - [ ] **T67** In your work window, Alt + click **Clawd Room** in the ⌄ menu → the room opens in a split pane; the **window keeps its size**, and the font of the other panes does not change.
 > - [ ] **T68** Open a second Clawd Room pane beside the first → after about 1 s still, a **gate** between the two panes; `g` + arrow sends a Clawd through.
 > - [ ] **T69** A room pane next to a room in its own window (edges close) → a gate between the pane and the window.
 > - [ ] **T70** Click into your work pane and back, drag the divider between the panes → the gates follow the panes and do not jump to the wrong one.
 > - [ ] **T71** A room in a whole window (Clawd Room from the ⌄ menu without Alt) → still sizes its window as before.
 > - [ ] **T72** With a split open, `./clawd-room.sh --list-windows` in another shell → a `(split window)` line with its panes under it, the room panes marked `(Clawd Room)`.
+> - [ ] **T73** Two room panes side by side; drag the window, let go → the gate rises in **both** rooms at the same moment (about 2 s after you let go), not one after the other.
 >
-> > [!tip]- T67–T72 · how to run them
+> > [!tip]- T67–T73 · how to run them
 > > 1. Branch `feat/split-panes`: `git switch feat/split-panes && make -C c`.
 > > 2. Windows Terminal: hold **Alt** while picking a profile in the ⌄ menu to open it as a split pane of the current tab (Alt + Shift + D duplicates the focused pane).
 > > 3. A room learns its pane when the pane has the focus (it has, just after it opens), or as the only Clawd Room pane no other room claims. Two rooms that both never had their pane focused wait for a click into one of them. A room that cannot tell within 15 s whether it is in a pane leaves the window and font alone.

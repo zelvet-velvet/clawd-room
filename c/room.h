@@ -85,6 +85,9 @@ typedef struct {
     double door_open[SIDES], door_t; /* how far each door leaf is open (0..1, opens while a Clawd passes) and when it was last moved */
     Animator anim;           /* eased values: gates appearing ("gate0".."gate3"), doors swinging ("door0", "door1") */
     int has_gate_sync; double gate_sync_t; /* when the windows stopped moving + 1 s, in draw time: both rooms start the animation then */
+#define GATE_SYNC_WAIT 1.0 /* s after both rooms were ready (a heartbeat is written at once and read within 0.5 s) */
+#define GATE_SYNC_ALONE 3.0 /* s after we were ready, while the other room has not said it is (an older room never does) */
+    int has_gate_start[SIDES]; double gate_start[SIDES]; /* agreed with the room behind the gate (app.c), in draw time: overrides gate_sync_t */
     char pick_sid[72]; double pick_until;  /* the picked Clawd (Tab) stands out until this draw time, then fades (draw.c draw_pick) */
     int pick_seen; double pick_cx, pick_cy; /* the corners are on screen, centred here (room pixels, glide included): the next pick glides from there */
     /* movement state */
