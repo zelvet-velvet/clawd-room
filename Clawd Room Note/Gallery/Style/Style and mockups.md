@@ -8,6 +8,17 @@ sticker: lucide//palette
 ---
 Pictures of mockups and options to choose from (the picked one is marked), newest first: ✅ current (open), ♻️ replaced and ❌ not picked (folded; the status is in [[Snapshot status]]). The files are the source in `Assets/Snapshots/Style and mockups/`; this note is written by `tools/vault_gallery.py` (do not edit it by hand: add a picture, then run the tool).
 
+## 2026-11-01
+
+> [!quote]- ♻️ replaced · Small pane strip with Tab · picked
+> ![[2026-11-01 small pane strip with Tab (picked).png|420]]
+> Replaced by: [[2026-11-01 small pane strip built.png]]
+> Shown in: not in a note yet
+
+> [!success]+ ✅ current · Small pane strip options
+> ![[2026-11-01 small pane strip options.png|420]]
+> Shown in: not in a note yet
+
 ## 2026-10-19
 
 > [!failure]- ❌ not picked · Editor palette mockup C, photoshop

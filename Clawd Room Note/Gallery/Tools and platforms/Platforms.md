@@ -8,6 +8,12 @@ sticker: lucide//monitor
 ---
 Pictures of Windows Terminal, iTerm2, `--try`, newest first: ✅ current (open), ♻️ replaced and ❌ not picked (folded; the status is in [[Snapshot status]]). The files are the source in `Assets/Snapshots/Platforms/`; this note is written by `tools/vault_gallery.py` (do not edit it by hand: add a picture, then run the tool).
 
+## 2026-11-01
+
+> [!success]+ ✅ current · Small pane strip built
+> ![[2026-11-01 small pane strip built.png|420]]
+> Shown in: [[Rooms and Art|Rooms and Art]]
+
 ## 2026-10-19
 
 > [!quote]- ♻️ replaced · Wsl try, four rooms at 8 pt

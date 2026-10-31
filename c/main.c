@@ -21,6 +21,7 @@
 #include "win.h"
 #include "script.h"
 #include "tail.h"
+#include "strip.h"
 #include "ui.h"
 
 int gallery_run(const char *dir); /* gallery.c: --check, --gallery DIR */
@@ -120,13 +121,6 @@ static int golden_ui(const char *path) {
         static const char *NF[4][2] = {{"", ""}, {"+3 MORE", ""}, {"", "SCALE 2X"}, {"+1 MORE", "FLASH"}};
         for (int k = 0; k < 4; k++) { overlay_text(buf, sizeof buf, paused, help, NF[k][0], NF[k][1]); printf("overlay %d %d [%s]\n", paused, help, buf); }
     }
-    static const int SM[4][2] = {{30, 10}, {44, 19}, {10, 5}, {200, 80}};
-    for (int i = 0; i < 4; i++) {
-        too_small(buf, sizeof buf, SM[i][0], SM[i][1]);
-        printf("small %d %d '", SM[i][0], SM[i][1]);
-        for (char *p = buf; *p; p++) { if (*p == 27) printf("\\x1b"); else putchar(*p); }
-        printf("'\n");
-    }
     static const int PW[4] = {110, 160, 220, 300}, PH[4] = {64, 100, 140, 200}, NN[6] = {0, 1, 3, 6, 12, 40};
     for (int a = 0; a < 4; a++) for (int b = 0; b < 4; b++) {
         printf("auto %d %d", PW[a], PH[b]);
@@ -146,6 +140,37 @@ static int golden_ui(const char *path) {
         Canvas cv = render_menu(TS[i][0], TS[i][1], 1, 0, 0.4);
         printf("menuterm %d %d %016" PRIx64 "\n", TS[i][0], TS[i][1], canvas_hash(&cv));
         canvas_free(&cv);
+    }
+    { /* the strip: a pane too small for the room (strip.h): the band, faces, the window over the sessions, Tab, a hidden wait */
+        static Fixture fx;
+        if (!fixture_load_text(&fx, "theme office\ntitle strip\nterminal 116 5\ntime 1000.0 3.4\nscale 1\n"
+                                    "session s00 name=api created=900 state=work tool=Bash\nsession s01 name=web-shop created=901 state=work tool=Edit\n"
+                                    "session s02 name=docs created=902 state=think tool=Read\nsession s03 name=app created=903 state=idle tool=Read\n"
+                                    "session s04 name=bot created=904 state=work tool=Bash\nsession s05 name=etl created=905 state=work tool=Bash\n")) {
+            static const int SS[5][2] = {{116, 5}, {60, 5}, {116, 2}, {30, 3}, {43, 30}};
+            for (int i = 0; i < 5; i++) {
+                Strip st = {0};
+                Canvas cv = strip_render(&st, &fx.room, SS[i][0], SS[i][1], fx.t, fx.now);
+                printf("strip %d %d %dx%d first=%d %016" PRIx64 "\n", SS[i][0], SS[i][1], cv.w, cv.h, st.first, canvas_hash(&cv));
+                canvas_free(&cv);
+            }
+            Strip st = {0}; /* 60x5: three fit */
+            Canvas cv = strip_render(&st, &fx.room, 60, 5, fx.t, fx.now); canvas_free(&cv);
+            for (int k = 0; k < 4; k++) {
+                const char *nm = strip_step(&st, &fx.room, fx.now, 1);
+                cv = strip_render(&st, &fx.room, 60, 5, fx.t, fx.now);
+                printf("strip tab %s first=%d %016" PRIx64 "\n", nm ? nm : "-", st.first, canvas_hash(&cv));
+                canvas_free(&cv);
+            }
+            strip_unpick(&st); st.first = 0;
+            for (int i = 0; i < fx.room.npool; i++) if (!strcmp(fx.room.pool[i].sid, "s05")) { snprintf(fx.room.pool[i].state, sizeof fx.room.pool[i].state, "wait"); fx.room.pool[i].state_t = fx.now; }
+            for (int k = 0; k < 2; k++) { /* the hidden one starts waiting: picked and brought into view, once */
+                cv = strip_render(&st, &fx.room, 60, 5, fx.t, fx.now);
+                printf("strip wait pick=%s first=%d %016" PRIx64 "\n", st.pick[0] ? st.pick : "-", st.first, canvas_hash(&cv));
+                canvas_free(&cv);
+                if (!k) { strip_unpick(&st); st.first = 0; }
+            }
+        }
     }
     return 0;
 }

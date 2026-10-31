@@ -26,6 +26,7 @@
 #include "tail.h"
 #include "term.h"
 #include "win.h"
+#include "strip.h"
 #include "ui.h"
 #define OWNER_GRACE 15.0 /* seconds a linked room that went quiet (but has not closed) keeps its share of the sessions */
 
@@ -251,6 +252,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
     room.cam_zoom = a->zoom;
     int size = a->room_size, seen_n = -1; /* the room size (r list) and how many Clawds the scale was picked for */
     Camera cam;
+    Strip strip = {0}; /* the room in a pane too small for it (strip.h) */
     camera_init(&cam);
     struct { int has; double t; int has_cell, cell[2]; int prescale; } pend = {0};
     char flash[96] = "";
@@ -327,7 +329,8 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                     flash_until = wall() + (side >= 0 ? 4 : 0); dirty = 1;
                     if (side >= 0 || k == 27) continue;
                 }
-                if (k == 27) { room_unpick(&room, paused ? frozen_t : t); dirty = 1; continue; } /* Esc lets go of the picked Clawd; only q quits */
+                if (k == 27) { room_unpick(&room, paused ? frozen_t : t); strip_unpick(&strip); dirty = 1; continue; } /* Esc lets go of the picked Clawd; only q quits */
+                if (strip_wanted(cols, rows) && (k == '\t' || k == 'a' || k == 'd')) { strip_step(&strip, &room, now, k == 'a' ? -1 : 1); dirty = 1; continue; } /* too small for the room: Tab picks in the strip */
                 if (k == 'p') { paused = !paused; frozen_now = now; frozen_t = t; dirty = 1; }
                 else if (k == '?') { help_on = !help_on; dirty = 1; }
                 else if (k == 'r') { size_pick = size; size_menu = 1; dirty = 1; } /* open the ROOM SIZE list at the current size */
@@ -660,11 +663,13 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
             if (fitter.done) { snprintf(flash, sizeof flash, "%s", fitter.message); flash_until = wall() + 5; has_fitter = 0; dirty = 1; }
         }
         if (dirty || !paused) {
-            if (cols < MIN_COLS || rows < MIN_ROWS) {
-                char buf[4096];
-                too_small(buf, sizeof buf, cols, rows);
-                puts_(buf);
-                have_prev = 0;
+            if (strip_wanted(cols, rows)) { /* too small for the room: the strip (a band of Clawds, or faces) */
+                Canvas cv = strip_render(&strip, &room, cols, rows, paused ? frozen_t : t, paused ? frozen_now : now);
+                Cells cells = cells_from_canvas(&cv, "");
+                show(&cells, have_prev ? &prev : NULL, 1);
+                if (have_prev) cells_free(&prev);
+                prev = cells; have_prev = 1;
+                canvas_free(&cv);
             } else {
                 double shown_now = paused ? frozen_now : now, shown_t = paused ? frozen_t : t;
                 if (auto_ && !a->no_auto && !a->scale && !strcmp(room.ratio, "auto")) { /* grow, then scale: pick the scale again when the size or the Clawds change */
