@@ -119,9 +119,9 @@ with tempfile.TemporaryDirectory() as tmp:
     # 2. a lone Esc does not quit (it lets go of the picked Clawd): the room still answers p afterwards, and q quits
     out, st = run(["--theme", "park", "--events", events], [(1.0, b"\t"), (1.5, b"\x1b"), (2.0, b"p"), (2.6, b"q")])
     check("Esc does not quit the room, q does", st == 0 and b"PAUSED" in out)
-    # 3. too small a terminal
-    out, st = run(["--theme", "office", "--events", events], [(0.8, b"q")], cols=30, rows=10)
-    check("small terminal says what it needs", b"need 44x20" in out and st == 0)
+    # 3. too small a terminal: the strip (a band of Clawds; strip.h), Tab and Esc work there, q quits
+    out, st = run(["--theme", "office", "--events", events], [(0.8, b"\t"), (1.2, b"\x1b"), (1.6, b"q")], cols=30, rows=10)
+    check("small terminal shows the strip of Clawds", b"205;110;88" in out and b"need 44x20" not in out and st == 0)
     # 4. the start menu: Enter opens the first scene, then q
     out, st = run(["--events", events], [(0.8, b"\x1b[C"), (1.1, b"\x1b[D"), (1.4, b"s"), (1.7, b"\r"), (2.8, b"q")])
     check("start menu shows its title and then the room", st == 0 and out.count(b"\x1b[?1049h") >= 1 and out.count(b"\x1b[?1049l") >= 1)

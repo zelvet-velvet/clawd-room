@@ -10,6 +10,15 @@ Pictures of mockups and options to choose from (the picked one is marked), newes
 
 ## 2026-11-01
 
+> [!quote]- ♻️ replaced · Small pane strip with Tab · picked
+> ![[2026-11-01 small pane strip with Tab (picked).png|420]]
+> Replaced by: [[2026-11-01 small pane strip built.png]]
+> Shown in: [[2026-11-01#🦀 A pane too small for the room shows a strip of Clawds (Zaviel)|2026-11-01 · 🦀 A pane too small for the room shows a strip of Clawds (Zaviel)]]
+
+> [!success]+ ✅ current · Small pane strip options
+> ![[2026-11-01 small pane strip options.png|420]]
+> Shown in: [[2026-11-01#🦀 A pane too small for the room shows a strip of Clawds (Zaviel)|2026-11-01 · 🦀 A pane too small for the room shows a strip of Clawds (Zaviel)]]
+
 > [!success]+ ✅ current · Room height in split panes, options
 > ![[2026-11-01 room height in split panes, options.png|420]]
 > Shown in: [[2026-11-01#📐 Rooms in tall panes keep a normal floor, and panes of one window share a scale (Zaviel)|2026-11-01 · 📐 Rooms in tall panes keep a normal floor, and panes of one window share a scale (Zaviel)]]

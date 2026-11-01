@@ -149,6 +149,17 @@ What to test next, one `[!todo] Group X · …` callout per group (`[!done]` onc
 > > 3. A room learns its pane when the pane has the focus (it has, just after it opens), or as the only Clawd Room pane no other room claims. Two rooms that both never had their pane focused wait for a click into one of them. A room that cannot tell within 15 s whether it is in a pane leaves the window and font alone.
 > > 4. If something looks wrong: `CLAWD_SIZE_LOG=/tmp/size.log ./clawd-room.sh` logs why a gate is shown or not.
 
+> [!todo] Group O · WSL: a pane too small for the room shows a strip (T76–T80)
+> - [ ] **T76** Split a Clawd Room pane until it is under 20 rows (about 5 rows high) → a band of Clawds at laptops instead of a black pane; each laptop's screen is green (working), yellow (waiting) or purple (thinking); an idle Clawd has its eyes shut and no laptop.
+> - [ ] **T77** Press Tab in it → yellow corners around one Clawd, the rest dims, its name shows beside it; Tab again moves on; Esc lets go.
+> - [ ] **T78** Make the pane narrower than all the Clawds need → only some show; Tab past the last one in view scrolls the band to the next.
+> - [ ] **T79** With a Clawd out of view, make its session wait for you (a permission prompt) → the band scrolls to it by itself and shows its name.
+> - [ ] **T80** Make the pane 2 or 3 rows high → faces on coloured tiles; Tab outlines one in yellow.
+>
+> > [!tip]- T76–T80 · how to run them
+> > 1. Branch `feat/split-panes`: `git switch feat/split-panes && make -C c`.
+> > 2. Windows Terminal: Alt + Shift + − splits the focused pane in two (below); drag the divider to make the room's pane small. Any terminal window made small works too.
+
 > [!example] Group L · WSL: the picked Clawd stands out (T58–T62)
 > - [x] **T58** In a room with two or more Clawds press Tab → yellow corners close in around one Clawd and the rest of the room dims around a soft light; the corners settle within about a quarter of a second.
 > - [x] **T59** Press Tab again (or A / D) a moment later → the corners glide to the next Clawd, they do not jump; stop pressing → they stay, as long as you like, until Esc.

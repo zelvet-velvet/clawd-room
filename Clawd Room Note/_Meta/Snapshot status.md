@@ -188,3 +188,6 @@ Whether each picture in `Assets/Snapshots/` still shows how things are. `tools/v
 | 2026-10-24 picked Clawd gliding.png | current |  |
 | 2026-11-01 room height in split panes, options.png | current |  |
 | 2026-11-01 room height in split panes, D (picked).png | current |  |
+| 2026-11-01 small pane strip options.png | current |  |
+| 2026-11-01 small pane strip with Tab (picked).png | replaced | [[2026-11-01 small pane strip built.png]] |
+| 2026-11-01 small pane strip built.png | current |  |
