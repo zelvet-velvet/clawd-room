@@ -21,6 +21,6 @@ The pictures of clawd-room (snapshots): what the room looked like, mockups that 
 | Gates and moving | [[Gates (stairs, doors, wells)]] | the ways between rooms: doors, stairs, the half floor, wells | 22 | 16 | 7 | 2026-10-22 | ![[2026-10-22 construct gate, the office stairs being built 4.png\|160]] |
 | Gates and moving | [[Interaction (keys, moving)]] | keys, hints, sending and moving Clawds | 10 | 6 | 1 | 2026-10-24 | ![[2026-10-24 picked Clawd gliding.png\|160]] |
 | Tools and platforms | [[Engine and tools]] | the debug overlay, the placer, the pixel editor, the gallery | 27 | 17 | 6 | 2026-10-22 | ![[2026-10-22 the picker's themes tab.png\|160]] |
-| Tools and platforms | [[Platforms]] | Windows Terminal, iTerm2, `--try` | 6 | 4 | 0 | 2026-11-01 | ![[2026-11-01 small pane strip name above, sleeping.png\|160]] |
-| Style | [[Style and mockups]] | mockups and options to choose from (the picked one is marked) | 11 | 10 | 12 | 2026-11-01 | ![[2026-11-01 strip faces options.png\|160]] |
+| Tools and platforms | [[Platforms]] | Windows Terminal, iTerm2, `--try` | 7 | 4 | 0 | 2026-11-01 | ![[2026-11-01 small pane strip name above, sleeping.png\|160]] |
+| Style | [[Style and mockups]] | mockups and options to choose from (the picked one is marked) | 12 | 10 | 12 | 2026-11-01 | ![[2026-11-01 strip faces options.png\|160]] |
 | Style | [[Old look]] | how it looked before style A | 0 | 4 | 0 | 2026-10-18 | ![[2026-10-18 four windows before style A (Zaviel).png\|160]] |

@@ -207,3 +207,5 @@ Whether each picture in `Assets/Snapshots/` still shows how things are. `tools/v
 | 2026-11-01 strip band walls options.png | not picked | [[2026-11-01 strip band walls spacing options.png]] |
 | 2026-11-01 strip band walls spacing options.png | current |  |
 | 2026-11-01 small pane strip band with its room's wall.png | current |  |
+| 2026-11-01 strip band height options.png | current |  |
+| 2026-11-01 small pane strip band, a tall wall.png | current |  |

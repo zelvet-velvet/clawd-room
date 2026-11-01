@@ -33,6 +33,10 @@ Pictures of Windows Terminal, iTerm2, `--try`, newest first: ✅ current (open),
 > Replaced by: [[2026-11-01 small pane strip focus frame.png]]
 > Shown in: [[2026-11-01#🦀 A pane too small for the room shows a strip of Clawds (Zaviel)|2026-11-01 · 🦀 A pane too small for the room shows a strip of Clawds (Zaviel)]]
 
+> [!success]+ ✅ current · Small pane strip band, a tall wall
+> ![[2026-11-01 small pane strip band, a tall wall.png|420]]
+> Shown in: [[2026-11-01#🖼️ The strip's band gets its room's wall (Zaviel)|2026-11-01 · 🖼️ The strip's band gets its room's wall (Zaviel)]]
+
 > [!success]+ ✅ current · Small pane strip band with its room's wall
 > ![[2026-11-01 small pane strip band with its room's wall.png|420]]
 > Shown in: [[2026-11-01#🖼️ The strip's band gets its room's wall (Zaviel)|2026-11-01 · 🖼️ The strip's band gets its room's wall (Zaviel)]]

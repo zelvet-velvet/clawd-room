@@ -101,8 +101,8 @@ strip 116 5 116x10 first=0 ce31b5c0ea72dbaf
 strip 60 5 60x10 first=0 c58f7e1779a9d7eb
 strip 116 2 116x4 first=0 80a8bb34ad4c75b3
 strip 30 3 30x6 first=0 b746b83af817b32b
-strip 43 30 43x60 first=0 c9350c0fc83b6811
-strip view band 116x30 df72411786b20eb8
+strip 43 30 43x60 first=0 f0c0183a3f811cbb
+strip view band 116x30 5ee8d95452ef2fba
 strip view faces 116x30 761ce42f29d657e3
 strip tab api first=0 f39f7227c5afd8c8
 strip tab web-shop first=0 da056b3385b85196

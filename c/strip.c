@@ -124,7 +124,49 @@ static void picked(Canvas *c, int cx, int top, const Session *s, double now, int
  * WALL_PERIOD pixels, on the wall just above the Clawds (they stand in front) */
 #define WALL_PERIOD 116
 #define WALL_ZONE 17 /* the wall's part above the Clawds that the things use (a taller band: the rest stays plain) */
+/* a tall wall (picked 2026-11-01, mockup 47 A): the same things over the whole wall: lamps hang from the ceiling, windows
+ * and boards at their height, a taller skyline, clouds high up, trees and lamp posts on the ground; the Clawds keep their size */
+static void wall_things_tall(Canvas *c, const char *th, int wh) {
+    for (int base = 0; base < c->w; base += WALL_PERIOD) {
+        if (!strcmp(th, "park")) {
+            unsigned r = 7u + (unsigned)base;
+            for (int x = base; x < base + WALL_PERIOD && x < c->w;) {
+                r = r * 1103515245u + 12345u;
+                int w = 7 + (int)(r >> 16) % 12, h = 6 + (int)(r >> 20) % (wh / 2);
+                canvas_rect(c, x, wh - h, w, h, RGB(176, 190, 208));
+                for (int yy = wh - h + 2; yy < wh - 1; yy += 3) for (int xx = x + 1; xx < x + w - 1; xx += 2) canvas_px(c, xx, yy, RGB(220, 226, 236));
+                x += w + 1;
+                if ((r >> 24) % 2) x += 14 + (int)(r >> 26) % 12;
+            }
+            for (int k = 0; k < 2; k++) { int x = base + (k ? 100 : 30), top = wh - 20; canvas_rect(c, x, top, 1, wh - top, RGB(50, 54, 60)); canvas_rect(c, x - 1, top - 1, 3, 1, RGB(240, 220, 140)); }
+            canvas_rect(c, base + 78, wh - 8, 2, 8, RGB(110, 80, 50)); canvas_rect(c, base + 73, wh - 20, 11, 13, RGB(70, 140, 70));
+            canvas_rect(c, base + 50, 5, 10, 3, RGB(250, 252, 255)); canvas_rect(c, base + 52, 4, 5, 1, RGB(250, 252, 255));
+            canvas_rect(c, base + 12, 9, 7, 2, RGB(250, 252, 255));
+        } else if (!strcmp(th, "coffee")) {
+            int sy = wh / 2;
+            for (int k = 0; k < 2; k++) {
+                int sx = base + (k ? 64 : 4);
+                canvas_rect(c, sx, sy, 20, 1, RGB(120, 92, 66));
+                for (int x = sx + 2; x < sx + 19; x += 5) canvas_rect(c, x, sy - 2, 2, 2, (x / 5) % 2 ? RGB(235, 235, 245) : RGB(120, 80, 50));
+            }
+            for (int k = 0; k < 2; k++) { int x = base + (k ? 100 : 40), sh = wh / 2 + 4; canvas_rect(c, x + 1, 0, 1, sh, RGB(80, 60, 48)); canvas_rect(c, x, sh, 3, 2, RGB(230, 190, 110)); canvas_px(c, x + 1, sh + 2, RGB(255, 230, 150)); }
+            int my = wh / 2 - 12;
+            canvas_rect(c, base + 82, my, 14, 8, RGB(40, 60, 46));
+            for (int x = base + 84; x < base + 94; x += 2) canvas_px(c, x, my + 2, RGB(235, 235, 210));
+            for (int x = base + 84; x < base + 92; x += 3) canvas_px(c, x, my + 4, RGB(235, 235, 210));
+        } else {
+            int wy = wh / 2 - 10, x = base + 10, q = base + 68;
+            canvas_rect(c, x, wy, 12, 14, RGB(240, 244, 250));
+            canvas_rect(c, x + 1, wy + 1, 4, 12, RGB(150, 200, 236)); canvas_rect(c, x + 7, wy + 1, 4, 12, RGB(150, 200, 236));
+            canvas_rect(c, q + 2, wy, 5, 5, RGB(240, 236, 220)); canvas_px(c, q + 4, wy + 1, EYE); canvas_px(c, q + 4, wy + 2, EYE); canvas_px(c, q + 5, wy + 2, EYE);
+            canvas_rect(c, q + 9, wy + 2, 9, 7, RGB(176, 140, 96)); canvas_px(c, q + 11, wy + 3, RGB(240, 230, 120)); canvas_px(c, q + 14, wy + 4, RGB(150, 200, 236)); canvas_px(c, q + 12, wy + 6, RGB(230, 130, 120));
+            for (int k = 0; k < 2; k++) canvas_rect(c, base + (k ? 96 : 36), 0, 10, 1, RGB(250, 250, 240)); /* ceiling lights */
+        }
+    }
+}
+#define WALL_TALL 24 /* from this many pixels of wall the things use all of it */
 static void wall_things(Canvas *c, const Theme *th) {
+    if (c->h - 3 >= WALL_TALL) { wall_things_tall(c, th->name, c->h - 3); return; }
     int wh = c->h - 3, zh = wh < WALL_ZONE ? wh : WALL_ZONE, y0 = wh - zh, park = !strcmp(th->name, "park"), coffee = !strcmp(th->name, "coffee");
     for (int base = 0; base < c->w; base += WALL_PERIOD) {
         if (park) {

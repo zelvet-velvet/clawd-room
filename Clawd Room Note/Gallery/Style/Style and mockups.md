@@ -27,6 +27,10 @@ Pictures of mockups and options to choose from (the picked one is marked), newes
 > Replaced by: [[2026-11-01 strip band walls spacing options.png]]
 > Shown in: not in a note yet
 
+> [!success]+ ✅ current · Strip band height options
+> ![[2026-11-01 strip band height options.png|420]]
+> Shown in: not in a note yet
+
 > [!success]+ ✅ current · Small room 80x24 options
 > ![[2026-11-01 small room 80x24 options.png|420]]
 > Shown in: not in a note yet
