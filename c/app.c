@@ -253,6 +253,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
     int size = a->room_size, seen_n = -1; /* the room size (r list) and how many Clawds the scale was picked for */
     Camera cam;
     Strip strip = {0}; /* the room in a pane too small for it (strip.h) */
+    int in_strip = 0; /* the strip shows (last frame): the pane is under MIN_COLS x MIN_ROWS, or the room has no seat for any Clawd */
     camera_init(&cam);
     struct { int has; double t; int has_cell, cell[2]; int prescale; } pend = {0};
     char flash[96] = "";
@@ -338,7 +339,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                     if (side >= 0 || k == 27) continue;
                 }
                 if (k == 27) { room_unpick(&room, paused ? frozen_t : t); strip_unpick(&strip); dirty = 1; continue; } /* Esc lets go of the picked Clawd; only q quits */
-                if (strip_wanted(cols, rows) && (k == '\t' || k == 'a' || k == 'd')) { strip_step(&strip, &room, now, k == 'a' ? -1 : 1); dirty = 1; continue; } /* too small for the room: Tab picks in the strip */
+                if (in_strip && (k == '\t' || k == 'a' || k == 'd')) { strip_step(&strip, &room, now, k == 'a' ? -1 : 1); dirty = 1; continue; } /* too small for the room: Tab picks in the strip */
                 if (k == 'p') { paused = !paused; frozen_now = now; frozen_t = t; dirty = 1; }
                 else if (k == '?') { help_on = !help_on; dirty = 1; }
                 else if (k == 'r') { size_pick = size; size_menu = 1; dirty = 1; } /* open the ROOM SIZE list at the current size */
@@ -497,7 +498,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                     for (int q = 0; q < n_old; q++) if (!strcmp(old_nb[q].id, p->id)) attached = 1;
                     side = neighbor_side(mine, watcher_rect(&desk.w, p->id), a->near, attached ? HYSTERESIS_PX : 0); /* stay attached a bit longer */
                 }
-                if (p->strip || strip_wanted(cols, rows)) side = -1; /* a strip (a pane too small for a room) has no floor to walk onto */
+                if (p->strip || in_strip) side = -1; /* a strip (a pane too small for a room) has no floor to walk onto */
                 psides[i] = side;
                 if (side >= 0) snprintf(new_held[n_new_held++], 40, "%s", p->id);
                 if (room.npeers < 8) {
@@ -567,7 +568,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                 my_grid = grid_params(&room, mine_area, watcher_dpi(&desk.w, win_id), &reports, cols, rows); has_grid = 1;
                 if (in_pane) my_grid.y0 += rows - pane_room_rows(cols, rows); /* (the dark above the room in a tall pane) */
             }
-            if (link.strip != strip_wanted(cols, rows)) { link.strip = !link.strip; link.ready_changed = 1; } /* (said at once: the rooms beside drop or make their gate) */
+            if (link.strip != in_strip) { link.strip = !link.strip; link.ready_changed = 1; } /* (said at once: the rooms beside drop or make their gate) */
             if (link.strip) { mine_area = NULL; has_grid = 0; link.auto_k = 0; } /* the strip: no gates, no scale for the others to share */
             link.has_grid = has_grid;
             if (has_grid) { double g[7] = {my_grid.ox, my_grid.oy, my_grid.cw, my_grid.ch, my_grid.k, my_grid.x0, my_grid.y0}; memcpy(link.grid, g, sizeof g); }
@@ -716,7 +717,9 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
             if (fitter.done) { snprintf(flash, sizeof flash, "%s", fitter.message); flash_until = wall() + 5; has_fitter = 0; dirty = 1; }
         }
         if (dirty || !paused) {
-            if (strip_wanted(cols, rows)) { /* too small for the room: the strip (a band of Clawds, or faces) */
+            int auto_on = auto_ && !a->no_auto && !a->scale && !strcmp(room.ratio, "auto"); /* (auto: if scale 1 seats nobody, no scale does) */
+            in_strip = strip_wanted(cols, rows) || (auto_on && strip_no_seat(&room, cols, (in_pane ? pane_room_rows(cols, rows) : rows) * 2));
+            if (in_strip) { /* too small for the room: the strip (a band of Clawds, or faces) */
                 Canvas cv = strip_render(&strip, &room, cols, rows, paused ? frozen_t : t, paused ? frozen_now : now);
                 Cells cells = cells_from_canvas(&cv, "");
                 show(&cells, have_prev ? &prev : NULL, 1);

@@ -172,6 +172,19 @@ static int golden_ui(const char *path) {
             }
         }
     }
+    { /* a room with no seat for even one Clawd shows the strip (not an empty floor saying "+1 MORE") */
+        static const char *TH[3] = {"office", "coffee", "park"};
+        static const int WH[4][2] = {{50, 40}, {50, 60}, {120, 50}, {120, 80}};
+        for (int i = 0; i < 3; i++) {
+            static Fixture fx;
+            char txt[300];
+            snprintf(txt, sizeof txt, "theme %s\ntitle seat\nterminal 120 40\ntime 1000.0 3.4\nscale 1\nsession s00 name=api created=900 state=work tool=Bash\n", TH[i]);
+            if (fixture_load_text(&fx, txt)) continue;
+            printf("no seat %s", TH[i]);
+            for (int k = 0; k < 4; k++) printf(" %dx%d:%d", WH[k][0], WH[k][1], strip_no_seat(&fx.room, WH[k][0], WH[k][1]));
+            printf("\n");
+        }
+    }
     return 0;
 }
 

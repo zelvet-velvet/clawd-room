@@ -149,7 +149,7 @@ What to test next, one `[!todo] Group X · …` callout per group (`[!done]` onc
 > > 3. A room learns its pane when the pane has the focus (it has, just after it opens), or as the only Clawd Room pane no other room claims. Two rooms that both never had their pane focused wait for a click into one of them. A room that cannot tell within 15 s whether it is in a pane leaves the window and font alone.
 > > 4. If something looks wrong: `CLAWD_SIZE_LOG=/tmp/size.log ./clawd-room.sh` logs why a gate is shown or not.
 
-> [!todo] Group O · WSL: a pane too small for the room shows a strip (T76–T82)
+> [!todo] Group O · WSL: a pane too small for the room shows a strip (T76–T85)
 > - [ ] **T76** Split a Clawd Room pane until it is under 20 rows (about 5 rows high) → a band of Clawds at laptops instead of a black pane; each laptop's screen is green (working), yellow (waiting) or purple (thinking); an idle Clawd has its eyes shut and no laptop.
 > - [ ] **T77** Press Tab in it → yellow corners around one Clawd, the rest dims, its name shows beside it; Tab again moves on; Esc lets go.
 > - [ ] **T78** Make the pane narrower than all the Clawds need → only some show; Tab past the last one in view scrolls the band to the next.
@@ -157,8 +157,11 @@ What to test next, one `[!todo] Group X · …` callout per group (`[!done]` onc
 > - [ ] **T80** Make the pane 2 or 3 rows high → faces on coloured tiles; Tab outlines one in yellow.
 > - [ ] **T81** In a strip taller than 5 rows press Tab → the yellow corners hug the Clawd (not the whole band's height), the light is round around it, the name sits beside the corners.
 > - [ ] **T82** A room pane beside a strip pane → no gate to the strip on either side; make the strip pane big again → after about 1 s still, the gate appears.
+> - [ ] **T83** One session; make a room pane about 22 rows high (office) or 35 (park) → the strip shows, not an empty floor saying "+1 MORE"; make it taller → the room comes back with the Clawd at its desk.
+> - [ ] **T84** A strip 10 or more rows high, Tab → the name sits above the yellow corners, not over the Clawd.
+> - [ ] **T85** A sleeping session in the strip → eyes shut and Zs rising from it; an idle one keeps its eyes open, no laptop.
 >
-> > [!tip]- T76–T82 · how to run them
+> > [!tip]- T76–T85 · how to run them
 > > 1. Branch `feat/split-panes`: `git switch feat/split-panes && make -C c`.
 > > 2. Windows Terminal: Alt + Shift + − splits the focused pane in two (below); drag the divider to make the room's pane small. Any terminal window made small works too.
 

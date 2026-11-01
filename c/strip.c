@@ -15,6 +15,21 @@ static const Rgb EYE = {20, 20, 24}, PLATE = {14, 14, 18}, TILE_BG = {12, 12, 16
 
 int strip_wanted(int cols, int rows) { return cols < MIN_COLS || rows < MIN_ROWS; }
 
+/* (picked 2026-11-01: an empty room saying "+1 MORE" tells nothing; the strip shows the Clawds) */
+int strip_no_seat(Room *room, int w, int h) {
+    static struct { int w, h, n, gates; const Theme *th; int none; } C = {-1, -1, -1, -1, NULL, 0};
+    room_order(room);
+    if (!room->n) return 0;
+    int gates = 0;
+    for (int i = 0; i < room->nnb; i++) gates |= 1 << room->nb[i].side;
+    if (C.w != w || C.h != h || C.n != room->n || C.gates != gates || C.th != room->theme) { /* (geo_init is not free: once per change) */
+        static Geo g;
+        geo_init(&g, room, w, h);
+        C.w = w; C.h = h; C.n = room->n; C.gates = gates; C.th = room->theme; C.none = g.shown == 0;
+    }
+    return C.none;
+}
+
 static Rgb state_col(const char *st) {
     if (!strcmp(st, "wait")) return RGB(240, 200, 60);
     if (!strcmp(st, "think")) return RGB(150, 140, 230);
@@ -96,7 +111,8 @@ static void picked(Canvas *c, int cx, int top, const Session *s, double now, int
     }
     if (name) {
         int w = text_width(s->name[0] ? s->name : "CLAWD") + 2;
-        plate(c, x1 + 2 + w <= c->w ? x1 + 2 : x0 - 2 - w, y0, s->name, state_col(session_shown(s, now))); /* beside it, else on its left */
+        if (y0 >= 7) plate(c, cx - w / 2, y0 - 7, s->name, state_col(session_shown(s, now))); /* above the corners when there is room ... */
+        else plate(c, x1 + 2 + w <= c->w ? x1 + 2 : x0 - 2 - w, y0, s->name, state_col(session_shown(s, now))); /* ... else beside them, or on their left */
     }
 }
 
@@ -112,8 +128,13 @@ static void band(Canvas *c, const Theme *th, Session **s, int n, int first, int 
         int cx = x0 + k * STRIP_SLOT + 7;
         Pose p = pose_for(q, st, t, now);
         if (!strcmp(st, "wait")) p.arms[0] = p.arms[1] = 2; /* waving: needs you */
-        if (resting(st)) p.eyes = "shut";
+        if (!strcmp(st, "sleep")) p.eyes = "shut";
         draw_clawd(c, cx, feet - 7, &p, draw_frames(), C_CLAWD, th, "");
+        if (!strcmp(st, "sleep")) /* the room's Zs (draw.c), rising from its head */
+            for (int z = 0; z < 3; z++) {
+                double k = fmod(t * 0.7 + z / 3.0, 1.0);
+                canvas_text(c, (int)(cx + 6 + k * 3), (int)(feet - 13 - k * 5), "Z", k < 0.7 ? RGB(180, 190, 240) : RGB(110, 115, 150));
+            }
         if (!resting(st)) { /* the laptop, its screen in the state's colour */
             canvas_rect(c, cx + 8, feet - 4, 6, 3, RGB(70, 72, 84));
             canvas_rect(c, cx + 9, feet - 3, 4, 1, state_col(st));

@@ -117,7 +117,7 @@ with tempfile.TemporaryDirectory() as tmp:
     out, st = run(["--theme", "office", "--events", events], [(1.0, b"r"), (1.3, b"\x1b"), (1.6, b"]"), (2.2, b"q")])
     check("Esc closes the room size list, not the room", st == 0 and b"ZOOM 2X" in out)
     # 2. a lone Esc does not quit (it lets go of the picked Clawd): the room still answers p afterwards, and q quits
-    out, st = run(["--theme", "park", "--events", events], [(1.0, b"\t"), (1.5, b"\x1b"), (2.0, b"p"), (2.6, b"q")])
+    out, st = run(["--theme", "park", "--events", events], [(1.0, b"\t"), (1.5, b"\x1b"), (2.0, b"p"), (2.6, b"q")], rows=42)  # (the park seats a Clawd from about 40 rows; below that the strip)
     check("Esc does not quit the room, q does", st == 0 and b"PAUSED" in out)
     # 3. too small a terminal: the strip (a band of Clawds; strip.h), Tab and Esc work there, q quits
     out, st = run(["--theme", "office", "--events", events], [(0.8, b"\t"), (1.2, b"\x1b"), (1.6, b"q")], cols=30, rows=10)

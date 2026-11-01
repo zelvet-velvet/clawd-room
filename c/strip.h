@@ -20,6 +20,7 @@ typedef struct {
 } Strip;
 
 int strip_wanted(int cols, int rows);                  /* the pane is too small for the room */
+int strip_no_seat(Room *room, int w, int h);           /* a room w x h room pixels has no seat for even one of its Clawds */
 Canvas strip_render(Strip *st, Room *room, int cols, int rows, double t, double now);
 const char *strip_step(Strip *st, Room *room, double now, int dir); /* Tab (dir 1) / back (-1): the next Clawd's name, NULL if none */
 void strip_unpick(Strip *st);                          /* Esc */
