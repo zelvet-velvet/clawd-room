@@ -103,7 +103,7 @@ strip 116 2 116x4 first=0 80a8bb34ad4c75b3
 strip 30 3 30x6 first=0 b746b83af817b32b
 strip 43 30 43x60 first=0 57b0d01c973c86c1
 strip view band 116x30 2c9a35b7e96fbb8a
-strip view faces 116x30 f4a20b4b1e994793
+strip view faces 116x30 761ce42f29d657e3
 strip tab api first=0 3800282f7c9ee9b7
 strip tab web-shop first=0 da056b3385b85196
 strip tab docs first=0 8ea367586710c877

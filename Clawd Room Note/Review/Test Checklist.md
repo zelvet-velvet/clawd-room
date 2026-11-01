@@ -167,7 +167,7 @@ What to test next, one `[!todo] Group X · …` callout per group (`[!done]` onc
 > - [ ] **T90** Make the pane 2 or 3 rows high → a face per Clawd on the room's wall colour (no black, no tiles), dark eyes as in the room, a small dot in the state colour on each face's left; Tab puts yellow brackets around one.
 > - [ ] **T91** In the 80x24 room press Tab, and open a pane beside it → Tab picks a Clawd on the floor; a gate appears, and Clawds can walk through it and come back to their floor place.
 > - [ ] **T92** Make a strip 2 or 3 rows high → each face has tall eyes: straight when working, raised when waiting, up to the side when thinking, half shut (dots) when idle, a line when sleeping.
-> - [ ] **T93** In a normal room press `v` three times → the Clawds at laptops, then the faces (3 rows tall in the middle of the pane, on the wall colour), then the room again; Tab picks in the first two.
+> - [ ] **T93** In a normal room press `v` three times → the Clawds at laptops, then the faces filling the pane's height (the same shape, bigger; at least one whole face across), then the room again; Tab picks in the first two.
 > - [ ] **T94** In a pane too small for the room press `v` → band and faces swap; under 4 rows `v` keeps the faces.
 > - [ ] **T95** Make the font big (Ctrl+= several times) so the window's edge has a gap less than a cell → the gap is the colour of the picture next to it, not black; quit → the terminal's background is back to normal.
 >

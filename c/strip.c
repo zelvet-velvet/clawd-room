@@ -178,11 +178,21 @@ Canvas strip_render(Strip *st, Room *room, int cols, int rows, double t, double 
     Canvas c = canvas_new(cols > 0 ? cols : 1, rows > 0 ? rows * 2 : 2, TILE_BG);
     Session *s[STRIP_MAX];
     int n = sessions(room, s), is_band = rows >= STRIP_BAND_ROWS && st->force != 2;
-    int fit = (cols - 2) / (is_band ? STRIP_SLOT : tile_w(face_h(c.h)));
+    int h0 = face_h(c.h), k = is_band ? 1 : c.h / h0; /* faces fill the height: the 3-row design k times bigger (its shape kept), */
+    if (!is_band && k > 1 && tile_w(h0) * k > cols - 2) k = (cols - 2) / tile_w(h0) > 1 ? (cols - 2) / tile_w(h0) : 1; /* ... a whole face across at least */
+    int fit = (cols - 2) / (is_band ? STRIP_SLOT : tile_w(h0) * k);
     if (fit < 1) fit = 1;
     int shown = fit_window(st, s, n, fit, now);
     if (is_band) band(&c, room->theme, s, n, st->first, shown, st->pick, t, now);
-    else faces(&c, room->theme, s, n, st->first, shown, st->pick, now);
+    else if (k <= 1) faces(&c, room->theme, s, n, st->first, shown, st->pick, now);
+    else {
+        Canvas small = canvas_new((cols + k - 1) / k, h0, TILE_BG), big;
+        faces(&small, room->theme, s, n, st->first, shown, st->pick, now);
+        big = canvas_scaled(&small, k);
+        canvas_rect(&c, 0, 0, c.w, c.h, room->theme->wall);
+        canvas_blit(&c, &big, (c.w - big.w) / 2, (c.h - big.h) / 2);
+        canvas_free(&small); canvas_free(&big);
+    }
     return c;
 }
 
