@@ -78,6 +78,17 @@ flowchart LR
     BG["🖼️ background<br/>(cached per size)"] --> Gates["🚪 gates"] --> Sign["🪧 sign"] --> Mix["🪑+🦀 workspaces and Clawds<br/>back to front<br/>(the stairs' railing in between:<br/>after the stairs, before the floor)"] --> Parts["✨ particles"] --> Marks["🔴 dots, bubbles,<br/>needs-you names"]
 ```
 
+> [!todo]- Picked, not built yet
+> - **No rows, no +N MORE** (2026-10-30): today a shallow floor gets no row at all (the first row wants 9 room pixels behind it and `WALK_MIN` 16 in front: a 119x21 pane has a floor 22 deep), so every Clawd went into "+N MORE"; even 119x32 seats one desk. Picked: **scattered spots mixed with loose clusters**. A spot is the farthest of about 40 random ones from the others (it stays while its session lives); a cluster is 2–3 workspaces sharing one piece (desks pushed together, a long café table with a stool each, one big picnic blanket).
+> - **Mixed furniture**, smaller than today: office: a narrow desk (16 px, not 24) with a laptop, a standing desk, a beanbag; coffee shop: a stool at a little round table, an armchair, a high table to stand at; park: a bench with a backrest, a tree stump, a picnic blanket (no desks in the park). ![[2026-10-30 scattered workspaces, mixed furniture (picked).png|250]] ![[2026-10-30 workspace clusters (picked).png|250]]
+> - **Clawds without a workspace** do something on the open floor instead of "+N MORE" (all four kept): D demolish (hammer the wall, a pickaxe on the paving), F fire (a bin or pan fire and an extinguisher, a campfire with a marshmallow), C clean up (sweep, mop, rake leaves), O play catch. ![[2026-10-30 desk-less activities (picked).gif|250]] Rows A / B / C were not picked: ![[2026-10-30 tight floor rows A B C.png|250]] → [[2026-10-30]]
+
+> [!question]- Open (2026-10-30)
+> - **Hot desking**: working Clawds get a seat first, waiting or idle ones give theirs up and do an activity (then activities show in every room)?
+> - **Which activity**: by the session's state (working → demolish or clean, waiting → fire, idle → play) or at random?
+> - **Every size**: below 44x20 today's room says "need 44x20". For a strip (116x5 cells = 10 room pixels): S1 the room as a band with a Clawd at a laptop each, S2 Clawds with their names, S3 chips; mini Clawds (4 px) under 8 rows. ![[2026-10-30 tiny pane strip options.png|250]]
+> - **Clawds that talk to you**: a waiting Clawd jumps and waves (and the taskbar flashes), eyes follow the mouse, click a Clawd for a card (name, state, tool, time), drag it to a gate, click to bring its terminal to the front (needs the pane's `WT_SESSION` from the hook, and Zaviel's yes to focusing windows), give it a coffee.
+
 ---
 ## 🚪 Gates
 
