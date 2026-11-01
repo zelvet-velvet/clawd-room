@@ -18,6 +18,7 @@ typedef struct {
     char pane[40]; /* its pane of a split Windows Terminal window (UI Automation runtime id), or "" */
     char ready_id[LINK_READY][40]; double ready_t[LINK_READY]; int nready; /* when it was ready to show its gate to each room */
     int auto_k; /* the scale it would pick for itself (0: not said, or its scale is not automatic) */
+    int strip;  /* it shows the strip (too small for a room): no gate to it */
     char homes[MAX_CLAIMS][72]; int nhomes; /* the sessions that moved into that room */
     char shows[MAX_SHOWS][72]; int nshows;  /* the sessions it shows now */
 } LinkPeer;
@@ -33,6 +34,7 @@ typedef struct {
     char ready_id[LINK_READY][40]; double ready_t[LINK_READY]; int nready; /* ours: when we were ready to show each gate */
     int ready_changed; /* say it at once (the other room waits for it) */
     int auto_k; /* ours: the scale we would pick for ourselves (rooms in panes of one window take the smallest) */
+    int strip;  /* ours: we show the strip, so no room makes a gate to us */
     char homes[MAX_CLAIMS][72]; int nhomes; /* ours, said in the heartbeat */
     char shows[MAX_SHOWS][72]; int nshows;  /* ... and the sessions we show */
 } Link;

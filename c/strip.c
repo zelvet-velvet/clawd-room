@@ -62,34 +62,41 @@ static int fit_window(Strip *st, Session **s, int n, int fit, double now) {
     return n < fit ? n : fit;
 }
 
-static void plate(Canvas *c, int x, const char *name, Rgb col) { /* a name on a dark plate along the top */
+static void plate(Canvas *c, int x, int y, const char *name, Rgb col) { /* a name on a dark plate */
     char up[24];
     snprintf(up, sizeof up, "%.12s", name[0] ? name : "CLAWD");
     for (char *q = up; *q; q++) if (*q >= 'a' && *q <= 'z') *q -= 32;
     int w = text_width(up) + 2;
     if (x + w > c->w) x = c->w - w;
     if (x < 0) x = 0;
-    canvas_rect(c, x, 0, w, 6, PLATE);
-    canvas_text(c, x + 1, 0, up, col);
+    if (y + 6 > c->h) y = c->h - 6;
+    if (y < 0) y = 0;
+    canvas_rect(c, x, y, w, 6, PLATE);
+    canvas_text(c, x + 1, y, up, col);
 }
 
-/* the picked one stands out: the rest dims outside a soft light, yellow corners at the band's edges, its name beside it */
-static void picked(Canvas *c, int cx, const Session *s, double now, int name) {
+/* the picked one stands out as in the room (draw.c draw_pick): the rest dims outside a round soft light, four yellow corners
+ * frame the Clawd only (its laptop stays outside), its name beside them; cx is the Clawd's middle, top the top of its sprite */
+static void picked(Canvas *c, int cx, int top, const Session *s, double now, int name) {
+    double lx = cx, ly = top + 4; /* (on the Clawd: the strip has no bubble above it to keep lit) */
     for (int y = 0; y < c->h; y++)
         for (int x = 0; x < c->w; x++) {
-            double r = fabs(x + 0.5 - cx) / PICK_LIGHT, k = r < 0.45 ? 0 : r > 1 ? 1 : (r - 0.45) / 0.55, f = 1.0 - PICK_DARK * k * k * (3 - 2 * k);
+            double dx = (x + 0.5 - lx) / PICK_LIGHT, dy = (y + 0.5 - ly) / PICK_LIGHT, r = sqrt(dx * dx + dy * dy);
+            double k = r < 0.45 ? 0 : r > 1 ? 1 : (r - 0.45) / 0.55, f = 1.0 - PICK_DARK * k * k * (3 - 2 * k);
             if (f >= 0.999) continue;
             Rgb *q = &c->p[y * c->w + x];
             q->r = (uint8_t)(q->r * f + 0.5); q->g = (uint8_t)(q->g * f + 0.5); q->b = (uint8_t)(q->b * f + 0.5);
         }
-    int x0 = cx - 9, x1 = cx + 8, y1 = c->h - 1;
-    for (int k = 0; k < 3; k++) {
-        canvas_px(c, x0 + k, 0, C_YELLOW); canvas_px(c, x0, k, C_YELLOW); canvas_px(c, x1 - k, 0, C_YELLOW); canvas_px(c, x1, k, C_YELLOW);
-        canvas_px(c, x0 + k, y1, C_YELLOW); canvas_px(c, x0, y1 - k, C_YELLOW); canvas_px(c, x1 - k, y1, C_YELLOW); canvas_px(c, x1, y1 - k, C_YELLOW);
+    int x0 = cx - 9, x1 = cx + 8, y0 = top - 3, y1 = top + 10; /* (the room's frame: the Clawd's box plus 2) */
+    if (y0 < 0) y0 = 0;
+    if (y1 > c->h - 1) y1 = c->h - 1;
+    for (int i = 0; i < 4; i++) {
+        canvas_px(c, x0 + i, y0, C_YELLOW); canvas_px(c, x0, y0 + i, C_YELLOW); canvas_px(c, x1 - i, y0, C_YELLOW); canvas_px(c, x1, y0 + i, C_YELLOW);
+        canvas_px(c, x0 + i, y1, C_YELLOW); canvas_px(c, x0, y1 - i, C_YELLOW); canvas_px(c, x1 - i, y1, C_YELLOW); canvas_px(c, x1, y1 - i, C_YELLOW);
     }
     if (name) {
         int w = text_width(s->name[0] ? s->name : "CLAWD") + 2;
-        plate(c, x1 + 2 + w <= c->w ? x1 + 2 : x0 - 2 - w, s->name, state_col(session_shown(s, now))); /* beside it, else on its left */
+        plate(c, x1 + 2 + w <= c->w ? x1 + 2 : x0 - 2 - w, y0, s->name, state_col(session_shown(s, now))); /* beside it, else on its left */
     }
 }
 
@@ -114,7 +121,7 @@ static void band(Canvas *c, const Theme *th, Session **s, int n, int first, int 
         }
         if (!strcmp(q->sid, pick)) { pcx = cx; ps = q; }
     }
-    if (ps) picked(c, pcx, ps, now, 1);
+    if (ps) picked(c, pcx, feet - 7, ps, now, 1);
 }
 
 static void faces(Canvas *c, Session **s, int n, int first, int shown, const char *pick, double now) {

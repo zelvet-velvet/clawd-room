@@ -118,9 +118,9 @@ strip 60 5 60x10 first=0 b5f04b3ca843945b
 strip 116 2 116x4 first=0 868c750af0356251
 strip 30 3 30x6 first=0 624cb515ab8f1ced
 strip 43 30 43x60 first=0 57b0d01c973c86c1
-strip tab api first=0 5d1d9750fb162872
-strip tab web-shop first=0 0384e0a46de0efb2
-strip tab docs first=0 263cb32c0abc7314
-strip tab app first=1 934f12d34199205b
-strip wait pick=s05 first=3 6747c3fc71ba8af7
+strip tab api first=0 3800282f7c9ee9b7
+strip tab web-shop first=0 da056b3385b85196
+strip tab docs first=0 8ea367586710c877
+strip tab app first=1 d84eb9b7732f50ea
+strip wait pick=s05 first=3 93d4ff75388a1937
 strip wait pick=- first=0 b5f04b3ca843945b

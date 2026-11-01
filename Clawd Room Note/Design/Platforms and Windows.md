@@ -49,7 +49,7 @@ sequenceDiagram
 > [!bug] Fixed: the view stayed scrolled up after a resize (2026-10-17)
 > iTerm2 copies a cleared screen into its scrollback and pushes lines off the top when a window gets shorter. The room now **never sends clear-screen** (`ESC[2J`) and ends every frame with the cursor at the top-left.
 
-- Minimum terminal size 44x20 for the room; below that a strip of Clawds shows instead (see [[Rooms and Art]], Layout).
+- Minimum terminal size 44x20 for the room; below that a strip of Clawds shows instead (see [[Rooms and Art]], Layout); a pane showing the strip gets no gates, and the rooms beside it make none to it.
 
 ---
 ## 🪟 WSL + Windows Terminal

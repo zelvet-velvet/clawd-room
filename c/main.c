@@ -322,7 +322,7 @@ static int golden_win(void) {
             static Link la, lb;
             link_init(&la, "alpha", dir); link_init(&lb, "beta", dir);
             link_start(&la); link_start(&lb);
-            snprintf(la.ready_id[0], 40, "%s", lb.id); la.ready_t[0] = 1000.25; la.nready = 1; la.ready_changed = 1;
+            snprintf(la.ready_id[0], 40, "%s", lb.id); la.ready_t[0] = 1000.25; la.nready = 1; la.ready_changed = 1; la.strip = 1; /* (and a strip says so: no gate to it) */
             LinkEvent ev[8];
             link_update(&la, 2000.0, 80, 24, ev, 8);
             link_update(&lb, 2000.0, 80, 24, ev, 8);
@@ -331,6 +331,7 @@ static int golden_win(void) {
                 for (int k = 0; k < lb.peers[p].nready; k++)
                     if (!strcmp(lb.peers[p].id, la.id) && !strcmp(lb.peers[p].ready_id[k], lb.id)) { printf("gate ready heard %.2f changed=%d\n", lb.peers[p].ready_t[k], la.ready_changed); found = 1; }
             if (!found) printf("gate ready not heard\n");
+            for (int p = 0; p < lb.npeers; p++) if (!strcmp(lb.peers[p].id, la.id)) printf("strip heard %d\n", lb.peers[p].strip);
             link_close(&la); link_close(&lb);
             rmdir(dir);
         }

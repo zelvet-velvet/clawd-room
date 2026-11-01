@@ -10,9 +10,14 @@ Pictures of Windows Terminal, iTerm2, `--try`, newest first: ✅ current (open),
 
 ## 2026-11-01
 
-> [!success]+ ✅ current · Small pane strip built
+> [!success]+ ✅ current · Small pane strip focus frame
+> ![[2026-11-01 small pane strip focus frame.png|420]]
+> Shown in: [[Rooms and Art|Rooms and Art]], [[2026-11-01#🦀 The strip joins the split-pane branch; its focus frames only the Clawd; no gates to a strip (Zaviel)|2026-11-01 · 🦀 The strip joins the split-pane branch; its focus frames only the Clawd; no gates to a strip (Zaviel)]]
+
+> [!quote]- ♻️ replaced · Small pane strip built
 > ![[2026-11-01 small pane strip built.png|420]]
-> Shown in: [[Rooms and Art|Rooms and Art]], [[2026-11-01#🦀 A pane too small for the room shows a strip of Clawds (Zaviel)|2026-11-01 · 🦀 A pane too small for the room shows a strip of Clawds (Zaviel)]]
+> Replaced by: [[2026-11-01 small pane strip focus frame.png]]
+> Shown in: [[2026-11-01#🦀 A pane too small for the room shows a strip of Clawds (Zaviel)|2026-11-01 · 🦀 A pane too small for the room shows a strip of Clawds (Zaviel)]]
 
 ## 2026-10-19
 

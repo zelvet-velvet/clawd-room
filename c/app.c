@@ -497,6 +497,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                     for (int q = 0; q < n_old; q++) if (!strcmp(old_nb[q].id, p->id)) attached = 1;
                     side = neighbor_side(mine, watcher_rect(&desk.w, p->id), a->near, attached ? HYSTERESIS_PX : 0); /* stay attached a bit longer */
                 }
+                if (p->strip || strip_wanted(cols, rows)) side = -1; /* a strip (a pane too small for a room) has no floor to walk onto */
                 psides[i] = side;
                 if (side >= 0) snprintf(new_held[n_new_held++], 40, "%s", p->id);
                 if (room.npeers < 8) {
@@ -566,6 +567,8 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                 my_grid = grid_params(&room, mine_area, watcher_dpi(&desk.w, win_id), &reports, cols, rows); has_grid = 1;
                 if (in_pane) my_grid.y0 += rows - pane_room_rows(cols, rows); /* (the dark above the room in a tall pane) */
             }
+            if (link.strip != strip_wanted(cols, rows)) { link.strip = !link.strip; link.ready_changed = 1; } /* (said at once: the rooms beside drop or make their gate) */
+            if (link.strip) { mine_area = NULL; has_grid = 0; link.auto_k = 0; } /* the strip: no gates, no scale for the others to share */
             link.has_grid = has_grid;
             if (has_grid) { double g[7] = {my_grid.ox, my_grid.oy, my_grid.cw, my_grid.ch, my_grid.k, my_grid.x0, my_grid.y0}; memcpy(link.grid, g, sizeof g); }
             link.has_band = has_grid && my_band(&room, &my_grid, link.band);
