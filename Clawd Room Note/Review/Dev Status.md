@@ -8,17 +8,19 @@ sticker: lucide//activity
 > [!important] For AI assistants
 > Read [[LLM Guide]] before any `CMD_` or status update. This note is kept by `CMD_SYNC` / `CMD_ROLLOVER` / `CMD_NOTES_SYNC`; the day notes in `Review/Log/` by `CMD_JOURNAL`.
 
-## 🚀 Today's Progress (2026-10-30)
+## 🚀 Today's Progress (2026-11-01)
+- **Same Clawd Size Everywhere**: A room pixel is always one cell (scale 1), so a Clawd is the same size in every window and pane; the 3/4 rule applies to whole windows too (#15).
+- **Floor Seats**: A room too short for a desk (80x24, a short park) seats its Clawds on the floor with laptops instead of falling back to the strip (#15, mockup 40 B).
+- **Small Pane Strip**: Under 44x20 a band of Clawds at laptops, its wall drawn like its room (picked E), the things over the whole wall in a tall band (picked A); under 4 rows faces with tall eyes and a state dot, filling the height (picked N, P) (#15).
+- **`v` View Key**: `v` goes room → laptops → faces → room (#15).
+- **Window Edge Colour**: The terminal's background takes the picture's edge colour so no black strip is left; reset on quit (#15, to check on WSL: T95).
+- **Branch Tidy**: #12, #16, #17 (profile `--update` fix) and #19 (leftover conflict markers) merged; #13 closed.
+
+## 📅 Yesterday's Progress (2026-10-30)
 - **Callout States**: A callout's type shows its block's state (`[!todo]`, `[!done]`, `[!warning]`, `[!question]`, `[!failure]`), callouts before tables; rule in [[LLM Guide]] (#14).
 - **Split Panes**: A room in a Windows Terminal split pane finds its own pane, gets gates to neighbouring panes and never resizes the shared window or sends font keys (#15, open; to test: T67 – T72 in [[Test Checklist]]).
 - **Crowded Rooms Picked**: Scattered workspaces mixed with loose clusters, smaller mixed furniture, and activities for Clawds without a seat instead of "+N MORE" (mockups; not built) ([[Rooms and Art]]).
 - **Mock Programs**: [[LLM Guide]] says how to write a mockup program (the room's own drawing, the real size, one build line that survives other branches' leftovers).
-
-## 📅 Yesterday's Progress (2026-10-27)
-- **Dev Log Graph**: `tools/git_graph.py` draws the last merged code branches of `main` as a woven gitGraph and writes it into the [[Dev Log]]; the graph's colours and branch chips follow the lane (#9).
-- **Mockups Stay Local**: A mockup is local scratch; only the picked option and one side-by-side picture go into the vault (#8).
-- **Stale Hook Path**: [[LLM Guide]] and [[Home]] say what to do when a moved clone leaves an old `hook.py` path in `settings.json`; no absolute paths or symlinks in the repo or notes.
-- **Vault Layout**: Long titles in the Days list wrap instead of scrolling sideways; general-layout section 1 stays empty (#9).
 
 ---
 
@@ -37,14 +39,14 @@ sticker: lucide//activity
 - [ ] **Bar Below the Room, Gate Tags**: The room above a one-line bar; while `g` / `m` is held a tag centred over each gate (arrow style still to pick).
 - [>] **Settings**: `~/.clawd-room/settings.conf` exists with one line, `gate_theme` (a missing theme falls back to simple quietly). Not yet: more settings and the panel beside the room on `.`, which reads and writes the same file.
 - [ ] **Room Setup Page**: An editor page to choose, per room, which Clawd look / role and which desks, props and options appear. Needs the data first: `rooms/*.txt` declares a room's desks, roles and allowed props (today the code decides), then the page edits those files with the room as the preview.
-- [?] **Every Size**: A strip for panes under 44x20 (S1 band, S2 names, S3 chips; mini Clawds under 8 rows): which one ([[Rooms and Art]])?
+- [>] **Every Size**: Built on `feat/split-panes` (#15): floor seats when no desk fits, under 44x20 the band (its room's wall) or faces, `v` to switch ([[Rooms and Art]], [[2026-11-01]]). To check by eye: T89 – T97.
 - [?] **Clawds That React**: Which first: a waiting Clawd waves (taskbar flash), eyes follow the mouse, click for a card, click to bring its terminal forward (needs `WT_SESSION` in the hook), drag to a gate, a coffee treat.
 - [ ] **Moving, Step 3**: Drag a Clawd with the mouse onto a door, the stairs or the well. (Settled: `--try real` stays split; uneven shares are fine.)
 
 ### 🖥️ Platforms
 - [ ] **Mac Check**: Run `make -C c test` on the Mac after the fused multiply-add change (it should still match).
 - [ ] **Blocked Writes**: The room can block writing when the terminal stops reading (seen with iTerm2 in full screen).
-- [>] **Windows Terminal Panes**: Built on `feat/split-panes` (#15): panes seen through UI Automation, gates between panes, no resize or font keys in a pane. To check by eye: T67 – T72 (Group N of [[Test Checklist]]); panes on other virtual desktops are not seen (Windows hides them).
+- [>] **Windows Terminal Panes**: Built on `feat/split-panes` (#15): panes seen through UI Automation, gates between panes, no resize or font keys in a pane. To check by eye: T67 – T97 (Groups N and O of [[Test Checklist]]); panes on other virtual desktops are not seen (Windows hides them).
 
 ### ⚙️ Engine and tools
 - [x] **Stage Page Polish**: Esc picks nothing (#21), folding the panel and timeline, the picker's search focus, the eye + KEYS button (#22); tests T39 – T50 are in [[Test Checklist]].
