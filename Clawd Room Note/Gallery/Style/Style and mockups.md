@@ -35,6 +35,29 @@ Pictures of mockups and options to choose from (the picked one is marked), newes
 > ![[2026-11-01 room height in split panes, D (picked).png|420]]
 > Shown in: [[Platforms and Windows|Platforms and Windows]]
 
+## 2026-10-30
+
+> [!success]+ ✅ current · Workspace clusters · picked
+> ![[2026-10-30 workspace clusters (picked).png|420]]
+> Shown in: [[Rooms and Art|Rooms and Art]], [[2026-10-30#🪑 Crowded rooms: scattered spots and clusters picked (Zaviel)|2026-10-30 · 🪑 Crowded rooms: scattered spots and clusters picked (Zaviel)]]
+
+> [!success]+ ✅ current · Tiny pane strip options
+> ![[2026-10-30 tiny pane strip options.png|420]]
+> Shown in: [[Rooms and Art|Rooms and Art]]
+
+> [!failure]- ❌ not picked · Tight floor rows A B C
+> ![[2026-10-30 tight floor rows A B C.png|420]]
+> Replaced by: [[2026-10-30 scattered workspaces, mixed furniture (picked).png]]
+> Shown in: [[Rooms and Art|Rooms and Art]]
+
+> [!success]+ ✅ current · Scattered workspaces, mixed furniture · picked
+> ![[2026-10-30 scattered workspaces, mixed furniture (picked).png|420]]
+> Shown in: [[Rooms and Art|Rooms and Art]], [[2026-10-30#🪑 Crowded rooms: scattered spots and clusters picked (Zaviel)|2026-10-30 · 🪑 Crowded rooms: scattered spots and clusters picked (Zaviel)]]
+
+> [!success]+ ✅ current · Desk-less activities · picked
+> ![[2026-10-30 desk-less activities (picked).gif|420]]
+> Shown in: [[Rooms and Art|Rooms and Art]]
+
 ## 2026-10-19
 
 > [!failure]- ❌ not picked · Editor palette mockup C, photoshop

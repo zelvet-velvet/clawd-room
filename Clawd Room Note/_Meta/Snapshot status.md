@@ -186,6 +186,11 @@ Whether each picture in `Assets/Snapshots/` still shows how things are. `tools/v
 | 2026-10-22 the picker's themes tab.png | current |  |
 | 2026-10-24 picked Clawd built.gif | current |  |
 | 2026-10-24 picked Clawd gliding.png | current |  |
+| 2026-10-30 desk-less activities (picked).gif | current |  |
+| 2026-10-30 scattered workspaces, mixed furniture (picked).png | current |  |
+| 2026-10-30 tight floor rows A B C.png | not picked | [[2026-10-30 scattered workspaces, mixed furniture (picked).png]] |
+| 2026-10-30 tiny pane strip options.png | current |  |
+| 2026-10-30 workspace clusters (picked).png | current |  |
 | 2026-11-01 room height in split panes, options.png | current |  |
 | 2026-11-01 room height in split panes, D (picked).png | current |  |
 | 2026-11-01 small pane strip options.png | current |  |
