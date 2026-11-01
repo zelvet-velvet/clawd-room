@@ -204,3 +204,6 @@ Whether each picture in `Assets/Snapshots/` still shows how things are. `tools/v
 | 2026-11-01 small pane strip faces with a state dot.png | replaced | [[2026-11-01 small pane strip faces with tall eyes.png]] |
 | 2026-11-01 strip face eyes options.png | current |  |
 | 2026-11-01 small pane strip faces with tall eyes.png | current |  |
+| 2026-11-01 strip band walls options.png | not picked | [[2026-11-01 strip band walls spacing options.png]] |
+| 2026-11-01 strip band walls spacing options.png | current |  |
+| 2026-11-01 small pane strip band with its room's wall.png | current |  |

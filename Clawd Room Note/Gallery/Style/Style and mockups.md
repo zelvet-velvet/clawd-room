@@ -18,6 +18,15 @@ Pictures of mockups and options to choose from (the picked one is marked), newes
 > ![[2026-11-01 strip face eyes options.png|420]]
 > Shown in: not in a note yet
 
+> [!success]+ ✅ current · Strip band walls spacing options
+> ![[2026-11-01 strip band walls spacing options.png|420]]
+> Shown in: not in a note yet
+
+> [!failure]- ❌ not picked · Strip band walls options
+> ![[2026-11-01 strip band walls options.png|420]]
+> Replaced by: [[2026-11-01 strip band walls spacing options.png]]
+> Shown in: not in a note yet
+
 > [!success]+ ✅ current · Small room 80x24 options
 > ![[2026-11-01 small room 80x24 options.png|420]]
 > Shown in: not in a note yet

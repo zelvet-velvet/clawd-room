@@ -97,19 +97,19 @@ menuterm 110 32 0bf9a063fe31a565
 menuterm 200 60 07e6d7512153600b
 menuterm 300 100 1abfd3c301d28a53
 menuterm 90 30 77875febf0db14a8
-strip 116 5 116x10 first=0 efe51dd3153963fd
-strip 60 5 60x10 first=0 b5f04b3ca843945b
+strip 116 5 116x10 first=0 ce31b5c0ea72dbaf
+strip 60 5 60x10 first=0 c58f7e1779a9d7eb
 strip 116 2 116x4 first=0 80a8bb34ad4c75b3
 strip 30 3 30x6 first=0 b746b83af817b32b
-strip 43 30 43x60 first=0 57b0d01c973c86c1
-strip view band 116x30 2c9a35b7e96fbb8a
+strip 43 30 43x60 first=0 c9350c0fc83b6811
+strip view band 116x30 df72411786b20eb8
 strip view faces 116x30 761ce42f29d657e3
-strip tab api first=0 3800282f7c9ee9b7
+strip tab api first=0 f39f7227c5afd8c8
 strip tab web-shop first=0 da056b3385b85196
-strip tab docs first=0 8ea367586710c877
-strip tab app first=1 d84eb9b7732f50ea
-strip wait pick=s05 first=3 2aed8310c0a26986
-strip wait pick=- first=0 b5f04b3ca843945b
+strip tab docs first=0 261f29965c4fe13b
+strip tab app first=1 03d202157a56811e
+strip wait pick=s05 first=3 a710e92133fb8ede
+strip wait pick=- first=0 c58f7e1779a9d7eb
 no seat office 50x40:0 50x60:0 120x50:0 120x80:0
 no seat coffee 50x40:0 50x60:0 120x50:0 120x80:0
 no seat park 50x40:1 50x60:0 120x50:0 120x80:0

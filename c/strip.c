@@ -120,10 +120,54 @@ static void picked(Canvas *c, int cx, int top, const Session *s, double now, int
     }
 }
 
+/* the band's wall looks like its room (picked 2026-11-01, mockup 45 E): things far apart and mixed, a pattern every
+ * WALL_PERIOD pixels, on the wall just above the Clawds (they stand in front) */
+#define WALL_PERIOD 116
+#define WALL_ZONE 17 /* the wall's part above the Clawds that the things use (a taller band: the rest stays plain) */
+static void wall_things(Canvas *c, const Theme *th) {
+    int wh = c->h - 3, zh = wh < WALL_ZONE ? wh : WALL_ZONE, y0 = wh - zh, park = !strcmp(th->name, "park"), coffee = !strcmp(th->name, "coffee");
+    for (int base = 0; base < c->w; base += WALL_PERIOD) {
+        if (park) {
+            unsigned r = 7u + (unsigned)base;
+            for (int x = base; x < base + WALL_PERIOD && x < c->w;) { /* a far city skyline at the foot of the sky, gaps of sky */
+                r = r * 1103515245u + 12345u;
+                int w = 6 + (int)(r >> 16) % 9, h = 2 + (int)(r >> 20) % (zh > 9 ? 8 : 4);
+                canvas_rect(c, x, wh - h, w, h, RGB(176, 190, 208));
+                for (int yy = wh - h + 1; yy < wh - 1; yy += 2) for (int xx = x + 1; xx < x + w - 1; xx += 2) canvas_px(c, xx, yy, RGB(220, 226, 236));
+                x += w + 1;
+                if ((r >> 24) % 2) x += 14 + (int)(r >> 26) % 12;
+            }
+            for (int k = 0; k < 2; k++) { int x = base + (k ? 100 : 30); canvas_rect(c, x, y0 + 1, 1, zh - 1, RGB(50, 54, 60)); canvas_rect(c, x - 1, y0, 3, 1, RGB(240, 220, 140)); } /* lamp posts */
+            canvas_rect(c, base + 78, wh - 5, 1, 5, RGB(110, 80, 50)); canvas_rect(c, base + 75, zh > 9 ? wh - 11 : y0, 7, zh > 9 ? 7 : zh - 5, RGB(70, 140, 70)); /* a tree */
+            canvas_rect(c, base + 50, y0 + 1, 8, 2, RGB(250, 252, 255)); canvas_rect(c, base + 52, y0, 4, 1, RGB(250, 252, 255)); /* a cloud */
+        } else if (coffee) {
+            int sy = y0 + (zh > 9 ? 5 : 3);
+            for (int k = 0; k < 2; k++) { /* short shelves with a few cups */
+                int sx = base + (k ? 64 : 4);
+                canvas_rect(c, sx, sy, 20, 1, RGB(120, 92, 66));
+                for (int x = sx + 2; x < sx + 19; x += 5) canvas_rect(c, x, sy - 2, 2, 2, (x / 5) % 2 ? RGB(235, 235, 245) : RGB(120, 80, 50));
+            }
+            for (int k = 0; k < 2; k++) { int x = base + (k ? 100 : 40); canvas_rect(c, x + 1, y0, 1, sy - y0 + 1, RGB(80, 60, 48)); canvas_rect(c, x, sy + 2, 3, 2, RGB(230, 190, 110)); canvas_px(c, x + 1, sy + 4, RGB(255, 230, 150)); } /* lamps */
+            if (zh >= 9) { /* a menu board */
+                canvas_rect(c, base + 82, y0 + 1, 14, 8, RGB(40, 60, 46));
+                for (int x = base + 84; x < base + 94; x += 2) canvas_px(c, x, y0 + 3, RGB(235, 235, 210));
+                for (int x = base + 84; x < base + 92; x += 3) canvas_px(c, x, y0 + 5, RGB(235, 235, 210));
+            }
+        } else { /* the office (and any other room): a window, a clock and a pin board */
+            int h = zh - 2 > 9 ? 9 : zh - 2, x = base + 10, q = base + 68;
+            canvas_rect(c, x, y0 + 1, 12, h, RGB(240, 244, 250));
+            canvas_rect(c, x + 1, y0 + 2, 4, h - 2, RGB(150, 200, 236)); canvas_rect(c, x + 7, y0 + 2, 4, h - 2, RGB(150, 200, 236));
+            canvas_rect(c, q + 2, y0 + 1, 5, 5, RGB(240, 236, 220)); canvas_px(c, q + 4, y0 + 2, EYE); canvas_px(c, q + 4, y0 + 3, EYE); canvas_px(c, q + 5, y0 + 3, EYE);
+            if (h >= 7) { canvas_rect(c, q + 9, y0 + 2, 9, h - 2, RGB(176, 140, 96)); canvas_px(c, q + 11, y0 + 3, RGB(240, 230, 120)); canvas_px(c, q + 14, y0 + 4, RGB(150, 200, 236)); canvas_px(c, q + 12, y0 + 6, RGB(230, 130, 120)); }
+        }
+    }
+}
+
 static void band(Canvas *c, const Theme *th, Session **s, int n, int first, int shown, const char *pick, double t, double now) {
     canvas_rect(c, 0, 0, c->w, c->h, th->wall);
     canvas_rect(c, 0, c->h - 3, c->w, 3, th->floor);
     canvas_rect(c, 0, c->h - 3, c->w, 1, th->base);
+    wall_things(c, th);
     int feet = c->h - 1, x0 = (c->w - shown * STRIP_SLOT) / 2, pcx = -1;
     const Session *ps = NULL;
     for (int k = 0; k < shown && first + k < n; k++) {
