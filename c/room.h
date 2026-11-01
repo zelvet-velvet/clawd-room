@@ -51,6 +51,7 @@ typedef struct {
     double gate_out[SIDES][2]; /* ... and where it goes through (the door, the platform's door, the park's stair tower, down the well) */
     int gate_has_mid[SIDES]; double gate_mid[SIDES][2]; /* a point on the way between them (the top of the stairs) */
     int shown, more, has_more_pos, more_pos[2];
+    int floor_seats;         /* no desk fits: the Clawds sit on the floor with a laptop (home is still the seat's "desk" point) */
     int home[MAX_SESS][2];   /* by index in room->s (only the first `shown`) */
     double door_y[2];
     Spots spots;
@@ -112,6 +113,15 @@ typedef struct {
 #define SLOT_MAX_W 40
 #define ROW_PITCH 15       /* room pixels between the rows of workspaces */
 #define ROW_MARGIN 3       /* room pixels kept free at the floor's sides of each row */
+/* a room with no desk place: floor seats (a Clawd at cx - 5 with its laptop on its right, as in the strip's band) */
+#define FLOOR_SEAT_W 18    /* room pixels across per floor seat */
+#define FLOOR_SEAT_BACK 8  /* the first row's front edge below the back wall's foot (the Clawd's feet 5 above it) */
+#define FLOOR_SEAT_ROW 12  /* between rows */
+#define FLOOR_SEAT_WALK 12 /* floor kept in front of a row's feet to walk on */
+#define FLOOR_SEAT_X0 -12
+#define FLOOR_SEAT_X1 10
+#define FLOOR_SEAT_Y0 -13 /* (the Clawd's top; its dot may go over the wall) */
+#define FLOOR_SEAT_Y1 -4
 #define WALK_MIN 16        /* room pixels of floor kept in front of the last row to walk on */
 #define TREE_X 0.9         /* the park's big tree, as a part of the width (at the back right corner) */
 #define PARK_STAIRS_FOOT 0.58 /* the park's stone stairs: their foot and top along the back (parts of its width), */

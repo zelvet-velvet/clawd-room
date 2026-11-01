@@ -36,7 +36,11 @@ static Rgb state_col(const char *st) {
     if (!strcmp(st, "idle") || !strcmp(st, "sleep")) return RGB(120, 120, 136);
     return RGB(110, 230, 120); /* work (and cheer: just done) */
 }
-static Rgb dim(Rgb c) { return RGB((c.r + 3 * 14) / 4, (c.g + 3 * 14) / 4, (c.b + 3 * 18) / 4); }
+void strip_laptop(Canvas *c, int cx, int feet, const char *st) { /* over its right arm, the screen in the state's colour */
+    canvas_rect(c, cx + 8, feet - 4, 6, 3, RGB(70, 72, 84));
+    canvas_rect(c, cx + 9, feet - 3, 4, 1, state_col(st));
+    canvas_rect(c, cx + 7, feet - 1, 8, 1, RGB(150, 152, 164));
+}
 static int resting(const char *st) { return !strcmp(st, "idle") || !strcmp(st, "sleep"); }
 
 /* the sessions the strip shows, in the room's order (not the ones walking out or visiting another room) */
@@ -135,31 +139,35 @@ static void band(Canvas *c, const Theme *th, Session **s, int n, int first, int 
                 double k = fmod(t * 0.7 + z / 3.0, 1.0);
                 canvas_text(c, (int)(cx + 6 + k * 3), (int)(feet - 13 - k * 5), "Z", k < 0.7 ? RGB(180, 190, 240) : RGB(110, 115, 150));
             }
-        if (!resting(st)) { /* the laptop, its screen in the state's colour */
-            canvas_rect(c, cx + 8, feet - 4, 6, 3, RGB(70, 72, 84));
-            canvas_rect(c, cx + 9, feet - 3, 4, 1, state_col(st));
-            canvas_rect(c, cx + 7, feet - 1, 8, 1, RGB(150, 152, 164));
-        }
+        if (!resting(st)) strip_laptop(c, cx, feet, st);
         if (!strcmp(q->sid, pick)) { pcx = cx; ps = q; }
     }
     if (ps) picked(c, pcx, feet - 7, ps, now, 1);
 }
 
-static void faces(Canvas *c, Session **s, int n, int first, int shown, const char *pick, double now) {
-    int x0 = (c->w - shown * STRIP_TILE) / 2, fy = (c->h - 4) / 2;
+/* under STRIP_BAND_ROWS rows: a face per session the whole height on the room's wall, its eyes as in the room, and a dot in
+ * the state's colour in the gap on its left, halfway up (picked 2026-11-01, mockup 41 N) */
+static int tile_w(int h) { return 2 * h + 6; }
+static void faces(Canvas *c, const Theme *th, Session **s, int n, int first, int shown, const char *pick, double now) {
+    int h = c->h, tw = tile_w(h), x0 = (c->w - shown * tw) / 2, fw = 2 * h - 2, ey = h >= 6 ? 2 : 1, dy = h / 2 - 1;
+    canvas_rect(c, 0, 0, c->w, c->h, th->wall);
     for (int k = 0; k < shown && first + k < n; k++) {
         const Session *q = s[first + k];
         const char *st = session_shown(q, now);
-        int x = x0 + k * STRIP_TILE, f = x + 3, on = !strcmp(q->sid, pick);
-        Rgb col = state_col(st);
-        canvas_rect(c, x, 0, STRIP_TILE - 2, c->h, dim(col));
-        canvas_rect(c, x, 0, 1, c->h, col);
-        canvas_rect(c, f, fy, 8, 4, C_CLAWD); /* the face; its eyes say the state */
-        if (resting(st)) { canvas_rect(c, f + 1, fy + 2, 2, 1, EYE); canvas_rect(c, f + 5, fy + 2, 2, 1, EYE); }
-        else if (!strcmp(st, "think")) { canvas_px(c, f + 3, fy + 1, EYE); canvas_px(c, f + 6, fy + 1, EYE); }
-        else if (!strcmp(st, "wait")) { canvas_rect(c, f + 2, fy + 1, 1, 2, EYE); canvas_rect(c, f + 5, fy + 1, 1, 2, EYE); }
-        else { canvas_px(c, f + 2, fy + 2, EYE); canvas_px(c, f + 5, fy + 2, EYE); }
-        if (on) { canvas_rect(c, x, 0, STRIP_TILE - 2, 1, C_YELLOW); canvas_rect(c, x, c->h - 1, STRIP_TILE - 2, 1, C_YELLOW); canvas_rect(c, x, 0, 1, c->h, C_YELLOW); canvas_rect(c, x + STRIP_TILE - 3, 0, 1, c->h, C_YELLOW); }
+        int x = x0 + k * tw, f = x + 4, l = f + fw / 2 - (h >= 6 ? 3 : 2), r = f + fw / 2 + (h >= 6 ? 2 : 1);
+        canvas_rect(c, x + 1, dy < 0 ? 0 : dy, 2, 2, state_col(st));
+        canvas_rect(c, f, 0, fw, h, C_CLAWD); /* the face; its eyes say the state */
+        if (resting(st)) { canvas_rect(c, l - 1, ey + 1, 2, 1, EYE); canvas_rect(c, r, ey + 1, 2, 1, EYE); }
+        else if (!strcmp(st, "think")) { canvas_px(c, l + 1, ey, EYE); canvas_px(c, r + 1, ey, EYE); }
+        else if (!strcmp(st, "wait")) { canvas_rect(c, l, ey, 1, 2, EYE); canvas_rect(c, r, ey, 1, 2, EYE); }
+        else { canvas_px(c, l, ey + 1, EYE); canvas_px(c, r, ey + 1, EYE); }
+        if (!strcmp(q->sid, pick)) { /* picked: yellow corners around the dot and the face */
+            int a = x, z = f + fw;
+            for (int i = 0; i < 2; i++) {
+                canvas_px(c, a + i, 0, C_YELLOW); canvas_px(c, z - i, 0, C_YELLOW); canvas_px(c, a + i, h - 1, C_YELLOW); canvas_px(c, z - i, h - 1, C_YELLOW);
+            }
+            canvas_rect(c, a, 0, 1, h, C_YELLOW); canvas_rect(c, z, 0, 1, h, C_YELLOW);
+        }
     }
 }
 
@@ -167,11 +175,11 @@ Canvas strip_render(Strip *st, Room *room, int cols, int rows, double t, double 
     Canvas c = canvas_new(cols > 0 ? cols : 1, rows > 0 ? rows * 2 : 2, TILE_BG);
     Session *s[STRIP_MAX];
     int n = sessions(room, s), is_band = rows >= STRIP_BAND_ROWS;
-    int fit = (cols - 2) / (is_band ? STRIP_SLOT : STRIP_TILE);
+    int fit = (cols - 2) / (is_band ? STRIP_SLOT : tile_w(c.h));
     if (fit < 1) fit = 1;
     int shown = fit_window(st, s, n, fit, now);
     if (is_band) band(&c, room->theme, s, n, st->first, shown, st->pick, t, now);
-    else faces(&c, s, n, st->first, shown, st->pick, now);
+    else faces(&c, room->theme, s, n, st->first, shown, st->pick, now);
     return c;
 }
 

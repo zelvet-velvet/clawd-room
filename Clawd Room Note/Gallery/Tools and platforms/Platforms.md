@@ -19,10 +19,18 @@ Pictures of Windows Terminal, iTerm2, `--try`, newest first: ✅ current (open),
 > Replaced by: [[2026-11-01 small pane strip name above, sleeping.png]]
 > Shown in: [[2026-11-01#🦀 The strip joins the split-pane branch; its focus frames only the Clawd; no gates to a strip (Zaviel)|2026-11-01 · 🦀 The strip joins the split-pane branch; its focus frames only the Clawd; no gates to a strip (Zaviel)]]
 
+> [!success]+ ✅ current · Small pane strip faces with a state dot
+> ![[2026-11-01 small pane strip faces with a state dot.png|420]]
+> Shown in: [[2026-11-01#🪑 A room too short for a desk seats its Clawds on the floor; the small strip's faces get a state dot (Zaviel)|2026-11-01 · 🪑 A room too short for a desk seats its Clawds on the floor; the small strip's faces get a state dot (Zaviel)]]
+
 > [!quote]- ♻️ replaced · Small pane strip built
 > ![[2026-11-01 small pane strip built.png|420]]
 > Replaced by: [[2026-11-01 small pane strip focus frame.png]]
 > Shown in: [[2026-11-01#🦀 A pane too small for the room shows a strip of Clawds (Zaviel)|2026-11-01 · 🦀 A pane too small for the room shows a strip of Clawds (Zaviel)]]
+
+> [!success]+ ✅ current · Room 80x24 Clawds on the floor
+> ![[2026-11-01 room 80x24 Clawds on the floor.png|420]]
+> Shown in: [[2026-11-01#🪑 A room too short for a desk seats its Clawds on the floor; the small strip's faces get a state dot (Zaviel)|2026-11-01 · 🪑 A room too short for a desk seats its Clawds on the floor; the small strip's faces get a state dot (Zaviel)]]
 
 ## 2026-10-19
 

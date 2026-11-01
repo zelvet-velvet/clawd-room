@@ -149,22 +149,25 @@ What to test next, one `[!todo] Group X · …` callout per group (`[!done]` onc
 > > 3. A room learns its pane when the pane has the focus (it has, just after it opens), or as the only Clawd Room pane no other room claims. Two rooms that both never had their pane focused wait for a click into one of them. A room that cannot tell within 15 s whether it is in a pane leaves the window and font alone.
 > > 4. If something looks wrong: `CLAWD_SIZE_LOG=/tmp/size.log ./clawd-room.sh` logs why a gate is shown or not.
 
-> [!todo] Group O · WSL: a pane too small for the room shows a strip (T76–T88)
+> [!todo] Group O · WSL: a pane too small for the room shows a strip (T76–T91)
 > - [ ] **T76** Split a Clawd Room pane until it is under 20 rows (about 5 rows high) → a band of Clawds at laptops instead of a black pane; each laptop's screen is green (working), yellow (waiting) or purple (thinking); an idle Clawd has its eyes shut and no laptop.
 > - [ ] **T77** Press Tab in it → yellow corners around one Clawd, the rest dims, its name shows beside it; Tab again moves on; Esc lets go.
 > - [ ] **T78** Make the pane narrower than all the Clawds need → only some show; Tab past the last one in view scrolls the band to the next.
 > - [ ] **T79** With a Clawd out of view, make its session wait for you (a permission prompt) → the band scrolls to it by itself and shows its name.
-> - [ ] **T80** Make the pane 2 or 3 rows high → faces on coloured tiles; Tab outlines one in yellow.
+> - [ ] ~~**T80** Make the pane 2 or 3 rows high → faces on coloured tiles; Tab outlines one in yellow.~~ (replaced by T90)
 > - [ ] **T81** In a strip taller than 5 rows press Tab → the yellow corners hug the Clawd (not the whole band's height), the light is round around it, the name sits beside the corners.
 > - [ ] **T82** A room pane beside a strip pane → no gate to the strip on either side; make the strip pane big again → after about 1 s still, the gate appears.
-> - [ ] **T83** One session; make a room pane about 22 rows high (office) or 35 (park) → the strip shows, not an empty floor saying "+1 MORE"; make it taller → the room comes back with the Clawd at its desk.
+> - [ ] ~~**T83**~~ (replaced by T89) One session; make a room pane about 22 rows high (office) or 35 (park) → the strip shows, not an empty floor saying "+1 MORE"; make it taller → the room comes back with the Clawd at its desk.
 > - [ ] **T84** A strip 10 or more rows high, Tab → the name sits above the yellow corners, not over the Clawd.
 > - [ ] **T85** A sleeping session in the strip → eyes shut and Zs rising from it; an idle one keeps its eyes open, no laptop.
 > - [ ] **T86** One Clawd in a full-screen window, then a quarter window, then a pane → the Clawd is the same size in all three (only the room gets bigger or smaller).
 > - [ ] **T87** A whole window taller than it is wide (drag it narrow and tall) → the room is shorter than the window, in its middle with dark above and below, like a tall pane.
 > - [ ] **T88** `r` does nothing now; `?` shows the help line without "r room size"; `[` `]` still zoom.
+> - [ ] **T89** An 80x24 window with one session (office) → the room, not the strip: the Clawd on the floor near the back wall with a laptop on its right, the screen green while it works; with 6 sessions → 2 on the floor and "+4 MORE".
+> - [ ] **T90** Make the pane 2 or 3 rows high → a face per Clawd on the room's wall colour (no black, no tiles), dark eyes as in the room, a small dot in the state colour on each face's left; Tab puts yellow brackets around one.
+> - [ ] **T91** In the 80x24 room press Tab, and open a pane beside it → Tab picks a Clawd on the floor; a gate appears, and Clawds can walk through it and come back to their floor place.
 >
-> > [!tip]- T76–T88 · how to run them
+> > [!tip]- T76–T91 · how to run them
 > > 1. Branch `feat/split-panes`: `git switch feat/split-panes && make -C c`.
 > > 2. Windows Terminal: Alt + Shift + − splits the focused pane in two (below); drag the divider to make the room's pane small. Any terminal window made small works too.
 

@@ -193,3 +193,7 @@ Whether each picture in `Assets/Snapshots/` still shows how things are. `tools/v
 | 2026-11-01 small pane strip built.png | replaced | [[2026-11-01 small pane strip focus frame.png]] |
 | 2026-11-01 small pane strip focus frame.png | replaced | [[2026-11-01 small pane strip name above, sleeping.png]] |
 | 2026-11-01 small pane strip name above, sleeping.png | current |  |
+| 2026-11-01 small room 80x24 options.png | current |  |
+| 2026-11-01 strip faces options.png | current |  |
+| 2026-11-01 room 80x24 Clawds on the floor.png | current |  |
+| 2026-11-01 small pane strip faces with a state dot.png | current |  |
