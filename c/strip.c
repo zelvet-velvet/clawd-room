@@ -145,28 +145,31 @@ static void band(Canvas *c, const Theme *th, Session **s, int n, int first, int 
     if (ps) picked(c, pcx, feet - 7, ps, now, 1);
 }
 
-/* under STRIP_BAND_ROWS rows: a face per session the whole height on the room's wall, its eyes as in the room, and a dot in
- * the state's colour in the gap on its left, halfway up (picked 2026-11-01, mockup 41 N) */
+/* under STRIP_BAND_ROWS rows (or with v): a face per session STRIP_FACE_ROWS rows tall at most on the room's wall, a dot in the
+ * state's colour in the gap on its left, halfway up (41 N), and tall eyes whose place says the state (43 P): waiting raised,
+ * thinking up and to the side, idle half shut, sleeping shut */
 static int tile_w(int h) { return 2 * h + 6; }
+static int face_h(int ch) { return ch < STRIP_FACE_ROWS * 2 ? ch : STRIP_FACE_ROWS * 2; }
 static void faces(Canvas *c, const Theme *th, Session **s, int n, int first, int shown, const char *pick, double now) {
-    int h = c->h, tw = tile_w(h), x0 = (c->w - shown * tw) / 2, fw = 2 * h - 2, ey = h >= 6 ? 2 : 1, dy = h / 2 - 1;
+    int h = face_h(c->h), y0 = (c->h - h) / 2, tw = tile_w(h), x0 = (c->w - shown * tw) / 2, fw = 2 * h - 2, ey = y0 + (h >= 6 ? 2 : 1), dy = y0 + h / 2 - 1;
     canvas_rect(c, 0, 0, c->w, c->h, th->wall);
     for (int k = 0; k < shown && first + k < n; k++) {
         const Session *q = s[first + k];
         const char *st = session_shown(q, now);
         int x = x0 + k * tw, f = x + 4, l = f + fw / 2 - (h >= 6 ? 3 : 2), r = f + fw / 2 + (h >= 6 ? 2 : 1);
-        canvas_rect(c, x + 1, dy < 0 ? 0 : dy, 2, 2, state_col(st));
-        canvas_rect(c, f, 0, fw, h, C_CLAWD); /* the face; its eyes say the state */
-        if (resting(st)) { canvas_rect(c, l - 1, ey + 1, 2, 1, EYE); canvas_rect(c, r, ey + 1, 2, 1, EYE); }
-        else if (!strcmp(st, "think")) { canvas_px(c, l + 1, ey, EYE); canvas_px(c, r + 1, ey, EYE); }
-        else if (!strcmp(st, "wait")) { canvas_rect(c, l, ey, 1, 2, EYE); canvas_rect(c, r, ey, 1, 2, EYE); }
-        else { canvas_px(c, l, ey + 1, EYE); canvas_px(c, r, ey + 1, EYE); }
-        if (!strcmp(q->sid, pick)) { /* picked: yellow corners around the dot and the face */
-            int a = x, z = f + fw;
+        canvas_rect(c, x + 1, dy < y0 ? y0 : dy, 2, 2, state_col(st));
+        canvas_rect(c, f, y0, fw, h, C_CLAWD);
+        if (!strcmp(st, "sleep")) { canvas_rect(c, l - 1, ey + 1, 2, 1, EYE); canvas_rect(c, r, ey + 1, 2, 1, EYE); }
+        else if (!strcmp(st, "idle")) { canvas_px(c, l, ey + 1, EYE); canvas_px(c, r, ey + 1, EYE); }
+        else if (!strcmp(st, "think")) { canvas_rect(c, l + 1, ey - 1, 1, 2, EYE); canvas_rect(c, r + 1, ey - 1, 1, 2, EYE); }
+        else if (!strcmp(st, "wait")) { canvas_rect(c, l, ey - 1, 1, 2, EYE); canvas_rect(c, r, ey - 1, 1, 2, EYE); }
+        else { canvas_rect(c, l, ey, 1, 2, EYE); canvas_rect(c, r, ey, 1, 2, EYE); }
+        if (!strcmp(q->sid, pick)) { /* picked: yellow brackets around the dot and the face */
+            int a = x, z = f + fw, yb = y0 + h - 1;
             for (int i = 0; i < 2; i++) {
-                canvas_px(c, a + i, 0, C_YELLOW); canvas_px(c, z - i, 0, C_YELLOW); canvas_px(c, a + i, h - 1, C_YELLOW); canvas_px(c, z - i, h - 1, C_YELLOW);
+                canvas_px(c, a + i, y0, C_YELLOW); canvas_px(c, z - i, y0, C_YELLOW); canvas_px(c, a + i, yb, C_YELLOW); canvas_px(c, z - i, yb, C_YELLOW);
             }
-            canvas_rect(c, a, 0, 1, h, C_YELLOW); canvas_rect(c, z, 0, 1, h, C_YELLOW);
+            canvas_rect(c, a, y0, 1, h, C_YELLOW); canvas_rect(c, z, y0, 1, h, C_YELLOW);
         }
     }
 }
@@ -174,8 +177,8 @@ static void faces(Canvas *c, const Theme *th, Session **s, int n, int first, int
 Canvas strip_render(Strip *st, Room *room, int cols, int rows, double t, double now) {
     Canvas c = canvas_new(cols > 0 ? cols : 1, rows > 0 ? rows * 2 : 2, TILE_BG);
     Session *s[STRIP_MAX];
-    int n = sessions(room, s), is_band = rows >= STRIP_BAND_ROWS;
-    int fit = (cols - 2) / (is_band ? STRIP_SLOT : tile_w(c.h));
+    int n = sessions(room, s), is_band = rows >= STRIP_BAND_ROWS && st->force != 2;
+    int fit = (cols - 2) / (is_band ? STRIP_SLOT : tile_w(face_h(c.h)));
     if (fit < 1) fit = 1;
     int shown = fit_window(st, s, n, fit, now);
     if (is_band) band(&c, room->theme, s, n, st->first, shown, st->pick, t, now);

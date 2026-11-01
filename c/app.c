@@ -91,9 +91,32 @@ static void wipe(void) {
     puts_("\x1b[H");
 }
 static void screen_on(void) { puts_("\x1b[?1049h\x1b[?25l\x1b[?7l\x1b[0m\x1b[H"); wipe(); } /* alt screen, hide cursor, no wrap */
-static void screen_off(void) { puts_("\x1b[0m\x1b[?7h\x1b[?25h\x1b[?1049l"); }
+static void edge_reset(void);
+static void screen_off(void) { edge_reset(); puts_("\x1b[0m\x1b[?7h\x1b[?25h\x1b[?1049l"); }
 
+/* the terminal's own background (OSC 11) as the colour most of the right column and the bottom row have: the window's
+ * leftover edge (less than a cell, which nothing can draw on) then matches the picture; put back on the way out (OSC 111) */
+static int g_edge_set;
+static Rgb g_edge;
+static void edge_colour(const Cells *cur) {
+    if (!cur->cols || !cur->rows || getenv("CLAWD_NO_EDGE")) return;
+    Rgb seen[8]; int cnt[8], ns = 0, best = 0;
+    for (int i = 0; i < cur->rows + cur->cols - 1; i++) {
+        const Cell *c = i < cur->rows ? &cur->c[i * cur->cols + cur->cols - 1] : &cur->c[(cur->rows - 1) * cur->cols + (i - cur->rows)];
+        int j = 0;
+        while (j < ns && !rgb_eq(seen[j], c->bg)) j++;
+        if (j == ns) { if (ns == 8) continue; seen[ns] = c->bg; cnt[ns++] = 0; }
+        if (++cnt[j] > cnt[best]) best = j;
+    }
+    if (g_edge_set && rgb_eq(g_edge, seen[best])) return;
+    g_edge = seen[best]; g_edge_set = 1;
+    char b[48];
+    snprintf(b, sizeof b, "\x1b]11;rgb:%02x/%02x/%02x\x1b\\", g_edge.r, g_edge.g, g_edge.b);
+    puts_(b);
+}
+static void edge_reset(void) { if (g_edge_set) { puts_("\x1b]111\x1b\\"); g_edge_set = 0; } }
 static void show(const Cells *cur, const Cells *prev, int sync) { /* one write per frame, wrapped in "synchronized update" so it never tears */
+    edge_colour(cur);
     size_t n;
     char *d = diff_frame(cur, prev, &n);
     char *out = malloc(n + 64);
@@ -143,7 +166,7 @@ static int read_keys(char *keys, size_t n, Reports *rep) {
         }
         if (c && strchr("WASD", c)) c += 32;
         if (c == '\n') c = '\r';
-        if (c && strchr("qpfgmbr?[]wasd\r\tczo", c)) keys[k++] = c; /* (o: the debug overlay, m: move a Clawd) */
+        if (c && strchr("qpfgmbr?[]wasd\r\tczov", c)) keys[k++] = c; /* (o: the debug overlay, m: move a Clawd, v: the view) */
     }
     keys[k] = 0;
     return (int)k;
@@ -252,7 +275,8 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
     room.cam_zoom = a->zoom;
     Camera cam;
     Strip strip = {0}; /* the room in a pane too small for it (strip.h) */
-    int in_strip = 0; /* the strip shows (last frame): the pane is under MIN_COLS x MIN_ROWS, or the room has no seat for any Clawd */
+    int in_strip = 0; /* the strip shows (last frame): the pane is under MIN_COLS x MIN_ROWS, the room has no seat for any Clawd, or v */
+    int view = 0, size_strip = 0; /* v: 0 the room (or the strip the size needs), 1 the band, 2 the faces; the size alone needs the strip */
     camera_init(&cam);
     struct { int has; double t; int has_cell, cell[2]; } pend = {0};
     char flash[96] = "";
@@ -321,6 +345,14 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                     } else snprintf(flash, sizeof flash, " ");
                     flash_until = wall() + (side >= 0 ? 4 : 0); dirty = 1;
                     if (side >= 0 || k == 27) continue;
+                }
+                if (k == 'v') { /* the view: room -> band -> faces -> room (the size needs the strip: band <-> faces; under 4 rows faces only) */
+                    int band_ok = rows >= STRIP_BAND_ROWS, now_band = in_strip && band_ok && view != 2;
+                    if (size_strip) view = band_ok && !now_band ? 1 : 2;
+                    else view = (view + 1) % 3;
+                    if (view == 1 && !band_ok) view = 2;
+                    snprintf(flash, sizeof flash, "VIEW: %s", view == 0 ? "ROOM" : view == 1 ? "CLAWDS AT LAPTOPS" : "FACES");
+                    flash_until = wall() + 3; dirty = 1; continue;
                 }
                 if (k == 27) { room_unpick(&room, paused ? frozen_t : t); strip_unpick(&strip); dirty = 1; continue; } /* Esc lets go of the picked Clawd; only q quits */
                 if (in_strip && (k == '\t' || k == 'a' || k == 'd')) { strip_step(&strip, &room, now, k == 'a' ? -1 : 1); dirty = 1; continue; } /* too small for the room: Tab picks in the strip */
@@ -696,7 +728,9 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
             if (fitter.done) { snprintf(flash, sizeof flash, "%s", fitter.message); flash_until = wall() + 5; has_fitter = 0; dirty = 1; }
         }
         if (dirty || !paused) {
-            in_strip = strip_wanted(cols, rows) || (!strcmp(room.ratio, "auto") && strip_no_seat(&room, cols, room_rows(cols, rows) * 2));
+            size_strip = strip_wanted(cols, rows) || (!strcmp(room.ratio, "auto") && strip_no_seat(&room, cols, room_rows(cols, rows) * 2));
+            in_strip = size_strip || view != 0;
+            strip.force = view;
             if (in_strip) { /* too small for the room: the strip (a band of Clawds, or faces) */
                 Canvas cv = strip_render(&strip, &room, cols, rows, paused ? frozen_t : t, paused ? frozen_now : now);
                 Cells cells = cells_from_canvas(&cv, "");

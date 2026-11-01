@@ -148,6 +148,13 @@ static int golden_ui(const char *path) {
                 printf("strip %d %d %dx%d first=%d %016" PRIx64 "\n", SS[i][0], SS[i][1], cv.w, cv.h, st.first, canvas_hash(&cv));
                 canvas_free(&cv);
             }
+            for (int f = 1; f <= 2; f++) { /* v: the band / the faces in a pane the room fits (faces: 3 rows at most, in the middle) */
+                Strip st = {0};
+                st.force = f;
+                Canvas cv = strip_render(&st, &fx.room, 116, 30, fx.t, fx.now);
+                printf("strip view %s 116x30 %016" PRIx64 "\n", f == 1 ? "band" : "faces", canvas_hash(&cv));
+                canvas_free(&cv);
+            }
             Strip st = {0}; /* 60x5: three fit */
             Canvas cv = strip_render(&st, &fx.room, 60, 5, fx.t, fx.now); canvas_free(&cv);
             for (int k = 0; k < 4; k++) {

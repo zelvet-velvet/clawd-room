@@ -11,11 +11,13 @@
 #define STRIP_BAND_ROWS 4 /* terminal rows from which the band shows (8 room pixels: a whole Clawd); fewer: faces */
 #define STRIP_SLOT 18     /* room pixels per Clawd in the band (the Clawd 14, its laptop over its right arm, a gap) */
 #define STRIP_MAX 64      /* sessions the strip keeps track of */
+#define STRIP_FACE_ROWS 3 /* faces use at most this many rows (chosen with v in a taller pane: in its middle) */
 
 typedef struct {
     int first;               /* the first session in view (when they do not all fit) */
     char pick[72];           /* the picked session (Tab), or "" */
     char waited[STRIP_MAX][72]; int nwaited; /* sessions already brought into view for their wait (once per wait) */
+    int force;               /* the v key: 0 as the size says, 1 the band, 2 the faces */
 } Strip;
 
 int strip_wanted(int cols, int rows);                  /* the pane is too small for the room */

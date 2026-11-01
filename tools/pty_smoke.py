@@ -120,6 +120,11 @@ with tempfile.TemporaryDirectory() as tmp:
     # 3. too small a terminal: the strip (a band of Clawds; strip.h), Tab and Esc work there, q quits
     out, st = run(["--theme", "office", "--events", events], [(0.8, b"\t"), (1.2, b"\x1b"), (1.6, b"q")], cols=30, rows=10)
     check("small terminal shows the strip of Clawds", b"205;110;88" in out and b"need 44x20" not in out and st == 0)
+    # 3b. v: room -> the band -> the faces -> the room (the bar is back with VIEW: ROOM); the window's leftover edge takes the
+    #     picture's colour (OSC 11) and gets the terminal's own back on the way out (OSC 111)
+    out, st = run(["--theme", "office", "--events", events], [(0.8, b"v"), (1.2, b"v"), (1.6, b"v"), (2.2, b"q")], rows=42)
+    check("v goes round room, laptops, faces and back", st == 0 and b"VIEW: ROOM" in out)
+    check("the edge colour is set and put back", b"\x1b]11;rgb:" in out and out.rfind(b"\x1b]111") > out.rfind(b"\x1b]11;rgb:"))
     # 4. the start menu: Enter opens the first scene, then q
     out, st = run(["--events", events], [(0.8, b"\x1b[C"), (1.1, b"\x1b[D"), (1.4, b"s"), (1.7, b"\r"), (2.8, b"q")])
     check("start menu shows its title and then the room", st == 0 and out.count(b"\x1b[?1049h") >= 1 and out.count(b"\x1b[?1049l") >= 1)

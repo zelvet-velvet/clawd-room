@@ -9,18 +9,18 @@ overlay 0 0 []
 overlay 0 0 [+3 MORE]
 overlay 0 0 [SCALE 2X]
 overlay 0 0 [+1 MORE   FLASH]
-overlay 0 1 [q/esc quit   p pause   [ ] zoom   z auto zoom   < > / tab pick a Clawd   c follow / free camera   f auto font   g send a Clawd (hold g + arrow: which way)   m + arrow move the picked Clawd there   b call back   o debug overlay   ? help]
-overlay 0 1 [q/esc quit   p pause   [ ] zoom   z auto zoom   < > / tab pick a Clawd   c follow / free camera   f auto font   g send a Clawd (hold g + arrow: which way)   m + arrow move the picked Clawd there   b call back   o debug overlay   ? help   +3 MORE]
-overlay 0 1 [q/esc quit   p pause   [ ] zoom   z auto zoom   < > / tab pick a Clawd   c follow / free camera   f auto font   g send a Clawd (hold g + arrow: which way)   m + arrow move the picked Clawd there   b call back   o debug overlay   ? help   SCALE 2X]
-overlay 0 1 [q/esc quit   p pause   [ ] zoom   z auto zoom   < > / tab pick a Clawd   c follow / free camera   f auto font   g send a Clawd (hold g + arrow: which way)   m + arrow move the picked Clawd there   b call back   o debug overlay   ? help   +1 MORE   FLASH]
+overlay 0 1 [q/esc quit   p pause   [ ] zoom   z auto zoom   < > / tab pick a Clawd   c follow / free camera   f auto font   g send a Clawd (hold g + arrow: which way)   m + arrow move the picked Clawd there   b call back   o debug overlay   v view: room / laptops / faces   ? help]
+overlay 0 1 [q/esc quit   p pause   [ ] zoom   z auto zoom   < > / tab pick a Clawd   c follow / free camera   f auto font   g send a Clawd (hold g + arrow: which way)   m + arrow move the picked Clawd there   b call back   o debug overlay   v view: room / laptops / faces   ? help   +3 MORE]
+overlay 0 1 [q/esc quit   p pause   [ ] zoom   z auto zoom   < > / tab pick a Clawd   c follow / free camera   f auto font   g send a Clawd (hold g + arrow: which way)   m + arrow move the picked Clawd there   b call back   o debug overlay   v view: room / laptops / faces   ? help   SCALE 2X]
+overlay 0 1 [q/esc quit   p pause   [ ] zoom   z auto zoom   < > / tab pick a Clawd   c follow / free camera   f auto font   g send a Clawd (hold g + arrow: which way)   m + arrow move the picked Clawd there   b call back   o debug overlay   v view: room / laptops / faces   ? help   +1 MORE   FLASH]
 overlay 1 0 [PAUSED]
 overlay 1 0 [PAUSED   +3 MORE]
 overlay 1 0 [PAUSED   SCALE 2X]
 overlay 1 0 [PAUSED   +1 MORE   FLASH]
-overlay 1 1 [PAUSED   q/esc quit   p pause   [ ] zoom   z auto zoom   < > / tab pick a Clawd   c follow / free camera   f auto font   g send a Clawd (hold g + arrow: which way)   m + arrow move the picked Clawd there   b call back   o debug overlay   ? help]
-overlay 1 1 [PAUSED   q/esc quit   p pause   [ ] zoom   z auto zoom   < > / tab pick a Clawd   c follow / free camera   f auto font   g send a Clawd (hold g + arrow: which way)   m + arrow move the picked Clawd there   b call back   o debug overlay   ? help   +3 MORE]
-overlay 1 1 [PAUSED   q/esc quit   p pause   [ ] zoom   z auto zoom   < > / tab pick a Clawd   c follow / free camera   f auto font   g send a Clawd (hold g + arrow: which way)   m + arrow move the picked Clawd there   b call back   o debug overlay   ? help   SCALE 2X]
-overlay 1 1 [PAUSED   q/esc quit   p pause   [ ] zoom   z auto zoom   < > / tab pick a Clawd   c follow / free camera   f auto font   g send a Clawd (hold g + arrow: which way)   m + arrow move the picked Clawd there   b call back   o debug overlay   ? help   +1 MORE   FLASH]
+overlay 1 1 [PAUSED   q/esc quit   p pause   [ ] zoom   z auto zoom   < > / tab pick a Clawd   c follow / free camera   f auto font   g send a Clawd (hold g + arrow: which way)   m + arrow move the picked Clawd there   b call back   o debug overlay   v view: room / laptops / faces   ? help]
+overlay 1 1 [PAUSED   q/esc quit   p pause   [ ] zoom   z auto zoom   < > / tab pick a Clawd   c follow / free camera   f auto font   g send a Clawd (hold g + arrow: which way)   m + arrow move the picked Clawd there   b call back   o debug overlay   v view: room / laptops / faces   ? help   +3 MORE]
+overlay 1 1 [PAUSED   q/esc quit   p pause   [ ] zoom   z auto zoom   < > / tab pick a Clawd   c follow / free camera   f auto font   g send a Clawd (hold g + arrow: which way)   m + arrow move the picked Clawd there   b call back   o debug overlay   v view: room / laptops / faces   ? help   SCALE 2X]
+overlay 1 1 [PAUSED   q/esc quit   p pause   [ ] zoom   z auto zoom   < > / tab pick a Clawd   c follow / free camera   f auto font   g send a Clawd (hold g + arrow: which way)   m + arrow move the picked Clawd there   b call back   o debug overlay   v view: room / laptops / faces   ? help   +1 MORE   FLASH]
 menu 144 84 0 0 0.0 84f4b0c0e958146d
 menu 144 84 0 0 0.4 9ea48af6b84a28a9
 menu 144 84 0 1 0.0 83f543ec4cee662f
@@ -99,9 +99,11 @@ menuterm 300 100 1abfd3c301d28a53
 menuterm 90 30 77875febf0db14a8
 strip 116 5 116x10 first=0 efe51dd3153963fd
 strip 60 5 60x10 first=0 b5f04b3ca843945b
-strip 116 2 116x4 first=0 02077509a184bfc1
-strip 30 3 30x6 first=0 42e535ae928df195
+strip 116 2 116x4 first=0 80a8bb34ad4c75b3
+strip 30 3 30x6 first=0 b746b83af817b32b
 strip 43 30 43x60 first=0 57b0d01c973c86c1
+strip view band 116x30 2c9a35b7e96fbb8a
+strip view faces 116x30 f4a20b4b1e994793
 strip tab api first=0 3800282f7c9ee9b7
 strip tab web-shop first=0 da056b3385b85196
 strip tab docs first=0 8ea367586710c877

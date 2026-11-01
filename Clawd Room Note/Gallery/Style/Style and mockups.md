@@ -14,6 +14,10 @@ Pictures of mockups and options to choose from (the picked one is marked), newes
 > ![[2026-11-01 strip faces options.png|420]]
 > Shown in: not in a note yet
 
+> [!success]+ ✅ current · Strip face eyes options
+> ![[2026-11-01 strip face eyes options.png|420]]
+> Shown in: not in a note yet
+
 > [!success]+ ✅ current · Small room 80x24 options
 > ![[2026-11-01 small room 80x24 options.png|420]]
 > Shown in: not in a note yet

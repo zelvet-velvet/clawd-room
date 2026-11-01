@@ -149,7 +149,7 @@ What to test next, one `[!todo] Group X · …` callout per group (`[!done]` onc
 > > 3. A room learns its pane when the pane has the focus (it has, just after it opens), or as the only Clawd Room pane no other room claims. Two rooms that both never had their pane focused wait for a click into one of them. A room that cannot tell within 15 s whether it is in a pane leaves the window and font alone.
 > > 4. If something looks wrong: `CLAWD_SIZE_LOG=/tmp/size.log ./clawd-room.sh` logs why a gate is shown or not.
 
-> [!todo] Group O · WSL: a pane too small for the room shows a strip (T76–T91)
+> [!todo] Group O · WSL: a pane too small for the room shows a strip (T76–T95)
 > - [ ] **T76** Split a Clawd Room pane until it is under 20 rows (about 5 rows high) → a band of Clawds at laptops instead of a black pane; each laptop's screen is green (working), yellow (waiting) or purple (thinking); an idle Clawd has its eyes shut and no laptop.
 > - [ ] **T77** Press Tab in it → yellow corners around one Clawd, the rest dims, its name shows beside it; Tab again moves on; Esc lets go.
 > - [ ] **T78** Make the pane narrower than all the Clawds need → only some show; Tab past the last one in view scrolls the band to the next.
@@ -166,8 +166,12 @@ What to test next, one `[!todo] Group X · …` callout per group (`[!done]` onc
 > - [ ] **T89** An 80x24 window with one session (office) → the room, not the strip: the Clawd on the floor near the back wall with a laptop on its right, the screen green while it works; with 6 sessions → 2 on the floor and "+4 MORE".
 > - [ ] **T90** Make the pane 2 or 3 rows high → a face per Clawd on the room's wall colour (no black, no tiles), dark eyes as in the room, a small dot in the state colour on each face's left; Tab puts yellow brackets around one.
 > - [ ] **T91** In the 80x24 room press Tab, and open a pane beside it → Tab picks a Clawd on the floor; a gate appears, and Clawds can walk through it and come back to their floor place.
+> - [ ] **T92** Make a strip 2 or 3 rows high → each face has tall eyes: straight when working, raised when waiting, up to the side when thinking, half shut (dots) when idle, a line when sleeping.
+> - [ ] **T93** In a normal room press `v` three times → the Clawds at laptops, then the faces (3 rows tall in the middle of the pane, on the wall colour), then the room again; Tab picks in the first two.
+> - [ ] **T94** In a pane too small for the room press `v` → band and faces swap; under 4 rows `v` keeps the faces.
+> - [ ] **T95** Make the font big (Ctrl+= several times) so the window's edge has a gap less than a cell → the gap is the colour of the picture next to it, not black; quit → the terminal's background is back to normal.
 >
-> > [!tip]- T76–T91 · how to run them
+> > [!tip]- T76–T95 · how to run them
 > > 1. Branch `feat/split-panes`: `git switch feat/split-panes && make -C c`.
 > > 2. Windows Terminal: Alt + Shift + − splits the focused pane in two (below); drag the divider to make the room's pane small. Any terminal window made small works too.
 

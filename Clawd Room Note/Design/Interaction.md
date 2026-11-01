@@ -26,6 +26,7 @@ sticker: lucide//gamepad-2
 | `m` | **move** the picked Clawd (`Tab` / `<` `>`; or the only one) to another room: `m` + an arrow; it carries its work there and lives there while the rooms run |
 | `b` | **call back**: our Clawds next door walk home; with none away, visitors here are sent home |
 | `f` | auto font again (WSL and iTerm2), camera back to 1x |
+| `v` | **view** (picked 2026-11-01): the room → the Clawds at laptops (the strip's band) → their faces → the room; in a pane too small for the room it switches band ↔ faces (under 4 rows faces only). The faces use 3 rows at most, in the pane's middle on the wall colour. A view other than the room is a strip: no gates to it. |
 | `o` | **debug overlay**: each item's box with its **name** (SIGN, DESK, GATE-LEFT …; the park's buildings all say BUILDING), anchors, gate points (in green, mid yellow, out red), where Clawds are walking; handy for pointing at something in a screenshot |
 
 > [!note] The picked Clawd stands out (built 2026-10-24)

@@ -19,8 +19,13 @@ Pictures of Windows Terminal, iTerm2, `--try`, newest first: ✅ current (open),
 > Replaced by: [[2026-11-01 small pane strip name above, sleeping.png]]
 > Shown in: [[2026-11-01#🦀 The strip joins the split-pane branch; its focus frames only the Clawd; no gates to a strip (Zaviel)|2026-11-01 · 🦀 The strip joins the split-pane branch; its focus frames only the Clawd; no gates to a strip (Zaviel)]]
 
-> [!success]+ ✅ current · Small pane strip faces with a state dot
+> [!success]+ ✅ current · Small pane strip faces with tall eyes
+> ![[2026-11-01 small pane strip faces with tall eyes.png|420]]
+> Shown in: [[2026-11-01#👀 Faces get tall eyes; `v` switches the view; the window's edge takes the picture's colour (Zaviel)|2026-11-01 · 👀 Faces get tall eyes; `v` switches the view; the window's edge takes the picture's colour (Zaviel)]]
+
+> [!quote]- ♻️ replaced · Small pane strip faces with a state dot
 > ![[2026-11-01 small pane strip faces with a state dot.png|420]]
+> Replaced by: [[2026-11-01 small pane strip faces with tall eyes.png]]
 > Shown in: [[2026-11-01#🪑 A room too short for a desk seats its Clawds on the floor; the small strip's faces get a state dot (Zaviel)|2026-11-01 · 🪑 A room too short for a desk seats its Clawds on the floor; the small strip's faces get a state dot (Zaviel)]]
 
 > [!quote]- ♻️ replaced · Small pane strip built
