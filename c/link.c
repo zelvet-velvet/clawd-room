@@ -88,7 +88,6 @@ static void beat(Link *l, double now, int cols, int rows, int force) { /* rewrit
     if (l->has_grid) { fprintf(f, ", \"grid\": ["); for (int i = 0; i < 7; i++) fprintf(f, "%s%.17g", i ? ", " : "", l->grid[i]); fprintf(f, "]"); }
     else fprintf(f, ", \"grid\": null");
     if (l->pane[0]) { fprintf(f, ", \"pane\": "); json_str(f, l->pane); }
-    if (l->auto_k > 0) fprintf(f, ", \"auto\": %d", l->auto_k);
     if (l->strip) fprintf(f, ", \"strip\": 1");
     if (l->nready) {
         fprintf(f, ", \"ready\": [");
@@ -224,8 +223,6 @@ static void scan(Link *l, double now, LinkPeer *joined, int *nj, LinkPeer *left,
                 }
                 v = json_get(rec, "pane");
                 if (v && v->type == J_STR) snprintf(q->pane, sizeof q->pane, "%.39s", v->str);
-                v = json_get(rec, "auto");
-                q->auto_k = v && v->type == J_NUM && v->num >= 1 && v->num <= 64 ? (int)v->num : 0;
                 v = json_get(rec, "strip");
                 q->strip = v && v->type == J_NUM && v->num == 1;
                 v = json_get(rec, "ready"); /* [[room id, wall time], ...] */

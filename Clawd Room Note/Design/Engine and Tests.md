@@ -57,7 +57,7 @@ flowchart LR
 | `clawd.c`, `sprites.c` | the Clawd's poses and the editable sprite files |
 | `link.c`, `json.c` | linked windows talking through files |
 | `win.c`, `ps_scripts.h`, `mac_scripts.h` | the window helpers |
-| `ui.c` | the bottom bar (status and the `g` / `m` hint, in the pixel font), menus, auto scale, room sizes |
+| `ui.c` | the bottom bar (status and the `g` / `m` hint, in the pixel font), menus, the room's height (`room_rows`, at most 3/4 of its width) |
 | `tail.c` | reading the events file |
 | `art.c` | sprite files, PNG and GIF output (`--build-art`) |
 

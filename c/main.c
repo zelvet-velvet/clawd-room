@@ -121,12 +121,6 @@ static int golden_ui(const char *path) {
         static const char *NF[4][2] = {{"", ""}, {"+3 MORE", ""}, {"", "SCALE 2X"}, {"+1 MORE", "FLASH"}};
         for (int k = 0; k < 4; k++) { overlay_text(buf, sizeof buf, paused, help, NF[k][0], NF[k][1]); printf("overlay %d %d [%s]\n", paused, help, buf); }
     }
-    static const int PW[4] = {110, 160, 220, 300}, PH[4] = {64, 100, 140, 200}, NN[6] = {0, 1, 3, 6, 12, 40};
-    for (int a = 0; a < 4; a++) for (int b = 0; b < 4; b++) {
-        printf("auto %d %d", PW[a], PH[b]);
-        for (int k = 0; k < 6; k++) printf(" %d", auto_scale(PW[a], PH[b], NN[k]));
-        printf("\n");
-    }
     static const int MS[6][2] = {{144, 84}, {110, 64}, {60, 40}, {200, 120}, {44, 30}, {46, 56}};
     for (int s = 0; s < 6; s++) for (int pick = 0; pick < 3; pick++) for (int solo = 0; solo < 2; solo++) for (int ti = 0; ti < 2; ti++) {
         double tt = ti ? 0.4 : 0.0;
@@ -314,19 +308,12 @@ static int golden_win(void) {
         int b2 = opensetup_update(&u, 100.0 + OPEN_PANE_WAIT + 1, 80, 24, NULL, NULL);
         printf("split setup unknown %d %d skipped=%d\n", b1, b2, u.skipped);
     }
-    /* a room in a tall pane: at most PANE_MAX_TALL as tall as wide (the rest dark); never under MIN_ROWS */
+    /* a room in a tall pane: at most ROOM_MAX_TALL as tall as wide (the rest dark); never under MIN_ROWS */
     {
         static const int PR[5][2] = {{167, 80}, {239, 125}, {159, 125}, {479, 62}, {44, 40}};
         printf("pane rows");
-        for (int i = 0; i < 5; i++) printf(" %dx%d:%d", PR[i][0], PR[i][1], pane_room_rows(PR[i][0], PR[i][1]));
+        for (int i = 0; i < 5; i++) printf(" %dx%d:%d", PR[i][0], PR[i][1], room_rows(PR[i][0], PR[i][1]));
         printf("\n");
-        static Watcher w;
-        memset(&w, 0, sizeof w);
-        double now = (double)time(NULL);
-        static const char *TWO[] = {"clawd-room a-1|0|0|1200|1300|8|40|1192|1290|96|40", "@5.1|1|1|10|50|598|1290", "@5.2|0|1|604|50|1190|1290",
-                                    "-|1300|0|2000|700|1308|40|1992|692|96|40", "@6.1|0|1|1308|40|1650|692", "@6.2|0|0|1654|40|1992|692", "--"};
-        for (size_t i = 0; i < sizeof TWO / sizeof TWO[0]; i++) watcher_feed(&w, TWO[i], now);
-        printf("same window %d %d %d\n", watcher_same_window(&w, "5.1", "5.2"), watcher_same_window(&w, "5.1", "6.1"), watcher_same_window(&w, "5.1", ""));
     }
     /* gates open together: a room's "ready" times go through its heartbeat to the other room */
     {

@@ -32,11 +32,9 @@ resizes the window to exactly that grid. It needs the default font-size shortcut
 
 When a room opens on WSL (the start menu included) it sets the terminal font to 5 pt (`--font PT`, 0 = leave it; the
 Clawd Room profile already has it, so a room pixel is about the size it is on macOS) and the window to the quarter of the
-screen it is in, like iTerm2 (`--size screen`; `COLSxROWS` for a cell count, `off` = leave it). The room is then drawn at a TUI scale (1x, 2x, 3x:
-every room pixel is scale x scale cells) that follows the window size and the number of sessions, and a window
-resize only changes that scale, never the font. Ctrl +/- sets the terminal font by
-hand; after that the automatic part stays off until `f` (font and scale automatic again, camera back to 1x). `--scale N` starts at a
-fixed scale, `--no-auto` turns all of it off. The terminal font is put back when the room quits.
+screen it is in, like iTerm2 (`--size screen`; `COLSxROWS` for a cell count, `off` = leave it). A room pixel is always one cell wide
+(a Clawd is the same size everywhere); a window resize changes how big the room is, never the font. Ctrl +/- sets the terminal font by
+hand; after that the automatic font stays off until `f` (automatic font again, camera back to 1x). `--no-auto` turns all of it off. The terminal font is put back when the room quits.
 A window opened from the profile menu starts at Windows Terminal's own default size and is then moved to its quarter.
 
 ### The "Clawd Room" profile and the tab bar

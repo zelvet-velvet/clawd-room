@@ -143,7 +143,6 @@ typedef struct {
 #define SEAT_DY -12 /* a Clawd sits behind its desk / table: its body top this far above the furniture's front edge */
 
 
-int room_auto_scale(int pw, int ph, const Room *room); /* AUTO room size: the biggest scale at which the placer seats everyone */
 void layout_slots(int w, int h, int n, int *banner, int *per_row, int *slot_w, int *rows_shown, int *ys);
 void geo_init(Geo *g, const Room *room, int w, int h);
 /* a gate in this theme (a door, the park's building with a door; stairs; a stair well); p 0..1 how far it has appeared */

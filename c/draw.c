@@ -369,18 +369,6 @@ static void place_room(Geo *g, const Room *room, const Rows *r, int n) {
     }
 }
 
-/* AUTO room size: the scale the old estimate picks, or smaller until the placer seats all of this room's Clawds */
-int room_auto_scale(int pw, int ph, const Room *room) { /* (never bigger pixels than the old estimate; smaller when the placer needs it) */
-    static Geo g;
-    for (int k = auto_scale(pw, ph, room->n); k >= 1; k--) {
-        int w = pw / k, h = ph / k / 2 * 2;
-        if (w < SLOT_MIN_W || h < SLOT_H || w < ROAM_W || h < ROAM_H) continue;
-        geo_init(&g, room, w, h);
-        if (g.more == 0) return k;
-    }
-    return 1;
-}
-
 void geo_init(Geo *g, const Room *room, int w, int h) {
     int n = room->n, park = !strcmp(room->theme->name, "park");
     memset(g, 0, sizeof *g);

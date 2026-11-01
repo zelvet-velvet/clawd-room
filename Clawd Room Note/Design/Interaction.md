@@ -6,7 +6,7 @@ tags:
 sticker: lucide//gamepad-2
 ---
 > [!abstract] In short
-> Every Claude Code session is a Clawd. Keys zoom and steer a camera, pick the room size, and send Clawds to linked windows. Linked windows find each other by themselves; Clawds walk through doors and stairs between them. Looks are in [[Rooms and Art]], window handling in [[Platforms and Windows]].
+> Every Claude Code session is a Clawd. Keys zoom and steer a camera and send Clawds to linked windows. Linked windows find each other by themselves; Clawds walk through doors and stairs between them. Looks are in [[Rooms and Art]], window handling in [[Platforms and Windows]].
 
 ---
 ## ⌨️ Keys
@@ -14,10 +14,9 @@ sticker: lucide//gamepad-2
 | Key | Does |
 | --- | --- |
 | `q` | quit |
-| Esc | lets go of the picked Clawd (the corners and the dimming fade out; the camera stays on it); it closes the room size list first |
+| Esc | lets go of the picked Clawd (the corners and the dimming fade out; the camera stays on it) |
 | `p` | pause |
 | `?` | help line |
-| `r` | **room size list**: AUTO, S, M, L, XL (up/down or W/S, Enter picks, Esc or `r` closes) |
 | `[` `]` | **camera zoom** 1x–4x (the room keeps its layout; only the view gets closer) |
 | `z` | **auto zoom** on / off (frames the busy Clawds) |
 | ← → or A D, Tab | while following: pick the previous / next Clawd (the camera stays on it); **yellow corners close in around it and the room dims (60 in 100)**, they glide on the next pick and stay until you press **Esc** |
@@ -26,7 +25,7 @@ sticker: lucide//gamepad-2
 | `g` | send an idle Clawd next door; with several linked rooms **hold `g` and press an arrow** (the way to send it); only while `g` (or `m`) is **held** (it goes soon after the key's repeats stop; the room learns how fast the keyboard repeats) the bar along the bottom has one yellow hint for both: `G SEND / M MOVE NAME + ARROW:` (the held key bright) and which arrow goes where |
 | `m` | **move** the picked Clawd (`Tab` / `<` `>`; or the only one) to another room: `m` + an arrow; it carries its work there and lives there while the rooms run |
 | `b` | **call back**: our Clawds next door walk home; with none away, visitors here are sent home |
-| `f` | auto font and scale again (WSL and iTerm2), camera back to 1x |
+| `f` | auto font again (WSL and iTerm2), camera back to 1x |
 | `o` | **debug overlay**: each item's box with its **name** (SIGN, DESK, GATE-LEFT …; the park's buildings all say BUILDING), anchors, gate points (in green, mid yellow, out red), where Clawds are walking; handy for pointing at something in a screenshot |
 
 > [!note] The picked Clawd stands out (built 2026-10-24)
@@ -111,19 +110,18 @@ A **part animation** is a file in `anims/` (`swing.txt`, `brew.txt`; the format 
 
 ## 📐 Room size and resizing
 
-- The room **always fills the window** and takes its shape; dragging the window re-lays it out at once.
-- **Grow, then scale:** the room gains floor up to the chosen size, past that every room pixel gets bigger.
+- **A Clawd is the same size everywhere** (Zaviel, 2026-11-01): a room pixel is always one cell wide and half a cell tall (scale 1). A bigger window or pane gets a **bigger room** (more floor and desks), never bigger pixels; `[` `]` zoom the camera, Ctrl+- / Ctrl+= change the font.
+- The room **fills the width** and is at most **3/4 as tall as wide** (`ROOM_MAX_TALL`); a taller window or pane shows it in its middle with dark above and below. Dragging the window re-lays it out at once.
 
 ```mermaid
 %%{init: {"flowchart": {"defaultRenderer": "elk"}}}%%
 flowchart LR
-    Drag["🖱️ window resized"] --> Fits{"room smaller than<br/>the chosen size?"}
-    Fits -->|yes| Grow["🧱 more floor and desks<br/>(1 room pixel = 1 cell)"]
-    Fits -->|no| Scale["🔍 bigger pixels<br/>(2x, 3x …)"]
+    Drag["🖱️ window resized"] --> Tall{"taller than<br/>3/4 of its width?"}
+    Tall -->|no| Fill["🧱 the room fills it<br/>(1 room pixel = 1 cell)"]
+    Tall -->|yes| Mid["⬛ the room 3/4 as tall as wide,<br/>dark above and below"]
 ```
 
-| Size | Biggest room (room pixels) |
-| --- | --- |
+--- | --- |
 | **AUTO** (default) | just big enough to seat every session with floor to walk on; changes when sessions come and go |
 | S / M / L / XL | 120x60 / 160x90 / 220x120 / 300x160 (an 80x25 window is 80x50) |
 

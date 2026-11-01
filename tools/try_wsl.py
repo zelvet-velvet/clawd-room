@@ -134,7 +134,7 @@ def main():
     for name, theme, qx, qy in [] if check_only else ROOMS:  # (PATH: wt.exe started from WSL passes on a PATH without Windows' folders, so no powershell.exe)
         cmd = ["wsl.exe", "-d", distro, "-e", "env", "CLAWD_HERE=1", "PATH=" + os.environ.get("PATH", ""), "CLAWD_LINK_DIR=%s/link" % tr, "CLAWD_SIZE_LOG=%s/log-%s" % (tr, name),
                "sh", os.path.join(ROOT, "tools", "try_room.sh"), binp, tr + "/stop", "--room", name, "--theme", theme,
-               "--scale", "1", "--size", "off", "--profile-font", "5", "--events", ev]  # (a fixed scale and the window's own size: the quarter)
+               "--size", "off", "--profile-font", "5", "--events", ev]  # (the window's own size: the quarter)
         wt = ["-w", "new", "-p", "Clawd Room"] + cmd
         wt = ['"%s"' % a if " " in a else a for a in wt]  # (Start-Process joins the arguments with spaces)
         lines.append("Start-Process wt.exe -WindowStyle Minimized -ArgumentList @(%s)" % ", ".join(ps_quote(a) for a in wt))

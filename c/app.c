@@ -42,7 +42,7 @@ typedef struct {
     int has_at; double at;
     const char *room, *theme, *edit, *edit_check, *gate_theme; /* (edit: --edit NAME, the pixel editor; edit_check: is there such a NAME) */
     char ratio[8];
-    int scale, zoom, room_size, no_auto, no_detect, no_split;
+    int zoom, no_auto, no_detect, no_split;
     const char *dump;
     int build_art, export_sprites, force, add, list_windows;
     int font, profile_font, near, opened;
@@ -247,15 +247,14 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
     int has_fitter = 0;
     if (desk.has_tool && !a->no_auto && !a->opened) { opensetup_init(&setup, &desk.tool, title, a->font, a->size, &reports, 1, a->profile_font); has_setup = 1; }
     int font_set = desk.has_tool && !a->no_auto && a->font; /* we changed the terminal font: put it back on exit */
-    int auto_ = !a->scale; /* the TUI scale follows the window until [ ] is pressed */
-    room.scale = a->scale ? a->scale : 1;
+    int auto_ = 1; /* the font is the room's own until Ctrl +/- (f: again) */
+    room.scale = 1; /* (fixed, Zaviel 2026-11-01: a Clawd is the same size everywhere; a bigger window gets a bigger room, [ ] zooms) */
     room.cam_zoom = a->zoom;
-    int size = a->room_size, seen_n = -1; /* the room size (r list) and how many Clawds the scale was picked for */
     Camera cam;
     Strip strip = {0}; /* the room in a pane too small for it (strip.h) */
     int in_strip = 0; /* the strip shows (last frame): the pane is under MIN_COLS x MIN_ROWS, or the room has no seat for any Clawd */
     camera_init(&cam);
-    struct { int has; double t; int has_cell, cell[2]; int prescale; } pend = {0};
+    struct { int has; double t; int has_cell, cell[2]; } pend = {0};
     char flash[96] = "";
     double flash_until = 0;
     int last_closed[SIDES] = {0};
@@ -269,7 +268,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
     static char rect_sig[512];
     double rect_still = wall(); /* when the windows themselves last moved (the gate animations start from this) */
     char ready_id[LINK_READY][40]; double ready_t[LINK_READY]; int nready = 0; /* when we were ready to show each gate */
-    int in_pane = 0, my_auto = 0, seen_rrows = -1; /* in a split pane; the scale we would pick for ourselves; the rows it was picked for */
+    int in_pane = 0; /* in a split pane */
 
     RawTerm rt = {0};
     struct sigaction sa;
@@ -286,7 +285,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
     if (desk.has_watcher) { char t[160]; snprintf(t, sizeof t, "\x1b[22;0t\x1b]2;%s\x07", title); puts_(t); } /* window title = how we are found */
     screen_on();
     double t0 = mono(), frozen_now = 0, frozen_t = 0;
-    int paused = 0, help_on = 0, dirty = 1, cols = 0, rows = 0, size_menu = 0, size_pick = 0;
+    int paused = 0, help_on = 0, dirty = 1, cols = 0, rows = 0;
     double go_until = 0; /* g held (its key repeats keep this going): an arrow then picks where to send a Clawd */
     double rep_first, rep_next;
     key_repeat(&rep_first, &rep_next);
@@ -310,21 +309,6 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
             for (char *kp = keys; *kp; kp++) {
                 char k = *kp;
                 if (k == 'q') { g_quit = 1; break; }
-                if (size_menu) { /* the ROOM SIZE list takes the keys while it is open */
-                    if (k == 'w' || k == 'a') size_pick = (size_pick + N_SIZES - 1) % N_SIZES;
-                    else if (k == 's' || k == 'd') size_pick = (size_pick + 1) % N_SIZES;
-                    else if (k == '\r') {
-                        size = size_pick; seen_n = -1; /* the scale is picked again below */
-                        snprintf(room.ratio, sizeof room.ratio, "auto");
-                        room.cam_set = 0;
-                        snprintf(flash, sizeof flash, "ROOM SIZE %s", SIZE_LABEL[size]);
-                        flash_until = wall() + 4; have_prev = 0;
-                        wipe();
-                        size_menu = 0;
-                    } else if (k == 27 || k == 'r') size_menu = 0;
-                    dirty = 1;
-                    continue;
-                }
                 if (wall() < go_until && k != go_key) { /* g / m + an arrow: send / move a Clawd that way (any other key: never mind) */
                     int side = k == 'a' ? SIDE_LEFT : k == 'd' ? SIDE_RIGHT : k == 'w' ? SIDE_UP : k == 's' ? SIDE_DOWN : -1;
                     go_until = 0;
@@ -342,7 +326,6 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                 if (in_strip && (k == '\t' || k == 'a' || k == 'd')) { strip_step(&strip, &room, now, k == 'a' ? -1 : 1); dirty = 1; continue; } /* too small for the room: Tab picks in the strip */
                 if (k == 'p') { paused = !paused; frozen_now = now; frozen_t = t; dirty = 1; }
                 else if (k == '?') { help_on = !help_on; dirty = 1; }
-                else if (k == 'r') { size_pick = size; size_menu = 1; dirty = 1; } /* open the ROOM SIZE list at the current size */
                 else if (k == 'c') { /* follow (auto) <-> free camera; from a chosen Clawd back to auto */
                     if (cam.mode == CAM_AUTO && !camera_anyone(&room)) snprintf(flash, sizeof flash, "AUTO FOLLOW: WAITING FOR A CLAWD"); /* (nothing to look at freely) */
                     else if (cam.mode == CAM_AUTO) { cam.mode = CAM_FREE; snprintf(flash, sizeof flash, "FREE CAMERA  ARROWS MOVE  (C = FOLLOW)"); }
@@ -426,12 +409,10 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                 } else if (k == 'f') {
                     if (!desk.has_watcher) { snprintf(flash, sizeof flash, "FIT NEEDS WSL OR ITERM2"); flash_until = wall() + 3; }
                     else if (!strcmp(room.ratio, "auto")) { /* automatic font and scale again (the window is left as it is) */
-                        auto_ = 1; room.cam_zoom = 1; cam.autozoom = 0; seen_n = -1;
+                        auto_ = 1; room.cam_zoom = 1; cam.autozoom = 0;
                         opensetup_init(&setup, &desk.tool, title, a->font, a->size, &reports, 0, a->profile_font); has_setup = 1;
                         font_set = font_set || a->font;
-                        room_order(&room);
-                        room.scale = size_scale(cols, (in_pane ? pane_room_rows(cols, rows) : rows) * 2, size, room.n, &room);
-                        snprintf(flash, sizeof flash, "AUTO FONT AND SCALE");
+                        snprintf(flash, sizeof flash, "AUTO FONT");
                         flash_until = wall() + 3; have_prev = 0;
                         wipe();
                     } else if (watcher_in_pane(&desk.w, win_id) == 1) { /* the window is shared with other panes */
@@ -455,9 +436,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
             g_winch = 0;
             cols = c; rows = r;
             have_prev = 0; dirty = 1;
-            int prescale = room.scale;
-            if (auto_ && !strcmp(room.ratio, "auto") && !a->no_auto) { room_order(&room); room.scale = size_scale(cols, (in_pane ? pane_room_rows(cols, rows) : rows) * 2, size, room.n, &room); seen_n = -1; } /* at once; undone below if it was the font */
-            if (!pend.has) { pend.has = 1; pend.t = wall(); pend.has_cell = reports.has_cell; pend.cell[0] = reports.cell[0]; pend.cell[1] = reports.cell[1]; pend.prescale = prescale; }
+            if (!pend.has) { pend.has = 1; pend.t = wall(); pend.has_cell = reports.has_cell; pend.cell[0] = reports.cell[0]; pend.cell[1] = reports.cell[1]; }
             reports.has_cell = 0;
             wipe(); puts_("\x1b[14t\x1b[16t"); /* ... and ask how big the text area and a cell are in pixels */
             if (getenv("CLAWD_SIZE_LOG")) { FILE *lf = fopen(getenv("CLAWD_SIZE_LOG"), "a"); if (lf) { fprintf(lf, "%.1f %d %d\n", wall(), cols, rows); fclose(lf); } }
@@ -566,10 +545,10 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
             int has_grid = 0;
             if (mine_area) {
                 my_grid = grid_params(&room, mine_area, watcher_dpi(&desk.w, win_id), &reports, cols, rows); has_grid = 1;
-                if (in_pane) my_grid.y0 += rows - pane_room_rows(cols, rows); /* (the dark above the room in a tall pane) */
+                my_grid.y0 += rows - room_rows(cols, rows); /* (the dark above the room in a tall window or pane) */
             }
             if (link.strip != in_strip) { link.strip = !link.strip; link.ready_changed = 1; } /* (said at once: the rooms beside drop or make their gate) */
-            if (link.strip) { mine_area = NULL; has_grid = 0; link.auto_k = 0; } /* the strip: no gates, no scale for the others to share */
+            if (link.strip) { mine_area = NULL; has_grid = 0; } /* the strip: no gates */
             link.has_grid = has_grid;
             if (has_grid) { double g[7] = {my_grid.ox, my_grid.oy, my_grid.cw, my_grid.ch, my_grid.k, my_grid.x0, my_grid.y0}; memcpy(link.grid, g, sizeof g); }
             link.has_band = has_grid && my_band(&room, &my_grid, link.band);
@@ -697,8 +676,8 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
         if (pend.has) { /* did the window change, or the font (the cell size changed, the window did not)? */
             if (reports.has_cell || wall() - pend.t > 0.4) {
                 if (reports.has_cell && pend.has_cell && (reports.cell[0] != pend.cell[0] || reports.cell[1] != pend.cell[1]) && !has_setup && !has_fitter && auto_) {
-                    auto_ = 0; room.scale = pend.prescale; /* Ctrl +/- : the user took over, keep the scale */
-                    snprintf(flash, sizeof flash, "FONT CHANGED: F = AUTO FONT AND SCALE");
+                    auto_ = 0; /* Ctrl +/- : the user took over the font */
+                    snprintf(flash, sizeof flash, "FONT CHANGED: F = AUTO FONT");
                     flash_until = wall() + 5;
                 } else if (!reports.has_cell && pend.has_cell) { reports.has_cell = 1; reports.cell[0] = pend.cell[0]; reports.cell[1] = pend.cell[1]; }
                 pend.has = 0; have_prev = 0; dirty = 1;
@@ -717,8 +696,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
             if (fitter.done) { snprintf(flash, sizeof flash, "%s", fitter.message); flash_until = wall() + 5; has_fitter = 0; dirty = 1; }
         }
         if (dirty || !paused) {
-            int auto_on = auto_ && !a->no_auto && !a->scale && !strcmp(room.ratio, "auto"); /* (auto: if scale 1 seats nobody, no scale does) */
-            in_strip = strip_wanted(cols, rows) || (auto_on && strip_no_seat(&room, cols, (in_pane ? pane_room_rows(cols, rows) : rows) * 2));
+            in_strip = strip_wanted(cols, rows) || (!strcmp(room.ratio, "auto") && strip_no_seat(&room, cols, room_rows(cols, rows) * 2));
             if (in_strip) { /* too small for the room: the strip (a band of Clawds, or faces) */
                 Canvas cv = strip_render(&strip, &room, cols, rows, paused ? frozen_t : t, paused ? frozen_now : now);
                 Cells cells = cells_from_canvas(&cv, "");
@@ -728,19 +706,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                 canvas_free(&cv);
             } else {
                 double shown_now = paused ? frozen_now : now, shown_t = paused ? frozen_t : t;
-                int rrows = in_pane ? pane_room_rows(cols, rows) : rows; /* (in a pane: at most PANE_MAX_TALL as tall as wide) */
-                if (auto_ && !a->no_auto && !a->scale && !strcmp(room.ratio, "auto")) { /* grow, then scale: pick the scale again when the size or the Clawds change */
-                    room_order(&room);
-                    if (room.n != seen_n || rrows != seen_rrows) {
-                        my_auto = size_scale(cols, rrows * 2, size, room.n, &room);
-                        seen_n = room.n; seen_rrows = rrows;
-                    }
-                    int k2 = my_auto; /* rooms in panes of one window share the smallest of their own scales, so they look alike */
-                    for (int p = 0; in_pane && has_link && p < link.npeers; p++)
-                        if (link.peers[p].auto_k > 0 && link.peers[p].auto_k < k2 && watcher_same_window(&desk.w, desk.w.my_rid, link.peers[p].pane)) k2 = link.peers[p].auto_k;
-                    if (k2 != room.scale) { room.scale = k2; have_prev = 0; }
-                    if (has_link) link.auto_k = my_auto;
-                } else if (has_link) link.auto_k = 0;
+                int rrows = room_rows(cols, rows); /* (at most ROOM_MAX_TALL as tall as wide: windows and panes, Zaviel 2026-11-01) */
                 if (!paused) camera_update(&cam, &room, shown_now);
                 if (getenv("CLAWD_SIZE_LOG")) { /* test hook: note who the camera follows whenever that changes */
                     static char logged_cam[128];
@@ -751,7 +717,7 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                 char note[80], over[512];
                 Canvas cv = render(cols, rrows, &room, shown_now, shown_t, note, sizeof note);
                 if (rrows < rows) { /* a tall pane: the room in its middle, dark above and below (the bar stays at the bottom) */
-                    Canvas full = canvas_new(cols, rows * 2, PANE_DARK);
+                    Canvas full = canvas_new(cols, rows * 2, ROOM_DARK);
                     canvas_blit(&full, &cv, 0, rows - rrows);
                     canvas_free(&cv);
                     cv = full;
@@ -762,7 +728,6 @@ static int run(Args *a, const SpriteFile *frames, const SpriteFile *items) {
                     size_t l = strlen(note);
                     snprintf(note + l, sizeof note - l, "%s%s", l ? "   " : "", lab);
                 }
-                if (size_menu) draw_size_menu(&cv, SIZE_LABEL, N_SIZES, size_pick);
                 overlay_text(over, sizeof over, paused, help_on, note, wall() < flash_until ? flash : "");
                 BarPiece bar[8];
                 int nbar = 0;
@@ -916,9 +881,10 @@ static int choose_scene(Args *a, const char **scene, const char **room_name) {
 /* ---- arguments --------------------------------------------------------------------------------- */
 static void usage(void) {
     fprintf(stderr,
-        "usage: clawd-room [--events FILE] [--at TS] [--room NAME] [--theme office|coffee|park] [--room-size auto|s|m|l|xl]\n"
-        "                  [--gate-theme NAME] [--scale N] [--zoom 1-4] [--ratio 3:1|2:1|16:9|4:3|1:1|3:4] [--no-auto] [--no-detect] [--dump COLSxROWS]\n"
-        "  (accepted, not used yet by the C version: --left/--right/--up/--down NAME, --no-split, --size, --font, --profile-font, --near)\n");
+        "usage: clawd-room [--events FILE] [--at TS] [--room NAME] [--theme office|coffee|park]\n"
+        "                  [--gate-theme NAME] [--zoom 1-4] [--ratio 3:1|2:1|16:9|4:3|1:1|3:4] [--no-auto] [--no-detect] [--dump COLSxROWS]\n"
+        "  (accepted, not used yet by the C version: --left/--right/--up/--down NAME, --no-split, --size, --font, --profile-font, --near;\n"
+        "   no longer used: --scale, --room-size, as a room pixel is always one cell wide)\n");
 }
 
 int app_main(int argc, char **argv) {
@@ -949,12 +915,12 @@ int app_main(int argc, char **argv) {
         case 'z': a.size = optarg; break;
         case 'f': a.font = atoi(optarg); font_given = 1; break;
         case 'p': a.profile_font = atoi(optarg); break;
-        case 'c': a.scale = atoi(optarg); break;
+        case 'c': break; /* --scale: no longer used (the scale is always 1) */
         case 'Z': a.zoom = atoi(optarg); break;
         case 'E': a.edit = optarg; break;
         case 'K': a.edit_check = optarg; break;
         case 'G': a.gate_theme = optarg; break;
-        case 'Y': a.room_size = -1; for (int i = 0; i < N_SIZES; i++) if (!strcmp(optarg, SIZE_KEY[i])) a.room_size = i; break;
+        case 'Y': break; /* --room-size: no longer used */
         case 'A': a.no_auto = 1; break;
         case 'N': a.no_detect = 1; break;
         case 'n': a.near = atoi(optarg); break;
@@ -967,7 +933,6 @@ int app_main(int argc, char **argv) {
     int ok = 0;
     for (int i = 0; i < N_RATIOS; i++) if (!strcmp(a.ratio, RATIO_CHOICES[i])) ok = 1;
     if (!ok) { fprintf(stderr, "clawd-room: bad --ratio %s\n", a.ratio); return 2; }
-    if (a.room_size < 0) { fprintf(stderr, "clawd-room: --room-size wants auto, s, m, l or xl\n"); return 2; }
     if (a.theme && strcmp(a.theme, "office") && strcmp(a.theme, "coffee") && strcmp(a.theme, "park")) { fprintf(stderr, "clawd-room: bad --theme %s\n", a.theme); return 2; }
 
     const char *dir = getenv("CLAWD_SPRITES");
@@ -1043,7 +1008,6 @@ int app_main(int argc, char **argv) {
         room_prune(&room, now);
         draw_set_sprites(&frames, &items);
         room.freeze = 0;
-        if (a.room_size) { room_order(&room); room.scale = size_scale(cols, rows * 2, a.room_size, room.n, &room); } /* (--scale is not used here, as before) */
         char *text = dump_text(cols, rows, &room, now, 0.0);
         puts(text);
         free(text);

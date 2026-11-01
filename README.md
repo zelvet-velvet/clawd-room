@@ -158,7 +158,6 @@ python3 install_hooks.py --apply    # installs it (backs the file up first)
 | Esc | let go of the picked Clawd (the corners fade out) |
 | `p` | pause |
 | `?` | help line |
-| `r` | room size list |
 | `[` `]` | camera zoom out / in |
 | `z` | auto zoom on / off |
 | ← → (`A` `D`) / Tab | pick the Clawd the camera follows |
