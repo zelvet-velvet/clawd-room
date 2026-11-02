@@ -1,6 +1,6 @@
 # Development
 
-For people working on the code. How we work together (branches, pull requests) is in [CONTRIBUTING.md](../CONTRIBUTING.md); the map and rules for AI assistants are in `Clawd Room Note/Start/LLM Guide.md`.
+For people working on the code. How we work together (branches, pull requests) is in [CONTRIBUTING.md](../CONTRIBUTING.md); the rules for AI assistants are in [AGENTS.md](../AGENTS.md) (skills in `.claude/skills/`), the map of the code and the vault in `Clawd Room Note/Start/LLM Guide.md`.
 
 ## What is where
 

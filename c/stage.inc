@@ -805,7 +805,11 @@ static int stage_loop(const char *dir, const char *name) {
                             if (k2 >= 0) { s.drag = 1; s.px0 = px; s.py0 = py; s.dpose = s.a.part[s.pick].key[k2].pose; }
                         }
                     }
-                    else if (rg->kind == R_STOOL) { if (rg->i == 3) { s.playing = 0; st_toggle_key(&s); } else if (rg->i == 2 && ST_HAS(&s) && s.a.part[s.pick].sprite) st_msg(&s, "A SPRITE MOVES, IT DOES NOT ROTATE"); else s.tool = rg->i; } /* (KEY: a key here or none; ROTATE greyed for a sprite: not picked) */
+                    else if (rg->kind == R_STOOL) { /* KEY: a key here or none; ROTATE greyed for a sprite: not picked */
+                        if (rg->i == 3) { s.playing = 0; st_toggle_key(&s); }
+                        else if (rg->i == 2 && ST_HAS(&s) && s.a.part[s.pick].sprite) st_msg(&s, "A SPRITE MOVES, IT DOES NOT ROTATE");
+                        else s.tool = rg->i;
+                    }
                     else if (rg->kind == R_SKEYSHOW) s.hide_keys = !s.hide_keys;
                     else if (rg->kind == R_SPART) { s.pick = rg->i; s.focus = 1; }
                     else if (rg->kind == R_SVAL) { s.row = rg->i / 3; if (rg->i % 3) { s.playing = 0; st_change(&s, s.row, rg->i % 3 == 2 ? 1 : -1); } }
@@ -865,7 +869,15 @@ static int stage_loop(const char *dir, const char *name) {
         }
         memmove(in, in + i, (size_t)(nin - i)); nin -= i;
         (void)t;
-        if (getenv("CLAWD_STAGE_LOG")) { FILE *lg = fopen(getenv("CLAWD_STAGE_LOG"), "a"); if (lg) { fprintf(lg, "tool=%d view=%d,%d,%d pick=%s frame=%d keyed=%d\n", s.tool, s.vx, s.vy, L.z, (ST_HAS(&s) ? s.a.part[s.pick].name : "-"), s.frame, (ST_HAS(&s) && st_key_at(&s.a.part[s.pick], st_t(s.frame)) >= 0)); fclose(lg); } } /* (for the tests: what the page is on after each input) */
+        if (getenv("CLAWD_STAGE_LOG")) { /* for the tests: what the page is on after each input */
+            FILE *lg = fopen(getenv("CLAWD_STAGE_LOG"), "a");
+            if (lg) {
+                fprintf(lg, "tool=%d view=%d,%d,%d pick=%s frame=%d keyed=%d\n", s.tool, s.vx, s.vy, L.z,
+                        (ST_HAS(&s) ? s.a.part[s.pick].name : "-"), s.frame,
+                        (ST_HAS(&s) && st_key_at(&s.a.part[s.pick], st_t(s.frame)) >= 0));
+                fclose(lg);
+            }
+        }
     }
     cells_free(&prev);
     for (int f = 0; f < ST_MAXF; f++) if (s.thumb[f].p) canvas_free(&s.thumb[f]);

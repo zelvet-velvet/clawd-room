@@ -836,7 +836,12 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
         } else if (side < 2 && park) { /* the park's building along the side, and its door */
             scene_add(sc, (SceneItem){.kind = "building", .layer = LAYER_STRUCT, .owner = -1, .draw = it_gate, .i = side, .j = 0, .p = gate_part_p(room, side, "building", t, p), .part = "building"});
             scene_add(sc, (SceneItem){.kind = GATE_KIND[side], .layer = LAYER_STRUCT, .owner = -1, .ax = geo.gate_out[side][0], .ay = geo.gate_out[side][1], .draw = it_gate, .i = side, .j = 1, .p = gate_part_p(room, side, "door", t, p), .part = "door"});
-        } else scene_add(sc, (SceneItem){.kind = GATE_KIND[side], .layer = LAYER_STRUCT, .owner = -1, .ax = geo.gate_out[side][0], .ay = geo.gate_out[side][1], .draw = it_gate, .i = side, .j = -1, .p = gate_part_p(room, side, side == SIDE_DOWN ? "well" : "door", t, p), .part = side == SIDE_DOWN ? "well" : "door"});
+        } else {
+            const char *part = side == SIDE_DOWN ? "well" : "door";
+            scene_add(sc, (SceneItem){.kind = GATE_KIND[side], .layer = LAYER_STRUCT, .owner = -1,
+                                      .ax = geo.gate_out[side][0], .ay = geo.gate_out[side][1], .draw = it_gate, .i = side, .j = -1,
+                                      .p = gate_part_p(room, side, part, t, p), .part = part});
+        }
     }
     /* the room's name as a sign in the room (after the gates: it hangs in front of the stairs), the park's bushes, the
      * things on the back wall */
