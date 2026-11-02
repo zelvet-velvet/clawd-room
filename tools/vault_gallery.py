@@ -7,7 +7,7 @@
 `YYYY-MM-DD subject.png`. For people to browse them this writes `Clawd Room Note/Gallery/`: a note per subject named
 like it, in a folder per category (`Gallery/Rooms/Park.md`: newest first, the picture, its caption, the Dev Log entry and
 notes that show it), and `Gallery/Index.md`. (Notes named like their folder are make.md's folder notes: never written here.)
-Run it after adding pictures (CMD_SYNC does). Gallery is written only by this: notes in it that it did not write are removed.
+Run it after adding pictures (/cmd-notes-sync does). Gallery is written only by this: notes in it that it did not write are removed.
 """
 import os
 import re
@@ -170,7 +170,7 @@ def main():
              "> 1. Save it in the subject folder that fits, named `YYYY-MM-DD subject.png` (names stay unique across folders).",
              "> 2. Embed it in its Dev Log entry (the day's note in `Review/Log/`): `![[YYYY-MM-DD subject.png|300]]`.",
              "> 3. Give it a row in [[Snapshot status]] (and mark what it replaces as replaced).",
-             "> 4. `python3 tools/vault_gallery.py` rewrites the notes in Gallery (CMD_SYNC runs it too).", "",
+             "> 4. `python3 tools/vault_gallery.py` rewrites the notes in Gallery (/cmd-notes-sync runs it too).", "",
              "| Category | Subject | What | ✅ current | ♻️ replaced | ❌ not picked | Newest current | |", "| --- | --- | --- | --- | --- | --- | --- | --- |"] + rows
     if loose:
         index += ["", "> [!warning] Not in a subject folder yet", "> " + ", ".join(sorted(loose))]
