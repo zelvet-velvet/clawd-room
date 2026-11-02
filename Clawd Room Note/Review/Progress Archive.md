@@ -6,7 +6,7 @@ tags:
 up: "[[Dev Status]]"
 sticker: lucide//archive
 ---
-Finished work moved out of [[Dev Status]] (Ongoing), newest on top, one line per item by area, result only. `CMD_NOTES_SYNC` adds to it; read it only when asked or for history.
+Finished work moved out of [[Dev Status]] (Ongoing), newest on top, one line per item by area, result only. `/cmd-notes-sync` adds to it; read it only when asked or for history.
 
 ### 🎨 Rooms and art
 - **Style A Rooms**: Office, coffee shop and park in one-point perspective; workspaces in rows; Clawds behind desks, the barista behind the bar.

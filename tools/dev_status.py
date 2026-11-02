@@ -11,8 +11,8 @@ Callouts (one under each heading; the fold sign + / - is kept):
     Yesterday    > [!abstract]- N items
     Ongoing ###  > [!todo]- N open            (type from the boxes, as in the LLM Guide's callout rule)
     Ideas        > [!tip]- N ideas
-Rollover exit codes: 0 done, 1 Today empty (run CMD_SYNC), 2 the day note has no entry (run CMD_JOURNAL first).
-Rules: .claude/skills/room-sync, room-rollover. No git here: vault changes go on a branch and a pull request.
+Rollover exit codes: 0 done, 1 Today empty (run /cmd-sync), 2 the day note has no entry (run /cmd-journal first).
+Rules: .claude/skills/cmd-sync, cmd-rollover. No git here: vault changes go on a branch and a pull request.
 """
 import argparse, datetime, re, sys
 from pathlib import Path
@@ -125,11 +125,11 @@ def main():
         print(f'Today ({date}):\n{body}' if items else f'Today ({date}) is empty')
         return
     if not items:
-        print('Today has no items: run CMD_SYNC first. Nothing changed.')
+        print('Today has no items: run /cmd-sync first. Nothing changed.')
         sys.exit(1)
     note = day_note(date)
     if not note or not re.search(r'^## \S', read(note)[0], re.M):
-        print(f'The day note {date} has no entry yet: run CMD_JOURNAL {date} first. Nothing changed.')
+        print(f'The day note {date} has no entry yet: run /cmd-journal {date} first. Nothing changed.')
         sys.exit(2)
     yest = re.sub(r'^> \[!\w+\][+-]?', '> [!abstract]-', body, count=1, flags=re.M)
     end = s.find('\n---', y.end())

@@ -35,7 +35,7 @@ The map of the code and the vault, and how notes are written. The always-loaded 
 | What is still to check by eye | [[Test Checklist]] (done groups: [[Test Checklist Archive]]) |
 | Every animation frame | [[Animations]] (edit `sprites/*.txt`, `clawd-room --build-art` redraws the pictures) |
 | Pictures and animations to browse | [[Index\|Gallery index]] |
-| Commands (`CMD_*`), git, mockups, testing | `AGENTS.md` (always loaded) → the skills in `.claude/skills/room-*` |
+| Commands (`/cmd-*`), git, mockups, testing | `AGENTS.md` (always loaded) → the skills in `.claude/skills/` (`cmd-*` commands, `room-*` task rules) |
 | Exact behaviour | the code (comments and constants at the top of each file) and `git log` |
 
 ---
@@ -63,7 +63,7 @@ Clawd Room Note/    this Obsidian vault (open this folder in Obsidian; plugin co
                       Assets/  files only: Snapshots/<subject>/ (pictures), Animations/ (GIFs and sheets from --build-art)
                       _Meta/   vault helpers: Checkbox Style, Snapshot status, Templates/ (Day note)
 AGENTS.md           the agent instructions (always loaded); CLAUDE.md imports it
-.claude/skills/     the project skills: room-sync, room-journal, room-rollover, room-notes-sync, room-git, room-mockups, room-testing, room-test-queue
+.claude/skills/     the project skills: cmd-sync, cmd-journal, cmd-rollover, cmd-notes-sync, room-git, room-mockups, room-testing, room-test-queue
 ```
 
 ---

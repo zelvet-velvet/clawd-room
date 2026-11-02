@@ -1,8 +1,8 @@
 ---
-name: room-notes-sync
-description: clawd-room command CMD_NOTES_SYNC [YYYY-MM-DD]. Use when the user types CMD_NOTES_SYNC in the clawd-room repo: brings the design notes, pictures, test queue and docs up to date with the code, then moves finished Ongoing items of Dev Status to the Progress Archive.
+name: cmd-notes-sync
+description: clawd-room progress command [YYYY-MM-DD]. Use when the user runs /cmd-notes-sync in the clawd-room repo: brings the design notes, pictures, test queue and docs up to date with the code, then moves finished Ongoing items of Dev Status to the Progress Archive.
 ---
-# CMD_NOTES_SYNC [YYYY-MM-DD] (clawd-room)
+# /cmd-notes-sync [YYYY-MM-DD] (clawd-room)
 
 Vault: `Clawd Room Note/`. No date: use `Today's Progress` of `Review/Dev Status.md`; with a date: `Yesterday's` when its date matches. Grep first; read only the matching sections of large notes. Note format (callouts, pictures, stickers): `Start/LLM Guide.md`, section Conventions.
 

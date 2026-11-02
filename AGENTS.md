@@ -24,17 +24,17 @@ A pixel room where every running Claude Code session is a little Clawd (terminal
 - Read a note right before editing it: the user edits in Obsidian at the same time; never restore what they rolled back.
 
 ## Commands
-The user types a command. Each one is a project skill in `.claude/skills/<skill>/SKILL.md`; an agent without skill support opens that file and follows it.
+The user runs a progress command as a slash command (`/cmd-sync`); each is a project skill in `.claude/skills/<skill>/SKILL.md`, and an agent without skill support opens that file and follows it. The task skills (`room-*`) load by themselves when the task needs them.
 
-| Command | Skill | What it does |
-| :--- | :--- | :--- |
-| `CMD_SYNC` | `room-sync` | Today / Yesterday / Ongoing in Dev Status from the chat |
-| `CMD_JOURNAL [date]` | `room-journal` | The day note's entries (`Review/Log/…`) |
-| `CMD_ROLLOVER` | `room-rollover` | Today → Yesterday (script `tools/dev_status.py`) |
-| `CMD_NOTES_SYNC [date]` | `room-notes-sync` | Design notes, pictures, test queue against the code; `[x]` Ongoing → Progress Archive |
-| (branch, commit, PR, merge) | `room-git` | Branches, messages, pull requests, who merges |
-| (a visual change, a mockup) | `room-mockups` | Mock programs, showing options, recording the pick |
-| (running or adding tests) | `room-testing` | Test commands, real windows, worktrees |
-| (test groups, results) | `room-test-queue` | `Review/Test Checklist.md` rules |
+| Command or task | What it does |
+| :--- | :--- |
+| `/cmd-sync` | Today / Yesterday / Ongoing in Dev Status from the chat |
+| `/cmd-journal [date]` | The day note's entries (`Review/Log/…`) |
+| `/cmd-rollover` | Today → Yesterday (script `tools/dev_status.py`) |
+| `/cmd-notes-sync [date]` | Design notes, pictures, test queue against the code; `[x]` Ongoing → Progress Archive |
+| branch, commit, PR, merge (skill `room-git`) | Branches, messages, pull requests, who merges |
+| a visual change, a mockup (skill `room-mockups`) | Mock programs, showing options, recording the pick |
+| running or adding tests (skill `room-testing`) | Test commands, real windows, worktrees |
+| test groups, results (skill `room-test-queue`) | `Review/Test Checklist.md` rules |
 
 Vault changes go on their own branch as `docs(vault): …` with a pull request. Stage files by name, never a folder.

@@ -6,7 +6,7 @@ tags:
 sticker: lucide//activity
 ---
 > [!important] For AI assistants
-> Kept by the `CMD_*` skills (`.claude/skills/room-*`, table in `AGENTS.md`). Read only the part you need. Never count by hand: `python3 tools/dev_status.py counts` rewrites every callout title. Finished work: [[Progress Archive]].
+> Kept by the `/cmd-*` skills (`.claude/skills/`, table in `AGENTS.md`). Read only the part you need. Never count by hand: `python3 tools/dev_status.py counts` rewrites every callout title. Finished work: [[Progress Archive]].
 
 ## 🚀 Today's Progress (2026-10-30)
 > [!abstract]+ 4 items
@@ -66,4 +66,4 @@ Status only; what each task is and what it needs: [[Task Queue]] (by W-ID). Open
 
 ---
 ## 🏁 Last Progress
-Finished work moved out of Ongoing is in [[Progress Archive]] (`CMD_NOTES_SYNC` adds to it). Read it only when asked or for history.
+Finished work moved out of Ongoing is in [[Progress Archive]] (`/cmd-notes-sync` adds to it). Read it only when asked or for history.

@@ -19,5 +19,5 @@ The room draws the mockup; the mock only changes what the question is about.
 
 ## Shown, picked, recorded
 - Show the options as **one picture** (frames side by side, `.gif` for an animation) and wait for the pick. Update the README row.
-- **Into git, only the decision**: the picked option and the one side-by-side picture go to `Clawd Room Note/Assets/Snapshots/<subject>/` through `CMD_NOTES_SYNC` (picked one `(picked)`, others `not picked` in `_Meta/Snapshot status.md`). Never `gallery/`, binaries, or every variant.
+- **Into git, only the decision**: the picked option and the one side-by-side picture go to `Clawd Room Note/Assets/Snapshots/<subject>/` through `/cmd-notes-sync` (picked one `(picked)`, others `not picked` in `_Meta/Snapshot status.md`). Never `gallery/`, binaries, or every variant.
 - **Before it is built**: a `> [!todo]- Picked, not built yet` callout in the design note, with the date and a link to the day note. The pull request for the visual change carries the picked picture.
