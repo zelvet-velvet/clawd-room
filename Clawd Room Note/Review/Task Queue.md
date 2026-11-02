@@ -17,7 +17,7 @@ Work anyone can pick up. Each task has an ID (`W1`, `W2` …) that never changes
 > **Let go:** close the draft PR and put the line back as `[ ]` without the name. A claim with no commits for two weeks is free for anyone to take (ask on the PR first).
 
 > [!warning] Before you start
-> - **Visual tasks start with a picture.** Where *needs* says *mockup*, post a rendered mockup in the draft PR and wait for the owner to pick before building (see [[LLM Guide]]).
+> - **Visual tasks start with a picture.** Where *needs* says *mockup*, post a rendered mockup in the draft PR and wait for the owner to pick before building (skill `room-mockups`).
 > - **Snapshots are the contract.** A change that alters what is drawn updates the snapshots on purpose and says so in the PR.
 > - **Big or unclear?** Say so in the draft PR before you build; a short question saves a long detour.
 

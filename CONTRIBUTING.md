@@ -30,7 +30,7 @@ Welcome! This is a small project by **Zaviel** (owner, `zelvet-velvet`), open to
    ```
 3. Look at it: `./clawd-room.sh --try` opens four linked rooms with made-up Clawds (iTerm2 on macOS, Windows Terminal on WSL). On WSL first run `python3 setup_profile.py --update` once (adds the "Clawd Room" profile, 5 pt font).
 4. Optional, to see your own Claude Code sessions as Clawds: `python3 install_hooks.py` shows the change to `~/.claude/settings.json`; `--apply` installs it. The hook remembers where the repo is, so **do not move the repo folder** afterwards (or run `--apply` again).
-5. Read, in this order: this page, `Clawd Room Note/Start/LLM Guide.md` (map and rules, written for AI assistants but short and useful for people), `Clawd Room Note/Review/Dev Log.md` (the days, what is pending). The `Clawd Room Note/` folder is an Obsidian vault (plain Markdown works too); how to share it is in `Clawd Room Note/Start/Collaboration.md`.
+5. Read, in this order: this page, `AGENTS.md` (the rules every AI assistant loads), `Clawd Room Note/Start/LLM Guide.md` (the map of the code and the vault), `Clawd Room Note/Review/Dev Log.md` (the days, what is pending). The `Clawd Room Note/` folder is an Obsidian vault (plain Markdown works too); how to share it is in `Clawd Room Note/Start/Collaboration.md`.
 
 ---
 ## 3. The everyday loop (SOP)
@@ -86,7 +86,7 @@ The notes are an Obsidian vault in git; setup, what is shared and how to write i
 - Every PR adds a short entry to today's note in `Clawd Room Note/Review/Log/<year>/<month>/<week>/` (`YYYY-MM-DD.md`, newest first; in Obsidian *Open today's daily note* makes it in the right folder): a title, two to four plain bullets about what changed **for someone using the room**, and your name in brackets after the title, e.g. `(Zaviel)`. Pictures go in the subject folder under `Clawd Room Note/Assets/Snapshots/` (Office, Park, Gates ...) as `YYYY-MM-DD subject.png`.
 - Several people adding entries at the top of the same file conflict easily: when `git merge origin/main` reports a conflict in the Dev Log, keep **both** entries.
 - Do not commit your own Obsidian layout or settings (`git restore "Clawd Room Note/.obsidian"` if you changed one by accident).
-- Where things stand is in `Clawd Room Note/Review/Dev Status.md`. Your Claude keeps it and the notes with `CMD_SYNC`, `CMD_JOURNAL`, `CMD_NOTES_SYNC`, `CMD_ROLLOVER` (see the LLM guide); bigger rewrites of the design notes (`Clawd Room Note/Design/`) happen in `CMD_NOTES_SYNC`.
+- Where things stand is in `Clawd Room Note/Review/Dev Status.md`. Your Claude keeps it and the notes with `CMD_SYNC`, `CMD_JOURNAL`, `CMD_NOTES_SYNC`, `CMD_ROLLOVER` (skills in `.claude/skills/`, table in `AGENTS.md`); bigger rewrites of the design notes (`Clawd Room Note/Design/`) happen in `CMD_NOTES_SYNC`.
 
 ---
 ## 7. Rules that are not negotiable
@@ -102,7 +102,7 @@ The notes are an Obsidian vault in git; setup, what is shared and how to write i
 ---
 ## 8. Working with an AI assistant (Claude Code)
 
-Many of us use Claude Code. `CLAUDE.md` points it to the guide, so it follows the same rules. Still:
+Many of us use Claude Code. `CLAUDE.md` imports `AGENTS.md` (also read by Codex and other agents), and the commands, git, mockup and test rules are project skills in `.claude/skills/` that load only when needed, so it follows the same rules. Still:
 - You are responsible for what it commits: read the diff before you push.
 - Let it open the PR (`gh pr create`) but not merge it; merging is the owner's step. (The owner may tell their own Claude to merge a PR they have tested.)
 - Visual changes: ask it for a rendered mockup picture first, and post that in the issue.
