@@ -25,50 +25,44 @@ sticker: lucide//activity
 ---
 
 ## ⏳ Ongoing
+Status only; what each task is and what it needs: [[Task Queue]] (by W-ID). Open questions stay here.
 
 ### 🎨 Rooms and art
 > [!question]- 5 open
-> - [ ] **Railed Stair Well**: Build design A (a bigger opening, steps right to left, a guard rail); no big tree in the park when it has a way up ([[2026-10-20]]).
-> - [>] **Gates Appear**: Built and merged (#22, #24): themes `simple` and `construct`, the `settings.conf` line, the picker's THEMES tab. Not yet: the park's own gates, gates leaving, the construct's pieces as authored sprites.
-> - [ ] **Art as Sprite Pieces**: Geometry stays in code (perspective, how many steps), the look moves to small sprites the code places and repeats (a tread, a baluster, a length of rail, a door leaf), so a gate, desk or well can be edited in the pixel editor; the default sprites must reproduce today's pictures exactly (snapshots). Props already work this way.
-> - [ ] **Crowded Rooms**: Build the picked layout: scattered spots mixed with clusters of 2–3, the smaller mixed furniture, activities for Clawds without a seat (demolish, fire, clean up, play), so "+N MORE" never shows ([[Rooms and Art]], [[2026-10-30]]).
+> - [ ] **Railed Stair Well** (W1): design A picked, not built.
+> - [>] **Gates Appear** (W2): themes `simple` and `construct` merged (#22, #24). Not yet: the park's own gates, gates leaving, the construct's pieces as authored sprites.
+> - [ ] **Art as Sprite Pieces** (W3): needs a design chat first.
+> - [ ] **Crowded Rooms** (W15): layout picked 2026-10-30, not built ([[Rooms and Art]]).
 > - [?] **Crowded Rooms, Open**: Hot desking (waiting / idle Clawds give up their seat)? Activity by state or at random?
 > - [x] **Docs Look**: `docs/Linked-Rooms.md` describes the current gates (doors, stairs, wells on the walls and floor), the bottom bar's `G` / `M` hint and how rooms find each other; `docs/Platforms.md` was checked and fits. Still to look at: the code names the park's way up `TREEHOUSE` in the bar's gate names, while the park has a corner building with a stoop.
 
 ### 🎮 Interaction
-> [!question]- 7 open
-> - [>] **Picked Clawd**: Built on `feat/picked-clawd` (#6): Tab puts yellow corners and a soft spotlight (60 in 100) on the picked Clawd, they glide on the next pick and stay until Esc; Esc lets go of it and no longer quits the room (only `q` does); to check by eye: T58 – T61 (Group L of [[Test Checklist]]).
-> - [ ] **Bar Below the Room, Gate Tags**: The room above a one-line bar; while `g` / `m` is held a tag centred over each gate (arrow style still to pick).
-> - [>] **Settings**: `~/.clawd-room/settings.conf` exists with one line, `gate_theme` (a missing theme falls back to simple quietly). Not yet: more settings and the panel beside the room on `.`, which reads and writes the same file.
-> - [ ] **Room Setup Page**: An editor page to choose, per room, which Clawd look / role and which desks, props and options appear. Needs the data first: `rooms/*.txt` declares a room's desks, roles and allowed props (today the code decides), then the page edits those files with the room as the preview.
+> [!question]- 6 open
+> - [x] **Picked Clawd** (W4): merged (#6); Tab puts yellow corners and a soft spotlight on the picked Clawd, Esc lets go; T58 – T62 pass.
+> - [ ] **Bar Below the Room, Gate Tags** (W5): arrow style still to pick.
+> - [>] **Settings** (W6): `settings.conf` has one line, `gate_theme`. Not yet: more settings, the panel on `.`.
+> - [ ] **Room Setup Page** (W7): `rooms/*.txt` must declare desks, roles and props first.
 > - [?] **Every Size**: A strip for panes under 44x20 (S1 band, S2 names, S3 chips; mini Clawds under 8 rows): which one ([[Rooms and Art]])?
 > - [?] **Clawds That React**: Which first: a waiting Clawd waves (taskbar flash), eyes follow the mouse, click for a card, click to bring its terminal forward (needs `WT_SESSION` in the hook), drag to a gate, a coffee treat.
-> - [ ] **Moving, Step 3**: Drag a Clawd with the mouse onto a door, the stairs or the well. (Settled: `--try real` stays split; uneven shares are fine.)
+> - [ ] **Moving, Step 3** (W8): drag a Clawd onto a gate.
 
 ### 🖥️ Platforms
 > [!todo]- 3 open
-> - [ ] **Mac Check**: Run `make -C c test` on the Mac after the fused multiply-add change (it should still match).
-> - [ ] **Blocked Writes**: The room can block writing when the terminal stops reading (seen with iTerm2 in full screen).
-> - [>] **Windows Terminal Panes**: Built on `feat/split-panes` (#15): panes seen through UI Automation, gates between panes, no resize or font keys in a pane. To check by eye: T67 – T72 (Group N of [[Test Checklist]]); panes on other virtual desktops are not seen (Windows hides them).
+> - [ ] **Mac Check** (W11): after the fused multiply-add change.
+> - [ ] **Blocked Writes** (W12): seen with iTerm2 in full screen.
+> - [>] **Windows Terminal Panes** (W13): built on `feat/split-panes` (#15); to check: T67 – T72 (Group N, on that branch). Panes on other virtual desktops are not seen.
 
 ### ⚙️ Engine and tools
 > [!todo]- 2 open
 > - [x] **Stage Page Polish**: Esc picks nothing (#21), folding the panel and timeline, the picker's search focus, the eye + KEYS button (#22); tests T39 – T50 are in [[Test Checklist]].
-> - [ ] **Editor Add Buttons**: NEW in the picker for what the room already looks up by name: a prop (placed through a room's wall plan), an animation (a copy of a template), a gate theme (a copy of `simple`). A UI icon waits until the code asks for a name. Aimed at Zaviel, William and later outside people, so friendly (names checked, templates, short help).
-> - [ ] **Less CPU**: Skip frames when nothing moves; stop drawing (FPS 0) when the window is covered, minimised or on another desktop; later dirty rects. (The terminal output is already diffed and written once per frame.)
+> - [ ] **Editor Add Buttons** (W9): needs a mockup.
+> - [ ] **Less CPU** (W10).
 
 ### 🗂️ Repo and vault
 > [!todo]- 1 open
 > - [x] **Pull Requests**: The public repo counts from #1: #1 – #6 and #8 – #9 merged, #7 closed, #10 (day note 2026-10-27) open. Only merged branches are deleted.
 > - [x] **Go Public** (2026-10-24): `zelvet-velvet/clawd-room` is public with an MIT `LICENSE` and a clean history (a new repo; the old one is `clawd-room-pre-public`, private, which can be archived). `main` is protected: changes only through a pull request with one approval from a code owner (`.github/CODEOWNERS`: Zaviel), no force-push, no deletion, conversations resolved; admins are not enforced, so Zaviel merges their own PRs. Merge commits only, branches deleted on merge.
 > - [>] **Contributors Setup**: Invitations to the new repo are sent; each contributor accepts, clones the new repo (or `git fetch && git reset --hard origin/main` in an old clone, after saving unmerged work), sets Templater ([[Collaboration]]).
-
-## 💡 Ideas
-> [!tip]- 4 ideas
-> - Animations gallery: `--build-art` GIFs sorted into category folders (Session states, Getting around, Playground, Together, On their own) with Gallery notes; the GIF colour rounding is already in. Dropped from Ongoing 2026-10-23 with the `wip/animations-stash` branch (a small `action_folder()` function, easy to write again).
-> - A seesaw in the park; an empty-desk look for Clawds that are away.
-> - Camera polish: smooth zoom, a slight lead in the walking direction, a small bounce when a Clawd finishes, parallax in the park.
-> - Full screen: a "hub" room that others visit, or several rooms side by side in one window.
 
 ---
 ## 🏁 Last Progress

@@ -20,7 +20,7 @@ A pixel room where every running Claude Code session is a little Clawd (terminal
 - Map of the code and the vault, conventions for notes: `Clawd Room Note/Start/LLM Guide.md`.
 - Where things stand: `Clawd Room Note/Review/Dev Status.md` (Today, Yesterday, Ongoing). History: `Review/Progress Archive.md`, day notes in `Review/Log/`, `git log`. Read archives only when asked.
 - How a part works now: `Clawd Room Note/Design/<note>.md`. Exact behaviour: the code.
-- Large notes (`Design/Interaction.md`, `Review/Test Checklist.md`, the archives, `_Meta/Theme Color Preview.md`): grep first, read the matching section. Never read `Gallery/` (generated) or `Assets/`.
+- Large notes (`Design/Pixel Editor.md`, `Design/Rooms and Art.md`, `_Meta/Snapshot status.md`, the archives, big day notes): grep first, read the matching section. Never read `Gallery/` (generated), `Assets/` or `_Meta/Theme Color Preview.md` (swatches for people).
 - Read a note right before editing it: the user edits in Obsidian at the same time; never restore what they rolled back.
 
 ## Commands
