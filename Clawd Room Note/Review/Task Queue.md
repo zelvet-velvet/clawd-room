@@ -17,13 +17,14 @@ Work anyone can pick up. Each task has an ID (`W1`, `W2` …) that never changes
 > **Let go:** close the draft PR and put the line back as `[ ]` without the name. A claim with no commits for two weeks is free for anyone to take (ask on the PR first).
 
 > [!warning] Before you start
-> - **Visual tasks start with a picture.** Where *needs* says *mockup*, post a rendered mockup in the draft PR and wait for the owner to pick before building (see [[LLM Guide]]).
+> - **Visual tasks start with a picture.** Where *needs* says *mockup*, post a rendered mockup in the draft PR and wait for the owner to pick before building (skill `room-mockups`).
 > - **Snapshots are the contract.** A change that alters what is drawn updates the snapshots on purpose and says so in the PR.
 > - **Big or unclear?** Say so in the draft PR before you build; a short question saves a long detour.
 
 > [!example] 🎨 Rooms and art
 > - [ ] **W1** **Railed stair well**: a bigger opening, steps right to left, a guard rail; no big tree in the park when it has a way up (design A is picked, [[2026-10-20]]) · *M · needs: picked design*
 > - [ ] **W2** **Gates in the park and gates leaving**: the park's own fence building and stoop as part animations, and gates that go away as well as appear ([[Art Data and Editor]]) · *M · needs: mockup*
+> - [ ] **W15** **Crowded rooms**: build the picked layout: scattered spots mixed with clusters of 2–3, the smaller mixed furniture, activities for Clawds without a seat (demolish, fire, clean up, play), so "+N MORE" never shows ([[Rooms and Art]], [[2026-10-30]]) · *L · needs: picked design*
 > - [ ] **W3** **Art as sprite pieces**: geometry stays in code, the look moves to small sprites the code places and repeats (a tread, a baluster, a length of rail), so gates, desks and wells can be edited in the pixel editor; the default sprites must reproduce today's pictures exactly · *L · needs: a design chat first*
 
 > [!example] 🎮 Interaction
@@ -47,7 +48,8 @@ Work anyone can pick up. Each task has an ID (`W1`, `W2` …) that never changes
 > - A seesaw in the park.
 > - An empty-desk look for Clawds that are away.
 > - Camera polish: smooth zoom, a slight lead in the walking direction, a small bounce when a Clawd finishes, parallax in the park.
-> - A full-screen "hub" room that others visit.
+> - A full-screen "hub" room that others visit, or several rooms side by side in one window.
+> - Animations gallery: `--build-art` GIFs sorted into category folders (Session states, Getting around, Playground, Together, On their own) with Gallery notes; dropped 2026-10-23 with the `wip/animations-stash` branch (a small `action_folder()` function, easy to write again).
 
 > [!success]- ✅ Taken and done
 > Move a finished line here, ticked `[x]`, with the PR number, for example `- [x] **W7** Room setup page · #31`. The history of what changed is in [[Dev Log]].
