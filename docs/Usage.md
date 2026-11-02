@@ -23,7 +23,9 @@ Everything the room can do from the command line, with the keys, the themes, the
     ./clawd-room.sh                           # draws in the terminal (works in a 60x20 pane or fullscreen); builds c/ on the first start
     ./clawd-room.sh --dump 100x30 --events /tmp/e.jsonl --at 1800000010   # one plain-text frame, for tests
 
-Keys: `q` quits, Esc lets go of the picked Clawd, `p` pause, `?` help line, `r` room size list, `[` `]` camera zoom, `z` auto zoom, left / right (A / D) or Tab pick the Clawd the camera follows, `c` follow / free camera (then the arrows or W A S D move it), `g` send a Clawd next door (hold `g` + an arrow: which way), `m` + an arrow move the picked Clawd to that room (it packs its desk into a box and lives there while the rooms run), `b` call your Clawds back (or send visitors home), `f` fit. Needs at least 44x20 cells. Messages, the help line and the `g` / `m` hint show in a bar along the bottom of the room. The hook must be
+A room too short for a desk (an 80x24 window, the park under about 40 rows) seats its Clawds on the floor, each with a laptop (the screen in the state colour); what does not fit says "+N MORE". Below 44x20 cells, or when not even the floor has a place, the room shows a strip instead: a band of Clawds at laptops (screens in the state colour), or under 4 rows a face per Clawd on the room's wall with a dot in the state colour beside it, its eyes saying the state too (raised: waiting, up to the side: thinking, half shut: idle, shut: sleeping); Tab picks a Clawd and shows its name, and one that starts waiting out of view is brought in. The window's edge that is less than a cell (nothing can draw there) takes the picture's colour (the terminal's background, put back when the room quits; `CLAWD_NO_EDGE=1` leaves it alone). In a Windows Terminal split pane the room leaves the font alone: Ctrl+- / Ctrl+= in that pane make its Clawds smaller / bigger (only that pane changes).
+
+Keys: `q` quits, Esc lets go of the picked Clawd, `p` pause, `?` help line, `[` `]` camera zoom, `z` auto zoom, left / right (A / D) or Tab pick the Clawd the camera follows, `c` follow / free camera (then the arrows or W A S D move it), `g` send a Clawd next door (hold `g` + an arrow: which way), `m` + an arrow move the picked Clawd to that room (it packs its desk into a box and lives there while the rooms run), `b` call your Clawds back (or send visitors home), `f` fit, `v` view: the room, then the Clawds at laptops, then their faces, then the room again (in a pane too small for the room: laptops / faces). Needs at least 44x20 cells. Messages, the help line and the `g` / `m` hint show in a bar along the bottom of the room. The hook must be
 installed once (`python3 install_hooks.py` shows what it would change) or the room stays empty.
 Needs a truecolor terminal (Windows Terminal is fine). It only reads the events file.
 
@@ -42,11 +44,11 @@ Themes (`--theme office|coffee|park`, by default guessed from the room name):
 
 ## Room size
 
-Room size: the room always fills the window and takes its shape; dragging the window resizes it live. It grows (more
-floor, more desks) up to the chosen room size, then the pixels get bigger instead (grow, then scale). `r` opens the ROOM SIZE
-list (up/down or W/S, Enter picks, Esc or `r` closes; `--room-size auto|s|m|l|xl`):
-- AUTO (default): just big enough to seat every session with floor to walk on; it changes when sessions come and go.
-- S 120x60, M 160x90, L 220x120, XL 300x160 room pixels: the biggest the room may be (an 80x25 window is 80x50 room pixels).
+Room size: a room pixel is always one cell wide and half a cell tall, so a Clawd is the same size (14x4 cells) in every
+window and pane; a bigger window gets a bigger room (more floor, more desks), not bigger pixels. The room fills the window's
+width and is at most 3/4 as tall as wide: a taller window or pane shows it in its middle, dark above and below. Dragging the
+window resizes it live. To make everything bigger or smaller, change the font (Ctrl+= / Ctrl+-) or zoom the camera (`[` `]`).
+(`--scale` and `--room-size` are accepted but no longer used.)
 (`--ratio 3:1|2:1|16:9|4:3|1:1|3:4` still pins an old fixed shape; it is kept for the tests.)
 
 ## Camera

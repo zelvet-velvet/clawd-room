@@ -8,12 +8,16 @@
 #define LINK_ALIVE_FOR 4.0
 #define LINK_BEAT_EVERY 1.0
 #define LINK_SCAN_EVERY 0.5
+#define LINK_READY 8 /* gates a room can say it is ready to show (one per neighbour) */
 
 typedef struct {
     char id[40], name[32], theme[32];
     int cols, rows;
     int has_band; int band[2];
     int has_grid; double grid[7];
+    char pane[40]; /* its pane of a split Windows Terminal window (UI Automation runtime id), or "" */
+    char ready_id[LINK_READY][40]; double ready_t[LINK_READY]; int nready; /* when it was ready to show its gate to each room */
+    int strip;  /* it shows the strip (too small for a room): no gate to it */
     char homes[MAX_CLAIMS][72]; int nhomes; /* the sessions that moved into that room */
     char shows[MAX_SHOWS][72]; int nshows;  /* the sessions it shows now */
 } LinkPeer;
@@ -25,6 +29,10 @@ typedef struct {
     double last_beat, last_scan;
     int has_band; int band[2];
     int has_grid; double grid[7];
+    char pane[40]; /* ours, when the room is in a split pane (watcher_resolve) */
+    char ready_id[LINK_READY][40]; double ready_t[LINK_READY]; int nready; /* ours: when we were ready to show each gate */
+    int ready_changed; /* say it at once (the other room waits for it) */
+    int strip;  /* ours: we show the strip, so no room makes a gate to us */
     char homes[MAX_CLAIMS][72]; int nhomes; /* ours, said in the heartbeat */
     char shows[MAX_SHOWS][72]; int nshows;  /* ... and the sessions we show */
 } Link;

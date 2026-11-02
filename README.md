@@ -158,7 +158,6 @@ python3 install_hooks.py --apply    # installs it (backs the file up first)
 | Esc | let go of the picked Clawd (the corners fade out) |
 | `p` | pause |
 | `?` | help line |
-| `r` | room size list |
 | `[` `]` | camera zoom out / in |
 | `z` | auto zoom on / off |
 | ← → (`A` `D`) / Tab | pick the Clawd the camera follows |
@@ -167,6 +166,7 @@ python3 install_hooks.py --apply    # installs it (backs the file up first)
 | `m` + arrow | move the picked Clawd to that room for good |
 | `b` | call your Clawds back (or send visitors home) |
 | `f` | fit the window and font |
+| `v` | view: the room, Clawds at laptops, or faces |
 
 The status line, the help and the `g` / `m` hint show in a bar along the bottom. All the options: [docs/Usage.md](docs/Usage.md).
 

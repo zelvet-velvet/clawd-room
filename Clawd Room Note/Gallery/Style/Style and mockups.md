@@ -8,28 +8,72 @@ sticker: lucide//palette
 ---
 Pictures of mockups and options to choose from (the picked one is marked), newest first: ✅ current (open), ♻️ replaced and ❌ not picked (folded; the status is in [[Snapshot status]]). The files are the source in `Assets/Snapshots/Style and mockups/`; this note is written by `tools/vault_gallery.py` (do not edit it by hand: add a picture, then run the tool).
 
+## 2026-11-01
+
+> [!success]+ ✅ current · Strip faces options
+> ![[2026-11-01 strip faces options.png|420]]
+> Shown in: not in a note yet
+
+> [!success]+ ✅ current · Strip face eyes options
+> ![[2026-11-01 strip face eyes options.png|420]]
+> Shown in: not in a note yet
+
+> [!success]+ ✅ current · Strip band walls spacing options
+> ![[2026-11-01 strip band walls spacing options.png|420]]
+> Shown in: not in a note yet
+
+> [!failure]- ❌ not picked · Strip band walls options
+> ![[2026-11-01 strip band walls options.png|420]]
+> Replaced by: [[2026-11-01 strip band walls spacing options.png]]
+> Shown in: not in a note yet
+
+> [!success]+ ✅ current · Strip band height options
+> ![[2026-11-01 strip band height options.png|420]]
+> Shown in: not in a note yet
+
+> [!success]+ ✅ current · Small room 80x24 options
+> ![[2026-11-01 small room 80x24 options.png|420]]
+> Shown in: not in a note yet
+
+> [!quote]- ♻️ replaced · Small pane strip with Tab · picked
+> ![[2026-11-01 small pane strip with Tab (picked).png|420]]
+> Replaced by: [[2026-11-01 small pane strip built.png]]
+> Shown in: [[2026-11-01#🦀 A pane too small for the room shows a strip of Clawds (Zaviel)|2026-11-01 · 🦀 A pane too small for the room shows a strip of Clawds (Zaviel)]]
+
+> [!success]+ ✅ current · Small pane strip options
+> ![[2026-11-01 small pane strip options.png|420]]
+> Shown in: [[2026-11-01#🦀 A pane too small for the room shows a strip of Clawds (Zaviel)|2026-11-01 · 🦀 A pane too small for the room shows a strip of Clawds (Zaviel)]]
+
+> [!success]+ ✅ current · Room height in split panes, options
+> ![[2026-11-01 room height in split panes, options.png|420]]
+> Shown in: [[2026-11-01#📐 Rooms in tall panes keep a normal floor, and panes of one window share a scale (Zaviel)|2026-11-01 · 📐 Rooms in tall panes keep a normal floor, and panes of one window share a scale (Zaviel)]]
+
+> [!success]+ ✅ current · Room height in split panes, D · picked
+> ![[2026-11-01 room height in split panes, D (picked).png|420]]
+> Shown in: [[Platforms and Windows|Platforms and Windows]]
+
 ## 2026-10-30
 
 > [!success]+ ✅ current · Workspace clusters · picked
 > ![[2026-10-30 workspace clusters (picked).png|420]]
-> Shown in: not in a note yet
+> Shown in: [[Rooms and Art|Rooms and Art]], [[2026-10-30#🪑 Crowded rooms: scattered spots and clusters picked (Zaviel)|2026-10-30 · 🪑 Crowded rooms: scattered spots and clusters picked (Zaviel)]]
 
 > [!success]+ ✅ current · Tiny pane strip options
 > ![[2026-10-30 tiny pane strip options.png|420]]
-> Shown in: not in a note yet
+> Shown in: [[Rooms and Art|Rooms and Art]]
 
 > [!failure]- ❌ not picked · Tight floor rows A B C
 > ![[2026-10-30 tight floor rows A B C.png|420]]
 > Replaced by: [[2026-10-30 scattered workspaces, mixed furniture (picked).png]]
-> Shown in: not in a note yet
+> Shown in: [[Rooms and Art|Rooms and Art]]
 
 > [!success]+ ✅ current · Scattered workspaces, mixed furniture · picked
 > ![[2026-10-30 scattered workspaces, mixed furniture (picked).png|420]]
-> Shown in: not in a note yet
+> Shown in: [[Rooms and Art|Rooms and Art]], [[2026-10-30#🪑 Crowded rooms: scattered spots and clusters picked (Zaviel)|2026-10-30 · 🪑 Crowded rooms: scattered spots and clusters picked (Zaviel)]]
 
 > [!success]+ ✅ current · Desk-less activities · picked
 > ![[2026-10-30 desk-less activities (picked).gif|420]]
-> Shown in: not in a note yet
+> Shown in: [[Rooms and Art|Rooms and Art]]
 
 ## 2026-10-19
 

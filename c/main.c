@@ -21,6 +21,7 @@
 #include "win.h"
 #include "script.h"
 #include "tail.h"
+#include "strip.h"
 #include "ui.h"
 
 int gallery_run(const char *dir); /* gallery.c: --check, --gallery DIR */
@@ -120,19 +121,6 @@ static int golden_ui(const char *path) {
         static const char *NF[4][2] = {{"", ""}, {"+3 MORE", ""}, {"", "SCALE 2X"}, {"+1 MORE", "FLASH"}};
         for (int k = 0; k < 4; k++) { overlay_text(buf, sizeof buf, paused, help, NF[k][0], NF[k][1]); printf("overlay %d %d [%s]\n", paused, help, buf); }
     }
-    static const int SM[4][2] = {{30, 10}, {44, 19}, {10, 5}, {200, 80}};
-    for (int i = 0; i < 4; i++) {
-        too_small(buf, sizeof buf, SM[i][0], SM[i][1]);
-        printf("small %d %d '", SM[i][0], SM[i][1]);
-        for (char *p = buf; *p; p++) { if (*p == 27) printf("\\x1b"); else putchar(*p); }
-        printf("'\n");
-    }
-    static const int PW[4] = {110, 160, 220, 300}, PH[4] = {64, 100, 140, 200}, NN[6] = {0, 1, 3, 6, 12, 40};
-    for (int a = 0; a < 4; a++) for (int b = 0; b < 4; b++) {
-        printf("auto %d %d", PW[a], PH[b]);
-        for (int k = 0; k < 6; k++) printf(" %d", auto_scale(PW[a], PH[b], NN[k]));
-        printf("\n");
-    }
     static const int MS[6][2] = {{144, 84}, {110, 64}, {60, 40}, {200, 120}, {44, 30}, {46, 56}};
     for (int s = 0; s < 6; s++) for (int pick = 0; pick < 3; pick++) for (int solo = 0; solo < 2; solo++) for (int ti = 0; ti < 2; ti++) {
         double tt = ti ? 0.4 : 0.0;
@@ -146,6 +134,57 @@ static int golden_ui(const char *path) {
         Canvas cv = render_menu(TS[i][0], TS[i][1], 1, 0, 0.4);
         printf("menuterm %d %d %016" PRIx64 "\n", TS[i][0], TS[i][1], canvas_hash(&cv));
         canvas_free(&cv);
+    }
+    { /* the strip: a pane too small for the room (strip.h): the band, faces, the window over the sessions, Tab, a hidden wait */
+        static Fixture fx;
+        if (!fixture_load_text(&fx, "theme office\ntitle strip\nterminal 116 5\ntime 1000.0 3.4\nscale 1\n"
+                                    "session s00 name=api created=900 state=work tool=Bash\nsession s01 name=web-shop created=901 state=work tool=Edit\n"
+                                    "session s02 name=docs created=902 state=think tool=Read\nsession s03 name=app created=903 state=idle tool=Read\n"
+                                    "session s04 name=bot created=904 state=work tool=Bash\nsession s05 name=etl created=905 state=work tool=Bash\n")) {
+            static const int SS[5][2] = {{116, 5}, {60, 5}, {116, 2}, {30, 3}, {43, 30}};
+            for (int i = 0; i < 5; i++) {
+                Strip st = {0};
+                Canvas cv = strip_render(&st, &fx.room, SS[i][0], SS[i][1], fx.t, fx.now);
+                printf("strip %d %d %dx%d first=%d %016" PRIx64 "\n", SS[i][0], SS[i][1], cv.w, cv.h, st.first, canvas_hash(&cv));
+                canvas_free(&cv);
+            }
+            for (int f = 1; f <= 2; f++) { /* v: the band / the faces in a pane the room fits (faces: 3 rows at most, in the middle) */
+                Strip st = {0};
+                st.force = f;
+                Canvas cv = strip_render(&st, &fx.room, 116, 30, fx.t, fx.now);
+                printf("strip view %s 116x30 %016" PRIx64 "\n", f == 1 ? "band" : "faces", canvas_hash(&cv));
+                canvas_free(&cv);
+            }
+            Strip st = {0}; /* 60x5: three fit */
+            Canvas cv = strip_render(&st, &fx.room, 60, 5, fx.t, fx.now); canvas_free(&cv);
+            for (int k = 0; k < 4; k++) {
+                const char *nm = strip_step(&st, &fx.room, fx.now, 1);
+                cv = strip_render(&st, &fx.room, 60, 5, fx.t, fx.now);
+                printf("strip tab %s first=%d %016" PRIx64 "\n", nm ? nm : "-", st.first, canvas_hash(&cv));
+                canvas_free(&cv);
+            }
+            strip_unpick(&st); st.first = 0;
+            for (int i = 0; i < fx.room.npool; i++) if (!strcmp(fx.room.pool[i].sid, "s05")) { snprintf(fx.room.pool[i].state, sizeof fx.room.pool[i].state, "wait"); fx.room.pool[i].state_t = fx.now; }
+            for (int k = 0; k < 2; k++) { /* the hidden one starts waiting: picked and brought into view, once */
+                cv = strip_render(&st, &fx.room, 60, 5, fx.t, fx.now);
+                printf("strip wait pick=%s first=%d %016" PRIx64 "\n", st.pick[0] ? st.pick : "-", st.first, canvas_hash(&cv));
+                canvas_free(&cv);
+                if (!k) { strip_unpick(&st); st.first = 0; }
+            }
+        }
+    }
+    { /* a room with no seat for even one Clawd shows the strip (not an empty floor saying "+1 MORE") */
+        static const char *TH[3] = {"office", "coffee", "park"};
+        static const int WH[4][2] = {{50, 40}, {50, 60}, {120, 50}, {120, 80}};
+        for (int i = 0; i < 3; i++) {
+            static Fixture fx;
+            char txt[300];
+            snprintf(txt, sizeof txt, "theme %s\ntitle seat\nterminal 120 40\ntime 1000.0 3.4\nscale 1\nsession s00 name=api created=900 state=work tool=Bash\n", TH[i]);
+            if (fixture_load_text(&fx, txt)) continue;
+            printf("no seat %s", TH[i]);
+            for (int k = 0; k < 4; k++) printf(" %dx%d:%d", WH[k][0], WH[k][1], strip_no_seat(&fx.room, WH[k][0], WH[k][1]));
+            printf("\n");
+        }
     }
     return 0;
 }
@@ -230,6 +269,98 @@ static int golden_win(void) {
         static const char *L[] = {"clawd-room alpha-1|10|20|800|600|18|60|792|592|120|40", "clawd-room we|ird|-5|0|300|200|5|30|295|195|96|30", "clawd-room y|1|2|3|4|5|6|7|8|9|x|11", "--"};
         for (int i = 0; i < 4; i++) watcher_feed(&w, L[i], 1000.0);
         for (int i = 0; i < w.ncur; i++) printf("win %s %d %d %d %d %d %d %d %d %d\n", w.cur[i].title, w.cur[i].rect[0], w.cur[i].rect[1], w.cur[i].rect[2], w.cur[i].rect[3], w.cur[i].area[0], w.cur[i].area[1], w.cur[i].area[2], w.cur[i].area[3], w.cur[i].dpi);
+    }
+    /* a Windows Terminal window split into panes: which pane is whose, and whether the window may be resized */
+    {
+        static Watcher w;
+        static Link link;
+        memset(&w, 0, sizeof w); memset(&link, 0, sizeof link);
+        double now = (double)time(NULL);
+        static const char *SPLIT[] = { /* (work pane on top with the focus, two rooms below; then a plain room window; rounds 1-3 our pane has the focus) */
+            "-|0|0|1200|1300|8|40|1192|1290|96|40", "@42.9.4.8|1|0|10|50|1190|900", "@42.9.4.9|0|1|10|910|598|1290", "@42.9.4.10|0|1|604|910|1190|1290",
+            "clawd-room solo-3|1300|0|2000|700|1308|40|1992|692|96|40", "@bad|x|1|2|3|4|5", "--"};
+        const char *ids[3] = {"left-1", "right-2", "solo-3"};
+        for (int round = 0; round < 6; round++) {
+            for (size_t i = 0; i < sizeof SPLIT / sizeof SPLIT[0]; i++) {
+                char line[128];
+                snprintf(line, sizeof line, "%s", SPLIT[i]);
+                if (round >= 1 && round < 4 && i == 0) snprintf(line, sizeof line, "clawd-room left-1|0|0|1200|1300|8|40|1192|1290|96|40"); /* our pane gets the focus */
+                if (round >= 1 && round < 4 && i == 1) snprintf(line, sizeof line, "@42.9.4.8|0|0|10|50|1190|900");
+                if (round >= 1 && round < 4 && i == 2) snprintf(line, sizeof line, "@42.9.4.9|1|1|10|910|598|1290");
+                watcher_feed(&w, line, now + round);
+            }
+            if (round == 3) { link.npeers = 1; snprintf(link.peers[0].id, 40, "right-2"); snprintf(link.peers[0].pane, 40, "42.9.4.10"); }
+            watcher_resolve(&w, "left-1", &link);
+            printf("split round %d mine=%s", round, w.my_rid[0] ? w.my_rid : "?");
+            for (int q = 0; q < 3; q++) {
+                const int *a = watcher_area(&w, ids[q]);
+                printf(" %s:%d", ids[q], watcher_in_pane(&w, ids[q]));
+                if (a) printf("@%d,%d,%d,%d", a[0], a[1], a[2], a[3]);
+            }
+            printf(" n=%d\n", w.ncur);
+        }
+        /* opening in a pane: wait for the watcher, then leave the window and the font alone */
+        Tool t = {0, -1};
+        Reports rp = {0};
+        OpenSetup o;
+        opensetup_init(&o, &t, "x", 8, "110x32", &rp, 1, 5);
+        int a1 = opensetup_update(&o, 100.0, 80, 24, NULL, NULL), st1 = o.stage;
+        o.pane = 1;
+        int a2 = opensetup_update(&o, 101.0, 80, 24, NULL, NULL);
+        printf("split setup %d %d %d skipped=%d\n", a1, st1, a2, o.skipped);
+        /* never told: after the wait the room leaves the window and the font alone as well */
+        OpenSetup u;
+        opensetup_init(&u, &t, "x", 8, "110x32", &rp, 1, 5);
+        int b1 = opensetup_update(&u, 100.0, 80, 24, NULL, NULL);
+        int b2 = opensetup_update(&u, 100.0 + OPEN_PANE_WAIT + 1, 80, 24, NULL, NULL);
+        printf("split setup unknown %d %d skipped=%d\n", b1, b2, u.skipped);
+    }
+    /* a room in a tall pane: at most ROOM_MAX_TALL as tall as wide (the rest dark); never under MIN_ROWS */
+    {
+        static const int PR[5][2] = {{167, 80}, {239, 125}, {159, 125}, {479, 62}, {44, 40}};
+        printf("pane rows");
+        for (int i = 0; i < 5; i++) printf(" %dx%d:%d", PR[i][0], PR[i][1], room_rows(PR[i][0], PR[i][1]));
+        printf("\n");
+    }
+    /* gates open together: a room's "ready" times go through its heartbeat to the other room */
+    {
+        char dir[] = "/tmp/clawd-ready-XXXXXX";
+        if (mkdtemp(dir)) {
+            static Link la, lb;
+            link_init(&la, "alpha", dir); link_init(&lb, "beta", dir);
+            link_start(&la); link_start(&lb);
+            snprintf(la.ready_id[0], 40, "%s", lb.id); la.ready_t[0] = 1000.25; la.nready = 1; la.ready_changed = 1; la.strip = 1; /* (and a strip says so: no gate to it) */
+            LinkEvent ev[8];
+            link_update(&la, 2000.0, 80, 24, ev, 8);
+            link_update(&lb, 2000.0, 80, 24, ev, 8);
+            int found = 0;
+            for (int p = 0; p < lb.npeers; p++)
+                for (int k = 0; k < lb.peers[p].nready; k++)
+                    if (!strcmp(lb.peers[p].id, la.id) && !strcmp(lb.peers[p].ready_id[k], lb.id)) { printf("gate ready heard %.2f changed=%d\n", lb.peers[p].ready_t[k], la.ready_changed); found = 1; }
+            if (!found) printf("gate ready not heard\n");
+            for (int p = 0; p < lb.npeers; p++) if (!strcmp(lb.peers[p].id, la.id)) printf("strip heard %d\n", lb.peers[p].strip);
+            link_close(&la); link_close(&lb);
+            rmdir(dir);
+        }
+    }
+    /* two room panes opened quickly: ours never had the focus while the window showed our title (the other room's pane
+     * has it), so ours is the one Clawd Room pane the other room does not claim */
+    {
+        static Watcher w;
+        static Link link;
+        memset(&w, 0, sizeof w); memset(&link, 0, sizeof link);
+        double now = (double)time(NULL);
+        static const char *QUICK[] = {"clawd-room right-2|0|0|1200|1300|8|40|1192|1290|96|40", "@7.1|0|0|10|50|1190|900",
+                                      "@7.2|0|1|10|910|598|1290", "@7.3|1|1|604|910|1190|1290", "--"};
+        for (int round = 0; round < 3; round++) {
+            for (size_t i = 0; i < sizeof QUICK / sizeof QUICK[0]; i++) watcher_feed(&w, QUICK[i], now + round);
+            if (round == 1) { link.npeers = 1; snprintf(link.peers[0].id, 40, "right-2"); snprintf(link.peers[0].pane, 40, "7.3"); }
+            watcher_resolve(&w, "left-1", &link);
+            const int *a = watcher_area(&w, "left-1");
+            printf("split quick round %d mine=%s left-1:%d", round, w.my_rid[0] ? w.my_rid : "?", watcher_in_pane(&w, "left-1"));
+            if (a) printf("@%d,%d,%d,%d", a[0], a[1], a[2], a[3]);
+            printf("\n");
+        }
     }
     /* the gates between two windows */
     for (int variant = 0; variant < 4; variant++) {

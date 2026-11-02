@@ -12,7 +12,7 @@ void overlay_text(char *out, size_t n, int paused, int help_on, const char *note
     const char *parts[4];
     int k = 0;
     if (paused) parts[k++] = "PAUSED";
-    if (help_on) parts[k++] = "q/esc quit   p pause   r room size   [ ] zoom   z auto zoom   < > / tab pick a Clawd   c follow / free camera   f auto font+scale   g send a Clawd (hold g + arrow: which way)   m + arrow move the picked Clawd there   b call back   o debug overlay   ? help";
+    if (help_on) parts[k++] = "q/esc quit   p pause   [ ] zoom   z auto zoom   < > / tab pick a Clawd   c follow / free camera   f auto font   g send a Clawd (hold g + arrow: which way)   m + arrow move the picked Clawd there   b call back   o debug overlay   v view: room / laptops / faces   ? help";
     if (note && note[0]) parts[k++] = note;
     if (flash && flash[0]) parts[k++] = flash;
     for (int i = 0; i < k; i++) {
@@ -64,38 +64,12 @@ void draw_bar(Canvas *cv, const BarPiece *pieces, int n) {
     }
 }
 
-void too_small(char *out, size_t n, int cols, int rows) {
-    char msg[64];
-    snprintf(msg, sizeof msg, "need %dx%d, have %dx%d", MIN_COLS, MIN_ROWS, cols, rows);
-    if ((int)strlen(msg) > cols) msg[cols > 0 ? cols : 0] = 0;
-    int r = rows / 2 + 1 > 1 ? rows / 2 + 1 : 1, c = (cols - (int)strlen(msg)) / 2 + 1 > 1 ? (cols - (int)strlen(msg)) / 2 + 1 : 1;
-    size_t k = (size_t)snprintf(out, n, "\x1b[0m");
-    for (int i = 1; i <= rows && k + 16 < n; i++) k += (size_t)snprintf(out + k, n - k, "\x1b[%d;1H\x1b[2K", i); /* no ESC[2J (see wipe in app.c) */
-    if (k < n) snprintf(out + k, n - k, "\x1b[%d;%dH%s\x1b[H", r, c, msg);
+int room_rows(int cols, int rows) {
+    int r = (int)(cols * ROOM_MAX_TALL / 2); /* (a row is two room pixels high, a column one wide) */
+    if (r < MIN_ROWS) r = MIN_ROWS;
+    return rows > r ? r : rows;
 }
 
-const char *const SIZE_LABEL[N_SIZES] = {"AUTO", "S  120X60", "M  160X90", "L  220X120", "XL 300X160"};
-const char *const SIZE_KEY[N_SIZES] = {"auto", "s", "m", "l", "xl"};
-const int SIZE_MAX_W[N_SIZES] = {0, 120, 160, 220, 300}, SIZE_MAX_H[N_SIZES] = {0, 60, 90, 120, 160};
-
-int size_scale(int pw, int ph, int size, int n, const Room *room) {
-    if (size <= 0 || size >= N_SIZES) return room ? room_auto_scale(pw, ph, room) : auto_scale(pw, ph, n);
-    int kw = (pw + SIZE_MAX_W[size] - 1) / SIZE_MAX_W[size], kh = (ph + SIZE_MAX_H[size] - 1) / SIZE_MAX_H[size];
-    int k = kw > kh ? kw : kh;
-    return k < 1 ? 1 : k;
-}
-
-int auto_scale(int pw, int ph, int n) {
-    for (int k = SCALE_CAP; k >= 1; k--) {
-        int w = pw / k, h = ph / k, ys[16], banner, per_row, slot_w, rows_shown;
-        if (w < SLOT_MIN_W || h < SLOT_H) continue;
-        layout_slots(w, h, n, &banner, &per_row, &slot_w, &rows_shown, ys);
-        if (per_row * rows_shown >= (n > 1 ? n : 1) && w >= ROAM_W && h >= ROAM_H) return k;
-    }
-    return 1;
-}
-
-void draw_size_menu(Canvas *cv, const char *const *labels, int n, int pick) { draw_list_menu(cv, "ROOM SIZE", labels, n, pick); }
 void draw_list_menu(Canvas *cv, const char *title, const char *const *labels, int n, int pick) {
     const int LINE = 7, PAD = 3;
     int fit = (cv->h - 2 * PAD - 9) / LINE; /* the lines that fit: the list scrolls with the pick */

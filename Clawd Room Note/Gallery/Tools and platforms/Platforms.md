@@ -8,6 +8,43 @@ sticker: lucide//monitor
 ---
 Pictures of Windows Terminal, iTerm2, `--try`, newest first: ✅ current (open), ♻️ replaced and ❌ not picked (folded; the status is in [[Snapshot status]]). The files are the source in `Assets/Snapshots/Platforms/`; this note is written by `tools/vault_gallery.py` (do not edit it by hand: add a picture, then run the tool).
 
+## 2026-11-01
+
+> [!success]+ ✅ current · Small pane strip name above, sleeping
+> ![[2026-11-01 small pane strip name above, sleeping.png|420]]
+> Shown in: [[Rooms and Art|Rooms and Art]], [[2026-11-01#🦀 A room with no seat for one Clawd shows the strip; the strip's name goes above, sleeping Clawds get Zs (Zaviel)|2026-11-01 · 🦀 A room with no seat for one Clawd shows the strip; the strip's name goes above, sleeping Clawds get Zs (Zaviel)]]
+
+> [!quote]- ♻️ replaced · Small pane strip focus frame
+> ![[2026-11-01 small pane strip focus frame.png|420]]
+> Replaced by: [[2026-11-01 small pane strip name above, sleeping.png]]
+> Shown in: [[2026-11-01#🦀 The strip joins the split-pane branch; its focus frames only the Clawd; no gates to a strip (Zaviel)|2026-11-01 · 🦀 The strip joins the split-pane branch; its focus frames only the Clawd; no gates to a strip (Zaviel)]]
+
+> [!success]+ ✅ current · Small pane strip faces with tall eyes
+> ![[2026-11-01 small pane strip faces with tall eyes.png|420]]
+> Shown in: [[2026-11-01#👀 Faces get tall eyes; `v` switches the view; the window's edge takes the picture's colour (Zaviel)|2026-11-01 · 👀 Faces get tall eyes; `v` switches the view; the window's edge takes the picture's colour (Zaviel)]]
+
+> [!quote]- ♻️ replaced · Small pane strip faces with a state dot
+> ![[2026-11-01 small pane strip faces with a state dot.png|420]]
+> Replaced by: [[2026-11-01 small pane strip faces with tall eyes.png]]
+> Shown in: [[2026-11-01#🪑 A room too short for a desk seats its Clawds on the floor; the small strip's faces get a state dot (Zaviel)|2026-11-01 · 🪑 A room too short for a desk seats its Clawds on the floor; the small strip's faces get a state dot (Zaviel)]]
+
+> [!quote]- ♻️ replaced · Small pane strip built
+> ![[2026-11-01 small pane strip built.png|420]]
+> Replaced by: [[2026-11-01 small pane strip focus frame.png]]
+> Shown in: [[2026-11-01#🦀 A pane too small for the room shows a strip of Clawds (Zaviel)|2026-11-01 · 🦀 A pane too small for the room shows a strip of Clawds (Zaviel)]]
+
+> [!success]+ ✅ current · Small pane strip band, a tall wall
+> ![[2026-11-01 small pane strip band, a tall wall.png|420]]
+> Shown in: [[2026-11-01#🖼️ The strip's band gets its room's wall (Zaviel)|2026-11-01 · 🖼️ The strip's band gets its room's wall (Zaviel)]]
+
+> [!success]+ ✅ current · Small pane strip band with its room's wall
+> ![[2026-11-01 small pane strip band with its room's wall.png|420]]
+> Shown in: [[2026-11-01#🖼️ The strip's band gets its room's wall (Zaviel)|2026-11-01 · 🖼️ The strip's band gets its room's wall (Zaviel)]]
+
+> [!success]+ ✅ current · Room 80x24 Clawds on the floor
+> ![[2026-11-01 room 80x24 Clawds on the floor.png|420]]
+> Shown in: [[2026-11-01#🪑 A room too short for a desk seats its Clawds on the floor; the small strip's faces get a state dot (Zaviel)|2026-11-01 · 🪑 A room too short for a desk seats its Clawds on the floor; the small strip's faces get a state dot (Zaviel)]]
+
 ## 2026-10-19
 
 > [!quote]- ♻️ replaced · Wsl try, four rooms at 8 pt

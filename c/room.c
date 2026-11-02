@@ -187,7 +187,7 @@ int geo_home(const Geo *g, const Room *room, const Session *s, int *cx, int *by)
 }
 
 const char *geo_role(const Geo *g, const Room *room, const Session *s) {
-    (void)g;
+    if (g && g->floor_seats) return ""; /* (on the floor: no bar, no barista) */
     for (int i = 0; i < room->n; i++) if (room->s[i] == s) return theme_role(room->theme, i);
     return "";
 }

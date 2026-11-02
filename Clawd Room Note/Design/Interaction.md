@@ -6,7 +6,7 @@ tags:
 sticker: lucide//gamepad-2
 ---
 > [!abstract] In short
-> Every Claude Code session is a Clawd. Keys zoom and steer a camera, pick the room size, and send Clawds to linked windows. Linked windows find each other by themselves; Clawds walk through doors and stairs between them. Looks are in [[Rooms and Art]], window handling in [[Platforms and Windows]], the editor in [[Pixel Editor]].
+> Every Claude Code session is a Clawd. Keys zoom and steer a camera and send Clawds to linked windows. Linked windows find each other by themselves; Clawds walk through doors and stairs between them. Looks are in [[Rooms and Art]], window handling in [[Platforms and Windows]], the editor in [[Pixel Editor]].
 
 ---
 ## ⌨️ Keys
@@ -14,10 +14,9 @@ sticker: lucide//gamepad-2
 | Key | Does |
 | --- | --- |
 | `q` | quit |
-| Esc | lets go of the picked Clawd (the corners and the dimming fade out; the camera stays on it); it closes the room size list first |
+| Esc | lets go of the picked Clawd (the corners and the dimming fade out; the camera stays on it) |
 | `p` | pause |
 | `?` | help line |
-| `r` | **room size list**: AUTO, S, M, L, XL (up/down or W/S, Enter picks, Esc or `r` closes) |
 | `[` `]` | **camera zoom** 1x–4x (the room keeps its layout; only the view gets closer) |
 | `z` | **auto zoom** on / off (frames the busy Clawds) |
 | ← → or A D, Tab | while following: pick the previous / next Clawd (the camera stays on it); **yellow corners close in around it and the room dims (60 in 100)**, they glide on the next pick and stay until you press **Esc** |
@@ -26,7 +25,8 @@ sticker: lucide//gamepad-2
 | `g` | send an idle Clawd next door; with several linked rooms **hold `g` and press an arrow** (the way to send it); only while `g` (or `m`) is **held** (it goes soon after the key's repeats stop; the room learns how fast the keyboard repeats) the bar along the bottom has one yellow hint for both: `G SEND / M MOVE NAME + ARROW:` (the held key bright) and which arrow goes where |
 | `m` | **move** the picked Clawd (`Tab` / `<` `>`; or the only one) to another room: `m` + an arrow; it carries its work there and lives there while the rooms run |
 | `b` | **call back**: our Clawds next door walk home; with none away, visitors here are sent home |
-| `f` | auto font and scale again (WSL and iTerm2), camera back to 1x |
+| `f` | auto font again (WSL and iTerm2), camera back to 1x |
+| `v` | **view** (picked 2026-11-01): the room → the Clawds at laptops (the strip's band) → their faces → the room; in a pane too small for the room it switches band ↔ faces (under 4 rows faces only). The faces fill the pane's height: the 3-row face drawn whole times bigger (its shape kept), but never wider than the pane; the rest on the wall colour. A view other than the room is a strip: no gates to it. |
 | `o` | **debug overlay**: each item's box with its **name** (SIGN, DESK, GATE-LEFT …; the park's buildings all say BUILDING), anchors, gate points (in green, mid yellow, out red), where Clawds are walking; handy for pointing at something in a screenshot |
 
 > [!note] The picked Clawd stands out (built 2026-10-24)
@@ -51,19 +51,18 @@ The editor (`--edit`), its sprite picker and the stage page for part animations:
 ---
 ## 📐 Room size and resizing
 
-- The room **always fills the window** and takes its shape; dragging the window re-lays it out at once.
-- **Grow, then scale:** the room gains floor up to the chosen size, past that every room pixel gets bigger.
+- **A Clawd is the same size everywhere** (Zaviel, 2026-11-01): a room pixel is always one cell wide and half a cell tall (scale 1). A bigger window or pane gets a **bigger room** (more floor and desks), never bigger pixels; `[` `]` zoom the camera, Ctrl+- / Ctrl+= change the font.
+- The room **fills the width** and is at most **3/4 as tall as wide** (`ROOM_MAX_TALL`); a taller window or pane shows it in its middle with dark above and below. Dragging the window re-lays it out at once.
 
 ```mermaid
 %%{init: {"flowchart": {"defaultRenderer": "elk"}}}%%
 flowchart LR
-    Drag["🖱️ window resized"] --> Fits{"room smaller than<br/>the chosen size?"}
-    Fits -->|yes| Grow["🧱 more floor and desks<br/>(1 room pixel = 1 cell)"]
-    Fits -->|no| Scale["🔍 bigger pixels<br/>(2x, 3x …)"]
+    Drag["🖱️ window resized"] --> Tall{"taller than<br/>3/4 of its width?"}
+    Tall -->|no| Fill["🧱 the room fills it<br/>(1 room pixel = 1 cell)"]
+    Tall -->|yes| Mid["⬛ the room 3/4 as tall as wide,<br/>dark above and below"]
 ```
 
-| Size | Biggest room (room pixels) |
-| --- | --- |
+--- | --- |
 | **AUTO** (default) | just big enough to seat every session with floor to walk on; changes when sessions come and go |
 | S / M / L / XL | 120x60 / 160x90 / 220x120 / 300x160 (an 80x25 window is 80x50) |
 
@@ -112,7 +111,7 @@ flowchart TD
 ---
 ## 🔗 Linked windows and crossing
 
-Rooms started with `--room NAME` find each other through files in `~/.clawd-room/link/` (no network) and **share the sessions** (each shows its own part). The split is **sticky**: every room says in its heartbeat which sessions it shows (`"shows"`), and a session a running room shows **stays there**, so opening more rooms never takes a Clawd away (shares can be uneven; `m` moves one). A session nobody shows (new, or its room closed) goes to the room that scores highest for it (a hash of session + room); if two rooms show one, the higher score keeps it. A room that goes quiet but has not closed (its presence file is still there: busy drawing, say) keeps its share for 15 s, so its Clawds do not hop away and back. With the window helper (WSL or iTerm2) a gate appears when two windows are **next to each other** (gap up to 30 px, stays attached until 45 px) and **still for 1 s**; both windows animate it in together. iTerm2 **split panes** count as windows.
+Rooms started with `--room NAME` find each other through files in `~/.clawd-room/link/` (no network) and **share the sessions** (each shows its own part). The split is **sticky**: every room says in its heartbeat which sessions it shows (`"shows"`), and a session a running room shows **stays there**, so opening more rooms never takes a Clawd away (shares can be uneven; `m` moves one). A session nobody shows (new, or its room closed) goes to the room that scores highest for it (a hash of session + room); if two rooms show one, the higher score keeps it. A room that goes quiet but has not closed (its presence file is still there: busy drawing, say) keeps its share for 15 s, so its Clawds do not hop away and back. With the window helper (WSL or iTerm2) a gate appears when two windows are **next to each other** (gap up to 30 px, stays attached until 45 px) and **still for 1 s**; both windows animate it in together: each room says in its heartbeat when it was ready to show the gate (`"ready"`), and both start at the later of the two + 1 s (`GATE_SYNC_WAIT`); while the other room has not said, it waits up to 3 s (`GATE_SYNC_ALONE`; an older room never says). iTerm2 **split panes** count as windows.
 
 **Moving** (`m` + arrow): the Clawd walks out like a visit, but the room it walks into **claims** it: its heartbeat lists the sessions that moved in (`"homes"`). A room shows a session if it claimed it, not if a running room claimed it, else by the split below. The room it left keeps showing it (away) until the claim appears, or brings it back after 10 s. Claims last only while that room runs. On the way it **packs** its workspace into a box at its desk and **unpacks** it at the new one (a poof each time); `m` + arrow on one that already carries its box sends it straight to that gate.
 

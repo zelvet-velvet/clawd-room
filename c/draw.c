@@ -8,6 +8,7 @@
 #include "parts.h"
 #include "room.h"
 #include "scene.h"
+#include "strip.h"
 #include "place.h"
 #include "ui.h"
 
@@ -295,21 +296,51 @@ static void place_room(Geo *g, const Room *room, const Rows *r, int n) {
                 add_keep(g, (Box){b.x0 - 1, r->by[row] - 4, b.x1 + 1, r->by[row] + 5}, 1); /* (only its own row: things in front stand in front of it) */
             }
         }
-    /* 4 the workspaces: places along each row, as far apart as a workspace is wide, kept only where they are clear */
+    /* 4 the workspaces: places along each row, as far apart as a workspace is wide, kept only where they are clear; a room
+     * with no place for a single desk seats its Clawds on the floor instead, each with a laptop (picked 2026-11-01, 40 B) */
     Box fp = C.fp;
     int fw = fp.x1 - fp.x0, fc = (fp.x0 + fp.x1) / 2, need = n - first;
     int px[16][PER_ROW_MAX], pn[16] = {0}, total = 0;
+    Rows fr;
+    const Rows *rr = r;
+    for (int on_floor = 0; on_floor < 2; on_floor++) {
+    if (on_floor) {
+        if (total > 0 || first || need <= 0) break;
+        fr.n = 0; /* one row of floor seats: the line nearest the back wall that seats as many as any line does */
+        Box fb = {FLOOR_SEAT_X0, FLOOR_SEAT_Y0, FLOOR_SEAT_X1, FLOOR_SEAT_Y1};
+        int best = 0, best_by = 0, want = 0;
+        for (int pass = 0; pass < 2; pass++) {
+            for (int by = (int)v->bb + FLOOR_SEAT_BACK; by - 5 <= h - FLOOR_SEAT_WALK; by++) {
+                double xl, xr;
+                view_floor_span(v, by, &xl, &xr);
+                int lo = (int)xl + 1 + ROW_MARGIN, hi = (int)xr - 1 - ROW_MARGIN, cnt = 0;
+                for (int cx = lo - fb.x0; cx + fb.x1 <= hi; cx++)
+                    if (floor_clear(g, (Box){cx + fb.x0, by + fb.y0, cx + fb.x1, by + fb.y1})) { cnt++; cx += FLOOR_SEAT_W - 1; }
+                if (!pass && cnt > best) best = cnt;
+                if (pass && cnt >= want) { best_by = by; break; }
+            }
+            if (!pass) want = best < need ? best : need;
+        }
+        if (best > 0) {
+            double xl, xr;
+            view_floor_span(v, best_by, &xl, &xr);
+            fr.by[0] = best_by; fr.x0[0] = xl + ROW_MARGIN; fr.x1[0] = xr - ROW_MARGIN; fr.count[0] = best; fr.n = 1;
+        }
+        rr = &fr; g->floor_seats = fr.n > 0;
+        fp = (Box){FLOOR_SEAT_X0, FLOOR_SEAT_Y0, FLOOR_SEAT_X1, FLOOR_SEAT_Y1}; /* the Clawd (at cx - 5) and its laptop */
+        fw = FLOOR_SEAT_W - 2; fc = (fp.x0 + fp.x1) / 2;
+    }
     for (int soft = 0; soft < 2 && total < need; soft++) { /* (too full: try again over the walkways, keeping clear of what shows) */
         total = 0;
-        for (int row = 0; row < r->n; row++) {
+        for (int row = 0; row < rr->n; row++) {
             pn[row] = 0;
-            double x0 = r->x0[row], x1 = r->x1[row], mid = (x0 + x1) / 2;
+            double x0 = rr->x0[row], x1 = rr->x1[row], mid = (x0 + x1) / 2;
             int k = (int)((x1 - x0) / (fw + 2));
             if (k < 1) continue;
             if (k > PER_ROW_MAX) k = PER_ROW_MAX;
             double sw = fmax(fw + 2, fmin(SLOT_MAX_W, (x1 - x0) / k)), xl, xr;
-            view_floor_span(v, r->by[row], &xl, &xr);
-            int by = r->by[row], lo = (int)fmax(x0, xl + 1), hi = (int)fmin(x1, xr - 1);
+            view_floor_span(v, rr->by[row], &xl, &xr);
+            int by = rr->by[row], lo = (int)fmax(x0, xl + 1), hi = (int)fmin(x1, xr - 1);
 #define FITS(cx) ((cx) + fp.x0 >= lo && (cx) + fp.x1 <= hi && floor_clear_soft(g, (Box){(cx) + fp.x0, by + fp.y0, (cx) + fp.x1, by + fp.y1}, soft))
             for (int j = 0; j < k; j++) { /* evenly spread places ... */
                 int cx = (int)(mid - sw * k / 2 + sw * (j + 0.5)) - fc;
@@ -325,26 +356,28 @@ static void place_room(Geo *g, const Room *room, const Rows *r, int n) {
             total += pn[row];
         }
     }
+    if (total > 0) break;
+    }
     int keep = need;
     if (keep > total) keep = total > 1 ? total - 1 : total; /* the last place says "+N MORE" */
     g->shown = first + keep; g->more = n - g->shown; g->has_more_pos = 0;
     int extra = (g->more && total > 1) ? 1 : 0, count = need < keep + extra ? need : keep + extra, i = 0, last_by = first ? g->home[0][1] : 0;
-    for (int row = 0; row < r->n && i < count; row++) { /* fill the rows from the back; a row not filled uses its middle places */
+    for (int row = 0; row < rr->n && i < count; row++) { /* fill the rows from the back; a row not filled uses its middle places */
         int in_row = pn[row] < count - i ? pn[row] : count - i;
         if (in_row <= 0) continue;
-        int use[PER_ROW_MAX] = {0}, mid = (int)((r->x0[row] + r->x1[row]) / 2);
+        int use[PER_ROW_MAX] = {0}, mid = (int)((rr->x0[row] + rr->x1[row]) / 2);
         for (int c = 0; c < in_row; c++) { /* the free place nearest the middle not taken yet */
             int best = -1;
             for (int j = 0; j < pn[row]; j++) if (!use[j] && (best < 0 || abs(px[row][j] + fc - mid) < abs(px[row][best] + fc - mid))) best = j;
             use[best] = 1;
         }
         for (int j = 0; j < pn[row]; j++) if (use[j]) {
-            if (i < keep) { g->home[first + i][0] = px[row][j]; g->home[first + i][1] = r->by[row]; }
-            else { g->has_more_pos = 1; g->more_pos[0] = px[row][j]; g->more_pos[1] = r->by[row] - 8; }
-            add_keep(g, box_grow((Box){px[row][j] + fp.x0, r->by[row] + fp.y0, px[row][j] + fp.x1, r->by[row] + fp.y1}, 1), 1);
+            if (i < keep) { g->home[first + i][0] = px[row][j]; g->home[first + i][1] = rr->by[row]; }
+            else { g->has_more_pos = 1; g->more_pos[0] = px[row][j]; g->more_pos[1] = rr->by[row] - 8; }
+            add_keep(g, box_grow((Box){px[row][j] + fp.x0, rr->by[row] + fp.y0, px[row][j] + fp.x1, rr->by[row] + fp.y1}, 1), 1);
             i++;
         }
-        if (r->by[row] > last_by) last_by = r->by[row];
+        if (rr->by[row] > last_by) last_by = rr->by[row];
     }
     if (last_by && last_by - 6 > g->ymin) { g->ymin = last_by - 6; g->ymax = g->ymax > g->ymin ? g->ymax : g->ymin; } /* (the walking strip: in front of the last row) */
     /* 5 the park's swing set and slide in the floor that is left: moved across to the nearest clear place, or left out */
@@ -367,18 +400,6 @@ static void place_room(Geo *g, const Room *room, const Rows *r, int n) {
         g->spots = theme_spots(th, w, h, g->play_dx);
         g->spots.no_swing = !g->play_on[0]; g->spots.no_slide = !g->play_on[1];
     }
-}
-
-/* AUTO room size: the scale the old estimate picks, or smaller until the placer seats all of this room's Clawds */
-int room_auto_scale(int pw, int ph, const Room *room) { /* (never bigger pixels than the old estimate; smaller when the placer needs it) */
-    static Geo g;
-    for (int k = auto_scale(pw, ph, room->n); k >= 1; k--) {
-        int w = pw / k, h = ph / k / 2 * 2;
-        if (w < SLOT_MIN_W || h < SLOT_H || w < ROAM_W || h < ROAM_H) continue;
-        geo_init(&g, room, w, h);
-        if (g.more == 0) return k;
-    }
-    return 1;
 }
 
 void geo_init(Geo *g, const Room *room, int w, int h) {
@@ -580,7 +601,8 @@ static void it_desk(Canvas *cv, const SceneItem *it, void *ctx) {
     else if (s->pack == 2) { double u = (X->now - s->pack_t0) / PACK_T; k = 1 - smooth(u / 0.85); box = u > 0.45; }
     else if (s->pack == 3) k = 0;
     else if (s->pack == 4) { double u = (X->now - s->pack_t0) / UNPACK_T; k = smooth((u - 0.15) / 0.85); box = u < 0.3; }
-    if (k >= 1) draw_desk(cv, cx, by, session_shown(s, X->now), s->tool, X->t, X->room->theme, X->roles[it->i], crc32_str(s->sid));
+    if (X->geo->floor_seats) { if (k > 0.5) strip_laptop(cv, cx - 5, by - 5, session_shown(s, X->now)); } /* (on the floor: no desk) */
+    else if (k >= 1) draw_desk(cv, cx, by, session_shown(s, X->now), s->tool, X->t, X->room->theme, X->roles[it->i], crc32_str(s->sid));
     else draw_desk_scaled(cv, cx, by, k, bx, bfy - 3, session_shown(s, X->now), s->tool, X->t, X->room->theme, X->roles[it->i], crc32_str(s->sid));
     if (box) draw_box(cv, bx, bfy);
 }
@@ -759,10 +781,15 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
         for (int sd = 0; sd < SIDES; sd++) {
             if (present[sd] && !room->gate_seen[sd]) { /* starts when the windows stopped moving (+1 s), the same moment for both rooms */
                 room->gate_seen[sd] = 1;
-                room->gate_t0[sd] = !room->drawn ? t - 1000.0 : room->has_gate_sync && room->gate_sync_t > t - GATE_ANIM ? room->gate_sync_t : t;
+                room->gate_t0[sd] = !room->drawn ? t - 1000.0 : room->has_gate_start[sd] ? room->gate_start[sd] : room->has_gate_sync && room->gate_sync_t > t - GATE_ANIM ? room->gate_sync_t : t;
                 char key[8];
                 snprintf(key, sizeof key, "gate%d", sd);
                 anim_start(&room->anim, key, 0, 1, room->gate_t0[sd], GATE_ANIM, EASE_OUT); /* (rises fast, settles) */
+            } else if (present[sd] && room->has_gate_start[sd] && t < room->gate_t0[sd] && fabs(room->gate_start[sd] - room->gate_t0[sd]) > 0.02) {
+                room->gate_t0[sd] = room->gate_start[sd]; /* not started yet and the other room said it was ready later: wait for it */
+                char key[8];
+                snprintf(key, sizeof key, "gate%d", sd);
+                anim_start(&room->anim, key, 0, 1, room->gate_t0[sd], GATE_ANIM, EASE_OUT);
             }
             else if (!present[sd]) room->gate_seen[sd] = 0;
         }
@@ -827,7 +854,7 @@ void draw_room(Canvas *cv, Room *room, double now, double t, char *note, size_t 
     if (room->n == 0 && !anyone) /* no Claude Code running anywhere: say so (visitors from other windows are still drawn) */
         scene_add(sc, (SceneItem){.kind = "no-sessions", .layer = LAYER_FLOOR, .owner = -1, .draw = it_no_sessions});
     /* who is seated at their desk, and who is in the room right now */
-    for (int i = 0; i < geo.shown; i++) snprintf(X.roles[i], sizeof X.roles[i], "%s", theme_role(room->theme, i));
+    for (int i = 0; i < geo.shown; i++) snprintf(X.roles[i], sizeof X.roles[i], "%s", geo.floor_seats ? "" : theme_role(room->theme, i)); /* (no bar on the floor) */
     for (int i = 0; i < geo.shown; i++) {
         const Session *s = room->s[i];
         if (s->has_away) continue;

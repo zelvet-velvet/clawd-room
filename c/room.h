@@ -51,6 +51,7 @@ typedef struct {
     double gate_out[SIDES][2]; /* ... and where it goes through (the door, the platform's door, the park's stair tower, down the well) */
     int gate_has_mid[SIDES]; double gate_mid[SIDES][2]; /* a point on the way between them (the top of the stairs) */
     int shown, more, has_more_pos, more_pos[2];
+    int floor_seats;         /* no desk fits: the Clawds sit on the floor with a laptop (home is still the seat's "desk" point) */
     int home[MAX_SESS][2];   /* by index in room->s (only the first `shown`) */
     double door_y[2];
     Spots spots;
@@ -85,6 +86,9 @@ typedef struct {
     double door_open[SIDES], door_t; /* how far each door leaf is open (0..1, opens while a Clawd passes) and when it was last moved */
     Animator anim;           /* eased values: gates appearing ("gate0".."gate3"), doors swinging ("door0", "door1") */
     int has_gate_sync; double gate_sync_t; /* when the windows stopped moving + 1 s, in draw time: both rooms start the animation then */
+#define GATE_SYNC_WAIT 1.0 /* s after both rooms were ready (a heartbeat is written at once and read within 0.5 s) */
+#define GATE_SYNC_ALONE 3.0 /* s after we were ready, while the other room has not said it is (an older room never does) */
+    int has_gate_start[SIDES]; double gate_start[SIDES]; /* agreed with the room behind the gate (app.c), in draw time: overrides gate_sync_t */
     char pick_sid[72]; double pick_until;  /* the picked Clawd (Tab) stands out until this draw time, then fades (draw.c draw_pick) */
     int pick_seen; double pick_cx, pick_cy; /* the corners are on screen, centred here (room pixels, glide included): the next pick glides from there */
     /* movement state */
@@ -109,6 +113,15 @@ typedef struct {
 #define SLOT_MAX_W 40
 #define ROW_PITCH 15       /* room pixels between the rows of workspaces */
 #define ROW_MARGIN 3       /* room pixels kept free at the floor's sides of each row */
+/* a room with no desk place: floor seats (a Clawd at cx - 5 with its laptop on its right, as in the strip's band) */
+#define FLOOR_SEAT_W 18    /* room pixels across per floor seat */
+#define FLOOR_SEAT_BACK 8  /* the first row's front edge below the back wall's foot (the Clawd's feet 5 above it) */
+#define FLOOR_SEAT_ROW 12  /* between rows */
+#define FLOOR_SEAT_WALK 12 /* floor kept in front of a row's feet to walk on */
+#define FLOOR_SEAT_X0 -12
+#define FLOOR_SEAT_X1 10
+#define FLOOR_SEAT_Y0 -13 /* (the Clawd's top; its dot may go over the wall) */
+#define FLOOR_SEAT_Y1 -4
 #define WALK_MIN 16        /* room pixels of floor kept in front of the last row to walk on */
 #define TREE_X 0.9         /* the park's big tree, as a part of the width (at the back right corner) */
 #define PARK_STAIRS_FOOT 0.58 /* the park's stone stairs: their foot and top along the back (parts of its width), */
@@ -140,7 +153,6 @@ typedef struct {
 #define SEAT_DY -12 /* a Clawd sits behind its desk / table: its body top this far above the furniture's front edge */
 
 
-int room_auto_scale(int pw, int ph, const Room *room); /* AUTO room size: the biggest scale at which the placer seats everyone */
 void layout_slots(int w, int h, int n, int *banner, int *per_row, int *slot_w, int *rows_shown, int *ys);
 void geo_init(Geo *g, const Room *room, int w, int h);
 /* a gate in this theme (a door, the park's building with a door; stairs; a stair well); p 0..1 how far it has appeared */

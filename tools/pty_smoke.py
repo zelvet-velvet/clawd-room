@@ -111,17 +111,20 @@ with tempfile.TemporaryDirectory() as tmp:
     check("the help line appears (?)", b"q/esc quit" in out)
     check("PAUSED appears (p)", b"PAUSED" in out)
     check("zoom message appears (])", b"ZOOM 2X" in out)
-    check("room size list picks a size (r, down, Enter)", b"ROOM SIZE S" in out)
+    check("no room size list any more (r does nothing)", b"ROOM SIZE" not in out)
     check("tab follows a Clawd", b"FOLLOW " in out)
     check("z turns auto zoom on", b"AUTO ZOOM ON" in out)
-    out, st = run(["--theme", "office", "--events", events], [(1.0, b"r"), (1.3, b"\x1b"), (1.6, b"]"), (2.2, b"q")])
-    check("Esc closes the room size list, not the room", st == 0 and b"ZOOM 2X" in out)
     # 2. a lone Esc does not quit (it lets go of the picked Clawd): the room still answers p afterwards, and q quits
-    out, st = run(["--theme", "park", "--events", events], [(1.0, b"\t"), (1.5, b"\x1b"), (2.0, b"p"), (2.6, b"q")])
+    out, st = run(["--theme", "park", "--events", events], [(1.0, b"\t"), (1.5, b"\x1b"), (2.0, b"p"), (2.6, b"q")], rows=42)  # (the park seats a Clawd from about 40 rows; below that the strip)
     check("Esc does not quit the room, q does", st == 0 and b"PAUSED" in out)
-    # 3. too small a terminal
-    out, st = run(["--theme", "office", "--events", events], [(0.8, b"q")], cols=30, rows=10)
-    check("small terminal says what it needs", b"need 44x20" in out and st == 0)
+    # 3. too small a terminal: the strip (a band of Clawds; strip.h), Tab and Esc work there, q quits
+    out, st = run(["--theme", "office", "--events", events], [(0.8, b"\t"), (1.2, b"\x1b"), (1.6, b"q")], cols=30, rows=10)
+    check("small terminal shows the strip of Clawds", b"205;110;88" in out and b"need 44x20" not in out and st == 0)
+    # 3b. v: room -> the band -> the faces -> the room (the bar is back with VIEW: ROOM); the window's leftover edge takes the
+    #     picture's colour (OSC 11) and gets the terminal's own back on the way out (OSC 111)
+    out, st = run(["--theme", "office", "--events", events], [(0.8, b"v"), (1.5, b"v"), (2.2, b"v"), (3.2, b"q")], rows=42)
+    check("v goes round room, laptops, faces and back", st == 0 and b"VIEW: ROOM" in out)
+    check("the edge colour is set and put back", b"\x1b]11;rgb:" in out and out.rfind(b"\x1b]111") > out.rfind(b"\x1b]11;rgb:"))
     # 4. the start menu: Enter opens the first scene, then q
     out, st = run(["--events", events], [(0.8, b"\x1b[C"), (1.1, b"\x1b[D"), (1.4, b"s"), (1.7, b"\r"), (2.8, b"q")])
     check("start menu shows its title and then the room", st == 0 and out.count(b"\x1b[?1049h") >= 1 and out.count(b"\x1b[?1049l") >= 1)
